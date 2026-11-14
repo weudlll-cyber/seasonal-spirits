@@ -1,37 +1,27 @@
 // Seasonal Spirits — the match server's game side: 32 slots, who steers each, match after match.
 // Every slot holds a ghost; a bot steers it until a player joins, and again when a player has
 // been gone for reconnectGraceMs. The game core decides everything; this file only routes
-// intents in and turns the core's state into the wire state.
+// intents in (wire.ts turns the core's state into the wire state).
 
 import {
   Match,
-  SEASONS,
   botRoster,
   createBot,
-  totalCount,
   type Bot,
   type GameConfig,
   type Intent,
-  type MatchState,
   type Roster,
   type Strategy,
 } from '@seasonal-spirits/game-core';
-import {
-  GHOST_BOT,
-  GHOST_CARRIER,
-  GHOST_SECURING,
-  STATE_HALVING_EVENT,
-  STATE_RESULT,
-  type GameAction,
-  type ServerState,
-} from '@seasonal-spirits/protocol';
+import type { GameAction } from '@seasonal-spirits/protocol';
+import { toWire, type WireState } from './wire.js';
+
+export type { WireState } from './wire.js';
 
 type Controller =
   | { kind: 'bot'; bot: Bot }
   | { kind: 'player'; clientId: number; dx: number; dy: number; action: GameAction | null }
   | { kind: 'standing'; since: number }; // a player left; the ghost waits for the grace time
-
-export type WireState = Omit<ServerState, 'tick' | 'serverMs'>;
 
 export class MatchHost {
   private readonly cfg: GameConfig;
@@ -95,7 +85,7 @@ export class MatchHost {
       }
     }
     if (this.resultUntil !== null) {
-      if (this.hostMs < this.resultUntil) return this.wire(this.match.state, false);
+      if (this.hostMs < this.resultUntil) return this.wire(false, this.resultUntil - this.hostMs);
       // A new match: same slots and players, a fresh seed, everyone back at the shrines.
       this.resultUntil = null;
       this.seed++;
@@ -104,8 +94,8 @@ export class MatchHost {
     const s = this.match.tick(dtMs, this.intents());
     if (s.ended) this.resultUntil = this.hostMs + this.cfg.resultPauseMs;
     return this.wire(
-      s,
       s.events.some((e) => e.type === 'halving'),
+      s.ended ? this.cfg.resultPauseMs : 0,
     );
   }
 
@@ -123,31 +113,14 @@ export class MatchHost {
     return out;
   }
 
-  private wire(s: Readonly<MatchState>, halvingEvent: boolean): WireState {
-    const teams = this.match.result().teams;
-    return {
-      matchMs: s.elapsedMs,
-      season: SEASONS.indexOf(s.clock.current),
-      seasonLeftMs: s.clock.timeLeftMs,
-      countdownMs: s.halvingCountdownMs,
-      flags: (halvingEvent ? STATE_HALVING_EVENT : 0) | (s.ended ? STATE_RESULT : 0),
-      teamSecured: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
-      ghosts: s.ghosts.map((g) => {
-        const carried = totalCount(g.carried);
-        return {
-          id: g.id,
-          x: g.x,
-          y: g.y,
-          team: g.team,
-          carried,
-          flags:
-            (carried > 0 ? GHOST_CARRIER : 0) |
-            (g.securingUntilMs !== null ? GHOST_SECURING : 0) |
-            (this.control.get(g.id)?.kind === 'bot' ? GHOST_BOT : 0),
-        };
-      }),
-      coins: s.coins.map((c) => ({ x: c.x, y: c.y })),
-    };
+  private wire(halvingEvent: boolean, nextMatchMs: number): WireState {
+    return toWire(this.match.state, {
+      cfg: this.cfg,
+      result: this.match.result(),
+      isBot: (ghost) => this.control.get(ghost)?.kind === 'bot',
+      halvingEvent,
+      nextMatchMs,
+    });
   }
 
   // Slots per team held by a player or a standing ghost.

@@ -6,14 +6,15 @@ import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
   decodeState,
   parseServerMessage,
+  type ServerMessage,
   type ServerState,
-  type ServerWelcome,
 } from '@seasonal-spirits/protocol';
 import { GameServer, type ServerConfig } from './server.js';
 
 // Four slots; a left player's slot goes back to a bot on the next tick.
 export const TEST_CONFIG: ServerConfig = {
   port: 0,
+  host: '127.0.0.1',
   tickHz: 20,
   game: { ...DEFAULT_CONFIG, reconnectGraceMs: 0 },
   maxGhosts: 4,
@@ -63,13 +64,14 @@ export function nthState(ws: WebSocket, n: number): Promise<ServerState> {
   });
 }
 
-function welcome(ws: WebSocket): Promise<ServerWelcome> {
+// The next valid text message from the server (a welcome or the spectating notice).
+export function serverText(ws: WebSocket): Promise<ServerMessage> {
   return new Promise((resolve) => {
     const onMessage = (data: WebSocket.RawData, isBinary: boolean): void => {
-      const greeting = isBinary ? null : parseServerMessage((data as Buffer).toString('utf8'));
-      if (!greeting) return;
+      const msg = isBinary ? null : parseServerMessage((data as Buffer).toString('utf8'));
+      if (!msg) return;
       ws.off('message', onMessage);
-      resolve(greeting);
+      resolve(msg);
     };
     ws.on('message', onMessage);
   });
@@ -78,9 +80,11 @@ function welcome(ws: WebSocket): Promise<ServerWelcome> {
 // A connected player and the ghost it steers, after its first state message.
 export async function player(server: GameServer): Promise<{ ws: WebSocket; ghost: number }> {
   const ws = await connect(server);
-  const greeting = welcome(ws);
+  const greeting = serverText(ws);
   ws.send(JSON.stringify({ kind: 'player' }));
-  const { ghost } = await greeting;
+  const msg = await greeting;
+  if (msg.kind !== 'welcome') throw new Error('expected a welcome');
+  const { ghost } = msg;
   await nthState(ws, 1);
   return { ws, ghost };
 }

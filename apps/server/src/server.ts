@@ -10,8 +10,10 @@ import type { GameConfig } from '@seasonal-spirits/game-core';
 import {
   MAX_CLIENT_MESSAGE_BYTES,
   encodeState,
+  ghostName,
   parseClientMessage,
   type ClientMessage,
+  type ServerSpectating,
   type ServerWelcome,
 } from '@seasonal-spirits/protocol';
 import { handleHttp } from './http-routes.js';
@@ -19,6 +21,7 @@ import { MatchHost } from './match-host.js';
 
 export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
+  host: string; // the address to listen on: loopback unless the LAN mode asks for more
   tickHz: number;
   game: GameConfig;
   maxGhosts: number; // slots in a match; bots fill those without a player
@@ -89,7 +92,7 @@ export class GameServer {
     this.wss.on('connection', (ws, req) => {
       this.handleConnection(ws, req.socket.remoteAddress ?? 'unknown');
     });
-    await new Promise<void>((resolve) => this.http.listen(this.cfg.port, resolve));
+    await new Promise<void>((resolve) => this.http.listen(this.cfg.port, this.cfg.host, resolve));
     this.start();
   }
 
@@ -238,11 +241,14 @@ export class GameServer {
     }
     const slot = this.host.join(rec.id);
     if (!slot) {
-      rec.ws.close(POLICY_VIOLATION); // every slot already has a player
+      // Every slot already has a player: the client watches instead and must send nothing more.
+      rec.kind = 'spectator';
+      const notice: ServerSpectating = { kind: 'spectating', reason: 'full' };
+      rec.ws.send(JSON.stringify(notice));
       return;
     }
     rec.kind = 'player';
-    const welcome: ServerWelcome = { kind: 'welcome', ...slot };
+    const welcome: ServerWelcome = { kind: 'welcome', ...slot, name: ghostName(slot.ghost, false) };
     rec.ws.send(JSON.stringify(welcome));
   }
 

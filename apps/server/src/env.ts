@@ -15,6 +15,20 @@ export function envInt(env: Env, name: string, fallback: number, range: [number,
   return n;
 }
 
+// One of a fixed list of strings; anything else stops the process.
+export function envChoice<T extends string>(
+  env: Env,
+  name: string,
+  fallback: T,
+  allowed: readonly T[],
+): T {
+  const raw = env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const hit = allowed.find((a) => a === raw);
+  if (hit === undefined) throw new Error(`${name} must be one of ${allowed.join(', ')}, got "${raw}"`);
+  return hit;
+}
+
 // The dev server and the probe are development tools: no sign-in, fake
 // players. They refuse to start in production (CLAUDE.md, "Security").
 export function refuseProduction(env: Env, what: string): void {

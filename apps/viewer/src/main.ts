@@ -1,7 +1,7 @@
 // Seasonal Spirits — browser viewer: a spectator of the running match, as a debug view.
-// Connects through the artificial delay queue, interpolates the ghosts and draws the match
-// (draw.ts). The HUD shows the network numbers and the match text; the numbers are also
-// exposed on window for Playwright checks.
+// Connects through the artificial delay queue, interpolates the ghosts and draws the whole
+// match with the client's drawing (packages/render). The HUD shows the network numbers; they
+// are also exposed on window for Playwright checks.
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
@@ -9,7 +9,6 @@ import {
   JumpDetector,
   PerMinuteCounter,
   RenderClock,
-  STATE_HALVING_EVENT,
   decodeState,
   interpolate,
   latestServerMs,
@@ -17,7 +16,14 @@ import {
   type BufferedState,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { drawField, drawGhosts, layout, matchLines } from './draw.js';
+import {
+  CLOCK_HEIGHT,
+  Trails,
+  drawClock,
+  drawField,
+  drawGhosts,
+  fitField,
+} from '@seasonal-spirits/render';
 
 declare const __SERVER_WS_URL__: string;
 declare const __SERVER_HTTP_URL__: string;
@@ -25,7 +31,6 @@ declare const __SERVER_HTTP_URL__: string;
 const BUFFER_MS = 100;
 const LATENCY_MIN = 100;
 const LATENCY_MAX = 200;
-const HALVING_SHOWN_MS = 3000; // the HALVING line stays this long after the event
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
@@ -45,15 +50,13 @@ const statesRate = new PerMinuteCounter();
 const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
-let halvingSeenAt = -Infinity;
+const trails = new Trails();
 const jumpDetector = new JumpDetector({ speedUnitsPerSecond: DEFAULT_CONFIG.ghostSpeed });
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
   const state: ServerState = decodeState(buf);
   const now = Date.now();
-  // The event is in one state only; every state passes here, so it is never missed.
-  if (state.flags & STATE_HALVING_EVENT) halvingSeenAt = now;
   buffer.push({ receivedAt: now, state });
   trimBuffer(buffer, now, 2000);
   lastStateBytes = buf.byteLength;
@@ -100,9 +103,15 @@ function frame(): void {
 
   // Ghosts are interpolated; coins and clock come from the newest state.
   const latest = buffer.at(-1)?.state;
-  const view = layout(ctx);
-  drawField(view, latest);
-  drawGhosts(view, ghosts);
+  trails.record(ghosts);
+  drawField(fitField(ctx, CLOCK_HEIGHT), latest);
+  drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
+    ownId: null,
+    season: latest?.season ?? 0,
+    trails,
+    labelAll: true,
+  });
+  drawClock(ctx, latest);
 
   // Expose for Playwright / probe self-check.
   (window as unknown as { __viewer: unknown }).__viewer = {
@@ -123,8 +132,7 @@ function frame(): void {
     `buffer:          ${BUFFER_MS} ms (${buffer.length} states held)\n` +
     `jumps /60 s:     ${jumpCounter.value(now)}\n` +
     `underruns /60 s: ${underrunCounter.value(now)}\n` +
-    `server Hz:       ${serverHz.toFixed(1)}` +
-    (latest ? `\n\n${matchLines(latest, now - halvingSeenAt < HALVING_SHOWN_MS).join('\n')}` : '');
+    `server Hz:       ${serverHz.toFixed(1)}`;
 
   requestAnimationFrame(frame);
 }

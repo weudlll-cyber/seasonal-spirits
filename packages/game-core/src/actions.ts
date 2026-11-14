@@ -13,12 +13,35 @@ export function atOwnShrine(cfg: GameConfig, s: MatchState, g: Ghost): boolean {
 
 // CONCEPT.md §2a, sentence 3: 10 coins of the current season become 15 of the next. All
 // carried coins of the current season are swapped at that rate, rounded down
-// (10 → 15 → 22 → 33 for a patient player).
+// (10 → 15 → 22 → 33 for a patient player); fewer than swapIn give nothing.
+function swapYield(cfg: GameConfig, spent: number): number {
+  return spent < cfg.swapIn ? 0 : Math.floor((spent * cfg.swapOut) / cfg.swapIn);
+}
+
+// What the two shrine buttons offer right now (CONCEPT.md §3: the player reads, never
+// calculates): the secure value, and the swap's coin count with its value now and later.
+export interface ShrineOffer {
+  secureValue: number;
+  swapCoins: number;
+  swapValueNow: number;
+  swapValueLater: number;
+}
+
+export function shrineOffer(cfg: GameConfig, s: MatchState, g: Ghost): ShrineOffer {
+  const swapCoins = swapYield(cfg, g.carried[s.clock.current]);
+  return {
+    secureValue: valueNow(cfg, g.carried, s.clock.current),
+    swapCoins,
+    swapValueNow: swapCoins * cfg.offSeasonValueFactor,
+    swapValueLater: swapCoins,
+  };
+}
+
 export function trySwap(cfg: GameConfig, s: MatchState, g: Ghost): void {
   const from = s.clock.current;
   const spent = g.carried[from];
-  if (!atOwnShrine(cfg, s, g) || spent < cfg.swapIn) return;
-  const got = Math.floor((spent * cfg.swapOut) / cfg.swapIn);
+  const got = swapYield(cfg, spent);
+  if (!atOwnShrine(cfg, s, g) || got === 0) return;
   g.carried[from] = 0;
   g.carried[nextSeason(from)] += got;
   s.events.push({ type: 'swap', ghost: g.id, from, spent, got });

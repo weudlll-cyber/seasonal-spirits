@@ -1,0 +1,9 @@
+// Seasonal Spirits — render package: Canvas 2D drawing shared by the client and the viewer.
+// Browser code, built by Vite inside the two apps; bundler resolution and the DOM.
+{
+  "extends": "../../tsconfig.bundler.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src"]
+}

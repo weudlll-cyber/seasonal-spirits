@@ -76,7 +76,7 @@ export class ProbeBot {
       return;
     }
     const welcome = parseServerMessage(new TextDecoder().decode(bytes));
-    if (welcome) this.ghost = welcome.ghost;
+    if (welcome?.kind === 'welcome') this.ghost = welcome.ghost;
   }
 
   private onState(s: ServerState): void {

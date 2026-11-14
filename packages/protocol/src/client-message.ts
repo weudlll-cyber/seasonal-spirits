@@ -3,7 +3,7 @@
 // shape, types and ranges are checked, and a fresh object with only the known fields is
 // returned. The server and later clients reuse it, so both sides agree on what is valid.
 
-import type { ClientMessage } from './state.js';
+import type { ClientMessage } from './messages.js';
 
 // The largest valid message is an input with two long floats, well under 100 bytes. The
 // server's WebSocket also refuses frames above this size (maxPayload).

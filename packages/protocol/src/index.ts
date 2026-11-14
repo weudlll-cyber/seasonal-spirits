@@ -2,6 +2,7 @@
 // Re-exports what server, viewer, probe and client share: encodings, validators, timing.
 
 export * from './state.js';
+export * from './messages.js';
 export * from './client-message.js';
 export * from './server-message.js';
 export * from './delay-queue.js';

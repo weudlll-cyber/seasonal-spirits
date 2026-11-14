@@ -1,0 +1,19 @@
+{
+  "name": "@seasonal-spirits/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@seasonal-spirits/game-core": "workspace:*",
+    "@seasonal-spirits/protocol": "workspace:*",
+    "@seasonal-spirits/render": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "8.3.4"
+  }
+}

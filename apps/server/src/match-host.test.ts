@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import {
+  GHOST_AT_SHRINE,
   GHOST_BOT,
   STATE_HALVING_EVENT,
   STATE_RESULT,
@@ -69,6 +70,22 @@ describe('match host inputs', () => {
   });
 });
 
+describe('match host shrine offers', () => {
+  it('sends the button numbers for a player in its own shrine, never for a bot', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
+    const slot = host.join(1);
+    if (!slot) throw new Error('no slot');
+    // Every ghost starts inside its own shrine.
+    const s = host.tick(50);
+    expect(s.ghosts.every((g) => g.flags & GHOST_AT_SHRINE)).toBe(true);
+    expect(s.offers).toEqual([
+      { ghost: slot.ghost, secureValue: 0, swapCoins: 0, swapValueNow: 0, swapValueLater: 0 },
+    ]);
+    host.steer(1, 1, 1);
+    expect(host.tick(1000).offers).toEqual([]);
+  });
+});
+
 describe('match host state size', () => {
   it('never sends more than 1 KB in a whole 32-bot match, the halvings included', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
@@ -81,7 +98,7 @@ describe('match host state size', () => {
     }
     expect(halvings).toBe(3);
     expect(max).toBeLessThan(1024);
-    // A full field (maxFieldCoins) is the upper bound: 30 + 9 · 32 + 4 · 60 bytes.
+    // Bots never get offers: a full field (maxFieldCoins) is the bound, 34 + 13 · 32 + 4 · 60.
     expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
   });
 });

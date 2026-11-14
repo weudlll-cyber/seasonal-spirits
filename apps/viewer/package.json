@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@seasonal-spirits/game-core": "workspace:*",
-    "@seasonal-spirits/protocol": "workspace:*"
+    "@seasonal-spirits/protocol": "workspace:*",
+    "@seasonal-spirits/render": "workspace:*"
   },
   "devDependencies": {
     "vite": "8.3.4"

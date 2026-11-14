@@ -1,12 +1,14 @@
-// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server and viewer, detached.
-// The server's own bots fill all 32 slots. Starts both as hidden background processes (no
-// windows on Windows, the same on Linux and macOS), logs to logs/dev-*.log (and
+// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
+// The server's own bots fill all 32 slots. Starts all three as hidden background processes
+// (no windows on Windows, the same on Linux and macOS), logs to logs/dev-*.log (and
 // dev-*.err.log on Windows), records their PIDs in tmp/dev-pids.json, and stops exactly
-// those PIDs again.
+// those PIDs again. `pnpm dev --lan` (development only, never the default) also opens server
+// and client to the local network and prints the address for a phone in the same Wi-Fi.
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -14,23 +16,29 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PID_FILE = path.join(ROOT, 'tmp', 'dev-pids.json');
 const SERVER_PORT = 3930;
-const VIEWER_PORT = 5930;
+const CLIENT_PORT = 5930;
+const VIEWER_PORT = 5931;
 
 /**
  * @typedef {{ name: string, pid: number }} Started
  * @param {string} name
  * @param {string} cwd repository-relative working directory
  * @param {string[]} args arguments for node
+ * @param {Record<string, string>} env added to this process's environment
  * @returns {Started}
  */
-function startHidden(name, cwd, args) {
+function startHidden(name, cwd, args, env) {
   fs.mkdirSync(path.join(ROOT, 'logs'), { recursive: true });
   const logBase = path.join(ROOT, 'logs', `dev-${name}`);
-  if (process.platform === 'win32') return startWindows(name, path.join(ROOT, cwd), args, logBase);
+  const fullEnv = { ...process.env, ...env };
+  if (process.platform === 'win32') {
+    return startWindows(name, { cwd: path.join(ROOT, cwd), args, env: fullEnv }, logBase);
+  }
   const log = fs.openSync(`${logBase}.log`, 'w');
   const child = spawn(process.execPath, args, {
     cwd: path.join(ROOT, cwd),
     detached: true,
+    env: fullEnv,
     stdio: ['ignore', log, log],
   });
   child.unref();
@@ -42,8 +50,13 @@ function startHidden(name, cwd, args) {
 // ends every child process with it; Start-Process starts the process outside that job. The
 // PID comes back through a file: the started process inherits handles, so a stdout pipe to
 // PowerShell would stay open as long as it runs.
-/** @param {string} name @param {string} cwd @param {string[]} args @param {string} logBase */
-function startWindows(name, cwd, args, logBase) {
+// Start-Process passes PowerShell's environment on, which is the env given to spawnSync.
+/**
+ * @param {string} name @param {string} logBase
+ * @param {{ cwd: string, args: string[], env: NodeJS.ProcessEnv }} run
+ */
+function startWindows(name, run, logBase) {
+  const { cwd, args, env } = run;
   const q = (/** @type {string} */ s) => `'${s.replaceAll("'", "''")}'`;
   const pidFile = `${logBase}.pid`;
   const command =
@@ -51,7 +64,7 @@ function startWindows(name, cwd, args, logBase) {
     `-WorkingDirectory ${q(cwd)} -WindowStyle Hidden -PassThru ` +
     `-RedirectStandardOutput ${q(`${logBase}.log`)} -RedirectStandardError ${q(`${logBase}.err.log`)}` +
     `).Id | Set-Content -Path ${q(pidFile)}`;
-  const r = spawnSync('powershell', ['-NoProfile', '-Command', command], { stdio: 'ignore' });
+  const r = spawnSync('powershell', ['-NoProfile', '-Command', command], { stdio: 'ignore', env });
   const pid = fs.existsSync(pidFile) ? Number(fs.readFileSync(pidFile, 'utf8').trim()) : NaN;
   fs.rmSync(pidFile, { force: true });
   if (r.status !== 0 || !Number.isSafeInteger(pid) || pid <= 0) {
@@ -114,21 +127,52 @@ function isStarted(p) {
   return typeof name === 'string' && Number.isSafeInteger(pid) && Number(pid) > 0;
 }
 
-async function start() {
+// The machine's first IPv4 address on the local network, for the phone.
+function lanAddress() {
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const i of list ?? []) if (i.family === 'IPv4' && !i.internal) return i.address;
+  }
+  return null;
+}
+
+/** @param {boolean} lan */
+async function start(lan) {
   if (process.env.NODE_ENV === 'production') throw new Error('pnpm dev is development only');
   if (recorded().some((p) => alive(p.pid))) throw new Error('already running; pnpm dev:stop first');
-  for (const port of [SERVER_PORT, VIEWER_PORT]) {
+  for (const port of [SERVER_PORT, CLIENT_PORT, VIEWER_PORT]) {
     if (await portOpen(port)) throw new Error(`port ${port} is in use by another process`);
   }
-  const started = [startHidden('server', 'apps/server', ['--import', 'tsx', 'src/main.ts'])];
-  fs.mkdirSync(path.dirname(PID_FILE), { recursive: true });
-  fs.writeFileSync(PID_FILE, JSON.stringify(started));
-  await waitForPort(SERVER_PORT, 15_000);
-  started.push(startHidden('viewer', 'apps/viewer', ['node_modules/vite/bin/vite.js']));
-  fs.writeFileSync(PID_FILE, JSON.stringify(started));
-  await waitForPort(VIEWER_PORT, 15_000);
+  const host = lan ? '0.0.0.0' : '127.0.0.1';
+  /** @type {Started[]} */
+  const started = [];
+  const launch = async (
+    /** @type {[string, string, string[], Record<string, string>, number]} */ p,
+  ) => {
+    started.push(startHidden(p[0], p[1], p[2], p[3]));
+    fs.mkdirSync(path.dirname(PID_FILE), { recursive: true });
+    fs.writeFileSync(PID_FILE, JSON.stringify(started));
+    await waitForPort(p[4], 15_000);
+  };
+  const vite = ['node_modules/vite/bin/vite.js'];
+  await launch([
+    'server',
+    'apps/server',
+    ['--import', 'tsx', 'src/main.ts'],
+    { HOST: host },
+    SERVER_PORT,
+  ]);
+  await launch(['client', 'apps/client', vite, { CLIENT_HOST: host }, CLIENT_PORT]);
+  await launch(['viewer', 'apps/viewer', vite, {}, VIEWER_PORT]);
   console.log(`Seasonal Spirits dev: ${started.map((p) => `${p.name} ${p.pid}`).join(', ')}`);
-  console.log(`Viewer: http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`);
+  console.log(`Client: http://localhost:${CLIENT_PORT}`);
+  const address = lan ? lanAddress() : null;
+  if (lan)
+    console.log(
+      `Phone (same Wi-Fi): ${address ? `http://${address}:${CLIENT_PORT}` : 'no LAN address found'}`,
+    );
+  console.log(
+    `Viewer (debug): http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`,
+  );
 }
 
 function stop() {
@@ -148,7 +192,7 @@ function stop() {
 if (process.argv[2] === 'stop') {
   stop();
 } else {
-  start().catch((/** @type {unknown} */ err) => {
+  start(process.argv.includes('--lan')).catch((/** @type {unknown} */ err) => {
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);
   });

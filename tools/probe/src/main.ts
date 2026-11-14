@@ -40,6 +40,7 @@ async function main(): Promise<void> {
   console.log(`[probe] starting server on port ${cfg.port}`);
   const server = new GameServer({
     port: cfg.port,
+    host: '127.0.0.1', // server and every client of the probe run on this machine
     tickHz: cfg.tickHz,
     game: DEFAULT_CONFIG,
     maxGhosts: cfg.maxGhosts,
@@ -56,7 +57,7 @@ async function main(): Promise<void> {
   await sleep(50);
 
   console.log(`[probe] spawning ${cfg.maxGhosts} bots`);
-  const url = `ws://localhost:${cfg.port}`;
+  const url = `ws://127.0.0.1:${cfg.port}`;
   const bots = spawnBots(cfg.maxGhosts, {
     url,
     worldSize: cfg.world,

@@ -5,7 +5,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { GHOST_BOT } from '@seasonal-spirits/protocol';
 import type { GameServer } from './server.js';
-import { closed, connect, ghostIn, nthState, player, startServer } from './test-client.js';
+import {
+  closed,
+  connect,
+  ghostIn,
+  nthState,
+  player,
+  serverText,
+  startServer,
+} from './test-client.js';
 
 let server: GameServer | null = null;
 
@@ -103,11 +111,16 @@ describe('server connection rules', () => {
     expect(server.metrics().players).toBe(1);
   });
 
-  it('refuses a player when every slot already has one', async () => {
+  it('makes a late player a spectator when every slot has one, and closes it if it sends', async () => {
     server = await startServer();
     for (let i = 0; i < 4; i++) await player(server);
     const late = await connect(server);
+    const notice = serverText(late);
     late.send(JSON.stringify({ kind: 'player' }));
+    expect(await notice).toEqual({ kind: 'spectating', reason: 'full' });
+    await nthState(late, 1); // it watches the match
+    expect(server.metrics().players).toBe(4);
+    late.send(JSON.stringify({ kind: 'input', dx: 1, dy: 0 }));
     expect(await closed(late)).toBe(1008);
   });
 
