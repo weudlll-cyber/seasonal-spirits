@@ -22,6 +22,12 @@ export interface Random {
 
 export const mathRandom: Random = { next: () => Math.random() };
 
+// The two seams a test replaces with a fake clock and a scripted random source.
+export interface DelayQueueDeps {
+  clock: DelayQueueClock;
+  rng: Random;
+}
+
 export class DelayQueue<T> {
   private readonly minMs: number;
   private readonly maxMs: number;
@@ -34,16 +40,15 @@ export class DelayQueue<T> {
     minMs: number,
     maxMs: number,
     onDeliver: (item: T) => void,
-    clock: DelayQueueClock = realClock,
-    rng: Random = mathRandom,
+    deps: DelayQueueDeps = { clock: realClock, rng: mathRandom },
   ) {
     if (minMs < 0 || maxMs < minMs) {
       throw new Error(`DelayQueue: invalid bounds min=${minMs} max=${maxMs}`);
     }
     this.minMs = minMs;
     this.maxMs = maxMs;
-    this.clock = clock;
-    this.rng = rng;
+    this.clock = deps.clock;
+    this.rng = deps.rng;
     this.onDeliver = onDeliver;
   }
 
@@ -58,6 +63,8 @@ export class DelayQueue<T> {
     const delivery = Math.max(this.lastDelivery, naturalDelivery);
     this.lastDelivery = delivery;
     const delay = delivery - now;
-    this.clock.schedule(delay, () => this.onDeliver(item));
+    this.clock.schedule(delay, () => {
+      this.onDeliver(item);
+    });
   }
 }

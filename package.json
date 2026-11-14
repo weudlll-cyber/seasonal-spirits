@@ -5,30 +5,29 @@
   "description": "Seasonal Spirits — a real-time team game for the Seasonal Entertainment community.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
+  "packageManager": "pnpm@12.14.0",
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@9.12.0",
   "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint .",
-    "typecheck": "pnpm -r --parallel exec tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r typecheck",
     "test": "vitest run",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "server": "pnpm --filter @seasonal-spirits/server start",
     "viewer": "pnpm --filter @seasonal-spirits/viewer start",
-    "probe": "pnpm --filter @seasonal-spirits/probe start",
-    "simulate": "pnpm --filter @seasonal-spirits/game-core simulate"
+    "probe": "pnpm --filter @seasonal-spirits/probe start"
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
-    "@types/node": "^22.10.1",
-    "eslint": "^9.15.0",
-    "playwright": "^1.65.1",
-    "prettier": "^3.3.3",
-    "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0",
-    "vitest": "^2.1.5"
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2",
+    "vitest": "5.0.5"
   }
 }

@@ -1,23 +1,28 @@
+# Seasonal Spirits — CI: the same "pnpm verify" developers run locally.
+# One job on every branch push and every pull request to master; the toolchain versions come
+# from package.json "packageManager" and .nvmrc (shared setup in .github/actions/setup).
 name: CI
 
 on:
   push:
-    branches: [master]
+    branches: ['**']
   pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One group per branch and event, so a push and its PR do not cancel each other.
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  # Every merge commit on master must get its own finished run.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: corepack enable
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      # Format check, lint, typecheck, tests.
+      - run: pnpm verify

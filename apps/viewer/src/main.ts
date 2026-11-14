@@ -56,12 +56,15 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 function colourFor(id: number): string {
   const season = (id - 1) % 4;
   const slot = Math.floor((id - 1) / 4) % 8;
-  return SEASON_PALETTES[season]![slot]!;
+  // Ids above 32 wrap around the palette; the white fallback only satisfies the index type.
+  return SEASON_PALETTES[season]?.[slot] ?? '#ffffff';
 }
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
-const ctx = canvas.getContext('2d')!;
+const context = canvas.getContext('2d');
+if (context === null) throw new Error('viewer: 2D canvas context unavailable');
+const ctx = context;
 
 function resize(): void {
   canvas.width = window.innerWidth;
@@ -107,7 +110,9 @@ async function pollMetrics(): Promise<void> {
     // ignore; the probe may be starting up.
   }
 }
-setInterval(pollMetrics, 1000);
+setInterval(() => {
+  void pollMetrics();
+}, 1000);
 
 function frame(): void {
   const now = Date.now();

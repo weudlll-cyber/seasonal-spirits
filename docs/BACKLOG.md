@@ -23,3 +23,6 @@ the commit that finished the item).
   interpolation, jump detection, tests.
 - 2026-11-14 — `packages/game-core`: deterministic mechanics, three bot strategies,
   `pnpm simulate`.
+- 2026-11-14 — toolchain aligned with seasonal-mini-games: pnpm 12.14.0, exact
+  devDependency pins, ESLint 10 strict typed linting, strict tsconfig base, Prettier
+  config file, CI with pinned actions and a frozen lockfile (`phase0/network-probe`).

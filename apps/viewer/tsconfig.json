@@ -1,9 +1,10 @@
+// Seasonal Spirits — viewer project: the browser source and its Vite config.
+// Node types are only for vite.config.ts, which reads the ports from process.env.
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.bundler.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "lib": ["ES2022", "DOM"]
+    "noEmit": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*"]
+  "include": ["src", "vite.config.ts"]
 }

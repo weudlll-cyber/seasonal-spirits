@@ -1,4 +1,17 @@
+# Seasonal Spirits — workspace packages and pnpm settings of the monorepo.
+# pnpm 11+ reads its settings here, not from .npmrc; aligned with seasonal-mini-games.
 packages:
   - 'apps/*'
   - 'packages/*'
   - 'tools/*'
+
+# Refuse installs on a Node version outside package.json "engines".
+engineStrict: true
+# "pnpm add" pins exact versions.
+saveExact: true
+
+# Dependency install scripts run only when listed here as true.
+allowBuilds:
+  # Pulled by tsx and vite. Its postinstall only checks or fetches the native binary, which
+  # the platform-specific optional dependency already ships.
+  esbuild: false

@@ -68,7 +68,9 @@ export class HeadlessSpectator {
       // swallowed
     });
     const periodMs = 1000 / opts.frameHz;
-    this.frameTimer = setInterval(() => this.renderFrame(), periodMs);
+    this.frameTimer = setInterval(() => {
+      this.renderFrame();
+    }, periodMs);
   }
 
   private renderFrame(): void {

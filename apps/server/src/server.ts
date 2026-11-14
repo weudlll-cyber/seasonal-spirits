@@ -5,7 +5,13 @@
 
 import http from 'node:http';
 import { WebSocketServer, type WebSocket } from 'ws';
-import { encodeState, encodedSize, type ClientMessage } from '@seasonal-spirits/protocol';
+import {
+  encodeState,
+  encodedSize,
+  type ClientHello,
+  type ClientInput,
+  type ClientMessage,
+} from '@seasonal-spirits/protocol';
 import { World } from './world.js';
 
 export interface ServerConfig {
@@ -59,9 +65,13 @@ export class GameServer {
   }
 
   async listen(): Promise<void> {
-    this.http = http.createServer((req, res) => this.handleHttp(req, res));
+    this.http = http.createServer((req, res) => {
+      this.handleHttp(req, res);
+    });
     this.wss = new WebSocketServer({ server: this.http });
-    this.wss.on('connection', (ws) => this.handleConnection(ws));
+    this.wss.on('connection', (ws) => {
+      this.handleConnection(ws);
+    });
     await new Promise<void>((resolve) => this.http.listen(this.cfg.port, resolve));
     this.start();
   }
@@ -70,8 +80,16 @@ export class GameServer {
     if (this.tickTimer) clearInterval(this.tickTimer);
     this.tickTimer = null;
     for (const c of this.clients.values()) c.ws.close();
-    await new Promise<void>((resolve) => this.wss.close(() => resolve()));
-    await new Promise<void>((resolve) => this.http.close(() => resolve()));
+    await new Promise<void>((resolve) => {
+      this.wss.close(() => {
+        resolve();
+      });
+    });
+    await new Promise<void>((resolve) =>
+      this.http.close(() => {
+        resolve();
+      }),
+    );
   }
 
   private start(): void {
@@ -82,7 +100,9 @@ export class GameServer {
     this.metricsWindowStart = this.startWall;
     this.ticksInWindow = 0;
     // 1 ms resolution; drift-corrected inside tickLoop.
-    this.tickTimer = setInterval(() => this.tickLoop(), 1);
+    this.tickTimer = setInterval(() => {
+      this.tickLoop();
+    }, 1);
   }
 
   private tickLoop(): void {
@@ -123,7 +143,9 @@ export class GameServer {
       inputWindowStart: Date.now(),
     };
     this.clients.set(id, rec);
-    ws.on('message', (data) => this.handleMessage(rec, data));
+    ws.on('message', (data) => {
+      this.handleMessage(rec, data);
+    });
     ws.on('close', () => {
       this.clients.delete(id);
       this.world.removeGhost(id);
@@ -141,31 +163,41 @@ export class GameServer {
     } catch {
       return;
     }
-    if (msg.kind === 'player' || msg.kind === 'spectator') {
-      if (rec.kind !== 'pending') return;
-      if (msg.kind === 'player' && this.world.ghostCount() < this.cfg.maxGhosts) {
-        rec.kind = 'player';
-        this.world.addGhost(rec.id);
-      } else if (msg.kind === 'player') {
-        rec.ws.close();
+    // A switch with no default: any kind outside the protocol falls through and is ignored.
+    switch (msg.kind) {
+      case 'player':
+      case 'spectator':
+        this.handleHello(rec, msg.kind);
         return;
-      } else {
-        rec.kind = 'spectator';
-      }
-      return;
+      case 'input':
+        this.handleInput(rec, msg);
+        return;
     }
-    if (msg.kind === 'input') {
-      if (rec.kind !== 'player') return; // spectators and pendings send nothing
-      const now = Date.now();
-      if (now - rec.inputWindowStart >= 1000) {
-        rec.inputWindowStart = now;
-        rec.inputsThisSecond = 0;
-      }
-      if (rec.inputsThisSecond >= this.cfg.maxInputsPerSecond) return;
-      rec.inputsThisSecond++;
-      if (Number.isFinite(msg.dx) && Number.isFinite(msg.dy)) {
-        this.world.setDirection(rec.id, msg.dx, msg.dy);
-      }
+  }
+
+  private handleHello(rec: ClientRecord, kind: ClientHello['kind']): void {
+    if (rec.kind !== 'pending') return;
+    if (kind === 'spectator') {
+      rec.kind = 'spectator';
+    } else if (this.world.ghostCount() < this.cfg.maxGhosts) {
+      rec.kind = 'player';
+      this.world.addGhost(rec.id);
+    } else {
+      rec.ws.close();
+    }
+  }
+
+  private handleInput(rec: ClientRecord, msg: ClientInput): void {
+    if (rec.kind !== 'player') return; // spectators and pendings send nothing
+    const now = Date.now();
+    if (now - rec.inputWindowStart >= 1000) {
+      rec.inputWindowStart = now;
+      rec.inputsThisSecond = 0;
+    }
+    if (rec.inputsThisSecond >= this.cfg.maxInputsPerSecond) return;
+    rec.inputsThisSecond++;
+    if (Number.isFinite(msg.dx) && Number.isFinite(msg.dy)) {
+      this.world.setDirection(rec.id, msg.dx, msg.dy);
     }
   }
 

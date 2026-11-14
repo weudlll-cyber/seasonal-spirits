@@ -22,10 +22,12 @@ class FakeClock implements DelayQueueClock {
   }
 
   advanceTo(t: number): void {
-    while (this.pending.length > 0 && this.pending[0]!.at <= t) {
-      const next = this.pending.shift()!;
+    let next = this.pending[0];
+    while (next !== undefined && next.at <= t) {
+      this.pending.shift();
       this.time = next.at;
       next.fn();
+      next = this.pending[0];
     }
     this.time = t;
   }
@@ -35,8 +37,9 @@ class SeqRng implements Random {
   constructor(private readonly values: number[]) {}
   private i = 0;
   next(): number {
-    const v = this.values[this.i % this.values.length]!;
+    const v = this.values[this.i % this.values.length];
     this.i++;
+    if (v === undefined) throw new Error('SeqRng: no values');
     return v;
   }
 }
@@ -46,7 +49,7 @@ describe('DelayQueue', () => {
     const clock = new FakeClock();
     const rng = new SeqRng([0.9, 0.0]); // first delayed by max, second by min
     const delivered: number[] = [];
-    const q = new DelayQueue<number>(100, 200, (n) => delivered.push(n), clock, rng);
+    const q = new DelayQueue<number>(100, 200, (n) => delivered.push(n), { clock, rng });
     q.push(1);
     q.push(2);
     clock.advanceTo(1000);
@@ -63,8 +66,7 @@ describe('DelayQueue', () => {
       () => {
         deliveredAt = clock.now();
       },
-      clock,
-      rng,
+      { clock, rng },
     );
     q.push(1);
     clock.advanceTo(1000);
@@ -76,7 +78,7 @@ describe('DelayQueue', () => {
     const clock = new FakeClock();
     const rng = new SeqRng([0.5]);
     const delivered: number[] = [];
-    const q = new DelayQueue<number>(0, 0, (n) => delivered.push(n), clock, rng);
+    const q = new DelayQueue<number>(0, 0, (n) => delivered.push(n), { clock, rng });
     q.push(1);
     q.push(2);
     expect(delivered).toEqual([1, 2]);
