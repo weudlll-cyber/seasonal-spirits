@@ -6,3 +6,4 @@ night-task.md
 reports/screens/latest/
 .claude/settings.local.json
 *.log
+*.tsbuildinfo
