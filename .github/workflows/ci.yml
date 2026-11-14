@@ -1,23 +1,34 @@
+# Seasonal Spirits — CI: the full "pnpm verify", run here instead of on the owner's PC.
+# One job on every branch push and every pull request to master; the toolchain versions come
+# from package.json "packageManager" and .nvmrc (shared setup in .github/actions/setup).
 name: CI
 
+# Markdown under docs/ and reports/ cannot change a check's answer (Prettier ignores
+# reports/; docs/ is formatted locally by pnpm verify:changed). Root Markdown files
+# (CONCEPT.md, README.md, CLAUDE.md) are not listed, so they still run the format check.
 on:
   push:
-    branches: [master]
+    branches: ['**']
+    paths-ignore: ['docs/**/*.md', 'reports/**/*.md']
   pull_request:
+    branches: [master]
+    paths-ignore: ['docs/**/*.md', 'reports/**/*.md']
+
+permissions:
+  contents: read
+
+concurrency:
+  # One group per branch and event, so a push and its PR do not cancel each other.
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  # Every merge commit on master must get its own finished run.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: corepack enable
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # pnpm, Node and the install; restores the pnpm store cache keyed on the lockfile.
+      - uses: ./.github/actions/setup
+      # Format check, lint, typecheck, tests.
+      - run: pnpm verify

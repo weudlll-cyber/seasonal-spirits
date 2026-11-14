@@ -1,0 +1,10 @@
+// Seasonal Spirits — strict base for code that Vite builds for the browser.
+// Keeps every check of tsconfig.base.json; switches to bundler resolution and adds the DOM.
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  }
+}

@@ -48,27 +48,67 @@ Three criteria decide the Phase 0 question:
    meet the threshold.
 2. **State message under 1 KB.** With 32 ghosts: `9 + 6 · 32 = 201 bytes`. Already well
    below 1 KB; this would only fail if the encoding changed.
-3. **No visible jumps at 150 ms.** The spectator reports `jumpsPer60s`; the criterion is
-   `0`.
+3. **No visible jumps at 150 ms.** The spectator reports `jumpsPer60s` and underruns per
+   60 s as numbers. "Visible" cannot be decided by a count: the detector's threshold is
+   deliberately strict and flags single-frame overshoots a viewer does not see. The report
+   therefore prints `jumps: <n>/60 s — visibility is checked by eye (see docs/PHASE0.md)`,
+   and the decision is a visual check of the running viewer (see "Result" below).
 
-Each criterion is marked `PASS` or `FAIL` in the report. The probe exits 0 in either case:
-the report is the answer.
+The first two criteria are marked `PASS` or `FAIL` in the report; the third carries only
+its count. The probe exits 0 in every case: the report is the answer.
 
-## Linux run sheet
+## Result
 
-One copy-paste block, Node 22 via Corepack if missing. Replace `<git-url>` with the clone
-URL (`https://github.com/weudlll-cyber/seasonal-spirits.git`).
+**Phase 0 is accepted on the development PC** (owner decision, 2026-11-14). Measured in
+Run 3 on Windows 11, Intel Core Ultra 7 165U, Node 24.20.0, 120 s, 32 bots, 100–200 ms
+one-way latency; report
+[`reports/phase0/2026-11-14T01-47-08-290Z-Testrechner.md`](../reports/phase0/2026-11-14T01-47-08-290Z-Testrechner.md):
+
+| Criterion                                 | Target          | Run 3                           | Decided by           |
+| ----------------------------------------- | --------------- | ------------------------------- | -------------------- |
+| 20 Hz with 32 bots under 30 % of one core | ≥ 19 Hz, ≤ 30 % | 20.00 Hz, 18.99 %               | number: PASS         |
+| State message under 1 KB                  | < 1024 bytes    | 201 bytes                       | number: PASS         |
+| No visible jumps at 150 ms                | none visible    | 32 jumps/60 s, 0 underruns/60 s | visual check: passed |
+
+The third criterion is decided by the owner's visual check of the running viewer on
+2026-11-14: no visible jumps. The count is the evidence for the record, not the decision:
+32 events in 115 200 ghost-frames are single-frame overshoots just past the detector's
+strict threshold. (The probe report of Run 3 still shows the old wording, `FAIL`, for this
+line; reports from later runs carry the count only.)
+
+**Still open:** the same measurement on the target server — the run sheet below.
+
+## Server run sheet (Docker, leaves nothing behind)
+
+The probe runs from branch `phase0/network-probe` inside a throw-away `node:22` container.
+Server and bots run together inside that container; no port is published, so nothing on
+the VPS can reach them and they cannot collide with anything on the VPS. Paste the block
+into a shell on the VPS:
 
 ```
+docker run --rm -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 node:22 bash -c '
 set -e
-command -v node || { corepack enable; corepack prepare node@22 --activate; }
-git clone <git-url> seasonal-spirits
-cd seasonal-spirits
-corepack enable
-pnpm install
-pnpm probe
+git clone --branch phase0/network-probe --depth 1 https://github.com/weudlll-cyber/seasonal-spirits.git /probe
+cd /probe
+corepack pnpm install --frozen-lockfile
+DURATION_S=120 corepack pnpm probe
 cat "$(ls -t reports/phase0/*.md | head -n 1)"
+'
+docker image rm node:22
 ```
+
+What you will see: Docker pulls the `node:22` image (first time only), then the clone and
+the install scroll by for a minute or two. Then the probe prints its `[probe] …` lines and
+is quiet for 120 seconds while it measures. At the end it prints the report: server Hz and
+CPU, bytes per message, jumps and underruns per 60 s, and the criteria. The report's host
+name is the container's random id. When the block ends, the container is gone with
+everything in it (clone, packages, report); copy the printed report if you want to keep it.
+The second line removes the `node:22` image again; if another container on the VPS uses
+that image, Docker refuses and nothing is removed.
+
+The bots and the website on the server keep running throughout: the container shares only
+the CPU with them. The probe's CPU number is therefore measured next to the real load, which
+is what the target-server measurement is for.
 
 ## Rules the probe follows
 

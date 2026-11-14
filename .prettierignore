@@ -1,3 +1,5 @@
+# Seasonal Spirits — files Prettier leaves untouched.
+# Generated files, probe reports, the licence text and the settings Claude Code rewrites.
 node_modules
 dist
 logs
@@ -5,3 +7,4 @@ tmp
 reports
 pnpm-lock.yaml
 LICENSE
+.claude/

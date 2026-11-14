@@ -5,8 +5,10 @@ A Claude Code session running unattended (`dontAsk` permission mode) uses this r
 ## Before the session starts
 
 - `CONCEPT.md` is up to date (the English reference of the owner's concept document).
-- `.claude/settings.json` is the night-run profile: `Read/Edit/Write` under `./**`, the
-  shell-level tools listed one by one, destructive git / gh / rm operations in `deny`.
+- `.claude/settings.json` is the night-run profile: `Read/Edit/Write` under `./**`,
+  read-only `Read/Glob/Grep` in the three sibling clones (`seasonal-bingo-royale`,
+  `seasonal-mini-games`, `seasonal-entertainment` next to this folder), the shell-level
+  tools listed one by one, destructive git / gh / rm operations in `deny`.
 - The task for the night is in `night-task.md` at the repository root. This file is
   `.gitignore`'d — it never lands in the commit history.
 - The owner leaves the machine; the session is unattended from here.
@@ -31,8 +33,8 @@ A Claude Code session running unattended (`dontAsk` permission mode) uses this r
 - Stop by port:
   `powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 3930 -State Listen | %{ Stop-Process -Id $_.OwningProcess -Force }"`
 
-On Linux the owner's server uses `nohup … &` with the same idea; the detail is in
-[PHASE0.md](PHASE0.md).
+On the owner's server nothing runs detached: the probe runs in a throw-away Docker
+container; the run sheet is in [PHASE0.md](PHASE0.md).
 
 ## Rules the session will not break
 

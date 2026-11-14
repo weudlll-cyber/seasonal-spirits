@@ -64,6 +64,6 @@ export class PerMinuteCounter {
 
   private trim(nowMs: number): void {
     const cutoff = nowMs - 60_000;
-    while (this.events.length > 0 && this.events[0]! < cutoff) this.events.shift();
+    while (this.events[0] !== undefined && this.events[0] < cutoff) this.events.shift();
   }
 }

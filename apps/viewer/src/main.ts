@@ -7,8 +7,10 @@ import {
   DelayQueue,
   JumpDetector,
   PerMinuteCounter,
+  RenderClock,
   decodeState,
   interpolate,
+  latestServerMs,
   trimBuffer,
   type BufferedState,
   type ServerState,
@@ -54,12 +56,15 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 function colourFor(id: number): string {
   const season = (id - 1) % 4;
   const slot = Math.floor((id - 1) / 4) % 8;
-  return SEASON_PALETTES[season]![slot]!;
+  // Ids above 32 wrap around the palette; the white fallback only satisfies the index type.
+  return SEASON_PALETTES[season]?.[slot] ?? '#ffffff';
 }
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
-const ctx = canvas.getContext('2d')!;
+const context = canvas.getContext('2d');
+if (context === null) throw new Error('viewer: 2D canvas context unavailable');
+const ctx = context;
 
 function resize(): void {
   canvas.width = window.innerWidth;
@@ -74,6 +79,7 @@ const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const jumpDetector = new JumpDetector({ speedUnitsPerSecond: SPEED });
+const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
   const state: ServerState = decodeState(buf);
@@ -104,11 +110,20 @@ async function pollMetrics(): Promise<void> {
     // ignore; the probe may be starting up.
   }
 }
-setInterval(pollMetrics, 1000);
+setInterval(() => {
+  void pollMetrics();
+}, 1000);
 
 function frame(): void {
   const now = Date.now();
-  const { ghosts, underrun } = interpolate(buffer, now, BUFFER_MS);
+  const target = renderClock.target(now, latestServerMs(buffer));
+  let ghosts: ReturnType<typeof interpolate>['ghosts'] = [];
+  let underrun = false;
+  if (target !== null) {
+    const r = interpolate(buffer, target);
+    ghosts = r.ghosts;
+    underrun = r.underrun;
+  }
   if (underrun) underrunCounter.record(now);
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);

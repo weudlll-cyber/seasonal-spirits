@@ -35,12 +35,14 @@ export class ProbeBot {
     this.outbound = new DelayQueue<string>(opts.latencyMinMs, opts.latencyMaxMs, (s) => {
       if (this.ws.readyState === WebSocket.OPEN) this.ws.send(s);
     });
-    this.inbound = new DelayQueue<Uint8Array>(opts.latencyMinMs, opts.latencyMaxMs, (buf) =>
-      this.onState(decodeState(buf)),
-    );
+    this.inbound = new DelayQueue<Uint8Array>(opts.latencyMinMs, opts.latencyMaxMs, (buf) => {
+      this.onState(decodeState(buf));
+    });
     this.ws = new WebSocket(opts.url);
     this.ws.binaryType = 'arraybuffer';
-    this.ws.on('open', () => this.onOpen());
+    this.ws.on('open', () => {
+      this.onOpen();
+    });
     this.ws.on('message', (data: RawData) => {
       this.inbound.push(toUint8Array(data));
     });
@@ -54,7 +56,9 @@ export class ProbeBot {
     // Pick a first random direction and schedule the next change.
     this.chooseDirection();
     this.scheduleNextTurn();
-    this.sendTimer = setInterval(() => this.sendInput(), 50);
+    this.sendTimer = setInterval(() => {
+      this.sendInput();
+    }, 50);
   }
 
   private chooseDirection(): void {

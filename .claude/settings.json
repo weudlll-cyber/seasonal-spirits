@@ -3,6 +3,15 @@
   "permissions": {
     "allow": [
       "Read(./**)",
+      "Read(//c/Users/weudl/seasonal-bingo-royale/**)",
+      "Read(//c/Users/weudl/seasonal-mini-games/**)",
+      "Read(//c/Users/weudl/seasonal-entertainment/**)",
+      "Glob(//c/Users/weudl/seasonal-bingo-royale/**)",
+      "Glob(//c/Users/weudl/seasonal-mini-games/**)",
+      "Glob(//c/Users/weudl/seasonal-entertainment/**)",
+      "Grep(//c/Users/weudl/seasonal-bingo-royale/**)",
+      "Grep(//c/Users/weudl/seasonal-mini-games/**)",
+      "Grep(//c/Users/weudl/seasonal-entertainment/**)",
       "Edit(./**)",
       "Write(./**)",
       "Bash(npm *)",

@@ -13,14 +13,12 @@ const cfg = {
 
 const server = new GameServer(cfg);
 
-server.listen().then(() => {
-  console.log(
-    `Seasonal Spirits server listening on ws://localhost:${cfg.port} ` +
-      `(tick ${cfg.tickHz} Hz, world ${cfg.world}, speed ${cfg.speed}, ghosts ${cfg.maxGhosts})`,
-  );
-});
+await server.listen();
+console.log(
+  `Seasonal Spirits server listening on ws://localhost:${cfg.port} ` +
+    `(tick ${cfg.tickHz} Hz, world ${cfg.world}, speed ${cfg.speed}, ghosts ${cfg.maxGhosts})`,
+);
 
-process.on('SIGINT', async () => {
-  await server.close();
-  process.exit(0);
+process.on('SIGINT', () => {
+  void server.close().then(() => process.exit(0));
 });

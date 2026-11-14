@@ -48,5 +48,9 @@ describe('BotPolicy', () => {
 
 function seqRng(values: number[]): () => number {
   let i = 0;
-  return () => values[i++ % values.length]!;
+  return () => {
+    const v = values[i++ % values.length];
+    if (v === undefined) throw new Error('seqRng: no values');
+    return v;
+  };
 }

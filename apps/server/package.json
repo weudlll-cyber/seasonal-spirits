@@ -10,7 +10,8 @@
   },
   "scripts": {
     "start": "tsx src/main.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@seasonal-spirits/protocol": "workspace:*",

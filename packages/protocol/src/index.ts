@@ -5,3 +5,4 @@ export * from './state.js';
 export * from './delay-queue.js';
 export * from './interpolation.js';
 export * from './jump.js';
+export * from './render-clock.js';

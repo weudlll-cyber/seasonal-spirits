@@ -1,8 +1,11 @@
+// Seasonal Spirits — protocol package: shared by the Node probe and the browser viewer.
+// The DOM lib supplies the host timer (setTimeout) without tying the package to Node types.
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "lib": ["ES2023", "DOM"]
   },
   "include": ["src/**/*"]
 }
