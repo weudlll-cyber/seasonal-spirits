@@ -8,3 +8,4 @@ reports
 pnpm-lock.yaml
 LICENSE
 .claude/
+test-results

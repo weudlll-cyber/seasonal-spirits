@@ -24,7 +24,10 @@ export default defineConfig({
   reporter: 'list',
   use: { baseURL: `http://localhost:${CLIENT_PORT}`, trace: 'retain-on-failure' },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+    },
     { name: 'phone', use: { ...devices['Pixel 7'] } },
   ],
   webServer: [

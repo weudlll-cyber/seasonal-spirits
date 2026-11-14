@@ -72,7 +72,12 @@ export class Connection {
 
   private onMessage(data: unknown): void {
     if (data instanceof ArrayBuffer) {
-      const state = decodeState(new Uint8Array(data));
+      let state: ServerState;
+      try {
+        state = decodeState(new Uint8Array(data));
+      } catch {
+        return; // a frame of the wrong length is dropped, never half read
+      }
       const now = performance.now();
       this.events.onState(state);
       this.buffer.push({ receivedAt: now, state });

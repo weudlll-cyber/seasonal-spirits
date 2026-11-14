@@ -7,13 +7,14 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 
 ## Files
 
-| File                 | What it holds                                                                   |
-| -------------------- | ------------------------------------------------------------------------------- |
-| `src/main.ts`        | Reads and validates the environment, starts the server                          |
-| `src/server.ts`      | The tick loop, the WebSocket handler, connection bounds, metrics                |
-| `src/match-host.ts`  | The slots (bot, player, standing ghost), the match lifecycle, game → wire state |
-| `src/http-routes.ts` | `/metrics-lite` (loopback only), everything else 404                            |
-| `src/env.ts`         | `envInt`, `refuseProduction` — shared with the probe                            |
+| File                 | What it holds                                                           |
+| -------------------- | ----------------------------------------------------------------------- |
+| `src/main.ts`        | Reads and validates the environment, starts the server                  |
+| `src/server.ts`      | The tick loop, the WebSocket handler, connection bounds, metrics        |
+| `src/match-host.ts`  | The slots (bot, player, standing ghost), the match lifecycle            |
+| `src/wire.ts`        | Game state → wire state: per-ghost values, the shrine offers of players |
+| `src/http-routes.ts` | `/metrics-lite` (loopback only), everything else 404                    |
+| `src/env.ts`         | `envInt`, `envChoice`, `refuseProduction` — shared with the probe       |
 
 ## The loop
 
@@ -28,8 +29,11 @@ is encoded once and sent to every client that has said hello.
   steered by a bot (patient, cautious or hunter, as in `pnpm simulate`) until a player
   joins.
 - A player who says `{"kind":"player"}` replaces a bot on the team with the fewest players
-  and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>}`. When every
-  slot has a player, the connection is closed (1008).
+  and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>,"name":"Player <id>"}`.
+  When every slot has a player, the client becomes a spectator and gets
+  `{"kind":"spectating","reason":"full"}`; from then on it must send nothing (THREATS 12b).
+  Names are `ghostName` in `packages/protocol`, the same on every client, until the website
+  provides them.
 - A player sends `{"kind":"input","dx":…,"dy":…}` (direction) and
   `{"kind":"action","action":"steal"|"secure"|"swap"}` (the one action; at the own shrine
   secure or swap). An action is used once, in the next tick. Whether it does anything is the
@@ -48,20 +52,26 @@ loses the running match (CONCEPT.md §7).
 
 ## The state message (`packages/protocol/src/state.ts`)
 
-One binary encoding, little endian:
+One binary encoding, little endian; values (secured, offers) travel in halves:
 
-- **Header, 30 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
-  3 Winter; the next is +1), ms left in the season u32, countdown to the next halving u16
-  (0xffff = none; set in the 10 s before every season turn, CONCEPT.md §13), flags u8 (a
-  halving in this tick — the season field is then the new season —, result), secured value
-  per team 4×u16 (in halves), ghost count u8, coin count u8.
-- **Per ghost, 9 bytes:** id u8, x u16, y u16, team u8, carried coins u16, flags u8 (carrier,
-  securing, bot).
+- **Header, 34 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
+  3 Winter; the next is +1), season number within the match u8 (the start season is season −
+  number), ms left in the season u32, countdown to the next halving u16 (0xffff = none; set
+  in the 10 s before every season turn, CONCEPT.md §13), flags u8 (a halving in this tick —
+  the season field is then the new season —, result), ms to the next match u16 (during the
+  result), secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
+- **Per ghost, 13 bytes:** id u8, x u16, y u16, team u8, carried coins u16, of those not of
+  the current season (worth half now) u16, secured value u16, flags u8 (carrier, securing,
+  bot, in its own shrine).
 - **Per field coin, 4 bytes:** x u16, y u16 (every field coin is of the current season).
+- **Per offer, 9 bytes:** for each player (never a bot) inside its own shrine: ghost u8, the
+  secure value, the swap's coin count of the next season, its value now and later — the
+  numbers on the two shrine buttons, computed by the game core (`shrineOffer`).
 
-At 32 ghosts: 318 bytes with an empty field, 558 bytes with a full one (60 coins). Measured
-in a full 32-bot match (seed 1): at most 418 bytes (25 field coins). The probe runs of
-docs/PHASE0.md ("Against the match server") were measured with the older 38-byte header.
+At 32 ghosts: 450 bytes with an empty field, 690 with a full one (60 coins), 978 in the
+worst case (a full field and 32 players in their shrines) — under 1 KB. Measured in a full
+32-bot match (seed 1): at most 550 bytes (25 field coins). The probe runs of docs/PHASE0.md
+("Against the match server") were measured with the older 38-byte header and 9-byte ghosts.
 
 ## Bounds and checks
 
@@ -73,16 +83,21 @@ and in total (twice the slots). The full list, with the test for each, is
 
 ## Environment
 
-| Variable                      | Default | Range       |
-| ----------------------------- | ------- | ----------- |
-| `PORT`                        | 3930    | 1–65535     |
-| `TICK_HZ`                     | 20      | 1–60        |
-| `GHOSTS`                      | 32      | 4–252       |
-| `MAX_INPUTS_PER_SECOND`       | 20      | 1–1000      |
-| `MAX_CONNECTIONS_PER_ADDRESS` | 40      | 1–1000      |
-| `SEED`                        | 1       | 0–999999999 |
+| Variable                      | Default   | Range                                              |
+| ----------------------------- | --------- | -------------------------------------------------- |
+| `PORT`                        | 3930      | 1–65535                                            |
+| `TICK_HZ`                     | 20        | 1–60                                               |
+| `GHOSTS`                      | 32        | 4–252                                              |
+| `MAX_INPUTS_PER_SECOND`       | 20        | 1–1000                                             |
+| `MAX_CONNECTIONS_PER_ADDRESS` | 40        | 1–1000                                             |
+| `SEED`                        | 1         | 0–999999999                                        |
+| `HOST`                        | 127.0.0.1 | `127.0.0.1` or `0.0.0.0` (`pnpm dev --lan`)        |
+| `SEASON_SECONDS`              | 75        | 15–75 (a match is four seasons; shorter for tests) |
+| `RESULT_SECONDS`              | 15        | 3–60                                               |
 
-Game numbers are not environment variables: they live in `packages/game-core/src/config.ts`.
+Other game numbers are not environment variables: they live in
+`packages/game-core/src/config.ts`. The whole server is development only (it refuses
+`NODE_ENV=production`), the short match and the LAN address with it.
 
 ## `/metrics-lite`
 

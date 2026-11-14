@@ -108,8 +108,10 @@ Run 3 divided the same CPU time by the uptime including the 1.5 s ramp-up, about
 State size outside the probe: with the 38-byte header of these runs, a whole 32-bot match
 encoded tick by tick (seed 1) never exceeded 402 bytes; the full-field bound was 566 bytes.
 Since the halving became a season change (CONCEPT.md §13) the header has no centre pool and
-is 30 bytes: at most 418 bytes in a whole match (seed 1), full-field bound 30 + 9 · 32 + 4 ·
-60 = **558 bytes**, under 1 KB without compaction (tests: `apps/server/src/match-host.test.ts`
+is 30 bytes: at most 418 bytes in a whole match (seed 1), full-field bound 558 bytes. The
+player client added per-ghost values and the shrine offers (header 34, ghost 13, offer 9
+bytes; docs/SERVER.md): at most 550 bytes in a whole match (seed 1), worst case 34 + 13 · 32 +
+4 · 60 + 9 · 32 = **978 bytes**, under 1 KB without compaction (tests: `apps/server/src/match-host.test.ts`
 "never sends more than 1 KB in a whole 32-bot match, the halvings included";
 `packages/protocol/src/state.test.ts`).
 

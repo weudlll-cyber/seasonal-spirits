@@ -66,7 +66,8 @@ export async function joystick(page: Page): Promise<Steering> {
   if (!box) throw new Error('the joystick area is not visible');
   const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   let down = false;
-  const touch = (type: string, x: number, y: number): Promise<unknown> =>
+  type TouchType = 'touchStart' | 'touchMove' | 'touchEnd';
+  const touch = (type: TouchType, x: number, y: number): Promise<unknown> =>
     cdp.send('Input.dispatchTouchEvent', {
       type,
       touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }],
@@ -103,7 +104,10 @@ export async function steerTo(
     if (own) {
       const dx = target.x - own.x;
       const dy = target.y - own.y;
-      await steering.hold(Math.abs(dx) > 25 ? Math.sign(dx) : 0, Math.abs(dy) > 25 ? Math.sign(dy) : 0);
+      await steering.hold(
+        Math.abs(dx) > 25 ? Math.sign(dx) : 0,
+        Math.abs(dy) > 25 ? Math.sign(dy) : 0,
+      );
     }
     await page.waitForTimeout(100);
   }

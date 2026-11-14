@@ -4,19 +4,23 @@ Seasonal Spirits is a real-time team game for the Seasonal Entertainment communi
 teams, named after the four Seasonal Tokens (Spring, Summer, Autumn, Winter), move their
 ghosts on one map and compete for coins in a five-minute match.
 
-Concept: [CONCEPT.md](CONCEPT.md). Phase 0 (the network probe) is the current work.
+Concept: [CONCEPT.md](CONCEPT.md). Phase 1 (the game with its core) is the current work.
 
 ## Status
 
 Phase 0 (network probe) is accepted on the development PC and merged. The game's core
 mechanics live in `packages/game-core` as a pure, headless simulation, and the server plays
-them: match after match with 32 slots, bots in every slot without a player. The viewer is a
-debug view; there is no player client yet.
+them: match after match with 32 slots, bots in every slot without a player. The first
+playable version is the player client (`apps/client`, development mode without sign-in);
+the viewer stays the debug view.
 
 ## Repository layout
 
 - `apps/server` — the match server: game core on the 20 Hz loop, WebSocket, server bots.
-- `apps/viewer` — browser spectator and debug view (Vite + Canvas, plain TypeScript).
+- `apps/client` — the player client (Vite + Canvas 2D, plain TypeScript): keyboard and
+  touch controls, the shrine buttons, the halving staging, the result screen.
+- `apps/viewer` — browser spectator and debug view with network numbers.
+- `packages/render` — the Canvas drawing both browser apps share.
 - `packages/protocol` — binary state encoding, the client message validator, delay queue,
   interpolation, jump detection.
 - `packages/game-core` — the match: seasons, coins, swap / secure / steal, halving, bots.
@@ -26,7 +30,9 @@ debug view; there is no player client yet.
 ## Ports
 
 - Game server: `3930` (override: `PORT`)
-- Viewer dev server: `5930` (override: `VIEWER_PORT`)
+- Player client: `5930` (override: `CLIENT_PORT`)
+- Viewer: `5931` (override: `VIEWER_PORT`)
+- Browser tests: server `3932`, client `5932` (their own stack, never `pnpm dev`'s)
 
 Chosen 2026-11-14 as the first free `*930` pair at that time; see
 [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md).
@@ -37,20 +43,25 @@ Prerequisites: Node >= 22, pnpm. `corepack enable` installs pnpm from `package.j
 
 ```
 pnpm install
-pnpm dev          # match server (32 bots) + viewer in the background, prints the viewer URL
+pnpm dev          # match server (32 bots), client and viewer in the background; prints URLs
+pnpm dev --lan    # the same, also open to the local network: prints the address for a phone
 pnpm dev:stop     # stops exactly the processes pnpm dev started
 pnpm simulate --seed 1  # one full 32-bot match of the game core, headless, with a sanity list
 pnpm probe        # full probe run: server + 32 bots + headless spectator, writes a report
-pnpm server       # just the server, in the foreground
-pnpm viewer       # just the viewer on http://localhost:5930, in the foreground
+pnpm server       # just the server, in the foreground (SEASON_SECONDS=15 for a 1-minute match)
+pnpm client       # just the client on http://localhost:5930, in the foreground
+pnpm viewer       # just the viewer on http://localhost:5931, in the foreground
+pnpm e2e          # Playwright: the client at desktop and phone size on a short match
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```
 
 `pnpm dev` starts the three processes hidden (no windows on Windows; the same on Linux and
 macOS), writes their output to `logs/dev-*.log` and their PIDs to `tmp/dev-pids.json`, and
-waits until the server and the viewer answer. It refuses to start if a port is taken or a
-previous `pnpm dev` is still running, and with `NODE_ENV=production`.
+waits until server, client and viewer answer. It refuses to start if a port is taken or a
+previous `pnpm dev` is still running, and with `NODE_ENV=production`. `--lan` is
+development only and never the default; on Windows the firewall may ask once whether Node
+may accept connections.
 
 ## Checks
 
@@ -69,6 +80,8 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
 - [docs/PHASE0.md](docs/PHASE0.md) — what Phase 0 measures and why.
 - [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md) — the launch recipe for an unattended night run.
 - [docs/GAME-CORE.md](docs/GAME-CORE.md) — the mechanics as built in `packages/game-core`.
+- [docs/CLIENT.md](docs/CLIENT.md) — the player client as built: joining, controls, screen,
+  halving staging, result and bridge box, browser tests.
 - [docs/SERVER.md](docs/SERVER.md) — the match server as built: slots, lifecycle, state
   message, bounds.
 - [docs/SECURITY.md](docs/SECURITY.md) — the automated security checks and the settings

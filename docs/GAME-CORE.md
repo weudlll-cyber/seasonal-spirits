@@ -15,7 +15,7 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 | `src/types.ts`      | Match state, intents, events, result                                      |
 | `src/match.ts`      | `Match`: one tick in a fixed order                                        |
 | `src/field.ts`      | Coin spawning and picking up                                              |
-| `src/actions.ts`    | Swap, secure, steal — each checks its own conditions                      |
+| `src/actions.ts`    | Swap, secure, steal — each checks its own conditions; the shrine offer    |
 | `src/halving.ts`    | The halving at a season turn                                              |
 | `src/geometry.ts`   | Distances, clamping, shrine positions                                     |
 | `src/rng.ts`        | `mulberry32`, shared with the probe bots                                  |
@@ -44,6 +44,10 @@ the end.
 - **Secure** (own shrine, something carried). Takes `secureDurationMs`; the ghost stands
   still and can be robbed, which cancels the secure. It banks at the values of the season in
   which it was started (the value the player read on the button).
+- **Shrine offer** (`shrineOffer`): what the two buttons show, computed here and sent to a
+  player in its own shrine (CONCEPT.md §3: the player reads, never calculates): the secure
+  value now, and the swap's coin count with its value now (half, it is the next season's) and
+  later (full). A swap gives exactly the offered count.
 - **Steal** (one action, no aiming). The target is the nearest opponent carrier within
   `stealRange` — never a teammate, never the thief. The victim loses `ceil(n · stealShare)`
   of each season's count to the thief; then the thief waits `stealCooldownMs`.

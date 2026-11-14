@@ -25,6 +25,8 @@ test('join, move, shrine buttons, a halving and the result with the bridge box',
   const joined = await view(page);
   expect(joined.mode).toBe('player');
   const team = joined.team ?? 0;
+  // Joining during a result pause: the result screen covers the field (and the joystick).
+  await expect(page.locator('#result')).toBeHidden({ timeout: 20_000 });
   const steer = await steering(page, info);
 
   // Move: away from the own shrine, towards the middle.

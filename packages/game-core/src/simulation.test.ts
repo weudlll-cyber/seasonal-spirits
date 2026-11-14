@@ -2,13 +2,14 @@
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from './config.js';
-import { simulate } from './simulation.js';
+import { botRoster, simulate } from './simulation.js';
 
 describe('simulated match', () => {
   it('is identical for the same seed and differs for another seed', () => {
-    const a = simulate(DEFAULT_CONFIG, 7);
-    const b = simulate(DEFAULT_CONFIG, 7);
-    const c = simulate(DEFAULT_CONFIG, 8);
+    // 8 bots keep this quick; determinism does not depend on the count.
+    const a = simulate(DEFAULT_CONFIG, 7, botRoster(8));
+    const b = simulate(DEFAULT_CONFIG, 7, botRoster(8));
+    const c = simulate(DEFAULT_CONFIG, 8, botRoster(8));
     expect(a.result).toEqual(b.result);
     expect(a.result).not.toEqual(c.result);
   });

@@ -15,7 +15,7 @@ const NO_DEFAULT_EXPORT = [
 
 export default defineConfig(
   {
-    ignores: ['**/node_modules/', '**/dist/', 'logs/', 'tmp/', 'reports/'],
+    ignores: ['**/node_modules/', '**/dist/', 'logs/', 'tmp/', 'reports/', 'test-results/'],
   },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,

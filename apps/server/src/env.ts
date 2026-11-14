@@ -25,7 +25,8 @@ export function envChoice<T extends string>(
   const raw = env[name];
   if (raw === undefined || raw === '') return fallback;
   const hit = allowed.find((a) => a === raw);
-  if (hit === undefined) throw new Error(`${name} must be one of ${allowed.join(', ')}, got "${raw}"`);
+  if (hit === undefined)
+    throw new Error(`${name} must be one of ${allowed.join(', ')}, got "${raw}"`);
   return hit;
 }
 
