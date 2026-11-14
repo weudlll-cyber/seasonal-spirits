@@ -1,32 +1,32 @@
-// Seasonal Spirits — tick server + WebSocket handler for the empty-map probe.
-// Fixed tick rate with drift correction (accumulated time, not a bare setInterval). One
-// binary state message per tick to every client. Tracks CPU usage, achieved Hz and max
-// tick duration; exposes /metrics-lite as JSON on the same HTTP server. Every client message
-// passes the shared validator first (docs/THREATS.md lists what a client can try).
+// Seasonal Spirits — the match server: 20 Hz loop + WebSocket handler + /metrics-lite.
+// Fixed tick rate with drift correction (accumulated time, not a bare setInterval); each tick
+// advances the match host and sends one binary state message to every client. Every client
+// message passes the shared validator first (docs/THREATS.md lists what a client can try).
 
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { WebSocketServer, type RawData, type WebSocket } from 'ws';
+import type { GameConfig } from '@seasonal-spirits/game-core';
 import {
   MAX_CLIENT_MESSAGE_BYTES,
   encodeState,
-  encodedSize,
   parseClientMessage,
-  type ClientHello,
-  type ClientInput,
+  type ClientMessage,
+  type ServerWelcome,
 } from '@seasonal-spirits/protocol';
 import { handleHttp } from './http-routes.js';
-import { World } from './world.js';
+import { MatchHost } from './match-host.js';
 
 export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
   tickHz: number;
-  world: number;
-  speed: number;
-  maxGhosts: number;
+  game: GameConfig;
+  maxGhosts: number; // slots in a match; bots fill those without a player
   maxInputsPerSecond: number; // every message counts, valid or not
   maxConnectionsPerAddress: number;
+  helloTimeoutMs: number; // a connection that has not said hello by then is closed
   devCors: boolean; // CORS `*` on /metrics-lite, development only
+  firstSeed: number;
 }
 
 // WebSocket close code 1008: policy violation.
@@ -37,8 +37,10 @@ export interface ServerMetrics {
   maxTickMs: number;
   cpuPercentOfOneCore: number;
   clients: number;
-  ghosts: number;
-  stateBytes: number;
+  players: number; // slots steered by a connected player
+  ghosts: number; // slots in the match
+  stateBytes: number; // the last state message
+  maxStateBytes: number; // the largest since the window started
   startedAtMs: number;
   uptimeMs: number;
 }
@@ -50,11 +52,12 @@ interface ClientRecord {
   address: string;
   messagesThisSecond: number;
   messageWindowStart: number;
+  helloTimer: NodeJS.Timeout;
 }
 
 export class GameServer {
   private readonly cfg: ServerConfig;
-  private readonly world: World;
+  private readonly host: MatchHost;
   private http!: http.Server;
   private wss!: WebSocketServer;
   private tickTimer: NodeJS.Timeout | null = null;
@@ -69,10 +72,12 @@ export class GameServer {
   private cpuBaseline: NodeJS.CpuUsage = { user: 0, system: 0 };
   private metricsWindowStart = 0;
   private ticksInWindow = 0;
+  private stateBytes = 0;
+  private maxStateBytes = 0;
 
   constructor(cfg: ServerConfig) {
     this.cfg = cfg;
-    this.world = new World({ size: cfg.world, speed: cfg.speed });
+    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed);
   }
 
   async listen(): Promise<void> {
@@ -107,7 +112,6 @@ export class GameServer {
   private start(): void {
     this.startWall = Date.now();
     this.lastTickWall = this.startWall;
-    this.world.start(this.startWall);
     this.cpuBaseline = process.cpuUsage();
     this.metricsWindowStart = this.startWall;
     this.ticksInWindow = 0;
@@ -117,25 +121,28 @@ export class GameServer {
     }, 1);
   }
 
+  // Drift correction: wall time accumulates, and as many fixed steps run as fit into it, so
+  // a late timer callback catches up instead of slowing the match down.
   private tickLoop(): void {
     const stepMs = 1000 / this.cfg.tickHz;
     const now = Date.now();
-    const elapsed = now - this.lastTickWall;
+    this.accumulator += now - this.lastTickWall;
     this.lastTickWall = now;
-    this.accumulator += elapsed;
     while (this.accumulator >= stepMs) {
       const tickStart = Date.now();
-      const state = this.world.advance(stepMs, tickStart);
-      const buf = encodeState(state);
-      for (const c of this.clients.values()) {
-        if (c.kind === 'pending') continue;
-        if (c.ws.readyState === c.ws.OPEN) {
-          c.ws.send(buf, { binary: true });
-        }
-      }
-      const dur = Date.now() - tickStart;
-      if (dur > this.maxTickMs) this.maxTickMs = dur;
       this.tickCount++;
+      const wire = this.host.tick(stepMs);
+      const buf = encodeState({
+        ...wire,
+        tick: this.tickCount,
+        serverMs: tickStart - this.startWall,
+      });
+      this.stateBytes = buf.byteLength;
+      this.maxStateBytes = Math.max(this.maxStateBytes, buf.byteLength);
+      for (const c of this.clients.values()) {
+        if (c.kind !== 'pending' && c.ws.readyState === c.ws.OPEN) c.ws.send(buf, { binary: true });
+      }
+      this.maxTickMs = Math.max(this.maxTickMs, Date.now() - tickStart);
       this.ticksInWindow++;
       this.accumulator -= stepMs;
     }
@@ -151,16 +158,18 @@ export class GameServer {
       return;
     }
     this.perAddress.set(address, fromAddress + 1);
-    const id = this.nextClientId++;
     const rec: ClientRecord = {
-      id,
+      id: this.nextClientId++,
       kind: 'pending',
       ws,
       address,
       messagesThisSecond: 0,
       messageWindowStart: Date.now(),
+      helloTimer: setTimeout(() => {
+        if (rec.kind === 'pending') ws.close(POLICY_VIOLATION);
+      }, this.cfg.helloTimeoutMs),
     };
-    this.clients.set(id, rec);
+    this.clients.set(rec.id, rec);
     ws.on('message', (data, isBinary) => {
       this.handleMessage(rec, data, isBinary);
     });
@@ -175,7 +184,8 @@ export class GameServer {
   // Idempotent: 'error' and 'close' may both fire for one socket.
   private drop(rec: ClientRecord): void {
     if (!this.clients.delete(rec.id)) return;
-    this.world.removeGhost(rec.id);
+    clearTimeout(rec.helloTimer);
+    if (rec.kind === 'player') this.host.leave(rec.id);
     const left = (this.perAddress.get(rec.address) ?? 1) - 1;
     if (left > 0) this.perAddress.set(rec.address, left);
     else this.perAddress.delete(rec.address);
@@ -189,9 +199,24 @@ export class GameServer {
     }
     if (!this.withinRate(rec) || isBinary) return;
     const msg = parseClientMessage(rawToText(data));
-    if (msg === null) return;
-    if (msg.kind === 'input') this.handleInput(rec, msg);
-    else this.handleHello(rec, msg.kind);
+    if (msg !== null) this.apply(rec, msg);
+  }
+
+  // Only a player that has said hello steers or acts; whether an action is allowed is the
+  // game core's decision, not this file's.
+  private apply(rec: ClientRecord, msg: ClientMessage): void {
+    switch (msg.kind) {
+      case 'player':
+      case 'spectator':
+        this.hello(rec, msg.kind);
+        return;
+      case 'input':
+        if (rec.kind === 'player') this.host.steer(rec.id, msg.dx, msg.dy);
+        return;
+      case 'action':
+        if (rec.kind === 'player') this.host.act(rec.id, msg.action);
+        return;
+    }
   }
 
   // Every message counts against the per-second budget, valid or not; the rest is dropped.
@@ -205,39 +230,36 @@ export class GameServer {
     return rec.messagesThisSecond <= this.cfg.maxInputsPerSecond;
   }
 
-  private handleHello(rec: ClientRecord, kind: ClientHello['kind']): void {
-    if (rec.kind !== 'pending') return;
+  private hello(rec: ClientRecord, kind: 'player' | 'spectator'): void {
+    if (rec.kind !== 'pending') return; // the first hello decides
     if (kind === 'spectator') {
       rec.kind = 'spectator';
-    } else if (this.world.ghostCount() < this.cfg.maxGhosts) {
-      rec.kind = 'player';
-      this.world.addGhost(rec.id);
-    } else {
-      rec.ws.close();
+      return;
     }
-  }
-
-  private handleInput(rec: ClientRecord, msg: ClientInput): void {
-    if (rec.kind !== 'player') return; // a pending client has not said hello yet
-    this.world.setDirection(rec.id, msg.dx, msg.dy);
+    const slot = this.host.join(rec.id);
+    if (!slot) {
+      rec.ws.close(POLICY_VIOLATION); // every slot already has a player
+      return;
+    }
+    rec.kind = 'player';
+    const welcome: ServerWelcome = { kind: 'welcome', ...slot };
+    rec.ws.send(JSON.stringify(welcome));
   }
 
   metrics(): ServerMetrics {
     const now = Date.now();
     const uptime = now - this.startWall;
     const cpu = process.cpuUsage(this.cpuBaseline);
-    const totalUs = cpu.user + cpu.system;
-    const pct = uptime > 0 ? (totalUs / 1000 / uptime) * 100 : 0;
     const windowMs = now - this.metricsWindowStart;
-    const achievedHz = windowMs > 0 ? (this.ticksInWindow * 1000) / windowMs : 0;
-    const ghosts = this.world.ghostCount();
     return {
-      achievedHz,
+      achievedHz: windowMs > 0 ? (this.ticksInWindow * 1000) / windowMs : 0,
       maxTickMs: this.maxTickMs,
-      cpuPercentOfOneCore: pct,
+      cpuPercentOfOneCore: windowMs > 0 ? ((cpu.user + cpu.system) / 1000 / windowMs) * 100 : 0,
       clients: this.clients.size,
-      ghosts,
-      stateBytes: encodedSize(ghosts),
+      players: this.host.players(),
+      ghosts: this.cfg.maxGhosts,
+      stateBytes: this.stateBytes,
+      maxStateBytes: this.maxStateBytes,
       startedAtMs: this.startWall,
       uptimeMs: uptime,
     };
@@ -247,6 +269,7 @@ export class GameServer {
     this.metricsWindowStart = Date.now();
     this.ticksInWindow = 0;
     this.maxTickMs = 0;
+    this.maxStateBytes = 0;
     this.cpuBaseline = process.cpuUsage();
   }
 

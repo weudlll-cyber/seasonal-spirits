@@ -9,17 +9,18 @@ Concept: [CONCEPT.md](CONCEPT.md). Phase 0 (the network probe) is the current wo
 ## Status
 
 Phase 0 (network probe) is accepted on the development PC and merged. The game's core
-mechanics live in `packages/game-core` as a pure, headless simulation; the server does not
-play matches yet (empty-map ghost movement).
+mechanics live in `packages/game-core` as a pure, headless simulation, and the server plays
+them: match after match with 32 slots, bots in every slot without a player. The viewer is a
+debug view; there is no player client yet.
 
 ## Repository layout
 
-- `apps/server` — authoritative tick server + WebSocket. Today: empty-map ghost movement.
-- `apps/viewer` — browser spectator (Vite + Canvas, plain TypeScript, no framework).
+- `apps/server` — the match server: game core on the 20 Hz loop, WebSocket, server bots.
+- `apps/viewer` — browser spectator and debug view (Vite + Canvas, plain TypeScript).
 - `packages/protocol` — binary state encoding, the client message validator, delay queue,
   interpolation, jump detection.
 - `packages/game-core` — the match: seasons, coins, swap / secure / steal, halving, bots.
-- `tools/probe` — bot clients + headless spectator + measurement run, and the demo bots.
+- `tools/probe` — bot clients + headless spectator + measurement run.
 - `scripts/` — `pnpm dev`, `pnpm verify:changed`.
 
 ## Ports
@@ -36,7 +37,7 @@ Prerequisites: Node >= 22, pnpm. `corepack enable` installs pnpm from `package.j
 
 ```
 pnpm install
-pnpm dev          # server + viewer + 32 demo bots in the background, prints the viewer URL
+pnpm dev          # match server (32 bots) + viewer in the background, prints the viewer URL
 pnpm dev:stop     # stops exactly the processes pnpm dev started
 pnpm simulate --seed 1  # one full 32-bot match of the game core, headless, with a sanity list
 pnpm probe        # full probe run: server + 32 bots + headless spectator, writes a report
@@ -68,6 +69,8 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
 - [docs/PHASE0.md](docs/PHASE0.md) — what Phase 0 measures and why.
 - [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md) — the launch recipe for an unattended night run.
 - [docs/GAME-CORE.md](docs/GAME-CORE.md) — the mechanics as built in `packages/game-core`.
+- [docs/SERVER.md](docs/SERVER.md) — the match server as built: slots, lifecycle, state
+  message, bounds.
 - [docs/SECURITY.md](docs/SECURITY.md) — the automated security checks and the settings
   only the owner can switch on.
 - [docs/THREATS.md](docs/THREATS.md) — what a cheating or broken client can try, the

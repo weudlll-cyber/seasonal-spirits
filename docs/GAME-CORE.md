@@ -104,6 +104,8 @@ check fails.
 | `halvingSpawnFactor`    | 0.5     | CONCEPT.md §2b                                                          |
 | `poolRadius`            | 100     | placeholder                                                             |
 | `poolTakeIntervalMs`    | 100     | placeholder                                                             |
+| `reconnectGraceMs`      | 12 000  | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot         |
+| `resultPauseMs`         | 15 000  | placeholder (result screen before the next match)                       |
 | `bots.cautiousSecureAt` | 5       | placeholder                                                             |
 | `bots.hunterSecureAt`   | 8       | placeholder                                                             |
 | `bots.arriveRadius`     | 20      | placeholder                                                             |

@@ -5,6 +5,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import { GameServer, envInt, refuseProduction, type ServerMetrics } from '@seasonal-spirits/server';
 import { spawnBots } from './bot.js';
 import {
@@ -23,9 +24,10 @@ refuseProduction(env, 'The probe');
 const cfg: ProbeConfig = {
   port: envInt(env, 'PORT', 3930, [1, 65535]),
   tickHz: envInt(env, 'TICK_HZ', 20, [1, 60]),
-  world: envInt(env, 'WORLD', 2000, [100, 100_000]),
-  speed: envInt(env, 'SPEED', 300, [1, 10_000]),
-  maxGhosts: envInt(env, 'GHOSTS', 32, [1, 256]),
+  // Field size and speed are the game's (packages/game-core/src/config.ts).
+  world: DEFAULT_CONFIG.fieldSize,
+  speed: DEFAULT_CONFIG.ghostSpeed,
+  maxGhosts: envInt(env, 'GHOSTS', 32, [4, 252]),
   maxInputsPerSecond: envInt(env, 'MAX_INPUTS_PER_SECOND', 20, [1, 1000]),
   latencyMin: envInt(env, 'LATENCY_MIN', 100, [0, 10_000]),
   latencyMax: envInt(env, 'LATENCY_MAX', 200, [0, 10_000]),
@@ -39,13 +41,14 @@ async function main(): Promise<void> {
   const server = new GameServer({
     port: cfg.port,
     tickHz: cfg.tickHz,
-    world: cfg.world,
-    speed: cfg.speed,
+    game: DEFAULT_CONFIG,
     maxGhosts: cfg.maxGhosts,
     maxInputsPerSecond: cfg.maxInputsPerSecond,
     // All bots and the spectator connect from this machine.
     maxConnectionsPerAddress: cfg.maxGhosts + 1,
+    helloTimeoutMs: 10_000,
     devCors: false,
+    firstSeed: 1,
   });
   await server.listen();
 

@@ -5,6 +5,7 @@
 import WebSocket, { type RawData } from 'ws';
 import { mulberry32 } from '@seasonal-spirits/game-core';
 import { DelayQueue, decodeState, type ServerState } from '@seasonal-spirits/protocol';
+import { toUint8Array } from './raw.js';
 
 export interface BotOptions {
   url: string;
@@ -44,8 +45,9 @@ export class ProbeBot {
     this.ws.on('open', () => {
       this.onOpen();
     });
-    this.ws.on('message', (data: RawData) => {
-      this.inbound.push(toUint8Array(data));
+    // State messages are binary; the one text message (the welcome) is not needed here.
+    this.ws.on('message', (data: RawData, isBinary: boolean) => {
+      if (isBinary) this.inbound.push(toUint8Array(data));
     });
     this.ws.on('error', () => {
       // swallowed; probe will report "clients" from the server metrics
@@ -134,25 +136,4 @@ export class ProbeBot {
 // `count` bots with distinct, fixed seeds, so every run steers the same way.
 export function spawnBots(count: number, base: Omit<BotOptions, 'seed'>): ProbeBot[] {
   return Array.from({ length: count }, (_, i) => new ProbeBot({ ...base, seed: i * 2654435761 }));
-}
-
-function toUint8Array(data: RawData): Uint8Array {
-  if (data instanceof ArrayBuffer) return new Uint8Array(data);
-  if (data instanceof Uint8Array) return data;
-  if (Array.isArray(data)) {
-    const total = data.reduce((n, b) => n + b.byteLength, 0);
-    const out = new Uint8Array(total);
-    let o = 0;
-    for (const b of data) {
-      out.set(new Uint8Array(b.buffer, b.byteOffset, b.byteLength), o);
-      o += b.byteLength;
-    }
-    return out;
-  }
-  // Buffer (node): assignable to Uint8Array but TypeScript may not infer it.
-  return new Uint8Array(
-    (data as Buffer).buffer,
-    (data as Buffer).byteOffset,
-    (data as Buffer).byteLength,
-  );
 }

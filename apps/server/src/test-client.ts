@@ -2,18 +2,21 @@
 // Waits on socket events (open, close, the n-th state message), never on fixed sleeps.
 
 import WebSocket from 'ws';
-import { decodeState, type ServerState } from '@seasonal-spirits/protocol';
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { decodeState, type ServerState, type ServerWelcome } from '@seasonal-spirits/protocol';
 import { GameServer, type ServerConfig } from './server.js';
 
+// Four slots; a left player's slot goes back to a bot on the next tick.
 export const TEST_CONFIG: ServerConfig = {
   port: 0,
   tickHz: 20,
-  world: 2000,
-  speed: 300,
+  game: { ...DEFAULT_CONFIG, reconnectGraceMs: 0 },
   maxGhosts: 4,
   maxInputsPerSecond: 20,
   maxConnectionsPerAddress: 6,
+  helloTimeoutMs: 10_000,
   devCors: true,
+  firstSeed: 1,
 };
 
 export async function startServer(over: Partial<ServerConfig> = {}): Promise<GameServer> {
@@ -46,9 +49,8 @@ export function closed(ws: WebSocket): Promise<number> {
 export function nthState(ws: WebSocket, n: number): Promise<ServerState> {
   return new Promise((resolve) => {
     let seen = 0;
-    const onMessage = (data: WebSocket.RawData): void => {
-      seen++;
-      if (seen < n) return;
+    const onMessage = (data: WebSocket.RawData, isBinary: boolean): void => {
+      if (!isBinary || ++seen < n) return;
       ws.off('message', onMessage);
       resolve(decodeState(new Uint8Array(data as Buffer)));
     };
@@ -56,9 +58,27 @@ export function nthState(ws: WebSocket, n: number): Promise<ServerState> {
   });
 }
 
-export async function player(server: GameServer): Promise<WebSocket> {
+function welcome(ws: WebSocket): Promise<ServerWelcome> {
+  return new Promise((resolve) => {
+    const onMessage = (data: WebSocket.RawData, isBinary: boolean): void => {
+      if (isBinary) return;
+      ws.off('message', onMessage);
+      resolve(JSON.parse((data as Buffer).toString('utf8')) as ServerWelcome);
+    };
+    ws.on('message', onMessage);
+  });
+}
+
+// A connected player and the ghost it steers, after its first state message.
+export async function player(server: GameServer): Promise<{ ws: WebSocket; ghost: number }> {
   const ws = await connect(server);
+  const greeting = welcome(ws);
   ws.send(JSON.stringify({ kind: 'player' }));
+  const { ghost } = await greeting;
   await nthState(ws, 1);
-  return ws;
+  return { ws, ghost };
+}
+
+export function ghostIn(s: ServerState, id: number): ServerState['ghosts'][number] | undefined {
+  return s.ghosts.find((g) => g.id === id);
 }

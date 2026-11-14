@@ -7,7 +7,9 @@ concept.
 
 ## What the probe does
 
-- Starts the game server in-process on `PORT` (default `3930`).
+- Starts the game server in-process on `PORT` (default `3930`). Since 2026-11-14 this is
+  the match server (docs/SERVER.md): its own bots hold the 32 slots until the probe bots
+  join and replace them.
 - Spawns `GHOSTS` real WebSocket bot clients (default 32). Each bot:
   - says `{"kind":"player"}`;
   - sends a normalized direction every 50 ms, `dx`/`dy` as a unit vector;
@@ -74,6 +76,37 @@ stays as the record. (The probe report of Run 3 still shows the old wording, `FA
 line; reports from later runs carry the count only.)
 
 **Still open:** the same measurement on the target server — the run sheet below.
+
+## Against the match server (2026-11-14)
+
+One 120 s run on the same PC after the server started playing real matches (game core on
+the 20 Hz loop, 32 slots, the probe bots replacing the server's bots), report
+[`reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md`](../reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md):
+
+| Number                                          | Phase 0 Run 3 (empty map) | Match server      |
+| ----------------------------------------------- | ------------------------- | ----------------- |
+| Achieved Hz                                     | 20.00                     | 20.00             |
+| CPU, % of one core (whole probe process)        | 18.99 %                   | 23.30 %           |
+| Max tick duration                               | 44 ms                     | 177 ms            |
+| State message bytes                             | 201                       | max 454 (avg 408) |
+| Jumps per 60 s                                  | 32                        | 414               |
+| Underruns per 60 s                              | 0                         | 162               |
+| Spectator frames rendered (60 Hz nominal: 7200) | 5338                      | 4233              |
+
+The two measured criteria still pass. The jump and underrun counts and the longest tick are
+clearly higher; this is one run, and its cause is not measured. The probe runs server, 32
+bots and the spectator in one Node process, so a slower event loop shows up in all three
+numbers and in the lower frame count; the PC also ran Docker Desktop during this run (it did
+not during Run 3). Whether the jumps are visible is again a question for the eye (`pnpm
+dev`, viewer on http://localhost:5930). The CPU number is now computed over the
+measurement window only; Run 3 divided the same CPU time by the uptime including the 1.5 s
+ramp-up, about 1 % lower.
+
+State size outside the probe: a whole 32-bot match encoded tick by tick (seed 1) never
+exceeds 402 bytes (19 field coins); after the halving the largest is 354 bytes. With a full
+field (60 coins, the `maxFieldCoins` cap) the bound is 38 + 9 · 32 + 4 · 60 = **566 bytes**,
+under 1 KB without compaction (tests: `apps/server/src/match-host.test.ts` "never sends more
+than 1 KB in a whole 32-bot match, the halving included"; `packages/protocol/src/state.test.ts`).
 
 ## Server run sheet (Docker, leaves nothing behind)
 

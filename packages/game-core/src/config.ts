@@ -35,6 +35,8 @@ export interface GameConfig {
   halvingSpawnFactor: number;
   poolRadius: number;
   poolTakeIntervalMs: number;
+  reconnectGraceMs: number;
+  resultPauseMs: number;
   bots: BotConfig;
 }
 
@@ -65,6 +67,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   halvingSpawnFactor: 0.5, // CONCEPT.md §2b: half as many coins afterwards
   poolRadius: 100, // placeholder — owner decides
   poolTakeIntervalMs: 100, // placeholder — owner decides (one pool coin per interval)
+  // CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot takes over.
+  reconnectGraceMs: 12_000,
+  resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
   bots: {
     cautiousSecureAt: 5, // placeholder — owner decides (coins a cautious bot banks at)
     hunterSecureAt: 8, // placeholder — owner decides (coins a hunter banks at)

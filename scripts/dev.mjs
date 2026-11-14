@@ -1,7 +1,8 @@
-// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: server, viewer and demo bots, detached.
-// Starts the three as hidden background processes (no windows on Windows, the same on Linux
-// and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
-// tmp/dev-pids.json, and stops exactly those PIDs again.
+// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server and viewer, detached.
+// The server's own bots fill all 32 slots. Starts both as hidden background processes (no
+// windows on Windows, the same on Linux and macOS), logs to logs/dev-*.log (and
+// dev-*.err.log on Windows), records their PIDs in tmp/dev-pids.json, and stops exactly
+// those PIDs again.
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -123,8 +124,6 @@ async function start() {
   fs.mkdirSync(path.dirname(PID_FILE), { recursive: true });
   fs.writeFileSync(PID_FILE, JSON.stringify(started));
   await waitForPort(SERVER_PORT, 15_000);
-  // The bots connect once and do not retry, so they start after the server listens.
-  started.push(startHidden('bots', 'tools/probe', ['--import', 'tsx', 'src/demo-bots.ts']));
   started.push(startHidden('viewer', 'apps/viewer', ['node_modules/vite/bin/vite.js']));
   fs.writeFileSync(PID_FILE, JSON.stringify(started));
   await waitForPort(VIEWER_PORT, 15_000);

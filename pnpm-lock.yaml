@@ -196,6 +196,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@seasonal-spirits/game-core':
+        specifier: workspace:*
+        version: link:../../packages/game-core
       '@seasonal-spirits/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
@@ -212,6 +215,9 @@ importers:
 
   apps/viewer:
     dependencies:
+      '@seasonal-spirits/game-core':
+        specifier: workspace:*
+        version: link:../../packages/game-core
       '@seasonal-spirits/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol

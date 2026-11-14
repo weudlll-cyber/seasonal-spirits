@@ -18,8 +18,10 @@ function metrics(over: Partial<ServerMetrics>): ServerMetrics {
     maxTickMs: 1,
     cpuPercentOfOneCore: 19,
     clients: 33,
+    players: 32,
     ghosts: 32,
-    stateBytes: 201,
+    stateBytes: 400,
+    maxStateBytes: 566,
     startedAtMs: 0,
     uptimeMs: 120_000,
     ...over,
@@ -50,8 +52,8 @@ describe('probe verdict', () => {
     expect(c.hzUnder30Cpu).toBe(false);
   });
 
-  it('fails the size criterion at 1024 bytes', () => {
-    const c = evaluateCriteria(cfg, metrics({ stateBytes: 1024 }), summary(0));
+  it('fails the size criterion when the largest message reaches 1024 bytes', () => {
+    const c = evaluateCriteria(cfg, metrics({ stateBytes: 400, maxStateBytes: 1024 }), summary(0));
     expect(c.bytesUnder1Kb).toBe(false);
   });
 
@@ -71,7 +73,9 @@ describe('probe verdict', () => {
   });
 
   it('reports FAIL in the verdict when a measured criterion fails', () => {
-    const lines = renderCriteria(evaluateCriteria(cfg, metrics({ stateBytes: 2000 }), summary(0)));
+    const lines = renderCriteria(
+      evaluateCriteria(cfg, metrics({ maxStateBytes: 2000 }), summary(0)),
+    );
     expect(lines).toContain('- state message under 1 KB: **FAIL**');
     expect(lines.at(-1)).toBe('## Verdict: at least one measured criterion FAIL; jumps by eye');
   });

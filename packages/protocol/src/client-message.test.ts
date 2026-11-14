@@ -14,6 +14,24 @@ describe('parseClientMessage', () => {
     });
   });
 
+  it('accepts the three actions and nothing else as an action', () => {
+    for (const action of ['steal', 'secure', 'swap']) {
+      expect(parseClientMessage(JSON.stringify({ kind: 'action', action, target: 7 }))).toEqual({
+        kind: 'action',
+        action,
+      });
+    }
+    for (const text of [
+      '{"kind":"action"}',
+      '{"kind":"action","action":"teleport"}',
+      '{"kind":"action","action":["steal"]}',
+    ]) {
+      expect(parseClientMessage(text), text).toBeNull();
+    }
+  });
+});
+
+describe('parseClientMessage refuses', () => {
   it('refuses anything that is not a JSON object', () => {
     for (const text of [
       '',

@@ -15,7 +15,7 @@ export function envInt(env: Env, name: string, fallback: number, range: [number,
   return n;
 }
 
-// The probe server, the demo bots and the dev viewer are development tools: no sign-in, fake
+// The dev server and the probe are development tools: no sign-in, fake
 // players. They refuse to start in production (CLAUDE.md, "Security").
 export function refuseProduction(env: Env, what: string): void {
   if (env.NODE_ENV === 'production') {

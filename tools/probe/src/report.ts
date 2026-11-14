@@ -45,7 +45,8 @@ export function evaluateCriteria(
 ): Criteria {
   return {
     hzUnder30Cpu: metrics.achievedHz >= cfg.tickHz * 0.95 && metrics.cpuPercentOfOneCore <= 30,
-    bytesUnder1Kb: metrics.stateBytes < 1024,
+    // The size varies with the coins on the field; the largest message decides.
+    bytesUnder1Kb: metrics.maxStateBytes < 1024,
     jumpsPer60s: summary.jumpsPer60s,
   };
 }
@@ -78,8 +79,13 @@ export function renderReport(r: ReportInput): string {
   lines.push(`- server CPU: **${r.metrics.cpuPercentOfOneCore.toFixed(2)} %** of one core`);
   lines.push(`- max tick duration: **${r.metrics.maxTickMs} ms**`);
   lines.push(`- clients connected: ${r.metrics.clients}`);
-  lines.push(`- ghosts on map: ${r.metrics.ghosts}`);
-  lines.push(`- bytes per state message: **${r.metrics.stateBytes}** (header 9 + 6 per ghost)`);
+  lines.push(
+    `- ghosts in the match: ${r.metrics.ghosts} (${r.metrics.players} steered by players)`,
+  );
+  lines.push(
+    `- bytes per state message: last ${r.metrics.stateBytes}, max **${r.metrics.maxStateBytes}** ` +
+      `(header 38 + 9 per ghost + 4 per field coin)`,
+  );
   lines.push('');
   lines.push('## Spectator numbers');
   lines.push(`- states received: ${r.summary.statesReceived}`);

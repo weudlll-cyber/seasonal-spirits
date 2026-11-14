@@ -21,14 +21,29 @@ export function parseClientMessage(text: string): ClientMessage | null {
   }
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   const fields = value as Record<string, unknown>;
-  const kind = fields.kind;
-  if (kind === 'player' || kind === 'spectator') return { kind };
-  if (kind === 'input') {
-    const { dx, dy } = fields;
-    if (!isUnitComponent(dx) || !isUnitComponent(dy)) return null;
-    return { kind, dx, dy };
+  switch (fields.kind) {
+    case 'player':
+    case 'spectator':
+      return { kind: fields.kind };
+    case 'input':
+      return parseInput(fields);
+    case 'action':
+      return parseAction(fields);
+    default:
+      return null;
   }
-  return null;
+}
+
+function parseInput(fields: Record<string, unknown>): ClientMessage | null {
+  const { dx, dy } = fields;
+  if (!isUnitComponent(dx) || !isUnitComponent(dy)) return null;
+  return { kind: 'input', dx, dy };
+}
+
+function parseAction(fields: Record<string, unknown>): ClientMessage | null {
+  const action = fields.action;
+  if (action !== 'steal' && action !== 'secure' && action !== 'swap') return null;
+  return { kind: 'action', action };
 }
 
 // A direction component: a finite number in [-1, 1]. The server clamps the magnitude.

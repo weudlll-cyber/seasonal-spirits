@@ -6,9 +6,9 @@ The rules behind it are in [CLAUDE.md](../CLAUDE.md) ("Server, clients, trust" a
 `server` = `apps/server/src/server.test.ts`, `routes` = `apps/server/src/http-routes.test.ts`,
 `core` = `packages/game-core/src/*.test.ts`.
 
-The wire protocol today carries hello and direction only. The shrine actions and the steal
-arrive with the match server (piece C); their rules already live in the game core, which
-refuses every invalid action itself, so the answers below hold whichever client sends them.
+The wire protocol carries hello, direction and the one action (`steal`, `secure`, `swap`).
+The server checks only the message; whether an action does anything is decided by the game
+core, which refuses every invalid action itself (rows 13–18), whoever sends it.
 
 ## Messages
 
@@ -26,6 +26,8 @@ refuses every invalid action itself, so the answers below hold whichever client 
 | 10  | A flood above the rate limit                                                     | Every message, valid or not, counts against `maxInputsPerSecond` (20); the rest of the second is dropped                  | server "drops messages above the per-second rate"                                                                                                                         |
 | 11  | A second hello, or switching from player to spectator                            | Ignored; the first hello decides                                                                                          | server "keeps a player a player after a second hello"                                                                                                                     |
 | 12  | A spectator sending inputs (or anything) after its hello                         | The connection is closed (1008)                                                                                           | server "closes a spectator that sends anything after its hello"                                                                                                           |
+| 12a | An action that is not steal, secure or swap                                      | Dropped by the validator                                                                                                  | protocol "accepts the three actions and nothing else as an action"                                                                                                        |
+| 12b | Joining when every slot has a player                                             | The connection is closed (1008)                                                                                           | server "refuses a player when every slot already has one"                                                                                                                 |
 
 ## Game actions (enforced by the game core)
 
@@ -40,19 +42,20 @@ refuses every invalid action itself, so the answers below hold whichever client 
 
 ## Connections and HTTP
 
-| #   | A client tries                                                    | The server's answer                                                                                                    | Test                                                                                                                       |
-| --- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 19  | Rapid reconnects                                                  | Each socket is freed exactly once ('error' and 'close' may both fire); ghosts and counters return to their prior state | server "leaves nothing behind after rapid reconnects"                                                                      |
-| 20  | Many connections from one address                                 | Refused above `maxConnectionsPerAddress` (40 in development, room for 32 bots and viewers) with 1008                   | server "refuses more connections from one address than the bound"                                                          |
-| 21  | Many connections in total                                         | Refused above twice the ghost count                                                                                    | server "refuses connections beyond twice the ghost count in total"                                                         |
-| 22  | Reading `/metrics-lite` from outside                              | 404 for any caller that is not loopback, any method but GET, any other path; CORS `*` only in development              | routes "accepts IPv4, IPv6 and IPv4-mapped loopback", "refuses any other or missing address"; server "/metrics-lite" tests |
-| 23  | Starting the dev server, the probe or the demo bots in production | They refuse to start with `NODE_ENV=production` (no sign-in, fake players)                                             | `apps/server/src/env.test.ts` "stops a development tool when NODE_ENV is production"                                       |
-| 24  | Odd environment values (text, NaN, out of range)                  | The process stops with a clear message instead of running with a bad setting                                           | `env.test.ts` "stops on text, fractions, NaN, Infinity and values out of range"                                            |
+| #   | A client tries                                     | The server's answer                                                                                                    | Test                                                                                                                       |
+| --- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 19  | Rapid reconnects                                   | Each socket is freed exactly once ('error' and 'close' may both fire); ghosts and counters return to their prior state | server "leaves nothing behind after rapid reconnects"                                                                      |
+| 20  | Many connections from one address                  | Refused above `maxConnectionsPerAddress` (40 in development, room for 32 bots and viewers) with 1008                   | server "refuses more connections from one address than the bound"                                                          |
+| 21  | Many connections in total                          | Refused above twice the slot count                                                                                     | server "refuses connections beyond twice the slot count in total"                                                          |
+| 21a | Connecting and never saying hello                  | Closed after 10 s (1008)                                                                                               | server "closes a connection that never says hello"                                                                         |
+| 22  | Reading `/metrics-lite` from outside               | 404 for any caller that is not loopback, any method but GET, any other path; CORS `*` only in development              | routes "accepts IPv4, IPv6 and IPv4-mapped loopback", "refuses any other or missing address"; server "/metrics-lite" tests |
+| 23  | Starting the dev server or the probe in production | They refuse to start with `NODE_ENV=production` (no sign-in, fake players)                                             | `apps/server/src/env.test.ts` "stops a development tool when NODE_ENV is production"                                       |
+| 24  | Odd environment values (text, NaN, out of range)   | The process stops with a clear message instead of running with a bad setting                                           | `env.test.ts` "stops on text, fractions, NaN, Infinity and values out of range"                                            |
 
 ## Open
 
 - Behind the website's nginx every connection comes from the proxy's address, so the
   per-address bound (row 20) must use the forwarded client address from the trusted proxy once
   the game runs embedded (backlog g).
-- A client that connects and never says hello holds a connection slot until it closes; a
-  hello timeout comes with the match server (piece C).
+- Without the website sign-in a returning player cannot be recognised: a reconnect is a new
+  player, and the old ghost stands for the grace time before a bot takes it (backlog g).

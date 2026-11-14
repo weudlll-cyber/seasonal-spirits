@@ -1,13 +1,15 @@
-// Seasonal Spirits — browser viewer. Connects as a spectator through the artificial delay
-// queue and renders ghosts as coloured circles. HUD shows states/s, bytes/message, latency
-// window, buffer size, jumps and underruns per 60 s, server Hz, and the drawn ghost count
-// (exposed on window for Playwright checks).
+// Seasonal Spirits — browser viewer: a spectator of the running match, as a debug view.
+// Connects through the artificial delay queue, interpolates the ghosts and draws the match
+// (draw.ts). The HUD shows the network numbers and the match text; the numbers are also
+// exposed on window for Playwright checks.
 
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
   DelayQueue,
   JumpDetector,
   PerMinuteCounter,
   RenderClock,
+  STATE_HALVING_EVENT,
   decodeState,
   interpolate,
   latestServerMs,
@@ -15,50 +17,15 @@ import {
   type BufferedState,
   type ServerState,
 } from '@seasonal-spirits/protocol';
+import { drawField, drawGhosts, layout, matchLines } from './draw.js';
 
 declare const __SERVER_WS_URL__: string;
 declare const __SERVER_HTTP_URL__: string;
 
-const WORLD = 2000;
 const BUFFER_MS = 100;
 const LATENCY_MIN = 100;
 const LATENCY_MAX = 200;
-const SPEED = 300;
-
-// 32 distinct colours — four seasons, eight players each. Phase 0 just needs them distinct.
-const SEASON_PALETTES: Record<number, string[]> = {
-  0: tintShades('#AFB84E'), // Spring
-  1: tintShades('#E06E22'), // Summer
-  2: tintShades('#F9A825'), // Autumn
-  3: tintShades('#04AAF7'), // Winter
-};
-
-function tintShades(hex: string): string[] {
-  const n = 8;
-  const { r, g, b } = hexToRgb(hex);
-  const out: string[] = [];
-  for (let i = 0; i < n; i++) {
-    const k = 0.5 + (i / (n - 1)) * 0.5; // 0.5..1.0 brightness
-    out.push(`rgb(${Math.round(r * k)}, ${Math.round(g * k)}, ${Math.round(b * k)})`);
-  }
-  return out;
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const v = hex.replace('#', '');
-  return {
-    r: parseInt(v.slice(0, 2), 16),
-    g: parseInt(v.slice(2, 4), 16),
-    b: parseInt(v.slice(4, 6), 16),
-  };
-}
-
-function colourFor(id: number): string {
-  const season = (id - 1) % 4;
-  const slot = Math.floor((id - 1) / 4) % 8;
-  // Ids above 32 wrap around the palette; the white fallback only satisfies the index type.
-  return SEASON_PALETTES[season]?.[slot] ?? '#ffffff';
-}
+const HALVING_SHOWN_MS = 3000; // the HALVING line stays this long after the event
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
@@ -78,12 +45,15 @@ const statesRate = new PerMinuteCounter();
 const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
-const jumpDetector = new JumpDetector({ speedUnitsPerSecond: SPEED });
+let halvingSeenAt = -Infinity;
+const jumpDetector = new JumpDetector({ speedUnitsPerSecond: DEFAULT_CONFIG.ghostSpeed });
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
   const state: ServerState = decodeState(buf);
   const now = Date.now();
+  // The event is in one state only; every state passes here, so it is never missed.
+  if (state.flags & STATE_HALVING_EVENT) halvingSeenAt = now;
   buffer.push({ receivedAt: now, state });
   trimBuffer(buffer, now, 2000);
   lastStateBytes = buf.byteLength;
@@ -128,21 +98,11 @@ function frame(): void {
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);
 
-  ctx.fillStyle = '#0b0f14';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const scale = Math.min(canvas.width, canvas.height) / WORLD;
-  const offsetX = (canvas.width - WORLD * scale) / 2;
-  const offsetY = (canvas.height - WORLD * scale) / 2;
-
-  ctx.strokeStyle = '#22303c';
-  ctx.strokeRect(offsetX, offsetY, WORLD * scale, WORLD * scale);
-
-  for (const g of ghosts) {
-    ctx.fillStyle = colourFor(g.id);
-    ctx.beginPath();
-    ctx.arc(offsetX + g.x * scale, offsetY + g.y * scale, 6, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  // Ghosts are interpolated; coins, pool and clock come from the newest state.
+  const latest = buffer.at(-1)?.state;
+  const view = layout(ctx);
+  drawField(view, latest);
+  drawGhosts(view, ghosts);
 
   // Expose for Playwright / probe self-check.
   (window as unknown as { __viewer: unknown }).__viewer = {
@@ -163,7 +123,8 @@ function frame(): void {
     `buffer:          ${BUFFER_MS} ms (${buffer.length} states held)\n` +
     `jumps /60 s:     ${jumpCounter.value(now)}\n` +
     `underruns /60 s: ${underrunCounter.value(now)}\n` +
-    `server Hz:       ${serverHz.toFixed(1)}`;
+    `server Hz:       ${serverHz.toFixed(1)}` +
+    (latest ? `\n\n${matchLines(latest, now - halvingSeenAt < HALVING_SHOWN_MS).join('\n')}` : '');
 
   requestAnimationFrame(frame);
 }

@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@seasonal-spirits/game-core": "workspace:*",
     "@seasonal-spirits/protocol": "workspace:*",
     "ws": "8.23.0"
   },

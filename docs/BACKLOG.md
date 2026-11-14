@@ -15,12 +15,11 @@ a. **Safety net — owner part.** CodeQL, osv-scanner and Renovate are in the re
 requests, and the Renovate app. Done when: all four are on and a test push of a fake
 secret is refused.
 
-b. **Server plays real matches.** `packages/game-core` on the server's 20 Hz loop, inputs
-for direction, steal, secure and swap through the shared validator, server-side bots
-filling up to 32, the match lifecycle, the extended state message, a debug view in the
-viewer. Done when: `pnpm dev` shows full matches with 32 bots one after another, the state
-message size is measured against 1 KB, and a probe run against the match server is
-recorded in PHASE0.md.
+b1. **Eye check of the match server.** The probe against the match server counted 414
+jumps and 162 underruns per 60 s (Run 3: 32 and 0), max tick 177 ms; cause not measured
+(docs/PHASE0.md, "Against the match server"). Done when: the owner has watched a match in
+the viewer (`pnpm dev`) and decided whether movement looks smooth; if not, the probe is run
+again under controlled conditions (Docker Desktop off) before anything is changed.
 
 b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
 `packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), and whether
@@ -32,8 +31,10 @@ framework decision (CONCEPT.md §8, after Phase 0) is taken here. Done when: a p
 join and steer a ghost through a full match on desktop and phone, checked with
 Playwright in desktop and phone sizes.
 
-d. **Balance by simulation.** Many bot matches. Done when: the owner has a short table per
-strategy (patient, cautious, hunter) with win share and value spread.
+d. **Balance by simulation.** Many bot matches. Seed 1 already shows hunters banking
+almost nothing: they mostly rob each other and rarely reach their bank threshold. Done
+when: the owner has a short table per strategy (patient, cautious, hunter) with win share
+and value spread.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -97,7 +98,16 @@ under `/games/seasonal-spirits` with the website's sign-in.
   test per entry and the shared client message validator in `packages/protocol` (fixes the
   crash on `null`); `/metrics-lite` loopback only, CORS in development only; validated
   environment, dev tools refuse production; `pnpm dev` / `pnpm dev:stop` — commit
-  "feat: game core, threat list, pnpm dev" on `feat/game-core`.
+  `61ba038` on `feat/game-core`.
+- 2026-11-14 — **server plays real matches**: game core on the 20 Hz loop through
+  `apps/server/src/match-host.ts` (32 slots, bots in every slot without a player, a joining
+  player replaces a bot, a left player's ghost stands 12 s, then a bot), direction and the
+  one action through the shared validator, match → result pause → next match, one extended
+  state encoding (clock, seasons, countdown, halving event, pool, team values, per ghost
+  team / carried / flags, field coins), welcome message, hello timeout, debug view in the
+  viewer, docs/SERVER.md, probe numbers against the match server in PHASE0.md; the
+  empty-map `World` and the demo bots are removed — commit "feat: the server plays real
+  matches" on `feat/server-match`.
 
 ## CHECKS DONE
 
@@ -127,3 +137,10 @@ under `/games/seasonal-spirits` with the website's sign-in.
 | 2026-11-14 | `pnpm simulate --seed 1`                                             | same tree                                                          | four sanity checks ok; halving at 3:45, 471 carried → 224 kept + 247 pooled                                                                                                                         | docs/GAME-CORE.md, session report                                                             |
 | 2026-11-14 | `pnpm dev` live start, `/metrics-lite`, viewer HTTP, `pnpm dev:stop` | same tree                                                          | 19.92 Hz, 32 clients, 32 ghosts; viewer 200; all three stopped, ports free                                                                                                                          | session report                                                                                |
 | 2026-11-14 | `pnpm verify:changed` (lint, typecheck, format)                      | same tree                                                          | first run: 11 files unformatted, 2 lint, 1 type error; fixed; lint, typecheck, format re-run green                                                                                                  | same commit                                                                                   |
+| 2026-11-14 | full CI (verify + dependencies)                                      | `61ba038`                                                          | success                                                                                                                                                                                             | [run 43593187838](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43593187838) |
+| 2026-11-14 | CodeQL                                                               | `61ba038`                                                          | success                                                                                                                                                                                             | [run 43593187840](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43593187840) |
+| 2026-11-14 | all unit tests (protocol encoding changed, so every package)         | working tree committed as "feat: the server plays real matches"    | 102 tests in 18 files green                                                                                                                                                                         | same commit                                                                                   |
+| 2026-11-14 | lint, typecheck, format, viewer build                                | working tree committed as "feat: the server plays real matches"    | green; viewer builds (26 modules)                                                                                                                                                                   | same commit                                                                                   |
+| 2026-11-14 | state size over a whole 32-bot match (seed 1, encoded every tick)    | working tree committed as "feat: the server plays real matches"    | max 402 bytes (19 coins); after the halving max 354 bytes; full-field bound 566 bytes                                                                                                               | docs/PHASE0.md "Against the match server"                                                     |
+| 2026-11-14 | probe 120 s against the match server                                 | working tree committed as "feat: the server plays real matches"    | 20.00 Hz, 23.30 % CPU, max tick 177 ms, max 454 bytes, 414 jumps/60 s, 162 underruns/60 s (Docker Desktop running)                                                                                  | `reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md`                                      |
+| 2026-11-14 | `pnpm dev` live (match server + viewer)                              | working tree committed as "feat: the server plays real matches"    | 19.97 Hz, 32 bot slots, coins and carriers in the state, 350–358 bytes; viewer HTTP 200                                                                                                             | session report                                                                                |
