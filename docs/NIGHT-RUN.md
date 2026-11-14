@@ -5,8 +5,10 @@ A Claude Code session running unattended (`dontAsk` permission mode) uses this r
 ## Before the session starts
 
 - `CONCEPT.md` is up to date (the English reference of the owner's concept document).
-- `.claude/settings.json` is the night-run profile: `Read/Edit/Write` under `./**`, the
-  shell-level tools listed one by one, destructive git / gh / rm operations in `deny`.
+- `.claude/settings.json` is the night-run profile: `Read/Edit/Write` under `./**`,
+  read-only `Read/Glob/Grep` in the three sibling clones (`seasonal-bingo-royale`,
+  `seasonal-mini-games`, `seasonal-entertainment` next to this folder), the shell-level
+  tools listed one by one, destructive git / gh / rm operations in `deny`.
 - The task for the night is in `night-task.md` at the repository root. This file is
   `.gitignore`'d — it never lands in the commit history.
 - The owner leaves the machine; the session is unattended from here.
