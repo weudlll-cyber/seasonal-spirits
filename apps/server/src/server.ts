@@ -172,7 +172,12 @@ export class GameServer {
   private handleHttp(req: http.IncomingMessage, res: http.ServerResponse): void {
     if (req.url === '/metrics-lite') {
       const m = this.metrics();
-      res.writeHead(200, { 'content-type': 'application/json' });
+      res.writeHead(200, {
+        'content-type': 'application/json',
+        // The viewer runs on its own Vite dev port; the probe curls from the same machine.
+        // Phase 0 only; the production front door is the website's nginx, same origin.
+        'access-control-allow-origin': '*',
+      });
       res.end(JSON.stringify(m));
       return;
     }
