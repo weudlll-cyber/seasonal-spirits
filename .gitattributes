@@ -1,0 +1,12 @@
+# Seasonal Spirits — line endings and binary files for git.
+# LF in the repository and in every checkout, so Windows and the Linux VPS see identical files
+# and git stops rewriting line endings.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff2 binary
+*.ogg binary

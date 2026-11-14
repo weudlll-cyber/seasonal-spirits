@@ -1,0 +1,10 @@
+# Seasonal Spirits — accepted osv-scanner findings, each with a reason and an expiry date.
+# The CI job "dependencies" fails on any known vulnerability in pnpm-lock.yaml that has no
+# entry here; every entry expires so it is reviewed again (docs/SECURITY.md).
+#
+# No entry now. Format of an accepted, dated exception:
+#
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2027-01-31
+# reason = "Why it is not exploitable here; who accepted it and when."

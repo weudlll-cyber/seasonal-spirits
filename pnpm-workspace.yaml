@@ -15,3 +15,9 @@ allowBuilds:
   # Pulled by tsx and vite. Its postinstall only checks or fetches the native binary, which
   # the platform-specific optional dependency already ships.
   esbuild: false
+
+# Forced versions for transitive dependencies. Remove an entry once its parent ships the fix.
+overrides:
+  # ESLint 10.13.0 and typescript-eslint 8.71.2 pull minimatch 10.2.6 (GHSA-g3hv-75wg-m249);
+  # 11.0.1 is the first fixed release.
+  minimatch@10.2.6: 11.0.1

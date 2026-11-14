@@ -57,7 +57,9 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
 - [docs/PHASE0.md](docs/PHASE0.md) — what Phase 0 measures and why.
 - [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md) — the launch recipe for an unattended night run.
 - [docs/GAME-CORE.md](docs/GAME-CORE.md) — the mechanics planned for `packages/game-core`.
-- [docs/BACKLOG.md](docs/BACKLOG.md) — OPEN / CLOSED backlog.
+- [docs/SECURITY.md](docs/SECURITY.md) — the automated security checks and the settings
+  only the owner can switch on.
+- [docs/BACKLOG.md](docs/BACKLOG.md) — OPEN / CLOSED / CHECKS DONE.
 
 ## Licence
 

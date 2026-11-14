@@ -49,9 +49,7 @@ Three criteria decide the Phase 0 question:
 2. **State message under 1 KB.** With 32 ghosts: `9 + 6 · 32 = 201 bytes`. Already well
    below 1 KB; this would only fail if the encoding changed.
 3. **No visible jumps at 150 ms.** The spectator reports `jumpsPer60s` and underruns per
-   60 s as numbers. "Visible" cannot be decided by a count: the detector's threshold is
-   deliberately strict and flags single-frame overshoots a viewer does not see. The report
-   therefore prints `jumps: <n>/60 s — visibility is checked by eye (see docs/PHASE0.md)`,
+   60 s as numbers. "Visible" cannot be decided by a count. The report therefore prints `jumps: <n>/60 s — visibility is checked by eye (see docs/PHASE0.md)`,
    and the decision is a visual check of the running viewer (see "Result" below).
 
 The first two criteria are marked `PASS` or `FAIL` in the report; the third carries only
@@ -71,9 +69,8 @@ one-way latency; report
 | No visible jumps at 150 ms                | none visible    | 32 jumps/60 s, 0 underruns/60 s | visual check: passed |
 
 The third criterion is decided by the owner's visual check of the running viewer on
-2026-11-14: no visible jumps. The count is the evidence for the record, not the decision:
-32 events in 115 200 ghost-frames are single-frame overshoots just past the detector's
-strict threshold. (The probe report of Run 3 still shows the old wording, `FAIL`, for this
+2026-11-14: no visible jumps. That visual check is the evidence; the count of 32 per 60 s
+stays as the record. (The probe report of Run 3 still shows the old wording, `FAIL`, for this
 line; reports from later runs carry the count only.)
 
 **Still open:** the same measurement on the target server — the run sheet below.

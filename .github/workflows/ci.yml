@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+# Scanner image pinned by digest, like the actions by commit SHA (same as seasonal-mini-games).
+env:
+  OSV_SCANNER_IMAGE: ghcr.io/google/osv-scanner:v2.7.0@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0
+
 concurrency:
   # One group per branch and event, so a push and its PR do not cancel each other.
   group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
@@ -32,3 +36,14 @@ jobs:
       - uses: ./.github/actions/setup
       # Format check, lint, typecheck, tests.
       - run: pnpm verify
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Any known vulnerability in the lockfile fails the job unless osv-scanner.toml holds an
+      # accepted, dated exception for it. No install needed: the lockfile is the input.
+      - name: osv-scanner (lockfile)
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src "$OSV_SCANNER_IMAGE" scan source \
+            --config=osv-scanner.toml --lockfile=pnpm-lock.yaml
