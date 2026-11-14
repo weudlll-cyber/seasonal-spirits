@@ -8,19 +8,20 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 
 ## Files
 
-| File                | What it holds                                                             |
-| ------------------- | ------------------------------------------------------------------------- |
-| `src/config.ts`     | Every number of the game (table below)                                    |
-| `src/seasons.ts`    | Season order, the season clock, coin values                               |
-| `src/types.ts`      | Match state, intents, events, result                                      |
-| `src/match.ts`      | `Match`: one tick in a fixed order                                        |
-| `src/field.ts`      | Coin spawning and picking up                                              |
-| `src/actions.ts`    | Swap, secure, steal — each checks its own conditions; the shrine offer    |
-| `src/halving.ts`    | The halving at a season turn                                              |
-| `src/geometry.ts`   | Distances, clamping, shrine positions                                     |
-| `src/rng.ts`        | `mulberry32`, shared with the probe bots                                  |
-| `src/bots/`         | The three strategies (`strategies.ts`) and what they share (`common.ts`)  |
-| `src/simulation.ts` | One full bot match with the sanity list; `src/simulate.ts` is the command |
+| File                | What it holds                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------ |
+| `src/config.ts`     | Every number of the game (table below)                                                                 |
+| `src/seasons.ts`    | Season order, the season clock, coin values                                                            |
+| `src/types.ts`      | Match state, intents, events, result                                                                   |
+| `src/match.ts`      | `Match`: one tick in a fixed order                                                                     |
+| `src/field.ts`      | Coin spawning and picking up                                                                           |
+| `src/actions.ts`    | Swap, secure, steal — each checks its own conditions; the shrine offer                                 |
+| `src/halving.ts`    | The halving at a season turn                                                                           |
+| `src/geometry.ts`   | Distances, clamping, shrine positions                                                                  |
+| `src/rng.ts`        | `mulberry32`, shared with the probe bots                                                               |
+| `src/bots/`         | The three strategies (`strategies.ts`) and what they share (`common.ts`)                               |
+| `src/simulation.ts` | One full bot match with the sanity list; `src/simulate.ts` is the command                              |
+| `src/balance.ts`    | Many matches summed up per strategy and team; `src/balance-cli.ts` is `pnpm balance` (docs/BALANCE.md) |
 
 ## One tick
 

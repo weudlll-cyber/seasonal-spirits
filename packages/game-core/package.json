@@ -10,6 +10,7 @@
   },
   "scripts": {
     "simulate": "tsx src/simulate.ts",
+    "balance": "tsx src/balance-cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

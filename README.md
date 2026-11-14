@@ -47,6 +47,7 @@ pnpm dev          # match server (32 bots), client and viewer in the background;
 pnpm dev --lan    # the same, also open to the local network: prints the address for a phone
 pnpm dev:stop     # stops exactly the processes pnpm dev started
 pnpm simulate --seed 1  # one full 32-bot match of the game core, headless, with a sanity list
+pnpm balance --matches 30 --seed 1 --variant all  # many matches per strategy and team (docs/BALANCE.md)
 pnpm probe        # full probe run: server + 32 bots + headless spectator, writes a report
 pnpm server       # just the server, in the foreground (SEASON_SECONDS=15 for a 1-minute match)
 pnpm client       # just the client on http://localhost:5930, in the foreground
@@ -80,6 +81,7 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
 - [docs/PHASE0.md](docs/PHASE0.md) — what Phase 0 measures and why.
 - [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md) — the launch recipe for an unattended night run.
 - [docs/GAME-CORE.md](docs/GAME-CORE.md) — the mechanics as built in `packages/game-core`.
+- [docs/BALANCE.md](docs/BALANCE.md) — strategies and teams over many simulated matches.
 - [docs/CLIENT.md](docs/CLIENT.md) — the player client as built: joining, controls, screen,
   halving staging, result and bridge box, browser tests.
 - [docs/SERVER.md](docs/SERVER.md) — the match server as built: slots, lifecycle, state

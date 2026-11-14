@@ -1,0 +1,78 @@
+// Seasonal Spirits — `pnpm balance --matches <n> --seed <s> [--variant <name> ...]`.
+// Runs n headless 32-bot matches (seeds s … s+n−1, teams rotating) for the current config and
+// for each named variant (one change each), and prints per strategy and per team, every
+// number with its N. Without --variant only the current config runs; --variant all runs all.
+
+import { STRATEGIES } from './bots/strategies.js';
+import { runBalance, type BalanceReport, type Spread } from './balance.js';
+import { DEFAULT_CONFIG, type GameConfig } from './config.js';
+
+export const VARIANTS: Record<string, Partial<GameConfig>> = {
+  current: {},
+  'stealShare=0.25': { stealShare: 0.25 },
+  'stealShare=0.75': { stealShare: 0.75 },
+  'coinSpawnPerSecond=1': { coinSpawnPerSecond: 1 },
+  'coinSpawnPerSecond=3': { coinSpawnPerSecond: 3 },
+  'carrySpeedFactor=0.5': { carrySpeedFactor: 0.5 },
+  'carrySpeedFactor=0.85': { carrySpeedFactor: 0.85 },
+};
+
+const TEAM_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
+
+function arg(argv: readonly string[], name: string, fallback: number, max: number): number {
+  const i = argv.indexOf(name);
+  if (i === -1) return fallback;
+  const raw = argv[i + 1] ?? '';
+  const n = Number(raw);
+  if (!/^\d{1,9}$/.test(raw) || n > max) {
+    console.error(`${name} needs a whole number from 0 to ${max}, got "${raw}"`);
+    process.exit(2);
+  }
+  return n;
+}
+
+function variants(argv: readonly string[]): string[] {
+  const names = argv.flatMap((a, i) => (argv[i - 1] === '--variant' ? [a] : []));
+  if (names.includes('all')) return Object.keys(VARIANTS);
+  const unknown = names.filter((n) => !(n in VARIANTS));
+  if (unknown.length > 0) {
+    console.error(
+      `unknown variant ${unknown.join(', ')}; known: ${Object.keys(VARIANTS).join(', ')}`,
+    );
+    process.exit(2);
+  }
+  return names.length > 0 ? names : ['current'];
+}
+
+const pct = (x: number): string => `${(x * 100).toFixed(1)} %`;
+const num = (x: number): string => x.toFixed(1);
+const spreadCells = (s: Spread): string =>
+  `${num(s.mean)} | ${num(s.median)} | ${num(s.p10)} | ${num(s.p90)}`;
+
+function print(name: string, r: BalanceReport): void {
+  const n = r.matches;
+  console.log(`\n### ${name} — N = ${n} matches, seeds ${r.firstSeed}–${r.firstSeed + n - 1}`);
+  console.log('\n| Strategy | Best player of the match | Mean | Median | p10 | p90 | Players |');
+  console.log('| --- | --- | --- | --- | --- | --- | --- |');
+  for (const s of STRATEGIES) {
+    const v = r.secured[s];
+    console.log(`| ${s} | ${pct(r.bestPlayerShare[s])} | ${spreadCells(v)} | ${v.n} |`);
+  }
+  console.log(`\n| Team | Matches won (N = ${n}) |\n| --- | --- |`);
+  r.teamWinShare.forEach((w, t) => {
+    console.log(`| ${TEAM_NAMES[t] ?? '?'} | ${pct(w)} |`);
+  });
+  console.log(
+    `\nField coins gone at the halvings, per match (N = ${n}): ` +
+      `mean ${num(r.clearedPerMatch.mean)}, median ${num(r.clearedPerMatch.median)}, ` +
+      `p10 ${num(r.clearedPerMatch.p10)}, p90 ${num(r.clearedPerMatch.p90)}`,
+  );
+}
+
+const argv = process.argv.slice(2);
+const matches = arg(argv, '--matches', 30, 10_000);
+const seed = arg(argv, '--seed', 1, 999_999_999);
+for (const name of variants(argv)) {
+  const cfg: GameConfig = { ...DEFAULT_CONFIG, ...VARIANTS[name] };
+  print(name, runBalance(cfg, matches, seed));
+}
