@@ -175,3 +175,83 @@ three "best player of the match" shares (N = 30 each).
 
 (current: patient 56.7 %, cautious 0.0 %, hunter 43.3 %.) Stage 2 runs the current config,
 `stealShare=0.25` and `coinSpawnPerSecond=1`.
+
+## Stage 2 — 300 matches each (seeds 1–300)
+
+Command: `pnpm balance --matches 300 --seed 1 --variant current --variant stealShare=0.25
+--variant coinSpawnPerSecond=1`.
+
+#### current — N = 300 matches, seeds 1–300
+
+| Strategy | Best player of the match | Mean | Median | p10 | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | --- | ---- | ------- |
+| patient  | 66.5 %                   | 21.3 | 2.0    | 0.5 | 73.5 | 3600    |
+| cautious | 0.0 %                    | 19.4 | 17.5   | 6.0 | 35.5 | 3600    |
+| hunter   | 33.5 %                   | 19.6 | 7.0    | 0.0 | 65.5 | 2400    |
+
+| Team   | Matches won (N = 300) |
+| ------ | --------------------- |
+| Spring | 24.3 %                |
+| Summer | 25.5 %                |
+| Autumn | 24.7 %                |
+| Winter | 25.5 %                |
+
+Field coins gone at the halvings, per match (N = 300): mean 32.6, median 31.0, p10 19.0, p90 50.0
+
+#### stealShare=0.25 — N = 300 matches, seeds 1–300
+
+| Strategy | Best player of the match | Mean | Median | p10 | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | --- | ---- | ------- |
+| patient  | 88.0 %                   | 25.2 | 2.5    | 0.5 | 92.0 | 3600    |
+| cautious | 0.0 %                    | 20.0 | 18.0   | 6.5 | 36.5 | 3600    |
+| hunter   | 12.0 %                   | 13.1 | 5.0    | 0.0 | 42.0 | 2400    |
+
+| Team   | Matches won (N = 300) |
+| ------ | --------------------- |
+| Spring | 22.8 %                |
+| Summer | 22.3 %                |
+| Autumn | 25.5 %                |
+| Winter | 29.3 %                |
+
+Field coins gone at the halvings, per match (N = 300): mean 32.6, median 31.0, p10 19.0, p90 48.0
+
+#### coinSpawnPerSecond=1 — N = 300 matches, seeds 1–300
+
+| Strategy | Best player of the match | Mean | Median | p10 | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | --- | ---- | ------- |
+| patient  | 74.8 %                   | 7.7  | 1.0    | 0.5 | 23.5 | 3600    |
+| cautious | 6.5 %                    | 12.1 | 10.5   | 5.0 | 21.5 | 3600    |
+| hunter   | 18.7 %                   | 4.7  | 1.0    | 0.0 | 11.0 | 2400    |
+
+| Team   | Matches won (N = 300) |
+| ------ | --------------------- |
+| Spring | 27.3 %                |
+| Summer | 25.0 %                |
+| Autumn | 22.3 %                |
+| Winter | 25.3 %                |
+
+Field coins gone at the halvings, per match (N = 300): mean 10.9, median 10.0, p10 6.0, p90 17.0
+
+## What the numbers say
+
+- **Patient dominates the top, cautious the middle.** With the current config (N = 300) the
+  best player of a match is patient in 66.5 %, hunter in 33.5 %, cautious never. But the
+  patient median is 2.0 (p10 0.5, p90 73.5): most patient bots end with almost nothing and a
+  few win big; cautious is steady (median 17.5, p10 6.0, p90 35.5). The swap chain pays only
+  for the patient bot that is never robbed.
+- **Teams are fair.** 24.3 % to 25.5 % per team with the current config (N = 300; an even
+  split is 25 %). The two variants stay between 22.3 % and 29.3 %.
+- **stealShare changes most at the top.** At 0.25 the hunters' share of best players falls
+  from 33.5 % to 12.0 % and patient rises to 88.0 % (N = 300 each); at 0.75 (stage 1, N = 30)
+  they move by about 7 points (patient 63.3 %, hunter 36.7 %).
+- **coinSpawnPerSecond = 1 makes the whole match poor.** All means drop to about a third
+  (patient 7.7, cautious 12.1, hunter 4.7; N = 300) and cautious becomes the best player in
+  6.5 % of matches; with 3 coins per second (stage 1, N = 30) the means rise by a third (cautious) to almost
+  double (hunter).
+- **The unchanged spawn rate across halvings** (CONCEPT.md §13, point 2): with 2 coins per
+  second about 33 field coins disappear at the three halvings per match (N = 300; p10 19,
+  p90 50), against about 600 spawned per match (`pnpm simulate --seed 1`: 599); the
+  halving is a deadline for carried coins, not a loss of field coins.
+- **Carry speed** (stage 1, N = 30) moves the shares by 10–13 points either way; not run at 300.
+
+Nothing here changes a default; the owner decides.
