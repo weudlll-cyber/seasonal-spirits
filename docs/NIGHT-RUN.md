@@ -33,8 +33,8 @@ A Claude Code session running unattended (`dontAsk` permission mode) uses this r
 - Stop by port:
   `powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 3930 -State Listen | %{ Stop-Process -Id $_.OwningProcess -Force }"`
 
-On Linux the owner's server uses `nohup … &` with the same idea; the detail is in
-[PHASE0.md](PHASE0.md).
+On the owner's server nothing runs detached: the probe runs in a throw-away Docker
+container; the run sheet is in [PHASE0.md](PHASE0.md).
 
 ## Rules the session will not break
 

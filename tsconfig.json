@@ -1,4 +1,4 @@
-// Seasonal Spirits — type-checks the root config files (ESLint, Prettier).
+// Seasonal Spirits — type-checks the root config files and the repository scripts.
 // Gives them a TypeScript program for typecheck and typed linting; workspace projects have
 // their own tsconfig.json.
 {
@@ -8,5 +8,5 @@
     "checkJs": true,
     "types": ["node"]
   },
-  "include": ["*.js", "*.ts"]
+  "include": ["*.js", "*.ts", "scripts/*.mjs", "scripts/*.ts"]
 }

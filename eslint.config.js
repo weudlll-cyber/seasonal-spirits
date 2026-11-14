@@ -40,6 +40,11 @@ export default defineConfig(
     },
   },
   {
+    // Plain Node scripts: TypeScript's own checks do not cover their globals here.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+  },
+  {
     files: ['**/*.test.ts'],
     rules: { 'max-lines': ['error', { max: 400 }] },
   },

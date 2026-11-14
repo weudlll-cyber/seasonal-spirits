@@ -1,13 +1,18 @@
-# Seasonal Spirits — CI: the same "pnpm verify" developers run locally.
+# Seasonal Spirits — CI: the full "pnpm verify", run here instead of on the owner's PC.
 # One job on every branch push and every pull request to master; the toolchain versions come
 # from package.json "packageManager" and .nvmrc (shared setup in .github/actions/setup).
 name: CI
 
+# Markdown under docs/ and reports/ cannot change a check's answer (Prettier ignores
+# reports/; docs/ is formatted locally by pnpm verify:changed). Root Markdown files
+# (CONCEPT.md, README.md, CLAUDE.md) are not listed, so they still run the format check.
 on:
   push:
     branches: ['**']
+    paths-ignore: ['docs/**/*.md', 'reports/**/*.md']
   pull_request:
     branches: [master]
+    paths-ignore: ['docs/**/*.md', 'reports/**/*.md']
 
 permissions:
   contents: read
@@ -23,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # pnpm, Node and the install; restores the pnpm store cache keyed on the lockfile.
       - uses: ./.github/actions/setup
       # Format check, lint, typecheck, tests.
       - run: pnpm verify

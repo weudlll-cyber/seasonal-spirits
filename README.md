@@ -36,10 +36,19 @@ pnpm install
 pnpm probe        # full probe run: server + 32 bots + headless spectator, writes a report
 pnpm server       # just the server (for the viewer)
 pnpm viewer       # browser viewer on http://localhost:5930
-pnpm verify       # format:check + lint + typecheck + test
+pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
+pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```
 
-The Linux run sheet for the probe is in [docs/PHASE0.md](docs/PHASE0.md).
+## Checks
+
+Locally, `pnpm verify:changed` checks only what a change can have affected; the full suite
+runs in GitHub Actions on every push. Which check runs when, and how a check that already
+ran is recorded instead of repeated, is in [CLAUDE.md](CLAUDE.md) ("Checks") and in the
+CHECKS DONE part of [docs/BACKLOG.md](docs/BACKLOG.md).
+
+The server run sheet for the probe (Docker, leaves nothing installed) is in
+[docs/PHASE0.md](docs/PHASE0.md).
 
 ## Documents
 
