@@ -220,10 +220,19 @@ importers:
         specifier: 8.3.4
         version: 8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)
 
+  packages/game-core:
+    devDependencies:
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+
   packages/protocol: {}
 
   tools/probe:
     dependencies:
+      '@seasonal-spirits/game-core':
+        specifier: workspace:*
+        version: link:../../packages/game-core
       '@seasonal-spirits/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol

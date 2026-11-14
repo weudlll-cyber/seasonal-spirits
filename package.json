@@ -19,7 +19,10 @@
     "verify:changed": "node scripts/verify-changed.mjs",
     "server": "pnpm --filter @seasonal-spirits/server start",
     "viewer": "pnpm --filter @seasonal-spirits/viewer start",
-    "probe": "pnpm --filter @seasonal-spirits/probe start"
+    "probe": "pnpm --filter @seasonal-spirits/probe start",
+    "simulate": "pnpm --filter @seasonal-spirits/game-core simulate",
+    "dev": "node scripts/dev.mjs",
+    "dev:stop": "node scripts/dev.mjs stop"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

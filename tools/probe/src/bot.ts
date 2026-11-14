@@ -3,6 +3,7 @@
 // incoming messages pass through the artificial delay queue.
 
 import WebSocket, { type RawData } from 'ws';
+import { mulberry32 } from '@seasonal-spirits/game-core';
 import { DelayQueue, decodeState, type ServerState } from '@seasonal-spirits/protocol';
 
 export interface BotOptions {
@@ -130,6 +131,11 @@ export class ProbeBot {
   }
 }
 
+// `count` bots with distinct, fixed seeds, so every run steers the same way.
+export function spawnBots(count: number, base: Omit<BotOptions, 'seed'>): ProbeBot[] {
+  return Array.from({ length: count }, (_, i) => new ProbeBot({ ...base, seed: i * 2654435761 }));
+}
+
 function toUint8Array(data: RawData): Uint8Array {
   if (data instanceof ArrayBuffer) return new Uint8Array(data);
   if (data instanceof Uint8Array) return data;
@@ -149,15 +155,4 @@ function toUint8Array(data: RawData): Uint8Array {
     (data as Buffer).byteOffset,
     (data as Buffer).byteLength,
   );
-}
-
-function mulberry32(seed: number): () => number {
-  let s = seed >>> 0;
-  return () => {
-    s = (s + 0x6d2b79f5) >>> 0;
-    let t = s;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }

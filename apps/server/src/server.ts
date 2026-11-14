@@ -1,27 +1,36 @@
 // Seasonal Spirits — tick server + WebSocket handler for the empty-map probe.
 // Fixed tick rate with drift correction (accumulated time, not a bare setInterval). One
 // binary state message per tick to every client. Tracks CPU usage, achieved Hz and max
-// tick duration; exposes /metrics-lite as JSON on the same HTTP server.
+// tick duration; exposes /metrics-lite as JSON on the same HTTP server. Every client message
+// passes the shared validator first (docs/THREATS.md lists what a client can try).
 
 import http from 'node:http';
-import { WebSocketServer, type WebSocket } from 'ws';
+import type { AddressInfo } from 'node:net';
+import { WebSocketServer, type RawData, type WebSocket } from 'ws';
 import {
+  MAX_CLIENT_MESSAGE_BYTES,
   encodeState,
   encodedSize,
+  parseClientMessage,
   type ClientHello,
   type ClientInput,
-  type ClientMessage,
 } from '@seasonal-spirits/protocol';
+import { handleHttp } from './http-routes.js';
 import { World } from './world.js';
 
 export interface ServerConfig {
-  port: number;
+  port: number; // 0 picks a free port (tests); port() reports the bound one
   tickHz: number;
   world: number;
   speed: number;
   maxGhosts: number;
-  maxInputsPerSecond: number;
+  maxInputsPerSecond: number; // every message counts, valid or not
+  maxConnectionsPerAddress: number;
+  devCors: boolean; // CORS `*` on /metrics-lite, development only
 }
+
+// WebSocket close code 1008: policy violation.
+const POLICY_VIOLATION = 1008;
 
 export interface ServerMetrics {
   achievedHz: number; // computed over the recent window
@@ -38,8 +47,9 @@ interface ClientRecord {
   id: number;
   kind: 'player' | 'spectator' | 'pending';
   ws: WebSocket;
-  inputsThisSecond: number;
-  inputWindowStart: number;
+  address: string;
+  messagesThisSecond: number;
+  messageWindowStart: number;
 }
 
 export class GameServer {
@@ -50,6 +60,7 @@ export class GameServer {
   private tickTimer: NodeJS.Timeout | null = null;
   private nextClientId = 1;
   private readonly clients = new Map<number, ClientRecord>();
+  private readonly perAddress = new Map<string, number>();
   private tickCount = 0;
   private maxTickMs = 0;
   private lastTickWall = 0;
@@ -66,11 +77,12 @@ export class GameServer {
 
   async listen(): Promise<void> {
     this.http = http.createServer((req, res) => {
-      this.handleHttp(req, res);
+      handleHttp(req, res, () => this.metrics(), this.cfg.devCors);
     });
-    this.wss = new WebSocketServer({ server: this.http });
-    this.wss.on('connection', (ws) => {
-      this.handleConnection(ws);
+    // Frames above the bound are refused by ws itself (close code 1009) before we see them.
+    this.wss = new WebSocketServer({ server: this.http, maxPayload: MAX_CLIENT_MESSAGE_BYTES });
+    this.wss.on('connection', (ws, req) => {
+      this.handleConnection(ws, req.socket.remoteAddress ?? 'unknown');
     });
     await new Promise<void>((resolve) => this.http.listen(this.cfg.port, resolve));
     this.start();
@@ -129,50 +141,68 @@ export class GameServer {
     }
   }
 
-  private handleConnection(ws: WebSocket): void {
-    if (this.clients.size >= this.cfg.maxGhosts * 2) {
-      ws.close();
+  private handleConnection(ws: WebSocket, address: string): void {
+    const fromAddress = this.perAddress.get(address) ?? 0;
+    if (
+      this.clients.size >= this.cfg.maxGhosts * 2 ||
+      fromAddress >= this.cfg.maxConnectionsPerAddress
+    ) {
+      ws.close(POLICY_VIOLATION);
       return;
     }
+    this.perAddress.set(address, fromAddress + 1);
     const id = this.nextClientId++;
     const rec: ClientRecord = {
       id,
       kind: 'pending',
       ws,
-      inputsThisSecond: 0,
-      inputWindowStart: Date.now(),
+      address,
+      messagesThisSecond: 0,
+      messageWindowStart: Date.now(),
     };
     this.clients.set(id, rec);
-    ws.on('message', (data) => {
-      this.handleMessage(rec, data);
+    ws.on('message', (data, isBinary) => {
+      this.handleMessage(rec, data, isBinary);
     });
     ws.on('close', () => {
-      this.clients.delete(id);
-      this.world.removeGhost(id);
+      this.drop(rec);
     });
     ws.on('error', () => {
-      this.clients.delete(id);
-      this.world.removeGhost(id);
+      this.drop(rec);
     });
   }
 
-  private handleMessage(rec: ClientRecord, data: unknown): void {
-    let msg: ClientMessage;
-    try {
-      msg = JSON.parse(String(data)) as ClientMessage;
-    } catch {
+  // Idempotent: 'error' and 'close' may both fire for one socket.
+  private drop(rec: ClientRecord): void {
+    if (!this.clients.delete(rec.id)) return;
+    this.world.removeGhost(rec.id);
+    const left = (this.perAddress.get(rec.address) ?? 1) - 1;
+    if (left > 0) this.perAddress.set(rec.address, left);
+    else this.perAddress.delete(rec.address);
+  }
+
+  private handleMessage(rec: ClientRecord, data: RawData, isBinary: boolean): void {
+    // A spectator sends nothing after its hello; any further message ends the connection.
+    if (rec.kind === 'spectator') {
+      rec.ws.close(POLICY_VIOLATION);
       return;
     }
-    // A switch with no default: any kind outside the protocol falls through and is ignored.
-    switch (msg.kind) {
-      case 'player':
-      case 'spectator':
-        this.handleHello(rec, msg.kind);
-        return;
-      case 'input':
-        this.handleInput(rec, msg);
-        return;
+    if (!this.withinRate(rec) || isBinary) return;
+    const msg = parseClientMessage(rawToText(data));
+    if (msg === null) return;
+    if (msg.kind === 'input') this.handleInput(rec, msg);
+    else this.handleHello(rec, msg.kind);
+  }
+
+  // Every message counts against the per-second budget, valid or not; the rest is dropped.
+  private withinRate(rec: ClientRecord): boolean {
+    const now = Date.now();
+    if (now - rec.messageWindowStart >= 1000) {
+      rec.messageWindowStart = now;
+      rec.messagesThisSecond = 0;
     }
+    rec.messagesThisSecond++;
+    return rec.messagesThisSecond <= this.cfg.maxInputsPerSecond;
   }
 
   private handleHello(rec: ClientRecord, kind: ClientHello['kind']): void {
@@ -188,33 +218,8 @@ export class GameServer {
   }
 
   private handleInput(rec: ClientRecord, msg: ClientInput): void {
-    if (rec.kind !== 'player') return; // spectators and pendings send nothing
-    const now = Date.now();
-    if (now - rec.inputWindowStart >= 1000) {
-      rec.inputWindowStart = now;
-      rec.inputsThisSecond = 0;
-    }
-    if (rec.inputsThisSecond >= this.cfg.maxInputsPerSecond) return;
-    rec.inputsThisSecond++;
-    if (Number.isFinite(msg.dx) && Number.isFinite(msg.dy)) {
-      this.world.setDirection(rec.id, msg.dx, msg.dy);
-    }
-  }
-
-  private handleHttp(req: http.IncomingMessage, res: http.ServerResponse): void {
-    if (req.url === '/metrics-lite') {
-      const m = this.metrics();
-      res.writeHead(200, {
-        'content-type': 'application/json',
-        // The viewer runs on its own Vite dev port; the probe curls from the same machine.
-        // Phase 0 only; the production front door is the website's nginx, same origin.
-        'access-control-allow-origin': '*',
-      });
-      res.end(JSON.stringify(m));
-      return;
-    }
-    res.writeHead(404);
-    res.end();
+    if (rec.kind !== 'player') return; // a pending client has not said hello yet
+    this.world.setDirection(rec.id, msg.dx, msg.dy);
   }
 
   metrics(): ServerMetrics {
@@ -246,10 +251,16 @@ export class GameServer {
   }
 
   port(): number {
-    return this.cfg.port;
+    return (this.http.address() as AddressInfo | null)?.port ?? this.cfg.port;
   }
 
   clientCount(): number {
     return this.clients.size;
   }
+}
+
+function rawToText(data: RawData): string {
+  if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
+  if (data instanceof ArrayBuffer) return Buffer.from(data).toString('utf8');
+  return data.toString('utf8');
 }

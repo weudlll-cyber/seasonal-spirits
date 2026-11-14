@@ -5,8 +5,8 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { GameServer, type ServerMetrics } from '@seasonal-spirits/server';
-import { ProbeBot } from './bot.js';
+import { GameServer, envInt, refuseProduction, type ServerMetrics } from '@seasonal-spirits/server';
+import { spawnBots } from './bot.js';
 import {
   evaluateCriteria,
   jumpsLabel,
@@ -17,19 +17,21 @@ import {
 } from './report.js';
 import { HeadlessSpectator } from './spectator.js';
 
+const env = process.env;
+refuseProduction(env, 'The probe');
+
 const cfg: ProbeConfig = {
-  port: Number(process.env.PORT ?? 3930),
-  tickHz: Number(process.env.TICK_HZ ?? 20),
-  world: Number(process.env.WORLD ?? 2000),
-  speed: Number(process.env.SPEED ?? 300),
-  maxGhosts: Number(process.env.GHOSTS ?? 32),
-  maxInputsPerSecond: Number(process.env.MAX_INPUTS_PER_SECOND ?? 20),
-  latencyMin: Number(process.env.LATENCY_MIN ?? 100),
-  latencyMax: Number(process.env.LATENCY_MAX ?? 200),
-  durationS: Number(process.env.DURATION_S ?? 120),
-  bufferMs: Number(process.env.BUFFER_MS ?? 100),
-  reportDir:
-    process.env.REPORT_DIR ?? path.resolve(process.env.INIT_CWD ?? process.cwd(), 'reports/phase0'),
+  port: envInt(env, 'PORT', 3930, [1, 65535]),
+  tickHz: envInt(env, 'TICK_HZ', 20, [1, 60]),
+  world: envInt(env, 'WORLD', 2000, [100, 100_000]),
+  speed: envInt(env, 'SPEED', 300, [1, 10_000]),
+  maxGhosts: envInt(env, 'GHOSTS', 32, [1, 256]),
+  maxInputsPerSecond: envInt(env, 'MAX_INPUTS_PER_SECOND', 20, [1, 1000]),
+  latencyMin: envInt(env, 'LATENCY_MIN', 100, [0, 10_000]),
+  latencyMax: envInt(env, 'LATENCY_MAX', 200, [0, 10_000]),
+  durationS: envInt(env, 'DURATION_S', 120, [1, 3600]),
+  bufferMs: envInt(env, 'BUFFER_MS', 100, [0, 10_000]),
+  reportDir: env.REPORT_DIR ?? path.resolve(env.INIT_CWD ?? process.cwd(), 'reports/phase0'),
 };
 
 async function main(): Promise<void> {
@@ -41,6 +43,9 @@ async function main(): Promise<void> {
     speed: cfg.speed,
     maxGhosts: cfg.maxGhosts,
     maxInputsPerSecond: cfg.maxInputsPerSecond,
+    // All bots and the spectator connect from this machine.
+    maxConnectionsPerAddress: cfg.maxGhosts + 1,
+    devCors: false,
   });
   await server.listen();
 
@@ -49,7 +54,12 @@ async function main(): Promise<void> {
 
   console.log(`[probe] spawning ${cfg.maxGhosts} bots`);
   const url = `ws://localhost:${cfg.port}`;
-  const bots = spawnBots(url);
+  const bots = spawnBots(cfg.maxGhosts, {
+    url,
+    worldSize: cfg.world,
+    latencyMinMs: cfg.latencyMin,
+    latencyMaxMs: cfg.latencyMax,
+  });
 
   // Give bots a moment to say hello, then reset the server's metrics window so the
   // reported numbers reflect the measurement period, not the ramp-up.
@@ -99,22 +109,6 @@ async function writeReport(metrics: ServerMetrics, summary: SpectatorSummary): P
     `[probe] criteria: hz-cpu=${pf(criteria.hzUnder30Cpu)} ` +
       `bytes=${pf(criteria.bytesUnder1Kb)} ${jumpsLabel(criteria.jumpsPer60s)}`,
   );
-}
-
-function spawnBots(url: string): ProbeBot[] {
-  const bots: ProbeBot[] = [];
-  for (let i = 0; i < cfg.maxGhosts; i++) {
-    bots.push(
-      new ProbeBot({
-        url,
-        worldSize: cfg.world,
-        latencyMinMs: cfg.latencyMin,
-        latencyMaxMs: cfg.latencyMax,
-        seed: i * 2654435761,
-      }),
-    );
-  }
-  return bots;
 }
 
 function sleep(ms: number): Promise<void> {

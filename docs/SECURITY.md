@@ -1,7 +1,9 @@
 # Security checks
 
 What runs automatically, where its results appear, and what only the owner can switch on.
-The rules for the code itself are in [CLAUDE.md](../CLAUDE.md) ("Security").
+The rules for the code itself are in [CLAUDE.md](../CLAUDE.md) ("Security"); what a
+cheating or broken client can try, and the test for each answer, is in
+[THREATS.md](THREATS.md).
 
 ## Automated checks
 
