@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seasonal Spirits — Phase 0 viewer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #0b0f14;
+        color: #e6edf3;
+        font-family: system-ui, sans-serif;
+        overflow: hidden;
+      }
+      #hud {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid #22303c;
+        border-radius: 6px;
+        font-size: 13px;
+        line-height: 1.4;
+        white-space: pre;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="map"></canvas>
+    <pre id="hud">connecting…</pre>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

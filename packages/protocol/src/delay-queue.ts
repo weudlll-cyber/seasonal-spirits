@@ -1,0 +1,63 @@
+// Seasonal Spirits — artificial one-way latency with preserved order.
+// Used by bots (both directions) and the headless spectator and viewer (states in).
+// Delay is uniform in [minMs, maxMs]; order is preserved by taking
+// max(previous delivery, now + random) as each item's delivery time. With 0/0 the queue
+// becomes a straight pass-through.
+
+export interface DelayQueueClock {
+  now(): number;
+  schedule(delayMs: number, fn: () => void): void;
+}
+
+export const realClock: DelayQueueClock = {
+  now: () => Date.now(),
+  schedule: (ms, fn) => {
+    setTimeout(fn, Math.max(0, ms));
+  },
+};
+
+export interface Random {
+  next(): number; // [0, 1)
+}
+
+export const mathRandom: Random = { next: () => Math.random() };
+
+export class DelayQueue<T> {
+  private readonly minMs: number;
+  private readonly maxMs: number;
+  private readonly clock: DelayQueueClock;
+  private readonly rng: Random;
+  private readonly onDeliver: (item: T) => void;
+  private lastDelivery = 0; // absolute time of the last scheduled delivery
+
+  constructor(
+    minMs: number,
+    maxMs: number,
+    onDeliver: (item: T) => void,
+    clock: DelayQueueClock = realClock,
+    rng: Random = mathRandom,
+  ) {
+    if (minMs < 0 || maxMs < minMs) {
+      throw new Error(`DelayQueue: invalid bounds min=${minMs} max=${maxMs}`);
+    }
+    this.minMs = minMs;
+    this.maxMs = maxMs;
+    this.clock = clock;
+    this.rng = rng;
+    this.onDeliver = onDeliver;
+  }
+
+  push(item: T): void {
+    if (this.minMs === 0 && this.maxMs === 0) {
+      this.onDeliver(item);
+      return;
+    }
+    const now = this.clock.now();
+    const sampled = this.minMs + this.rng.next() * (this.maxMs - this.minMs);
+    const naturalDelivery = now + sampled;
+    const delivery = Math.max(this.lastDelivery, naturalDelivery);
+    this.lastDelivery = delivery;
+    const delay = delivery - now;
+    this.clock.schedule(delay, () => this.onDeliver(item));
+  }
+}

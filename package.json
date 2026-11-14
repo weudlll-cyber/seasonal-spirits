@@ -1,0 +1,33 @@
+{
+  "name": "seasonal-spirits",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Seasonal Spirits — a real-time team game for the Seasonal Entertainment community.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --parallel exec tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "server": "pnpm --filter @seasonal-spirits/server start",
+    "viewer": "pnpm --filter @seasonal-spirits/viewer start",
+    "probe": "pnpm --filter @seasonal-spirits/probe start",
+    "simulate": "pnpm --filter @seasonal-spirits/game-core simulate"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.10.1",
+    "eslint": "^9.15.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0",
+    "vitest": "^2.1.5"
+  }
+}

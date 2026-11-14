@@ -1,0 +1,8 @@
+node_modules/
+dist/
+logs/
+tmp/
+night-task.md
+reports/screens/latest/
+.claude/settings.local.json
+*.log
