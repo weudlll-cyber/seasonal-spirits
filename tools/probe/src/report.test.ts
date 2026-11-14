@@ -6,6 +6,7 @@ import type { ServerMetrics } from '@seasonal-spirits/server';
 import {
   evaluateCriteria,
   renderCriteria,
+  renderReport,
   type ProbeConfig,
   type SpectatorSummary,
 } from './report.js';
@@ -78,5 +79,18 @@ describe('probe verdict', () => {
     );
     expect(lines).toContain('- state message under 1 KB: **FAIL**');
     expect(lines.at(-1)).toBe('## Verdict: at least one measured criterion FAIL; jumps by eye');
+  });
+
+  it('never prints the report directory, a machine path that may name the user', () => {
+    const machineCfg = { tickHz: 20, reportDir: 'C:/Users/someone/reports' } as ProbeConfig;
+    const text = renderReport({
+      cfg: machineCfg,
+      metrics: metrics({}),
+      summary: summary(0),
+      criteria: evaluateCriteria(machineCfg, metrics({}), summary(0)),
+      hostname: 'host',
+    });
+    expect(text).not.toContain('someone');
+    expect(text).not.toContain('reportDir');
   });
 });

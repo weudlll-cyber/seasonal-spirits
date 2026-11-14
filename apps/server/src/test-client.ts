@@ -3,7 +3,12 @@
 
 import WebSocket from 'ws';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import { decodeState, type ServerState, type ServerWelcome } from '@seasonal-spirits/protocol';
+import {
+  decodeState,
+  parseServerMessage,
+  type ServerState,
+  type ServerWelcome,
+} from '@seasonal-spirits/protocol';
 import { GameServer, type ServerConfig } from './server.js';
 
 // Four slots; a left player's slot goes back to a bot on the next tick.
@@ -61,9 +66,10 @@ export function nthState(ws: WebSocket, n: number): Promise<ServerState> {
 function welcome(ws: WebSocket): Promise<ServerWelcome> {
   return new Promise((resolve) => {
     const onMessage = (data: WebSocket.RawData, isBinary: boolean): void => {
-      if (isBinary) return;
+      const greeting = isBinary ? null : parseServerMessage((data as Buffer).toString('utf8'));
+      if (!greeting) return;
       ws.off('message', onMessage);
-      resolve(JSON.parse((data as Buffer).toString('utf8')) as ServerWelcome);
+      resolve(greeting);
     };
     ws.on('message', onMessage);
   });

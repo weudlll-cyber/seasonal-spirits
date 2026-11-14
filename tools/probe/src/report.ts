@@ -71,7 +71,10 @@ export function renderReport(r: ReportInput): string {
   lines.push('');
   lines.push('## Configuration');
   lines.push('```');
-  lines.push(JSON.stringify(r.cfg, null, 2));
+  // The report directory is a machine path (it may name the user); it stays out of the report.
+  lines.push(
+    JSON.stringify(r.cfg, (key, value: unknown) => (key === 'reportDir' ? undefined : value), 2),
+  );
   lines.push('```');
   lines.push('');
   lines.push('## Server numbers');

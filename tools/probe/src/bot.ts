@@ -1,10 +1,16 @@
-// Seasonal Spirits — a probe bot. A normal WebSocket player: a direction every 50 ms,
-// a fresh random direction every 0.5-2 s, and a wall turn at the world edge. Outgoing and
-// incoming messages pass through the artificial delay queue.
+// Seasonal Spirits — a probe bot. A normal WebSocket player that sends the direction its
+// BotPolicy chooses every 50 ms; it knows its own ghost from the welcome message. Outgoing
+// and incoming messages pass through the artificial delay queue.
 
 import WebSocket, { type RawData } from 'ws';
 import { mulberry32 } from '@seasonal-spirits/game-core';
-import { DelayQueue, decodeState, type ServerState } from '@seasonal-spirits/protocol';
+import {
+  DelayQueue,
+  decodeState,
+  parseServerMessage,
+  type ServerState,
+} from '@seasonal-spirits/protocol';
+import { BotPolicy } from './bot-policy.js';
 import { toUint8Array } from './raw.js';
 
 export interface BotOptions {
@@ -15,25 +21,26 @@ export interface BotOptions {
   seed: number;
 }
 
+const WALL_MARGIN = 50;
+const realClock = { now: (): number => Date.now() };
+
 export class ProbeBot {
-  private readonly opts: BotOptions;
-  private ws: WebSocket;
-  private readonly rng: () => number;
-  private dx = 0;
-  private dy = 0;
-  private x = 0;
-  private y = 0;
-  private hasPos = false;
-  private nextTurnAt = 0;
-  private sendTimer: NodeJS.Timeout | null = null;
+  private readonly ws: WebSocket;
+  private readonly policy: BotPolicy;
   private readonly outbound: DelayQueue<string>;
   private readonly inbound: DelayQueue<Uint8Array>;
-  private statesReceived = 0;
-  private id = 0;
+  private sendTimer: NodeJS.Timeout | null = null;
+  private ghost: number | null = null;
+  private x: number | null = null;
+  private y: number | null = null;
 
   constructor(opts: BotOptions) {
-    this.opts = opts;
-    this.rng = mulberry32(opts.seed);
+    this.policy = new BotPolicy({
+      worldSize: opts.worldSize,
+      wallMargin: WALL_MARGIN,
+      rng: mulberry32(opts.seed),
+      clock: realClock,
+    });
     this.outbound = new DelayQueue<string>(opts.latencyMinMs, opts.latencyMaxMs, (s) => {
       if (this.ws.readyState === WebSocket.OPEN) this.ws.send(s);
     });
@@ -45,91 +52,44 @@ export class ProbeBot {
     this.ws.on('open', () => {
       this.onOpen();
     });
-    // State messages are binary; the one text message (the welcome) is not needed here.
     this.ws.on('message', (data: RawData, isBinary: boolean) => {
-      if (isBinary) this.inbound.push(toUint8Array(data));
+      this.onMessage(data, isBinary);
     });
     this.ws.on('error', () => {
-      // swallowed; probe will report "clients" from the server metrics
+      // swallowed; the probe reports clients from the server metrics
     });
   }
 
   private onOpen(): void {
     this.outbound.push(JSON.stringify({ kind: 'player' }));
-    // Pick a first random direction and schedule the next change.
-    this.chooseDirection();
-    this.scheduleNextTurn();
     this.sendTimer = setInterval(() => {
-      this.sendInput();
+      const { dx, dy } = this.policy.tick(this.x, this.y);
+      this.outbound.push(JSON.stringify({ kind: 'input', dx, dy }));
     }, 50);
   }
 
-  private chooseDirection(): void {
-    const angle = this.rng() * Math.PI * 2;
-    this.dx = Math.cos(angle);
-    this.dy = Math.sin(angle);
-  }
-
-  private scheduleNextTurn(): void {
-    this.nextTurnAt = Date.now() + 500 + this.rng() * 1500;
-  }
-
-  private sendInput(): void {
-    // Wall turn: if we know where we are and we're pointing out of the world, flip inward.
-    if (this.hasPos) {
-      const margin = 50;
-      if (this.x < margin && this.dx < 0) this.dx = Math.abs(this.dx);
-      if (this.x > this.opts.worldSize - margin && this.dx > 0) this.dx = -Math.abs(this.dx);
-      if (this.y < margin && this.dy < 0) this.dy = Math.abs(this.dy);
-      if (this.y > this.opts.worldSize - margin && this.dy > 0) this.dy = -Math.abs(this.dy);
+  // State is binary; the one text message is the welcome naming the bot's ghost.
+  private onMessage(data: RawData, isBinary: boolean): void {
+    const bytes = toUint8Array(data);
+    if (isBinary) {
+      this.inbound.push(bytes);
+      return;
     }
-    if (Date.now() >= this.nextTurnAt) {
-      this.chooseDirection();
-      this.scheduleNextTurn();
-    }
-    this.outbound.push(JSON.stringify({ kind: 'input', dx: this.dx, dy: this.dy }));
+    const welcome = parseServerMessage(new TextDecoder().decode(bytes));
+    if (welcome) this.ghost = welcome.ghost;
   }
 
   private onState(s: ServerState): void {
-    this.statesReceived++;
-    if (this.id === 0 && s.ghosts.length > 0) {
-      // We identify our own ghost by the last one added; but that's fragile. Instead we
-      // just read the whole state and approximate our own position by averaging — good
-      // enough for a "turn at the wall" heuristic in the probe.
-      let sx = 0;
-      let sy = 0;
-      for (const g of s.ghosts) {
-        sx += g.x;
-        sy += g.y;
-      }
-      this.x = sx / s.ghosts.length;
-      this.y = sy / s.ghosts.length;
-      this.hasPos = true;
-    } else if (s.ghosts.length > 0) {
-      // Keep the heuristic position fresh.
-      let sx = 0;
-      let sy = 0;
-      for (const g of s.ghosts) {
-        sx += g.x;
-        sy += g.y;
-      }
-      this.x = sx / s.ghosts.length;
-      this.y = sy / s.ghosts.length;
-    }
+    const own = s.ghosts.find((g) => g.id === this.ghost);
+    if (!own) return;
+    this.x = own.x;
+    this.y = own.y;
   }
 
   close(): void {
     if (this.sendTimer) clearInterval(this.sendTimer);
     this.sendTimer = null;
-    try {
-      this.ws.close();
-    } catch {
-      // ignore
-    }
-  }
-
-  getStatesReceived(): number {
-    return this.statesReceived;
+    this.ws.close();
   }
 }
 

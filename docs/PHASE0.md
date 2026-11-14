@@ -79,28 +79,31 @@ line; reports from later runs carry the count only.)
 
 ## Against the match server (2026-11-14)
 
-One 120 s run on the same PC after the server started playing real matches (game core on
-the 20 Hz loop, 32 slots, the probe bots replacing the server's bots), report
-[`reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md`](../reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md):
+Two 120 s runs on the same PC after the server started playing real matches (game core on
+the 20 Hz loop, 32 slots, the probe bots replacing the server's bots):
 
-| Number                                          | Phase 0 Run 3 (empty map) | Match server      |
-| ----------------------------------------------- | ------------------------- | ----------------- |
-| Achieved Hz                                     | 20.00                     | 20.00             |
-| CPU, % of one core (whole probe process)        | 18.99 %                   | 23.30 %           |
-| Max tick duration                               | 44 ms                     | 177 ms            |
-| State message bytes                             | 201                       | max 454 (avg 408) |
-| Jumps per 60 s                                  | 32                        | 414               |
-| Underruns per 60 s                              | 0                         | 162               |
-| Spectator frames rendered (60 Hz nominal: 7200) | 5338                      | 4233              |
+| Number                                          | Phase 0 Run 3 (empty map) | Match server, first run | Match server, check run |
+| ----------------------------------------------- | ------------------------- | ----------------------- | ----------------------- |
+| Achieved Hz                                     | 20.00                     | 20.00                   | 20.00                   |
+| CPU, % of one core (whole probe process)        | 18.99 %                   | 23.30 %                 | 16.39 %                 |
+| Max tick duration                               | 44 ms                     | 177 ms                  | 26 ms                   |
+| State message bytes                             | 201                       | max 454 (avg 408)       | max 454 (avg 406)       |
+| Jumps per 60 s                                  | 32                        | 414                     | 0                       |
+| Underruns per 60 s                              | 0                         | 162                     | 0                       |
+| Spectator frames rendered (60 Hz nominal: 7200) | 5338                      | 4233                    | 5481                    |
 
-The two measured criteria still pass. The jump and underrun counts and the longest tick are
-clearly higher; this is one run, and its cause is not measured. The probe runs server, 32
-bots and the spectator in one Node process, so a slower event loop shows up in all three
-numbers and in the lower frame count; the PC also ran Docker Desktop during this run
-(whether it ran during Run 3 is not known). Whether the jumps are visible is again a question for the eye (`pnpm
-dev`, viewer on http://localhost:5930). The CPU number is now computed over the
-measurement window only; Run 3 divided the same CPU time by the uptime including the 1.5 s
-ramp-up, about 1 % lower.
+First run: report
+[`reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md`](../reports/phase0/2026-11-14T12-26-57-230Z-Testrechner.md),
+with other load on the PC (Docker Desktop among it). Check run, same server code, PC mostly
+idle: report
+[`reports/phase0/2026-11-14T15-11-15-932Z-Testrechner.md`](../reports/phase0/2026-11-14T15-11-15-932Z-Testrechner.md).
+The owner had watched the viewer at 15:52 the same day with the PC mostly idle: 0 jumps per
+60 s and no visible stutter. The check run's rule (jumps ≤ 50 per 60 s, underruns ≤ 20 per
+60 s, max tick ≤ 50 ms) holds, so **the first run's numbers were load on the PC**, not the
+match server; nothing in the server was changed for it. The probe runs server, 32 bots and
+the spectator in one Node process, so a busy PC shows up in all of jumps, underruns, tick
+time and frame count at once. The CPU number is computed over the measurement window only;
+Run 3 divided the same CPU time by the uptime including the 1.5 s ramp-up, about 1 % lower.
 
 State size outside the probe: a whole 32-bot match encoded tick by tick (seed 1) never
 exceeds 402 bytes (19 field coins); after the halving the largest is 354 bytes. With a full
