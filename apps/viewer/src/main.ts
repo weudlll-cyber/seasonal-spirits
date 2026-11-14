@@ -7,8 +7,10 @@ import {
   DelayQueue,
   JumpDetector,
   PerMinuteCounter,
+  RenderClock,
   decodeState,
   interpolate,
+  latestServerMs,
   trimBuffer,
   type BufferedState,
   type ServerState,
@@ -74,6 +76,7 @@ const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const jumpDetector = new JumpDetector({ speedUnitsPerSecond: SPEED });
+const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
   const state: ServerState = decodeState(buf);
@@ -108,7 +111,14 @@ setInterval(pollMetrics, 1000);
 
 function frame(): void {
   const now = Date.now();
-  const { ghosts, underrun } = interpolate(buffer, now, BUFFER_MS);
+  const target = renderClock.target(now, latestServerMs(buffer));
+  let ghosts: ReturnType<typeof interpolate>['ghosts'] = [];
+  let underrun = false;
+  if (target !== null) {
+    const r = interpolate(buffer, target);
+    ghosts = r.ghosts;
+    underrun = r.underrun;
+  }
   if (underrun) underrunCounter.record(now);
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);

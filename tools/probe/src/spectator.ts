@@ -7,8 +7,10 @@ import {
   DelayQueue,
   JumpDetector,
   PerMinuteCounter,
+  RenderClock,
   decodeState,
   interpolate,
+  latestServerMs,
   trimBuffer,
   type BufferedState,
 } from '@seasonal-spirits/protocol';
@@ -36,11 +38,13 @@ export class HeadlessSpectator {
   private jumps = new PerMinuteCounter();
   private underruns = new PerMinuteCounter();
   private readonly jumpDetector: JumpDetector;
+  private readonly renderClock: RenderClock;
   private framesRendered = 0;
 
   constructor(opts: SpectatorOptions) {
     this.opts = opts;
     this.jumpDetector = new JumpDetector({ speedUnitsPerSecond: opts.speedUnitsPerSecond });
+    this.renderClock = new RenderClock({ bufferMs: opts.bufferMs });
     this.inbound = new DelayQueue<Uint8Array>(opts.latencyMinMs, opts.latencyMaxMs, (buf) => {
       const now = Date.now();
       const state = decodeState(buf);
@@ -69,7 +73,12 @@ export class HeadlessSpectator {
 
   private renderFrame(): void {
     const now = Date.now();
-    const { ghosts, underrun } = interpolate(this.buffer, now, this.opts.bufferMs);
+    const target = this.renderClock.target(now, latestServerMs(this.buffer));
+    if (target === null) {
+      this.framesRendered++;
+      return;
+    }
+    const { ghosts, underrun } = interpolate(this.buffer, target);
     if (underrun && this.buffer.length > 0) this.underruns.record(now);
     const jumps = this.jumpDetector.observe(now, ghosts);
     if (jumps > 0) this.jumps.record(now, jumps);

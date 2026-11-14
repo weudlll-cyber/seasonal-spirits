@@ -20,7 +20,8 @@ const cfg = {
   latencyMax: Number(process.env.LATENCY_MAX ?? 200),
   durationS: Number(process.env.DURATION_S ?? 120),
   bufferMs: Number(process.env.BUFFER_MS ?? 100),
-  reportDir: process.env.REPORT_DIR ?? 'reports/phase0',
+  reportDir:
+    process.env.REPORT_DIR ?? path.resolve(process.env.INIT_CWD ?? process.cwd(), 'reports/phase0'),
 };
 
 async function main(): Promise<void> {
