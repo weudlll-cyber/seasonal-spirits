@@ -2,6 +2,7 @@
 // Pure functions, split from main.ts so the verdict can be tested without a probe run.
 
 import os from 'node:os';
+import { COIN_BYTES, GHOST_BYTES, HEADER_BYTES } from '@seasonal-spirits/protocol';
 import type { ServerMetrics } from '@seasonal-spirits/server';
 import type { HeadlessSpectator } from './spectator.js';
 
@@ -87,7 +88,7 @@ export function renderReport(r: ReportInput): string {
   );
   lines.push(
     `- bytes per state message: last ${r.metrics.stateBytes}, max **${r.metrics.maxStateBytes}** ` +
-      `(header 38 + 9 per ghost + 4 per field coin)`,
+      `(header ${HEADER_BYTES} + ${GHOST_BYTES} per ghost + ${COIN_BYTES} per field coin)`,
   );
   lines.push('');
   lines.push('## Spectator numbers');

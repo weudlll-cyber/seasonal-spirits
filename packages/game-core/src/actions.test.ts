@@ -85,7 +85,7 @@ describe('secure at the own shrine', () => {
     expect(m.state.ghosts.every((g) => g.securingUntilMs === null)).toBe(true);
   });
 
-  it('a cautious player who secures early keeps the value through the halving', () => {
+  it('a cautious player who secures early keeps the value through every halving', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
     const g = placeAtShrine(m, 1);
     g.carried.spring = 10;

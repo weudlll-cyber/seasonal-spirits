@@ -1,25 +1,29 @@
 // Seasonal Spirits — the three bot strategies of CONCEPT.md §2a as small state machines.
-// Each picks a mode from the public state, then acts on it: patient swaps every season and
-// banks in the last one, cautious banks early and often, hunter takes from carriers.
+// Each picks a mode from the public state, then acts on it: patient swaps before every
+// halving and banks before the end, cautious banks early and before every halving, hunter
+// takes from carriers.
 
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
-import { totalCount } from '../seasons.js';
+import { isLastSeason, totalCount } from '../seasons.js';
 import type { Ghost, Intent, MatchState } from '../types.js';
-import { collect, goHomeAnd, isLastSeason, steerTo, IDLE, type Bot } from './common.js';
+import { collect, deadlineNear, goHomeAnd, steerTo, IDLE, type Bot } from './common.js';
 
 export type Strategy = 'patient' | 'cautious' | 'hunter';
 export const STRATEGIES: readonly Strategy[] = ['patient', 'cautious', 'hunter'];
 
-type PatientMode = 'collect' | 'swap' | 'secure';
+type Mode = 'collect' | 'swap' | 'secure';
 
-function patientMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): PatientMode {
-  if (isLastSeason(cfg, s)) return totalCount(me.carried) > 0 ? 'secure' : 'collect';
+function patientMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Mode {
+  if (!deadlineNear(cfg, s, me)) return 'collect';
+  if (isLastSeason(cfg, s.clock)) return totalCount(me.carried) > 0 ? 'secure' : 'collect';
   return me.carried[s.clock.current] >= cfg.swapIn ? 'swap' : 'collect';
 }
 
-function cautiousMode(cfg: GameConfig, me: Readonly<Ghost>): 'collect' | 'secure' {
-  return totalCount(me.carried) >= cfg.bots.cautiousSecureAt ? 'secure' : 'collect';
+function cautiousMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Mode {
+  const carried = totalCount(me.carried);
+  if (carried >= cfg.bots.cautiousSecureAt) return 'secure';
+  return carried > 0 && deadlineNear(cfg, s, me) ? 'secure' : 'collect';
 }
 
 function nearestCarrier(s: Readonly<MatchState>, me: Readonly<Ghost>): Ghost | null {
@@ -36,21 +40,21 @@ function hunt(cfg: GameConfig, me: Readonly<Ghost>, prey: Readonly<Ghost>): Inte
   return distance(me, prey) <= cfg.stealRange ? { ...dir, action: 'steal' } : dir;
 }
 
+function act(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>, mode: Mode): Intent {
+  return mode === 'collect' ? collect(cfg, s, me) : goHomeAnd(cfg, s, me, mode);
+}
+
 export function createBot(cfg: GameConfig, strategy: Strategy): Bot {
   return (s, me) => {
     if (me.securingUntilMs !== null || s.ended) return IDLE;
     switch (strategy) {
-      case 'patient': {
-        const mode = patientMode(cfg, s, me);
-        return mode === 'collect' ? collect(cfg, s, me) : goHomeAnd(cfg, s, me, mode);
-      }
+      case 'patient':
+        return act(cfg, s, me, patientMode(cfg, s, me));
       case 'cautious':
-        return cautiousMode(cfg, me) === 'secure'
-          ? goHomeAnd(cfg, s, me, 'secure')
-          : collect(cfg, s, me);
+        return act(cfg, s, me, cautiousMode(cfg, s, me));
       case 'hunter': {
         const carried = totalCount(me.carried);
-        if (carried >= cfg.bots.hunterSecureAt || (carried > 0 && isLastSeason(cfg, s))) {
+        if (carried >= cfg.bots.hunterSecureAt || (carried > 0 && isLastSeason(cfg, s.clock))) {
           return goHomeAnd(cfg, s, me, 'secure');
         }
         const prey = nearestCarrier(s, me);

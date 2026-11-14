@@ -3,7 +3,6 @@
 
 import type { GameConfig } from '../config.js';
 import { distance, shrineOf } from '../geometry.js';
-import { totalCount } from '../seasons.js';
 import type { Ghost, Intent, MatchState, Vec } from '../types.js';
 
 export type Bot = (s: Readonly<MatchState>, me: Readonly<Ghost>) => Intent;
@@ -28,7 +27,7 @@ export function goHomeAnd(
   return steerTo(cfg, me, home);
 }
 
-// Head for the nearest field coin, or for the halving pool if it is fuller; idle if none.
+// Head for the nearest field coin; idle if there is none.
 export function collect(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Intent {
   let target: Vec | null = null;
   let best = Infinity;
@@ -39,10 +38,18 @@ export function collect(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<G
       target = c;
     }
   }
-  if (totalCount(s.pool) > 0 && distance(me, s.poolCenter) < best) target = s.poolCenter;
   return target ? steerTo(cfg, me, target) : IDLE;
 }
 
-export function isLastSeason(cfg: GameConfig, s: Readonly<MatchState>): boolean {
-  return s.clock.index >= Math.ceil(cfg.matchDurationMs / cfg.seasonDurationMs) - 1;
+// Every season ends with a deadline — a halving, or the match end in the last season. True
+// once the time left is just enough to walk home at carrying speed, secure, and keep
+// bots.deadlineMarginMs spare.
+export function deadlineNear(
+  cfg: GameConfig,
+  s: Readonly<MatchState>,
+  me: Readonly<Ghost>,
+): boolean {
+  const toShrine = Math.max(0, distance(me, shrineOf(s.shrines, me.team)) - cfg.shrineRadius);
+  const walkMs = (toShrine / (cfg.ghostSpeed * cfg.carrySpeedFactor)) * 1000;
+  return s.clock.timeLeftMs <= walkMs + cfg.secureDurationMs + cfg.bots.deadlineMarginMs;
 }

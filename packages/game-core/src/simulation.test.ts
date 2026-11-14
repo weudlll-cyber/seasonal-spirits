@@ -16,8 +16,11 @@ describe('simulated match', () => {
   it('passes every sanity check and banks value for every strategy', () => {
     const r = simulate(DEFAULT_CONFIG, 1);
     expect(r.sanity.filter((c) => !c.ok)).toEqual([]);
-    expect(r.seasons.map((e) => e.season)).toEqual(['summer', 'autumn', 'winter']);
-    expect(r.halving?.atMs).toBe(DEFAULT_CONFIG.halvingAtMs);
+    expect(r.halvings.map((h) => [h.event.atMs, h.event.season])).toEqual([
+      [75_000, 'summer'],
+      [150_000, 'autumn'],
+      [225_000, 'winter'],
+    ]);
     for (const strategy of ['patient', 'cautious', 'hunter']) {
       const ids = new Set(r.roster.filter((x) => x.strategy === strategy).map((x) => x.id));
       const total = r.result.players

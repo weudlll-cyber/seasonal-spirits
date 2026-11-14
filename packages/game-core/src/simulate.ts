@@ -1,6 +1,6 @@
 // Seasonal Spirits — `pnpm simulate --seed <n>`: one full 32-bot match, printed.
-// Season timeline, halving moment and pool size, final values per team and player, and the
-// sanity list. Exits 1 if a sanity check fails.
+// Season timeline with the halvings, final values per team and player, and the sanity list.
+// Exits 1 if a sanity check fails.
 
 import { DEFAULT_CONFIG } from './config.js';
 import { simulate, type SimulationReport } from './simulation.js';
@@ -28,14 +28,13 @@ function print(r: SimulationReport): void {
   console.log(`Seasonal Spirits — simulated match, seed ${r.seed}, ${r.roster.length} bots`);
   console.log('\nSeason timeline');
   console.log(`  0:00  ${DEFAULT_CONFIG.startSeason}`);
-  for (const e of r.seasons) console.log(`  ${clock(e.atMs)}  ${e.season}`);
-  console.log('\nHalving');
-  if (r.halving) {
+  for (const { event: e } of r.halvings) {
     console.log(
-      `  at ${clock(r.halving.atMs)}: ${r.halving.carriedBefore} carried coins → ` +
-        `${r.halving.carriedAfter} kept, ${r.halving.pooled} into the centre pool`,
+      `  ${clock(e.atMs)}  HALVING → ${e.season} (${e.fieldCoinsCleared} field coins gone, ` +
+        `${e.carried} carried coins kept)`,
     );
   }
+  console.log(`  ${clock(DEFAULT_CONFIG.matchDurationMs)}  end`);
   console.log('\nSecured value per team');
   r.result.teams.forEach((v, t) => {
     console.log(`  ${(TEAM_NAMES[t] ?? '?').padEnd(7)} ${v.toFixed(1)}`);

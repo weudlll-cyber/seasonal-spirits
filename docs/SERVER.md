@@ -50,17 +50,18 @@ loses the running match (CONCEPT.md §7).
 
 One binary encoding, little endian:
 
-- **Header, 38 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
-  3 Winter; the next is +1), ms left in the season u32, halving countdown u16 (0xffff = none),
-  flags u8 (halving event in this tick, halving done, result), centre pool per season 4×u16,
-  secured value per team 4×u16 (in halves), ghost count u8, coin count u8.
+- **Header, 30 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
+  3 Winter; the next is +1), ms left in the season u32, countdown to the next halving u16
+  (0xffff = none; set in the 10 s before every season turn, CONCEPT.md §13), flags u8 (a
+  halving in this tick — the season field is then the new season —, result), secured value
+  per team 4×u16 (in halves), ghost count u8, coin count u8.
 - **Per ghost, 9 bytes:** id u8, x u16, y u16, team u8, carried coins u16, flags u8 (carrier,
   securing, bot).
 - **Per field coin, 4 bytes:** x u16, y u16 (every field coin is of the current season).
 
-At 32 ghosts: 326 bytes with an empty field, 566 bytes with a full one (60 coins). Measured
-in a full bot match: at most 402 bytes; in the probe run: at most 454 bytes
-(docs/PHASE0.md, "Against the match server").
+At 32 ghosts: 318 bytes with an empty field, 558 bytes with a full one (60 coins). Measured
+in a full 32-bot match (seed 1): at most 418 bytes (25 field coins). The probe runs of
+docs/PHASE0.md ("Against the match server") were measured with the older 38-byte header.
 
 ## Bounds and checks
 

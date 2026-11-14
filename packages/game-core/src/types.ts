@@ -22,7 +22,6 @@ export interface Ghost {
   securingUntilMs: number | null; // a secure in progress ends at this match time
   securingSeason: Season | null; // the season whose values the secure banks at
   lastStealMs: number;
-  lastPoolTakeMs: number;
 }
 
 export interface FieldCoin {
@@ -43,8 +42,8 @@ export interface Intent {
 }
 
 export type MatchEvent =
-  | { type: 'season'; season: Season; atMs: number }
-  | { type: 'halving'; atMs: number; carriedBefore: number; carriedAfter: number; pooled: number }
+  // Every season turn inside a match (CONCEPT.md §2b, §13); season is the new one.
+  | { type: 'halving'; atMs: number; season: Season; fieldCoinsCleared: number; carried: number }
   | { type: 'swap'; ghost: number; from: Season; spent: number; got: number }
   | { type: 'secure-start'; ghost: number }
   | { type: 'secured'; ghost: number; value: number }
@@ -54,21 +53,18 @@ export type MatchEvent =
 // Running totals kept for the sanity list of `pnpm simulate`.
 export interface MatchStats {
   spawned: number;
-  pooled: number;
-  poolTaken: number;
+  pickedUp: number;
+  cleared: number; // field coins that disappeared at a halving
 }
 
 export interface MatchState {
   elapsedMs: number;
   tick: number;
   clock: SeasonClock;
-  halvingCountdownMs: number | null; // set during the last halvingCountdownMs before it
-  halvingDone: boolean;
+  halvingCountdownMs: number | null; // set during the last halvingCountdownMs before a halving
   ended: boolean;
   ghosts: Ghost[]; // sorted by id
   coins: FieldCoin[];
-  pool: SeasonCounts;
-  poolCenter: Vec;
   shrines: readonly Vec[]; // index = team
   events: MatchEvent[]; // events of the last tick only
   stats: MatchStats;

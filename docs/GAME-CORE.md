@@ -3,7 +3,7 @@
 Pure TypeScript: no network, no graphics, no clock and no randomness of its own. A match is
 driven by `tick(dtMs, intents)`; its time is the sum of the `dt` values and every random
 value comes from the seed (`mulberry32`), so the same seed and the same intents give the same
-match. It builds CONCEPT.md §2a, §2b and the controls part of §8 — nothing from §7
+match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 — nothing from §7
 "Dropped", no season specials, no spectator prediction, no team chat.
 
 ## Files
@@ -14,9 +14,9 @@ match. It builds CONCEPT.md §2a, §2b and the controls part of §8 — nothing 
 | `src/seasons.ts`    | Season order, the season clock, coin values                               |
 | `src/types.ts`      | Match state, intents, events, result                                      |
 | `src/match.ts`      | `Match`: one tick in a fixed order                                        |
-| `src/field.ts`      | Coin spawning, picking up, taking from the centre pool                    |
+| `src/field.ts`      | Coin spawning and picking up                                              |
 | `src/actions.ts`    | Swap, secure, steal — each checks its own conditions                      |
-| `src/halving.ts`    | The halving                                                               |
+| `src/halving.ts`    | The halving at a season turn                                              |
 | `src/geometry.ts`   | Distances, clamping, shrine positions                                     |
 | `src/rng.ts`        | `mulberry32`, shared with the probe bots                                  |
 | `src/bots/`         | The three strategies (`strategies.ts`) and what they share (`common.ts`)  |
@@ -24,17 +24,16 @@ match. It builds CONCEPT.md §2a, §2b and the controls part of §8 — nothing 
 
 ## One tick
 
-In this order: time and season (the field is cleared when the season turns), the halving
-(once, at `halvingAtMs`), each ghost's intent by id (a securing ghost only completes its
-secure), picking up field coins, taking from the pool, spawning, the countdown, the end.
+In this order: time and season (a season turn is a halving), each ghost's intent by id (a
+securing ghost only completes its secure), picking up field coins, spawning, the countdown,
+the end.
 
 ## The rules as built
 
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
   The state carries the season clock: current, next, index, time left in the season.
-- **Coins.** Only coins of the current season spawn, at `coinSpawnPerSecond`, up to
-  `maxFieldCoins`. A ghost within `pickupRadius` picks a coin up. When the season turns, the
-  field is cleared.
+- **Coins.** Only coins of the current season spawn, at `coinSpawnPerSecond` all match long,
+  up to `maxFieldCoins`. A ghost within `pickupRadius` picks a coin up.
 - **Teams and shrines.** Four teams; team 0 to 3 have their shrines inset from the four
   corners. Ghosts start around their own shrine.
 - **Carrying.** A ghost with any coin moves at `carrySpeedFactor` of its speed. Carried coins
@@ -48,12 +47,13 @@ secure), picking up field coins, taking from the pool, spawning, the countdown, 
 - **Steal** (one action, no aiming). The target is the nearest opponent carrier within
   `stealRange` — never a teammate, never the thief. The victim loses `ceil(n · stealShare)`
   of each season's count to the thief; then the thief waits `stealCooldownMs`.
-- **Halving** at `halvingAtMs` (3:45, the Autumn → Winter turn when the match starts in
-  Spring). Each carried count is halved, the ghost keeps the lower half, the rest goes to the
-  centre pool; secured value is untouched. The state carries `halvingCountdownMs` during the
-  last 10 s before it and a `halving` event in exactly one tick. Afterwards the spawn rate is
-  `halvingSpawnFactor` (½). Any idle ghost within `poolRadius` of the centre takes one pool
-  coin per `poolTakeIntervalMs`, from the fullest season.
+- **Halving** at every season turn inside the match (CONCEPT.md §2b, §13): 1:15, 2:30 and
+  3:45 of a 5-minute match; the match end is not one. The old season's field coins disappear
+  (counted in `stats.cleared`), the new season's coins fall at the same rate. Carried coins
+  keep their count; the old season's are now worth half, so every halving is a deadline to
+  swap or secure. The state carries `halvingCountdownMs` during the last
+  `halvingCountdownMs` (10 s) before each halving and a `halving` event with the new season
+  in exactly one tick each time.
 - **End.** Only secured value counts; coins still carried and unfinished secures are lost.
   `result()` gives the secured value per player and per team.
 
@@ -62,20 +62,26 @@ secure), picking up field coins, taking from the pool, spawning, the countdown, 
 Three small state machines over the public state (`src/bots/strategies.ts`); each picks a
 mode, then acts on it:
 
-- **patient**: collects; with `swapIn` coins of the current season, walks home and swaps;
-  in the last season, banks everything.
-- **cautious**: collects; at `bots.cautiousSecureAt` coins, walks home and banks.
+- **patient**: collects and holds; when the next halving comes near, walks home and swaps
+  its coins of the current season (at least `swapIn`); before the match end, banks
+  everything.
+- **cautious**: collects; at `bots.cautiousSecureAt` coins, and with anything at all when
+  the next halving or the end comes near, walks home and banks.
 - **hunter**: chases the nearest opponent carrier and steals in range; at
   `bots.hunterSecureAt` coins, or in the last season with anything, walks home and banks.
+
+"Near" (`deadlineNear` in `src/bots/common.ts`): the time left in the season is just enough
+to walk home at carrying speed, secure, and keep `bots.deadlineMarginMs` spare.
 
 ## `pnpm simulate --seed <n>`
 
 One full match, 32 bots (8 per team: 3 patient, 3 cautious, 2 hunters), in 50 ms ticks as
-fast as the machine runs. It prints the season timeline, the halving moment and the pool
-size, the secured value per team and per player, and the sanity list: no negative counts
-(checked after every tick), exactly one halving, conservation at the halving (carried before
-= kept + pooled), the pool fully accounted (pooled = taken + left). It exits 1 if a sanity
-check fails.
+fast as the machine runs. It prints the season timeline with the three halvings (field coins
+gone, carried coins kept), the secured value per team and per player, and the sanity list: no
+negative counts (checked after every tick), one halving per season turn, carried coins
+conserved across each halving (end of the tick before = at the halving), field coins
+accounted (spawned = picked up + gone at halvings + left). It exits 1 if a sanity check
+fails.
 
 ## Configuration (`src/config.ts`)
 
@@ -99,18 +105,10 @@ check fails.
 | `stealRange`            | 60      | placeholder (CONCEPT.md leaves the range open)                          |
 | `stealShare`            | 0.5     | placeholder (CONCEPT.md leaves the share open)                          |
 | `stealCooldownMs`       | 1000    | placeholder                                                             |
-| `halvingAtMs`           | 225 000 | CONCEPT.md §2b: 3:45 of 5:00                                            |
-| `halvingCountdownMs`    | 10 000  | CONCEPT.md §2b                                                          |
-| `halvingSpawnFactor`    | 0.5     | CONCEPT.md §2b                                                          |
-| `poolRadius`            | 100     | placeholder                                                             |
-| `poolTakeIntervalMs`    | 100     | placeholder                                                             |
+| `halvingCountdownMs`    | 10 000  | CONCEPT.md §2b, §13: before every halving                               |
 | `reconnectGraceMs`      | 12 000  | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot         |
 | `resultPauseMs`         | 15 000  | placeholder (result screen before the next match)                       |
 | `bots.cautiousSecureAt` | 5       | placeholder                                                             |
 | `bots.hunterSecureAt`   | 8       | placeholder                                                             |
 | `bots.arriveRadius`     | 20      | placeholder                                                             |
-
-Note on `startSeason` and `halvingAtMs`: CONCEPT.md §2b puts the halving at the Autumn →
-Winter turn, 3:45. Both hold only for a match that starts in Spring; with another start
-season the halving stays at 3:45 and falls on another turn. The owner decides which of the
-two the rule is.
+| `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)             |

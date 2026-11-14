@@ -20,7 +20,6 @@ import {
   GHOST_BOT,
   GHOST_CARRIER,
   GHOST_SECURING,
-  STATE_HALVING_DONE,
   STATE_HALVING_EVENT,
   STATE_RESULT,
   type GameAction,
@@ -131,11 +130,7 @@ export class MatchHost {
       season: SEASONS.indexOf(s.clock.current),
       seasonLeftMs: s.clock.timeLeftMs,
       countdownMs: s.halvingCountdownMs,
-      flags:
-        (halvingEvent ? STATE_HALVING_EVENT : 0) |
-        (s.halvingDone ? STATE_HALVING_DONE : 0) |
-        (s.ended ? STATE_RESULT : 0),
-      pool: [s.pool.spring, s.pool.summer, s.pool.autumn, s.pool.winter],
+      flags: (halvingEvent ? STATE_HALVING_EVENT : 0) | (s.ended ? STATE_RESULT : 0),
       teamSecured: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
       ghosts: s.ghosts.map((g) => {
         const carried = totalCount(g.carried);

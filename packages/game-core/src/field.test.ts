@@ -13,28 +13,6 @@ describe('field coins', () => {
     expect(new Set(m.state.coins.map((c) => c.season))).toEqual(new Set(['summer']));
   });
 
-  it('removes every coin of the old season when the season turns', () => {
-    const m = matchOf(quietConfig({ coinSpawnPerSecond: 4 }), [{ id: 1, team: 0 }]);
-    runTo(m, 74_950);
-    expect(m.state.coins.length).toBeGreaterThan(0);
-    runTo(m, 75_000);
-    expect(m.state.coins.filter((c) => c.season === 'spring')).toEqual([]);
-  });
-
-  it('spawns at half the rate after the halving', () => {
-    const cfg = quietConfig({ coinSpawnPerSecond: 2, maxFieldCoins: 10_000 });
-    const m = matchOf(cfg, [{ id: 1, team: 0 }]);
-    runTo(m, 200_000);
-    const before = m.state.stats.spawned;
-    runTo(m, 220_000); // 20 s before the halving
-    const rateBefore = m.state.stats.spawned - before;
-    runTo(m, 230_000);
-    const after = m.state.stats.spawned;
-    runTo(m, 250_000); // 20 s after it
-    expect(rateBefore).toBe(40);
-    expect(m.state.stats.spawned - after).toBe(20);
-  });
-
   it('a ghost picks up a coin it touches', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
     const g = ghost(m, 1);

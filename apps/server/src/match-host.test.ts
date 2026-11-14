@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import {
   GHOST_BOT,
-  STATE_HALVING_DONE,
   STATE_HALVING_EVENT,
   STATE_RESULT,
   encodeState,
@@ -71,27 +70,32 @@ describe('match host inputs', () => {
 });
 
 describe('match host state size', () => {
-  it('never sends more than 1 KB in a whole 32-bot match, the halving included', () => {
+  it('never sends more than 1 KB in a whole 32-bot match, the halvings included', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
     let max = 0;
-    let maxAfterHalving = 0;
+    let halvings = 0;
     for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
       const bytes = encodeState({ ...s, tick: 0, serverMs: 0 }).byteLength;
       max = Math.max(max, bytes);
-      if (s.flags & STATE_HALVING_DONE) maxAfterHalving = Math.max(maxAfterHalving, bytes);
+      if (s.flags & STATE_HALVING_EVENT) halvings++;
     }
-    expect(maxAfterHalving).toBeGreaterThan(0);
+    expect(halvings).toBe(3);
     expect(max).toBeLessThan(1024);
-    // A full field (maxFieldCoins) is the upper bound: 38 + 9 · 32 + 4 · 60 bytes.
+    // A full field (maxFieldCoins) is the upper bound: 30 + 9 · 32 + 4 · 60 bytes.
     expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
   });
 });
 
 describe('match host lifecycle', () => {
-  it('flags the halving in exactly one tick', () => {
+  it('flags each of the three halvings in exactly one tick, with the new season', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 8, 1);
     const states = runFor(host, DEFAULT_CONFIG.matchDurationMs);
-    expect(states.filter((s) => s.flags & STATE_HALVING_EVENT)).toHaveLength(1);
+    const flagged = states.filter((s) => s.flags & STATE_HALVING_EVENT);
+    expect(flagged.map((s) => [s.matchMs, s.season])).toEqual([
+      [75_000, 1],
+      [150_000, 2],
+      [225_000, 3],
+    ]);
   });
 
   it('shows the result for the pause, then starts the next match with the same players', () => {

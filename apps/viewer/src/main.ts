@@ -98,7 +98,7 @@ function frame(): void {
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);
 
-  // Ghosts are interpolated; coins, pool and clock come from the newest state.
+  // Ghosts are interpolated; coins and clock come from the newest state.
   const latest = buffer.at(-1)?.state;
   const view = layout(ctx);
   drawField(view, latest);

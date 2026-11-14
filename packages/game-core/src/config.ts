@@ -8,6 +8,7 @@ export interface BotConfig {
   cautiousSecureAt: number;
   hunterSecureAt: number;
   arriveRadius: number;
+  deadlineMarginMs: number;
 }
 
 export interface GameConfig {
@@ -30,11 +31,7 @@ export interface GameConfig {
   stealRange: number;
   stealShare: number;
   stealCooldownMs: number;
-  halvingAtMs: number;
   halvingCountdownMs: number;
-  halvingSpawnFactor: number;
-  poolRadius: number;
-  poolTakeIntervalMs: number;
   reconnectGraceMs: number;
   resultPauseMs: number;
   bots: BotConfig;
@@ -62,11 +59,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   stealRange: 60, // placeholder — owner decides (CONCEPT.md leaves the range open)
   stealShare: 0.5, // placeholder — owner decides (CONCEPT.md leaves the share open)
   stealCooldownMs: 1000, // placeholder — owner decides
-  halvingAtMs: 225_000, // CONCEPT.md §2b: the Autumn → Winter turn, 3:45 of 5:00
-  halvingCountdownMs: 10_000, // CONCEPT.md §2b: countdown from 10 s before
-  halvingSpawnFactor: 0.5, // CONCEPT.md §2b: half as many coins afterwards
-  poolRadius: 100, // placeholder — owner decides
-  poolTakeIntervalMs: 100, // placeholder — owner decides (one pool coin per interval)
+  // CONCEPT.md §2b / §13: every season turn inside a match is a halving, counted down from
+  // 10 s before.
+  halvingCountdownMs: 10_000,
   // CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot takes over.
   reconnectGraceMs: 12_000,
   resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
@@ -74,5 +69,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     cautiousSecureAt: 5, // placeholder — owner decides (coins a cautious bot banks at)
     hunterSecureAt: 8, // placeholder — owner decides (coins a hunter banks at)
     arriveRadius: 20, // placeholder — owner decides (how close a bot steers to a target)
+    // Spare time a bot keeps when it walks home to swap or secure before a halving.
+    deadlineMarginMs: 3000, // placeholder — owner decides
   },
 };

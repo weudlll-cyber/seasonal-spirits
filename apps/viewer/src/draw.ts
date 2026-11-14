@@ -1,6 +1,6 @@
-// Seasonal Spirits — the viewer's debug drawing: field, shrines, pool, coins, ghosts, text.
-// No art: coins are dots in the token colours, shrines squares, the pool a ring. The layout
-// numbers (field size, shrine positions, pool radius) come from the game core's config.
+// Seasonal Spirits — the viewer's debug drawing: field, shrines, coins, ghosts, text.
+// No art: coins are dots in the token colours, shrines squares. The layout numbers (field
+// size, shrine positions) come from the game core's config.
 
 import { DEFAULT_CONFIG, SEASONS, shrinePositions } from '@seasonal-spirits/game-core';
 import {
@@ -49,14 +49,6 @@ export function drawField(v: View, s: ServerState | undefined): void {
     ctx.strokeRect(v.ox + p.x * v.scale - half, v.oy + p.y * v.scale - half, 2 * half, 2 * half);
   });
   if (!s) return;
-  const pool = s.pool.reduce((a, b) => a + b, 0);
-  if (pool > 0) {
-    ctx.strokeStyle = '#e6edf3';
-    dot(v, FIELD / 2, FIELD / 2, DEFAULT_CONFIG.poolRadius * v.scale);
-    ctx.stroke();
-    ctx.fillStyle = '#e6edf3';
-    ctx.fillText(`pool ${pool}`, v.ox + (FIELD / 2) * v.scale - 18, v.oy + (FIELD / 2) * v.scale);
-  }
   ctx.fillStyle = colour(s.season); // every field coin is of the current season
   for (const c of s.coins) {
     dot(v, c.x, c.y, 2.5);
@@ -95,7 +87,7 @@ export function matchLines(s: ServerState, halvingShown: boolean): string[] {
     `match:           ${clock(s.matchMs)} / ${clock(DEFAULT_CONFIG.matchDurationMs)}`,
   ];
   if (s.countdownMs !== null) lines.push(`halving in:      ${clock(s.countdownMs)}`);
-  if (halvingShown) lines.push('HALVING');
+  if (halvingShown) lines.push(`HALVING — ${season} is in season`);
   if (s.flags & STATE_RESULT) lines.push('RESULT — the next match starts soon');
   lines.push(
     `secured:         ${s.teamSecured.map((v, t) => `${NAMES[t] ?? '?'} ${v}`).join(' · ')}`,

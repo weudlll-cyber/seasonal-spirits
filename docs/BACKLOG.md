@@ -19,12 +19,6 @@ b2. **Game-core placeholders.** The values marked `placeholder — owner decides
 `packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)). Done when: the
 owner has decided each and config.ts carries the source.
 
-b3. **Halving at every season change** (owner decision 2026-11-14, afternoon): every season
-turn inside a match is a halving; carried coins are not halved; the centre pool, the halved
-spawn rate and the single halving moment go. Done when: game core, state, bots,
-`pnpm simulate`, CONCEPT.md §2b and §13, GAME-CORE.md, SERVER.md and THREATS.md show only
-the new rule (branch `feat/halving-per-season`).
-
 c. **First playable version.** Rough visuals, phone joystick from the start; the client
 framework decision (CONCEPT.md §8, after Phase 0) is taken here. Done when: a person can
 join and steer a ghost through a full match on desktop and phone, checked with
@@ -114,6 +108,16 @@ under `/games/seasonal-spirits` with the website's sign-in.
   longer print the report directory, a machine path (removed from the four committed
   reports; it remains in the pushed history) — commit "probe: check run, one bot policy, no
   machine path in reports" on `feat/server-match`.
+- 2026-11-14 — **halving at every season change** (owner decision, afternoon; CONCEPT.md
+  §2b and §13): a halving at 1:15, 2:30 and 3:45, none at the end; the old season's field
+  coins disappear, the spawn rate stays; carried coins keep their count (the old season's
+  are worth half); countdown before and a one-tick event with the new season at each. Removed:
+  halving of carried coins, the centre pool, the halved spawn rate, `halvingAtMs`,
+  `halvingSpawnFactor`, `poolRadius`, `poolTakeIntervalMs`, the pool in the state (header
+  38 → 30 bytes) and `STATE_HALVING_DONE`. Bots: patient swaps and cautious secures before
+  each halving (`deadlineNear`, new placeholder `bots.deadlineMarginMs`). `pnpm simulate`
+  prints the three halvings and the new sanity list. No THREATS entry concerned only the old
+  mechanics — commit "feat: a halving at every season change" on `feat/halving-per-season`.
 
 ## CHECKS DONE
 
@@ -155,3 +159,6 @@ under `/games/seasonal-spirits` with the website's sign-in.
 | 2026-11-14 | CodeQL (CI skipped: Markdown only)                                                        | `bb38761`                                                                                | success                                                                                                                                                                                             | [run 43595652398](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43595652398) |
 | 2026-11-14 | probe 120 s against the match server (check run, PC mostly idle)                          | `bb38761`                                                                                | 20.00 Hz, 16.39 % CPU, max tick 26 ms, max 454 bytes, 0 jumps/60 s, 0 underruns/60 s; rule "≤ 50 jumps, ≤ 20 underruns, ≤ 50 ms" holds: the first run was load on the PC                            | `reports/phase0/2026-11-14T15-11-15-932Z-Testrechner.md`                                      |
 | 2026-11-14 | `pnpm verify:changed` (widened to the full tree: toolchain changed since `origin/master`) | working tree committed as "probe: check run, one bot policy, no machine path in reports" | lint, typecheck green, 105 tests in 19 files green; format: 1 file unformatted, fixed, re-checked green                                                                                             | same commit                                                                                   |
+| 2026-11-14 | `pnpm verify:changed` (widened to the full tree: toolchain changed since `origin/master`) | working tree committed as "feat: a halving at every season change"                       | typecheck green, 107 tests in 20 files green; format: 5 files unformatted, lint: 1 function too long; both fixed, lint and format re-checked green                                                  | same commit                                                                                   |
+| 2026-11-14 | `pnpm simulate --seed 1`                                                                  | same tree                                                                                | halvings at 1:15 / 2:30 / 3:45 (2 / 7 / 9 field coins gone; 111 / 260 / 425 carried kept); four sanity checks ok                                                                                    | docs/GAME-CORE.md, session sheet                                                              |
+| 2026-11-14 | largest state over a whole 32-bot match (seed 1), new 30-byte header                      | same tree                                                                                | max 418 bytes (25 coins); full-field bound 558 bytes                                                                                                                                                | docs/SERVER.md, docs/PHASE0.md                                                                |

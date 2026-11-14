@@ -26,23 +26,22 @@ export interface ServerState {
   matchMs: number; // u32 ms since the match started
   season: number; // current season index; the next is (season + 1) % 4
   seasonLeftMs: number; // u32 until the season turns (or the match ends)
-  countdownMs: number | null; // halving countdown, null outside the last 10 s before it
+  countdownMs: number | null; // countdown to the next halving, null outside its last 10 s
   flags: number; // STATE_* bits
-  pool: [number, number, number, number]; // centre pool per season
   teamSecured: [number, number, number, number]; // secured value per team, in halves
   ghosts: GhostState[]; // up to 255
   coins: CoinState[]; // up to 255
 }
 
-export const STATE_HALVING_EVENT = 1; // the halving happened in this tick
-export const STATE_HALVING_DONE = 2;
+// A halving (every season turn inside a match) happened in this tick; `season` is the new one.
+export const STATE_HALVING_EVENT = 1;
 export const STATE_RESULT = 4; // the match is over; the result pause before the next
 
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonLeftMs u32 ·
-// countdownMs u16 (0xffff = none) · flags u8 · pool 4×u16 · teamSecured 4×u16 (value × 2) ·
+// countdownMs u16 (0xffff = none) · flags u8 · teamSecured 4×u16 (value × 2) ·
 // ghost count u8 · coin count u8 — all little endian.
 // Ghost: id u8 · x u16 · y u16 · team u8 · carried u16 · flags u8.  Coin: x u16 · y u16.
-export const HEADER_BYTES = 38;
+export const HEADER_BYTES = 30;
 export const GHOST_BYTES = 9;
 export const COIN_BYTES = 4;
 const NO_COUNTDOWN = 0xffff;
@@ -71,11 +70,10 @@ export function encodeState(s: ServerState): Uint8Array {
   );
   v.setUint8(19, s.flags & 0xff);
   for (let i = 0; i < 4; i++) {
-    v.setUint16(20 + 2 * i, u16(s.pool[i] ?? 0), true);
-    v.setUint16(28 + 2 * i, u16((s.teamSecured[i] ?? 0) * 2), true);
+    v.setUint16(20 + 2 * i, u16((s.teamSecured[i] ?? 0) * 2), true);
   }
-  v.setUint8(36, s.ghosts.length);
-  v.setUint8(37, s.coins.length);
+  v.setUint8(28, s.ghosts.length);
+  v.setUint8(29, s.coins.length);
   let o = HEADER_BYTES;
   for (const g of s.ghosts) {
     v.setUint8(o, g.id & 0xff);
@@ -97,8 +95,8 @@ export function encodeState(s: ServerState): Uint8Array {
 export function decodeState(buf: Uint8Array): ServerState {
   if (buf.byteLength < HEADER_BYTES) throw new Error('decodeState: buffer too short for header');
   const v = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  const ghostCount = v.getUint8(36);
-  const coinCount = v.getUint8(37);
+  const ghostCount = v.getUint8(28);
+  const coinCount = v.getUint8(29);
   const expected = encodedSize(ghostCount, coinCount);
   if (buf.byteLength !== expected) {
     throw new Error(`decodeState: expected ${expected} bytes, got ${buf.byteLength}`);
@@ -134,8 +132,7 @@ export function decodeState(buf: Uint8Array): ServerState {
     seasonLeftMs: v.getUint32(13, true),
     countdownMs: countdown === NO_COUNTDOWN ? null : countdown,
     flags: v.getUint8(19),
-    pool: four(20, 1),
-    teamSecured: four(28, 2),
+    teamSecured: four(20, 2),
     ghosts,
     coins,
   };

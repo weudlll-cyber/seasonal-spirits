@@ -105,11 +105,13 @@ the spectator in one Node process, so a busy PC shows up in all of jumps, underr
 time and frame count at once. The CPU number is computed over the measurement window only;
 Run 3 divided the same CPU time by the uptime including the 1.5 s ramp-up, about 1 % lower.
 
-State size outside the probe: a whole 32-bot match encoded tick by tick (seed 1) never
-exceeds 402 bytes (19 field coins); after the halving the largest is 354 bytes. With a full
-field (60 coins, the `maxFieldCoins` cap) the bound is 38 + 9 · 32 + 4 · 60 = **566 bytes**,
-under 1 KB without compaction (tests: `apps/server/src/match-host.test.ts` "never sends more
-than 1 KB in a whole 32-bot match, the halving included"; `packages/protocol/src/state.test.ts`).
+State size outside the probe: with the 38-byte header of these runs, a whole 32-bot match
+encoded tick by tick (seed 1) never exceeded 402 bytes; the full-field bound was 566 bytes.
+Since the halving became a season change (CONCEPT.md §13) the header has no centre pool and
+is 30 bytes: at most 418 bytes in a whole match (seed 1), full-field bound 30 + 9 · 32 + 4 ·
+60 = **558 bytes**, under 1 KB without compaction (tests: `apps/server/src/match-host.test.ts`
+"never sends more than 1 KB in a whole 32-bot match, the halvings included";
+`packages/protocol/src/state.test.ts`).
 
 ## Server run sheet (Docker, leaves nothing behind)
 

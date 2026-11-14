@@ -6,7 +6,7 @@ import {
   GHOST_BYTES,
   HEADER_BYTES,
   GHOST_CARRIER,
-  STATE_HALVING_DONE,
+  STATE_HALVING_EVENT,
   decodeState,
   encodeState,
   encodedSize,
@@ -21,8 +21,7 @@ function sample(ghosts: number, coins: number): ServerState {
     season: 3,
     seasonLeftMs: 70_000,
     countdownMs: null,
-    flags: STATE_HALVING_DONE,
-    pool: [0, 3, 17, 2],
+    flags: STATE_HALVING_EVENT,
     teamSecured: [12.5, 0, 33, 7.5],
     ghosts: Array.from({ length: ghosts }, (_, i) => ({
       id: i + 1,
@@ -44,7 +43,7 @@ describe('state encoding', () => {
     expect(decodeState(buf)).toEqual(s);
   });
 
-  it('round-trips 32 ghosts, coins, pool, half-point team values and a countdown', () => {
+  it('round-trips 32 ghosts, coins, half-point team values and a countdown', () => {
     const s = { ...sample(32, 60), countdownMs: 9000, flags: 0 };
     const buf = encodeState(s);
     expect(buf.byteLength).toBe(HEADER_BYTES + 32 * GHOST_BYTES + 60 * COIN_BYTES);
@@ -52,7 +51,7 @@ describe('state encoding', () => {
   });
 
   it('keeps a full match state — 32 ghosts, a full field of 60 coins — under 1 KB', () => {
-    expect(encodedSize(32, 60)).toBe(566);
+    expect(encodedSize(32, 60)).toBe(558);
     expect(encodedSize(32, 60)).toBeLessThan(1024);
   });
 

@@ -5,7 +5,7 @@ import { createBot, STRATEGIES, type Strategy } from './bots/strategies.js';
 import type { Bot } from './bots/common.js';
 import type { GameConfig } from './config.js';
 import { Match, type Roster } from './match.js';
-import { SEASONS, totalCount } from './seasons.js';
+import { SEASONS, seasonsInMatch, totalCount } from './seasons.js';
 import type { Intent, MatchEvent, MatchResult, MatchState, Team } from './types.js';
 
 export const SIM_TICK_MS = 50; // the server's 20 Hz step
@@ -16,11 +16,18 @@ export interface SanityCheck {
   detail: string;
 }
 
+type HalvingEvent = Extract<MatchEvent, { type: 'halving' }>;
+
+// One halving with the coins carried at the end of the tick before it.
+export interface HalvingRecord {
+  event: HalvingEvent;
+  carriedBefore: number;
+}
+
 export interface SimulationReport {
   seed: number;
   roster: (Roster & { strategy: Strategy })[];
-  seasons: Extract<MatchEvent, { type: 'season' }>[];
-  halving: Extract<MatchEvent, { type: 'halving' }> | null;
+  halvings: HalvingRecord[];
   result: MatchResult;
   sanity: SanityCheck[];
 }
@@ -34,64 +41,67 @@ export function botRoster(ghosts: number): (Roster & { strategy: Strategy })[] {
   }));
 }
 
-export function simulate(cfg: GameConfig, seed: number, ghosts = 32): SimulationReport {
-  const roster = botRoster(ghosts);
+export function simulate(
+  cfg: GameConfig,
+  seed: number,
+  roster: (Roster & { strategy: Strategy })[] = botRoster(32),
+): SimulationReport {
   const match = new Match(cfg, seed, roster);
   const bots = new Map<number, Bot>(roster.map((r) => [r.id, createBot(cfg, r.strategy)]));
-  const report: SimulationReport = {
-    seed,
-    roster,
-    seasons: [],
-    halving: null,
-    result: match.result(),
-    sanity: [],
-  };
+  const halvings: HalvingRecord[] = [];
   let negativeSeen = false;
-  let halvings = 0;
   while (!match.state.ended) {
     const s = match.state;
+    const carriedBefore = carriedTotal(s);
     const intents = new Map<number, Intent>();
     for (const g of s.ghosts) intents.set(g.id, bots.get(g.id)?.(s, g) ?? { dx: 0, dy: 0 });
     const next = match.tick(SIM_TICK_MS, intents);
-    for (const e of next.events) {
-      if (e.type === 'season') report.seasons.push(e);
-      if (e.type === 'halving') {
-        report.halving = e;
-        halvings++;
-      }
-    }
+    for (const e of next.events)
+      if (e.type === 'halving') halvings.push({ event: e, carriedBefore });
     negativeSeen ||= hasNegativeCount(next);
   }
-  report.result = match.result();
-  report.sanity = sanityList(match.state, report.halving, { negativeSeen, halvings });
-  return report;
+  return {
+    seed,
+    roster,
+    halvings,
+    result: match.result(),
+    sanity: sanityList(cfg, match.state, halvings, negativeSeen),
+  };
+}
+
+function carriedTotal(s: Readonly<MatchState>): number {
+  return s.ghosts.reduce((n, g) => n + totalCount(g.carried), 0);
 }
 
 export function hasNegativeCount(s: Readonly<MatchState>): boolean {
-  const counts = [s.pool, ...s.ghosts.map((g) => g.carried)];
-  return counts.some((c) => SEASONS.some((season) => c[season] < 0));
+  return s.ghosts.some((g) => SEASONS.some((season) => g.carried[season] < 0));
 }
 
 function sanityList(
+  cfg: GameConfig,
   s: Readonly<MatchState>,
-  halving: SimulationReport['halving'],
-  seen: { negativeSeen: boolean; halvings: number },
+  halvings: readonly HalvingRecord[],
+  negativeSeen: boolean,
 ): SanityCheck[] {
-  const poolLeft = totalCount(s.pool);
+  const expected = seasonsInMatch(cfg) - 1;
+  const broken = halvings.filter((h) => h.event.carried !== h.carriedBefore);
+  const { spawned, pickedUp, cleared } = s.stats;
   return [
-    { name: 'no negative counts', ok: !seen.negativeSeen, detail: 'checked after every tick' },
-    { name: 'exactly one halving', ok: seen.halvings === 1, detail: `${seen.halvings} seen` },
+    { name: 'no negative counts', ok: !negativeSeen, detail: 'checked after every tick' },
     {
-      name: 'conservation at the halving',
-      ok: halving !== null && halving.carriedBefore === halving.carriedAfter + halving.pooled,
-      detail: halving
-        ? `${halving.carriedBefore} carried = ${halving.carriedAfter} kept + ${halving.pooled} pooled`
-        : 'no halving',
+      name: 'one halving per season turn',
+      ok: halvings.length === expected,
+      detail: `${halvings.length} seen, ${expected} expected`,
     },
     {
-      name: 'pool fully accounted',
-      ok: s.stats.pooled === s.stats.poolTaken + poolLeft,
-      detail: `${s.stats.pooled} pooled = ${s.stats.poolTaken} taken + ${poolLeft} left`,
+      name: 'carried coins conserved across each halving',
+      ok: broken.length === 0,
+      detail: halvings.map((h) => `${h.carriedBefore} → ${h.event.carried}`).join(', '),
+    },
+    {
+      name: 'field coins accounted',
+      ok: spawned === pickedUp + cleared + s.coins.length,
+      detail: `${spawned} spawned = ${pickedUp} picked up + ${cleared} gone at halvings + ${s.coins.length} left`,
     },
   ];
 }

@@ -9,4 +9,10 @@ export { mulberry32 } from './rng.js';
 export { shrinePositions } from './geometry.js';
 export { createBot, STRATEGIES, type Strategy } from './bots/strategies.js';
 export type { Bot } from './bots/common.js';
-export { simulate, botRoster, SIM_TICK_MS, type SimulationReport } from './simulation.js';
+export {
+  simulate,
+  botRoster,
+  SIM_TICK_MS,
+  type HalvingRecord,
+  type SimulationReport,
+} from './simulation.js';
