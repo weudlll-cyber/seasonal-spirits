@@ -96,8 +96,8 @@ the 20 Hz loop, 32 slots, the probe bots replacing the server's bots), report
 The two measured criteria still pass. The jump and underrun counts and the longest tick are
 clearly higher; this is one run, and its cause is not measured. The probe runs server, 32
 bots and the spectator in one Node process, so a slower event loop shows up in all three
-numbers and in the lower frame count; the PC also ran Docker Desktop during this run (it did
-not during Run 3). Whether the jumps are visible is again a question for the eye (`pnpm
+numbers and in the lower frame count; the PC also ran Docker Desktop during this run
+(whether it ran during Run 3 is not known). Whether the jumps are visible is again a question for the eye (`pnpm
 dev`, viewer on http://localhost:5930). The CPU number is now computed over the
 measurement window only; Run 3 divided the same CPU time by the uptime including the 1.5 s
 ramp-up, about 1 % lower.
