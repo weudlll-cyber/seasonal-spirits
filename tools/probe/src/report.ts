@@ -21,10 +21,13 @@ export interface ProbeConfig {
 
 export type SpectatorSummary = ReturnType<HeadlessSpectator['summary']>;
 
+// The first two criteria are decided by a number. The third ("no visible jumps") is not: a
+// count cannot say what an eye sees, so the report carries the count and the decision is
+// the visual check described in docs/PHASE0.md.
 export interface Criteria {
   hzUnder30Cpu: boolean;
   bytesUnder1Kb: boolean;
-  noVisibleJumps: boolean;
+  jumpsPer60s: number;
 }
 
 export interface ReportInput {
@@ -43,8 +46,12 @@ export function evaluateCriteria(
   return {
     hzUnder30Cpu: metrics.achievedHz >= cfg.tickHz * 0.95 && metrics.cpuPercentOfOneCore <= 30,
     bytesUnder1Kb: metrics.stateBytes < 1024,
-    noVisibleJumps: summary.jumpsPer60s === 0,
+    jumpsPer60s: summary.jumpsPer60s,
   };
+}
+
+export function jumpsLabel(jumpsPer60s: number): string {
+  return `jumps: ${jumpsPer60s}/60 s — visibility is checked by eye (see docs/PHASE0.md)`;
 }
 
 export function pf(v: boolean): string {
@@ -88,14 +95,14 @@ export function renderReport(r: ReportInput): string {
   return lines.join('\n') + '\n';
 }
 
-function renderCriteria(c: Criteria): string[] {
-  const allPass = c.hzUnder30Cpu && c.bytesUnder1Kb && c.noVisibleJumps;
+export function renderCriteria(c: Criteria): string[] {
+  const bothPass = c.hzUnder30Cpu && c.bytesUnder1Kb;
   return [
     '## Criteria',
     `- 20 Hz with 32 bots under 30 % of one core: **${pf(c.hzUnder30Cpu)}**`,
     `- state message under 1 KB: **${pf(c.bytesUnder1Kb)}**`,
-    `- no visible jumps at 150 ms (0 per 60 s): **${pf(c.noVisibleJumps)}**`,
+    `- no visible jumps at 150 ms: ${jumpsLabel(c.jumpsPer60s)}`,
     '',
-    `## Verdict: ${allPass ? 'all three PASS' : 'at least one FAIL'}`,
+    `## Verdict: ${bothPass ? 'both measured criteria PASS' : 'at least one measured criterion FAIL'}; jumps by eye`,
   ];
 }

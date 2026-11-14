@@ -48,11 +48,14 @@ Three criteria decide the Phase 0 question:
    meet the threshold.
 2. **State message under 1 KB.** With 32 ghosts: `9 + 6 · 32 = 201 bytes`. Already well
    below 1 KB; this would only fail if the encoding changed.
-3. **No visible jumps at 150 ms.** The spectator reports `jumpsPer60s`; the criterion is
-   `0`.
+3. **No visible jumps at 150 ms.** The spectator reports `jumpsPer60s` and underruns per
+   60 s as numbers. "Visible" cannot be decided by a count: the detector's threshold is
+   deliberately strict and flags single-frame overshoots a viewer does not see. The report
+   therefore prints `jumps: <n>/60 s — visibility is checked by eye (see docs/PHASE0.md)`,
+   and the decision is a visual check of the running viewer (see "Result" below).
 
-Each criterion is marked `PASS` or `FAIL` in the report. The probe exits 0 in either case:
-the report is the answer.
+The first two criteria are marked `PASS` or `FAIL` in the report; the third carries only
+its count. The probe exits 0 in every case: the report is the answer.
 
 ## Linux run sheet
 

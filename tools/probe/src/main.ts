@@ -9,6 +9,7 @@ import { GameServer, type ServerMetrics } from '@seasonal-spirits/server';
 import { ProbeBot } from './bot.js';
 import {
   evaluateCriteria,
+  jumpsLabel,
   pf,
   renderReport,
   type ProbeConfig,
@@ -94,11 +95,9 @@ async function writeReport(metrics: ServerMetrics, summary: SpectatorSummary): P
     'utf8',
   );
   console.log(`[probe] wrote ${reportPath}`);
-  const allPass = criteria.hzUnder30Cpu && criteria.bytesUnder1Kb && criteria.noVisibleJumps;
   console.log(
     `[probe] criteria: hz-cpu=${pf(criteria.hzUnder30Cpu)} ` +
-      `bytes=${pf(criteria.bytesUnder1Kb)} no-jumps=${pf(criteria.noVisibleJumps)} ` +
-      `→ ${allPass ? 'PASS' : 'FAIL'}`,
+      `bytes=${pf(criteria.bytesUnder1Kb)} ${jumpsLabel(criteria.jumpsPer60s)}`,
   );
 }
 
