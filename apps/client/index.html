@@ -97,6 +97,11 @@
       body.touch #stick {
         display: block;
       }
+      /* A spectator has no controls (it sends nothing after its hello). */
+      body.spectating #stick,
+      body.spectating #actions {
+        display: none;
+      }
       #stick::before,
       #knob {
         position: fixed;

@@ -15,7 +15,7 @@ message (docs/SERVER.md). Development mode only: there is no sign-in yet (CONCEP
 | `src/result.ts`            | Result screen and bridge box                                                 |
 | `src/sound.ts`             | The halving tone (Web Audio)                                                 |
 | `src/config.ts`            | Bridge box on/off and its links, camera span                                 |
-| `e2e/`                     | Playwright config, helpers and the spec                                      |
+| `e2e/`                     | Playwright config, helpers, the player and the spectator specs               |
 | `packages/render` (shared) | The Canvas drawing the client and the viewer share: field, ghosts, clock     |
 
 Reused rather than rebuilt: the state decoding, interpolation, render clock and buffer
@@ -30,6 +30,17 @@ the name "Player <ghost>" and a team chosen by the server, and answers with a we
 every slot already has a player, the server answers `{"kind":"spectating","reason":"full"}`
 and the client watches the whole field and says so on screen. After a lost connection the
 client asks for a reload; a reconnect is a new player until the website sign-in exists.
+
+## Spectator mode (`?spectate=1`)
+
+http://localhost:5930/?spectate=1 joins as a spectator (CONCEPT.md §5: watching is the
+step before playing): the whole field, every ghost named, the season clock and the halving
+staging as players see them, the result screen with the bridge box (no own place), and no
+controls — no joystick, no buttons, keys do nothing. The client sends its hello and then
+nothing; the server would close a spectator that sends anything (THREATS row 12). Only the
+exact value `1` switches it on. The browser spec `e2e/spectate.e2e.ts` (desktop size)
+watches a halving and the result and counts the frames sent to the match server: exactly
+the hello.
 
 ## Controls (CONCEPT.md §8)
 

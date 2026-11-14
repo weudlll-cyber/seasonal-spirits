@@ -1,6 +1,7 @@
 // Seasonal Spirits — the player client: joins the match, steers one ghost, shows the match.
 // Development mode, no sign-in: the server gives a free slot (a bot leaves) or, when every
-// slot has a player, lets the client watch. Draws with packages/render, interpolates with
+// slot has a player, lets the client watch. With ?spectate=1 it only watches (CONCEPT.md §5):
+// the whole field, every name, the clock and the halving staging, no controls. Draws with packages/render, interpolates with
 // packages/protocol; everything shown comes from the server's state.
 
 import {
@@ -43,6 +44,9 @@ window.addEventListener('resize', resize);
 // Joystick and touch layout when the primary pointer is a finger (a laptop with a touch screen
 // and a mouse keeps the desktop layout).
 document.body.classList.toggle('touch', matchMedia('(pointer: coarse)').matches);
+// Exactly "1"; anything else plays.
+const spectate = new URLSearchParams(location.search).get('spectate') === '1';
+document.body.classList.toggle('spectating', spectate);
 
 const tone = new HalvingTone();
 bindMute(() => tone.toggleMute(), tone.muted);
@@ -54,11 +58,11 @@ let halvings = 0;
 const NOTICES: Record<Mode, string | null> = {
   connecting: 'Connecting…',
   player: null,
-  spectator: null,
+  spectator: spectate ? 'Watching the match.' : null,
   closed: 'The connection to the match server is gone. Reload the page to join again.',
 };
 
-const conn = new Connection('player', {
+const conn = new Connection(spectate ? 'spectator' : 'player', {
   onState: (s: ServerState) => {
     // The event is in one state only; every state passes here, so none is missed.
     if (!(s.flags & STATE_HALVING_EVENT)) return;
