@@ -25,13 +25,12 @@ in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 (CONCEPT.md §8: built with plain Canvas 2D, no framework). Done when: the owner has played
 a match on both and decided whether the Canvas client stays.
 
-d. **Balance — owner decision.** Both stages are in [BALANCE.md](BALANCE.md) (CLOSED),
-from before the hunter fix and soft separation of 2026-11-15. Since then (N = 30): hunters
-are the best player in 73 % of the matches, cautious in 27 %, patient never (mean 3.6, was
-21.8); teams stay even. The variants were not re-run. Done when: the owner has decided
-whether to change `stealShare`, `coinSpawnPerSecond`, `carrySpeedFactor`, the separation
-values or the bots (possibly after a fresh stage 1 and 2), and config.ts carries the
-decision.
+d. **Balance — owner decision.** Two rounds in [BALANCE.md](BALANCE.md) (CLOSED). Round 2
+(after the hunter fix and separation, N = 300): hunter best player in 66.0 % of the matches,
+cautious 32.3 %, patient 1.7 % (mean 3.8); `stealShare=0.25` turns it to cautious 70.0 %;
+no variant tried brings patient back; teams stay even (22.3–29.8 %). Done when: the owner
+has decided whether to change `stealShare`, `coinSpawnPerSecond`, `carrySpeedFactor`, the
+separation values or the bots (patient in particular), and config.ts carries the decision.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -60,12 +59,6 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 2026-11-15; the overlaps found in the own match are fixed on `fix/ui-overlaps` (CLOSED).
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
-
-i. **Balance re-run (session 2026-11-15-B, `fix/ui-overlaps`).** Stage 1 (30 matches,
-current config and the six variants) and stage 2 (300 matches, current config and the two
-variants that differ most) after the hunter fix and separation. Done when: both stages
-are in BALANCE.md with N, seeds and config per row and an English summary; no default
-changed.
 
 ## CLOSED
 
@@ -198,7 +191,13 @@ changed.
   height; names at the screen edge are moved inside (`placeLabels` takes the visible
   area). Tests in `labels.test.ts`, `arrow.test.ts`, `minimap.test.ts`, `view.test.ts`,
   `readability.e2e.ts` — commit "fix: HUD never covers the field's labels and arrow" on
-  `fix/ui-overlaps`.
+  `fix/ui-overlaps`; the spec helper `view` waits for the client's first frame (CI race) —
+  commit "test: wait for the client's first frame before reading it".
+- 2026-11-15 — **balance round 2** after the hunter fix and separation: stage 1 (30
+  matches, current config and the six variants), stage 2 (300 matches, current config,
+  `stealShare=0.25`, `coinSpawnPerSecond=1`) and the English summary in BALANCE.md (round 1
+  kept and named); no default changed — commit "docs: balance round 2 and session sheet
+  2026-11-15-B" on `fix/ui-overlaps`.
 
 ## CHECKS DONE
 
@@ -291,3 +290,7 @@ changed.
 | 2026-11-15 | `pnpm verify:changed` (18 files: format, lint, typecheck, 4 related test files / 20 tests)                                                                                                | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-15 | full CI (verify, dependencies, e2e)                                                                                                                                                       | `0127ed1`                                                                                                                            | failure: e2e desktop readability read `window.__client` right after a reload, before the first frame (a race in the spec helper `view`, not in the client); CodeQL success                                                          | [run 43718217747](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43718217747)  |
 | 2026-11-15 | `pnpm e2e` (all specs) after `view` waits for the first frame                                                                                                                             | working tree committed as "test: wait for the client's first frame before reading it"                                                | 5 passed, 1 skipped (spectator at phone size, by design)                                                                                                                                                                            | same commit                                                                                    |
+| 2026-11-15 | `pnpm balance --matches 30 --seed 1 --variant all` (round 2, stage 1)                                                                                                                     | game core of `master` `5b0500b` (unchanged on `fix/ui-overlaps`)                                                                     | current: hunter 73.3 %, cautious 26.7 %, patient 0.0 %; most different: `stealShare=0.25` (63.3 points), `coinSpawnPerSecond=1` (55.6)                                                                                              | docs/BALANCE.md                                                                                |
+| 2026-11-15 | `pnpm balance --matches 300 --seed 1 --variant current --variant stealShare=0.25 --variant coinSpawnPerSecond=1` (round 2, stage 2)                                                       | same game core                                                                                                                       | current: hunter 66.0 %, cautious 32.3 %, patient 1.7 %; `stealShare=0.25`: cautious 70.0 %; `coinSpawnPerSecond=1`: cautious 55.6 %; teams 22.3–29.8 %                                                                              | docs/BALANCE.md                                                                                |
+| 2026-11-15 | full CI (verify, dependencies, e2e)                                                                                                                                                       | `4c6bad7`                                                                                                                            | success; CodeQL success                                                                                                                                                                                                             | [run 43719657429](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43719657429)  |
+| 2026-11-15 | format check of the changed Markdown (docs only, no tests)                                                                                                                                | working tree committed as "docs: balance round 2 and session sheet 2026-11-15-B"                                                     | green                                                                                                                                                                                                                               | same commit                                                                                    |
