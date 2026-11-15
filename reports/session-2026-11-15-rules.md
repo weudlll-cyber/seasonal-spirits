@@ -4,7 +4,7 @@
 the default game); viewer http://localhost:5931, stop with `pnpm dev:stop`.
 
 Started after MERGE 2026-11-15-CD, from `master` (`d4ae550`) on `feat/rule-trials`. Nothing
-merged, no config default changed. In progress.
+merged, no config default changed.
 
 ## Step 1 — the three switches
 
@@ -42,3 +42,69 @@ carrier with a teammate within the radius, and unblocks it", "blocks nothing by 
 Every steal test checks that the Steal flag (`canSteal`) agrees with what `trySteal` takes.
 `fairness.test.ts` "tries every one of the 24 rule-trial configurations once, today's rules
 among them".
+
+## Step 2 — stage 1 (24 configurations × 30 matches, seeds 1–30)
+
+CPU load 29 % before the start (the running `pnpm dev`); 3 min 1 s with 8 processes on 14
+cores. The default rows reproduce the known numbers (2 coins/s: 10.0 / 41.7 / 48.3 %).
+**1 of 24 within 25–42 %**: R1 + R2, no escort, 2 coins/s — patient 26.7 %, cautious 31.7 %,
+hunter 41.7 %, 10.1 swaps per match. Every row with medians, p10, p90, team wins and swaps in
+docs/BALANCE.md "Round 4"; raw `reports/rule-trials/stage1.json`.
+
+## Step 3 — stage 2 (the qualifying configuration × 300 matches, seeds 1–300)
+
+2 min 24 s. R1 + R2, no escort, 2 coins/s: patient 24.3 %, cautious 25.3 %, **hunter
+50.3 %**; secured median / p10 / p90 patient 13.0 / 8.0 / 21.0, cautious 16.5 / 10.0 / 24.0,
+hunter 16.0 / 8.0 / 28.0; teams 21.7–28.0 %; 8.6 swaps per match. **No configuration meets
+25–42 % at N = 300.**
+
+## Step 4 — results
+
+Each rule alone against the default row of the same coin rate (N = 30), best player
+patient / cautious / hunter in points:
+
+- **R1 ratio**: 1.5 coins/s +8.3 / −10.0 / +1.6; 2 coins/s 0 / −31.7 / +31.7. Swaps 0.3 → 4.1
+  and 1.3 → 9.5 per match — R1 is what makes swapping happen; alone it feeds the hunters.
+- **R2 proof**: +6.6 / 0 / −6.7 and 0 / +25.0 / −25.0, but with about one swap per match it
+  shields almost nothing — the shift is most likely N = 30 noise.
+- **R3 escort 50**: −6.7 / −18.4 / +25.0 and −10.0 / −36.7 / +46.7; escort 90: hunters
+  96.7 % at both rates. Measured without escort-seeking bots. Scratch count (5 seeds):
+  robberies of hunters 6801 → 5064, of patient bots 236 → 329; a hunter is within 50 of its
+  team's other hunter about 16 % of the time with and without the rule.
+- **R1 + R2**: +10.0 / −8.4 / −1.7 and +16.7 / −10.0 / −6.6 — the only change that lifts the
+  patient bot; at N = 300 it stays (24.3 %).
+
+**Recommendation**: R1 and R2 together — the only rule change that gives all three a real
+share and makes swapping part of the game (8.6 swaps per match at N = 300); leave out R3 as
+built (it hands the game to the hunters). The remaining gap is the hunters' 50.3 %; the lever
+measured for it is `stealShare` (0.25 instead of 0.5: hunters 33.5 → 12.0 % in Round 1 and
+66.0 → 30.0 % in Round 2, N = 300). Next measurement: R1 + R2 with stealShare 0.25 and 0.35
+at 2 coins/s, stage 1 and 2.
+
+## Files (lines before → after, against master `d4ae550`)
+
+Game core: `actions.ts` 125 → 155, `bots/strategies.ts` 97 → 104, `config.ts` 99 → 114,
+`types.ts` 76 → 79, `halving.ts` 20 → 22, `match.ts` 121 → 122, `balance.ts` 82 → 89,
+`balance-cli.ts` 78 → 78, `fairness.ts` 63 → 86, `fairness-cli.ts` 141 → 149, `index.ts` 19 →
+26, new `rules.test.ts` 132, `fairness.test.ts` 29 → 39. Docs: GAME-CORE 159 → 179, BALANCE
+663 → 782 (before this commit's BACKLOG rows: BACKLOG 366 → 381). Data:
+`reports/rule-trials/stage1.json`, `stage2.json`.
+
+- **Reused:** `nearestOpponentCarrier` (now asks the new `isStealTarget`) — the one place
+  `canSteal`, `trySteal` and the hunter bot already shared; the swap yield for `shrineOffer`,
+  `trySwap` and (through `swapMinimum`) the patient bot; `applyHalving` for the end of the
+  protection; `simulate`'s per-tick observer for counting swaps; `spread` for the swaps;
+  `pnpm fairness` with its worker slices and summary; the round-3 distance rule;
+  `test-helpers` (`quietConfig`, `matchOf`, `placeAtShrine`, `act`, `runTo`).
+- **Removed:** the swap yield's fixed `spent < swapIn` check (now `swapMinimum`); the
+  balance CLI's one-off output line for the cleared coins (now a shared `perMatch` line for
+  cleared coins and swaps).
+- **Noticed, left:** with `'fixed'` (today) a swap in the last season is allowed by the core —
+  the task assumed it was not; the default was kept. R3 was measured without bots that seek
+  escorts. N = 30 rows move by several points from noise alone (R2 alone).
+
+## NEEDS OWNER
+
+- Which rule, if any, goes into the game — the numbers point to R1 + R2 together, not R3.
+- Trial values as placeholders: `swapMinIn` 6 (R1), `escortRadius` 50 / 90 (R3).
+- Whether to measure R1 + R2 with a lower `stealShare` next.

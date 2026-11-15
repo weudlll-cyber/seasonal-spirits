@@ -64,10 +64,12 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-k. **Rule trials — measurement** (session 2026-11-15-RULES, `feat/rule-trials`). The three
-switches are built (CLOSED). Done when: stage 1 (24 configurations × 30 matches), stage 2
-(300 matches) and the results with a recommendation are in BALANCE.md "Round 4", the raw
-data in `reports/rule-trials/`, and pushed.
+k. **Rule trials — owner decision** (session 2026-11-15-RULES, `feat/rule-trials`, not
+merged). Measured (CLOSED, BALANCE.md "Round 4"): no configuration meets 25–42 % at N = 300;
+R1 + R2 together come closest (patient 24.3 %, cautious 25.3 %, hunter 50.3 %, 8.6 swaps per
+match); R3 as built hands the game to the hunters. Done when: the owner has decided which
+rule, if any, goes into the game, the trial values (`swapMinIn` 6, `escortRadius` 50 / 90)
+and whether R1 + R2 is measured with a lower `stealShare` next.
 
 ## CLOSED
 
@@ -252,6 +254,11 @@ data in `reports/rule-trials/`, and pushed.
   `pnpm fairness --rules-grid`. Tests `rules.test.ts`, `fairness.test.ts`; defaults reproduce
   the last default N = 30 row exactly — commit "feat: rule-trial switches R1–R3, defaults
   unchanged" on `feat/rule-trials`.
+- 2026-11-15 — **rule trials measured**: stage 1 (24 configurations × 30 matches), stage 2
+  (R1 + R2, 2 coins/s × 300), each rule alone against the default, swaps per match, and a
+  recommendation (R1 + R2, not R3) in BALANCE.md "Round 4"; raw data in
+  `reports/rule-trials/`; no default changed — commit "docs: rule trials stage 1 and 2,
+  results" on `feat/rule-trials`.
 
 ## CHECKS DONE
 
@@ -379,3 +386,8 @@ data in `reports/rule-trials/`, and pushed.
 | 2026-11-15 | full CI and CodeQL for the merge                                                                                                                                                          | `d4ae550` on `master`                                                                                                                | success (CI 43754246037, CodeQL 43754246045)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
 | 2026-11-15 | defaults check: `pnpm balance --matches 30 --seed 1` with the rule switches at their defaults                                                                                             | working tree committed as "feat: rule-trial switches R1–R3, defaults unchanged"                                                      | identical to the last default N = 30 row: 10.0 / 41.7 / 48.3 %, means 13.7 / 16.9 / 17.2, teams 30.0 / 16.7 / 30.0 / 23.3 %, 20.8 coins gone                                                                                        | sheet `reports/session-2026-11-15-rules.md`                                                    |
 | 2026-11-15 | `pnpm verify:changed` (14 files: format, lint, typecheck, 20 related test files / 111 tests); no e2e — client untouched, the default state unchanged                                      | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `f4a79b9` on `feat/rule-trials`                                                                                                      | success (CI 43758753341, CodeQL 43758753318)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-15 | `pnpm fairness --rules-grid --matches 30 --seed 1 --jobs 8` (stage 1)                                                                                                                     | `f4a79b9`                                                                                                                            | 3 min 1 s, CPU 29 % before; 1 of 24 within 25–42 % (R1 + R2, 2 coins/s: 26.7 / 31.7 / 41.7 %)                                                                                                                                       | `reports/rule-trials/stage1.json`, docs/BALANCE.md                                             |
+| 2026-11-15 | `pnpm fairness --configs <R1 + R2, 2 coins/s> --matches 300 --seed 1` (stage 2)                                                                                                           | same                                                                                                                                 | 2 min 24 s; 24.3 / 25.3 / 50.3 %, 8.6 swaps per match — not within 25–42 %                                                                                                                                                          | `reports/rule-trials/stage2.json`                                                              |
+| 2026-11-15 | escort check (scratch script, 5 seeds, escort 0 vs 50): robberies per victim strategy, hunter beside its team's other hunter                                                              | same                                                                                                                                 | hunters robbed 6801 → 5064, patient 236 → 329; hunter within 50 of the other hunter 15.8 % → 16.2 % of the time                                                                                                                     | sheet `reports/session-2026-11-15-rules.md`                                                    |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: rule trials stage 1 and 2, results"                                                                 | green                                                                                                                                                                                                                               | same commit                                                                                    |

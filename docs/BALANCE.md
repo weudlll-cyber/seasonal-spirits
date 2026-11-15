@@ -661,3 +661,122 @@ happens and its rate changes nothing. The swap only matters with more coins on t
   above).
 
 Nothing here changes a default; the owner decides (BACKLOG d).
+
+## Round 4 — rule trials (2026-11-15, `feat/rule-trials`)
+
+Owner decision 2026-11-15: no value setting met the target (Round 3), and at 1 coin per
+second no swap happens; three rule changes are measured, alone and combined. Trials only:
+built behind config switches whose defaults are today's game (docs/GAME-CORE.md, "Rule
+trials").
+
+- **R1 `swapMode` `'ratio'`**: a swap from `swapMinIn` = 6 coins of the current season at the
+  same rate, rounded down (6 → 9, 8 → 12, 10 → 15); not in the last season.
+- **R2 `swappedStealProof`**: coins got from a swap cannot be stolen until the next halving.
+- **R3 `escortRadius`** 50 or 90: a carrier with a teammate within that radius cannot be
+  robbed. **Measured without bots that seek escorts**: the bots follow the rule (hunters skip
+  escorted carriers) but nobody walks beside a teammate on purpose.
+
+**Base config of every row**: `DEFAULT_CONFIG` on `feat/rule-trials` — the same as the last
+default row of Round 3 (stealShare 0.5, carry 0.7, steal cooldown 1000 ms, secure 2500 ms,
+swap 10 → 15 with `'fixed'`, steal range 60, separation 28 / 0.5, ghost radius 14, coin
+radius 10, bots: cautious 5, hunter 8, deadline margin 3 s, waypoint 4 s, threat range 150)
+with the four values each row names. 32 bots, teams rotating. The defaults check: with all
+switches at their defaults `pnpm balance --matches 30 --seed 1` gives exactly the last default
+N = 30 row (10.0 / 41.7 / 48.3 %). Raw reports: `reports/rule-trials/stage1.json`,
+`stage2.json`. Swaps per match: all swaps by all 32 bots in one match.
+
+### Stage 1 — 24 configurations × 30 matches (seeds 1–30)
+
+Grid: `swapMode` {fixed, ratio} × `swappedStealProof` {false, true} × `escortRadius` {0, 50,
+90} × `coinSpawnPerSecond` {1.5, 2}. Command: `pnpm fairness --rules-grid --matches 30 --seed
+1 --jobs 8 --out reports/rule-trials/stage1.json` (3 min 1 s, 8 processes on 14 cores; CPU
+load 29 % before the start, the running `pnpm dev`). Best player share per strategy (bold:
+all three within 25–42 %), secured value per player and match, team wins, swaps. Sorted by
+distance from an even split; N = 30 matches each (360 patient, 360 cautious, 240 hunter
+players).
+
+| swapMode | swappedStealProof | escortRadius | spawn/s | patient    | cautious   | hunter     | distance | patient secured (median / p10 / p90) | cautious secured   | hunter secured     | teams won (Sp / Su / Au / Wi) | swaps per match (mean / median) |
+| -------- | ----------------- | ------------ | ------- | ---------- | ---------- | ---------- | -------- | ------------------------------------ | ------------------ | ------------------ | ----------------------------- | ------------------------------- |
+| ratio    | true              | 0            | 2       | **26.7 %** | **31.7 %** | **41.7 %** | 16.7     | 13.0 / 8.0 / 21.5                    | 16.0 / 10.0 / 25.0 | 17.0 / 6.0 / 28.5  | 20.0 / 26.7 / 20.0 / 33.3 %   | 10.1 / 10.0                     |
+| fixed    | true              | 0            | 1.5     | 13.3 %     | 31.7 %     | 55.0 %     | 43.3     | 10.5 / 7.0 / 16.0                    | 12.0 / 6.0 / 17.0  | 12.0 / 5.0 / 20.0  | 16.7 / 43.3 / 23.3 / 16.7 %   | 0.3 / 0.0                       |
+| fixed    | false             | 0            | 2       | 10.0 %     | 41.7 %     | 48.3 %     | 46.7     | 13.5 / 9.0 / 19.5                    | 16.0 / 10.0 / 24.5 | 16.0 / 8.5 / 27.5  | 30.0 / 16.7 / 30.0 / 23.3 %   | 1.3 / 1.0                       |
+| ratio    | true              | 0            | 1.5     | 16.7 %     | 23.3 %     | 60.0 %     | 53.3     | 10.0 / 6.0 / 16.0                    | 11.5 / 7.0 / 17.5  | 12.5 / 5.5 / 22.5  | 26.7 / 11.7 / 36.7 / 25.0 %   | 3.8 / 4.0                       |
+| fixed    | false             | 0            | 1.5     | 6.7 %      | 31.7 %     | 61.7 %     | 56.7     | 10.5 / 7.0 / 16.0                    | 12.0 / 6.5 / 17.0  | 12.0 / 5.0 / 20.0  | 20.0 / 40.0 / 23.3 / 16.7 %   | 0.3 / 0.0                       |
+| ratio    | false             | 0            | 1.5     | 15.0 %     | 21.7 %     | 63.3 %     | 60.0     | 10.0 / 6.0 / 15.0                    | 12.0 / 7.0 / 18.0  | 13.0 / 5.5 / 22.5  | 28.3 / 11.7 / 33.3 / 26.7 %   | 4.1 / 4.0                       |
+| fixed    | true              | 0            | 2       | 10.0 %     | 66.7 %     | 23.3 %     | 66.7     | 13.5 / 9.0 / 19.5                    | 16.5 / 10.0 / 25.0 | 15.8 / 7.5 / 25.5  | 33.3 / 13.3 / 23.3 / 30.0 %   | 1.1 / 1.0                       |
+| ratio    | false             | 0            | 2       | 10.0 %     | 10.0 %     | 80.0 %     | 93.3     | 12.0 / 7.0 / 19.0                    | 16.0 / 10.0 / 24.5 | 19.0 / 9.0 / 33.5  | 30.0 / 10.0 / 26.7 / 33.3 %   | 9.5 / 9.0                       |
+| ratio    | true              | 50           | 2       | 13.3 %     | 3.3 %      | 83.3 %     | 100.0    | 12.0 / 7.5 / 19.5                    | 15.0 / 9.0 / 22.0  | 20.5 / 10.5 / 34.0 | 23.3 / 26.7 / 30.0 / 20.0 %   | 6.0 / 6.0                       |
+| fixed    | false             | 50           | 1.5     | 0.0 %      | 13.3 %     | 86.7 %     | 106.7    | 9.5 / 6.0 / 14.0                     | 10.8 / 6.0 / 16.0  | 16.0 / 8.0 / 24.5  | 10.0 / 33.3 / 23.3 / 33.3 %   | 0.1 / 0.0                       |
+| ratio    | false             | 50           | 2       | 3.3 %      | 8.3 %      | 88.3 %     | 110.0    | 11.0 / 7.0 / 17.0                    | 15.0 / 8.5 / 23.0  | 23.5 / 13.0 / 36.0 | 16.7 / 40.0 / 30.0 / 13.3 %   | 5.6 / 5.0                       |
+| fixed    | true              | 50           | 1.5     | 0.0 %      | 10.0 %     | 90.0 %     | 113.3    | 9.5 / 6.0 / 14.0                     | 10.5 / 6.0 / 16.0  | 16.0 / 8.0 / 24.0  | 13.3 / 30.0 / 26.7 / 30.0 %   | 0.1 / 0.0                       |
+| fixed    | true              | 50           | 2       | 0.0 %      | 6.7 %      | 93.3 %     | 120.0    | 12.0 / 8.0 / 19.0                    | 15.0 / 8.0 / 22.5  | 20.0 / 11.0 / 33.0 | 33.3 / 10.0 / 18.3 / 38.3 %   | 0.8 / 0.5                       |
+| ratio    | true              | 90           | 1.5     | 3.3 %      | 3.3 %      | 93.3 %     | 120.0    | 8.0 / 5.0 / 13.0                     | 10.0 / 6.0 / 15.0  | 18.3 / 9.5 / 28.0  | 20.0 / 26.7 / 40.0 / 13.3 %   | 1.8 / 2.0                       |
+| fixed    | false             | 50           | 2       | 0.0 %      | 5.0 %      | 95.0 %     | 123.3    | 12.0 / 7.5 / 18.0                    | 15.5 / 9.0 / 23.0  | 20.0 / 11.0 / 33.0 | 36.7 / 18.3 / 18.3 / 26.7 %   | 0.8 / 0.5                       |
+| ratio    | false             | 90           | 1.5     | 0.0 %      | 5.0 %      | 95.0 %     | 123.3    | 8.0 / 5.0 / 12.0                     | 10.0 / 5.5 / 15.5  | 18.0 / 9.5 / 28.5  | 18.3 / 30.0 / 28.3 / 23.3 %   | 1.8 / 2.0                       |
+| fixed    | false             | 90           | 1.5     | 0.0 %      | 3.3 %      | 96.7 %     | 126.7    | 9.0 / 5.0 / 13.0                     | 10.0 / 6.0 / 15.0  | 17.8 / 9.0 / 27.0  | 25.0 / 40.0 / 21.7 / 13.3 %   | 0.0 / 0.0                       |
+| fixed    | false             | 90           | 2       | 0.0 %      | 3.3 %      | 96.7 %     | 126.7    | 11.3 / 7.5 / 16.0                    | 14.0 / 8.0 / 22.0  | 23.0 / 12.0 / 38.0 | 26.7 / 26.7 / 26.7 / 20.0 %   | 0.4 / 0.0                       |
+| fixed    | true              | 90           | 1.5     | 0.0 %      | 3.3 %      | 96.7 %     | 126.7    | 9.0 / 5.0 / 13.0                     | 10.0 / 6.0 / 15.0  | 17.8 / 9.0 / 27.0  | 25.0 / 40.0 / 21.7 / 13.3 %   | 0.0 / 0.0                       |
+| fixed    | true              | 90           | 2       | 0.0 %      | 3.3 %      | 96.7 %     | 126.7    | 11.5 / 7.5 / 16.5                    | 14.0 / 8.0 / 22.5  | 22.3 / 11.5 / 38.0 | 30.0 / 30.0 / 26.7 / 13.3 %   | 0.5 / 0.0                       |
+| ratio    | true              | 50           | 1.5     | 0.0 %      | 3.3 %      | 96.7 %     | 126.7    | 9.0 / 5.5 / 13.0                     | 10.0 / 6.0 / 17.0  | 16.5 / 8.5 / 26.5  | 25.0 / 28.3 / 30.0 / 16.7 %   | 2.0 / 2.0                       |
+| ratio    | false             | 90           | 2       | 1.7 %      | 0.0 %      | 98.3 %     | 130.0    | 10.0 / 6.0 / 15.0                    | 15.0 / 8.0 / 21.5  | 26.0 / 14.0 / 39.5 | 28.3 / 33.3 / 33.3 / 5.0 %    | 4.2 / 4.0                       |
+| ratio    | false             | 50           | 1.5     | 0.0 %      | 0.0 %      | 100.0 %    | 133.3    | 9.0 / 5.0 / 13.0                     | 10.5 / 6.0 / 17.0  | 17.5 / 8.0 / 26.5  | 13.3 / 30.0 / 36.7 / 20.0 %   | 2.2 / 2.0                       |
+| ratio    | true              | 90           | 2       | 0.0 %      | 0.0 %      | 100.0 %    | 133.3    | 11.0 / 7.0 / 16.5                    | 14.0 / 8.0 / 22.0  | 24.0 / 12.5 / 38.0 | 20.0 / 30.0 / 30.0 / 20.0 %   | 4.8 / 4.5                       |
+
+**1 of 24** has all three strategies within 25–42 % at N = 30: R1 and R2 together, no escort,
+2 coins per second.
+
+### Stage 2 — the qualifying configuration × 300 matches (seeds 1–300)
+
+Command: `pnpm fairness --configs <R1 + R2, escort 0, 2 coins/s> --matches 300 --seed 1 --jobs
+1 --out reports/rule-trials/stage2.json` (2 min 24 s). N = 300 matches (3600 patient, 3600
+cautious, 2400 hunter players):
+
+| swapMode | swappedStealProof | escortRadius | spawn/s | patient | cautious | hunter     | distance | patient secured (median / p10 / p90) | cautious secured   | hunter secured    | teams won (Sp / Su / Au / Wi) | swaps per match (mean / median) |
+| -------- | ----------------- | ------------ | ------- | ------- | -------- | ---------- | -------- | ------------------------------------ | ------------------ | ----------------- | ----------------------------- | ------------------------------- |
+| ratio    | true              | 0            | 2       | 24.3 %  | 25.3 %   | **50.3 %** | 34.0     | 13.0 / 8.0 / 21.0                    | 16.5 / 10.0 / 24.0 | 16.0 / 8.0 / 28.0 | 26.2 / 28.0 / 24.2 / 21.7 %   | 8.6 / 8.0                       |
+
+**No configuration holds 25–42 % for all three at N = 300.** The best misses with hunters at
+50.3 % and patient and cautious just under 25 %.
+
+### Each rule alone against the default (N = 30, seeds 1–30)
+
+Best-player share patient / cautious / hunter, change in points against the default row of the
+same coin rate; swaps per match.
+
+| Rule         | 1.5 coins/s        | change               | swaps | 2 coins/s          | change                | swaps |
+| ------------ | ------------------ | -------------------- | ----- | ------------------ | --------------------- | ----- |
+| default      | 6.7 / 31.7 / 61.7  | —                    | 0.3   | 10.0 / 41.7 / 48.3 | —                     | 1.3   |
+| R1 ratio     | 15.0 / 21.7 / 63.3 | +8.3 / −10.0 / +1.6  | 4.1   | 10.0 / 10.0 / 80.0 | 0 / −31.7 / +31.7     | 9.5   |
+| R2 proof     | 13.3 / 31.7 / 55.0 | +6.6 / 0 / −6.7      | 0.3   | 10.0 / 66.7 / 23.3 | 0 / +25.0 / −25.0     | 1.1   |
+| R3 escort 50 | 0.0 / 13.3 / 86.7  | −6.7 / −18.4 / +25.0 | 0.1   | 0.0 / 5.0 / 95.0   | −10.0 / −36.7 / +46.7 | 0.8   |
+| R3 escort 90 | 0.0 / 3.3 / 96.7   | −6.7 / −28.4 / +35.0 | 0.0   | 0.0 / 3.3 / 96.7   | −10.0 / −38.4 / +48.4 | 0.4   |
+| R1 + R2      | 16.7 / 23.3 / 60.0 | +10.0 / −8.4 / −1.7  | 3.8   | 26.7 / 31.7 / 41.7 | +16.7 / −10.0 / −6.6  | 10.1  |
+
+### Round 4: what the numbers say
+
+- **R1 makes swapping happen**: 1.3 → 9.5 swaps per match at 2 coins/s (0.3 → 4.1 at 1.5).
+  Alone it feeds the hunters (hunter 48.3 → 80.0 % at 2 coins/s): the swapped coins are just
+  more to rob.
+- **R2 alone barely acts**: without R1 there is about one swap per match, so it shields
+  almost nothing. Its rows still move (cautious 41.7 → 66.7 %, hunter 48.3 → 23.3 % at 2
+  coins/s; −6.7 points for hunters at 1.5) — more than so small a change explains; most
+  likely the noise of N = 30 in a match where one changed steal changes the whole seed's
+  course. Patient stays at about 10 %.
+- **R1 and R2 together are the only combination that lifts the patient bot** (10.0 → 26.7 %
+  at N = 30, 24.3 % at N = 300), with about 9–10 swaps per match.
+- **R3, as measured, makes hunters dominate** (83–100 % in every escort row). A scratch count
+  over five seeded matches at the default otherwise (escort 50 against 0): robberies of
+  hunters fall from 6801 to 5064, robberies of patient bots rise from 236 to 329; a hunter
+  is within 50 of its team's other hunter about 16 % of the time in both. The spread-out
+  collectors are rarely beside a teammate (they patrol their own waypoints), so the rule
+  shields little of what they carry. Bots that seek escorts could change this; they were not
+  built.
+- **None meets the target at N = 300.** The best (R1 + R2, 2 coins/s) is off by the hunters
+  (50.3 %).
+
+**Recommendation, backed by these numbers**: R1 and R2 together are the approach — the only
+rule change that gives all three strategies a real share and makes swapping part of the game
+(8.6 swaps per match at N = 300). Leave out R3 as built. What is left is the hunters' 50 %;
+the lever measured for that is `stealShare` (0.25 instead of 0.5 moved the hunters' best-player
+share from 33.5 to 12.0 % in Round 1 and from 66.0 to 30.0 % in Round 2, N = 300 each). The next measurement would be R1 + R2 with stealShare 0.25 and
+0.35 at 2 coins/s, stage 1 and 2. Nothing here changes a default; the owner decides.
