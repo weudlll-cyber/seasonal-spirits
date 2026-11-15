@@ -5,7 +5,7 @@
 import type { GameConfig } from './config.js';
 import { STRATEGIES, type Strategy } from './bots/strategies.js';
 import { botRoster, simulate } from './simulation.js';
-import { TEAMS, type Team } from './types.js';
+import { TEAMS, type MatchEvent, type Team } from './types.js';
 
 export interface Spread {
   n: number; // how many values
@@ -26,38 +26,63 @@ export interface BalanceReport {
   swapsPerMatch: Spread; // swaps by all ghosts in a match: whether swapping happens at all
   stealsPerMatch: Spread; // steals by all ghosts in a match
   coinsPerSteal: Spread; // coins one steal took, over every steal of every match
+  stealsByPair: StealMatrix; // steals per match (mean), thief strategy → victim strategy
 }
+
+export type StealMatrix = Record<Strategy, Record<Strategy, number>>;
+
+interface MatchCount {
+  swaps: number;
+  steals: number;
+}
+
+interface Totals {
+  stealCoins: number[]; // coins of every single steal, over all matches
+  pairs: StealMatrix; // steals summed over all matches
+}
+
+// One tick's events into this match's counts and the totals over all matches.
+function countEvents(
+  events: readonly MatchEvent[],
+  strategyOf: ReadonlyMap<number, Strategy>,
+  match: MatchCount,
+  totals: Totals,
+): void {
+  for (const e of events) {
+    if (e.type === 'swap') match.swaps++;
+    if (e.type !== 'steal') continue;
+    match.steals++;
+    totals.stealCoins.push(e.coins);
+    const thief = strategyOf.get(e.thief);
+    const victim = strategyOf.get(e.victim);
+    if (thief && victim) totals.pairs[thief][victim]++;
+  }
+}
+
+const perStrategy = <T>(make: (s: Strategy) => T): Record<Strategy, T> =>
+  Object.fromEntries(STRATEGIES.map((s) => [s, make(s)])) as Record<Strategy, T>;
 
 export function rotatedRoster(match: number): ReturnType<typeof botRoster> {
   return botRoster(32).map((r) => ({ ...r, team: ((r.team + match) % 4) as Team }));
 }
 
 export function runBalance(cfg: GameConfig, matches: number, firstSeed: number): BalanceReport {
-  const best = Object.fromEntries(STRATEGIES.map((s) => [s, 0])) as Record<Strategy, number>;
-  const values = Object.fromEntries(STRATEGIES.map((s) => [s, [] as number[]])) as Record<
-    Strategy,
-    number[]
-  >;
+  const best = perStrategy(() => 0);
+  const values = perStrategy(() => [] as number[]);
   const teamWins = TEAMS.map(() => 0);
   const cleared: number[] = [];
   const swaps: number[] = [];
   const steals: number[] = [];
-  const stealCoins: number[] = []; // coins of every single steal, over all matches
+  const totals: Totals = { stealCoins: [], pairs: perStrategy(() => perStrategy(() => 0)) };
   for (let k = 0; k < matches; k++) {
     const roster = rotatedRoster(k);
-    let swapped = 0;
-    let stole = 0;
-    const r = simulate(cfg, firstSeed + k, roster, (s) => {
-      for (const e of s.events) {
-        if (e.type === 'swap') swapped++;
-        if (e.type !== 'steal') continue;
-        stole++;
-        stealCoins.push(e.coins);
-      }
-    });
-    swaps.push(swapped);
-    steals.push(stole);
     const strategyOf = new Map(roster.map((x) => [x.id, x.strategy]));
+    const count: MatchCount = { swaps: 0, steals: 0 };
+    const r = simulate(cfg, firstSeed + k, roster, (s) => {
+      countEvents(s.events, strategyOf, count, totals);
+    });
+    swaps.push(count.swaps);
+    steals.push(count.steals);
     const top = Math.max(...r.result.players.map((p) => p.secured));
     const winners = r.result.players.filter((p) => p.secured === top);
     for (const p of r.result.players) {
@@ -74,19 +99,14 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
   return {
     matches,
     firstSeed,
-    bestPlayerShare: Object.fromEntries(STRATEGIES.map((s) => [s, share(best[s])])) as Record<
-      Strategy,
-      number
-    >,
-    secured: Object.fromEntries(STRATEGIES.map((s) => [s, spread(values[s])])) as Record<
-      Strategy,
-      Spread
-    >,
+    bestPlayerShare: perStrategy((s) => share(best[s])),
+    secured: perStrategy((s) => spread(values[s])),
     teamWinShare: teamWins.map(share),
     clearedPerMatch: spread(cleared),
     swapsPerMatch: spread(swaps),
     stealsPerMatch: spread(steals),
-    coinsPerSteal: spread(stealCoins),
+    coinsPerSteal: spread(totals.stealCoins),
+    stealsByPair: perStrategy((t) => perStrategy((v) => share(totals.pairs[t][v]))),
   };
 }
 

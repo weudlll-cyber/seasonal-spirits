@@ -1,4 +1,5 @@
-// Seasonal Spirits — the balance numbers: percentiles, rotating teams, shares that add up.
+// Seasonal Spirits — the balance numbers: percentiles, rotating teams, shares and steal
+// counts that add up.
 
 import { describe, expect, it } from 'vitest';
 import { rotatedRoster, runBalance, spread } from './balance.js';
@@ -32,5 +33,13 @@ describe('balance', () => {
     expect(sum(Object.values(r.bestPlayerShare))).toBeCloseTo(1);
     expect(sum(r.teamWinShare)).toBeCloseTo(1);
     expect(r.secured.patient.n + r.secured.cautious.n + r.secured.hunter.n).toBe(64);
+  });
+
+  it('counts every steal once in the thief × victim strategy matrix', () => {
+    const short = { ...DEFAULT_CONFIG, seasonDurationMs: 15_000, matchDurationMs: 60_000 };
+    const r = runBalance(short, 2, 1);
+    const cells = Object.values(r.stealsByPair).flatMap((row) => Object.values(row));
+    expect(r.stealsPerMatch.mean).toBeGreaterThan(0);
+    expect(cells.reduce((a, b) => a + b, 0)).toBeCloseTo(r.stealsPerMatch.mean);
   });
 });

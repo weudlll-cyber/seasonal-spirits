@@ -186,3 +186,36 @@ Round 3); why a random share differs from its mean these runs do not show.
 
 NEEDS OWNER: fixed 0.35, A (0–0.5) or B (0.2–0.5) for the game — A and fixed 0.35 both meet
 25–42 % at N = 300, B does not.
+
+## Round 7 — the two fair candidates on fresh seeds (session 2026-11-16-RULES-4)
+
+**Why**: Round 6 showed equal mean shares acting very differently, so an in-band result might
+belong to seeds 1–300. Both in-band candidates ran on seeds never used: 301–600, N = 300
+each, R1 + R2 on, escort off, 2 coins/s, everything else default. C1 = `stealShare` 0.35
+fixed; C2 = `stealShare` 0, `stealShareMax` 0.5. One run, 4 min 17 s, CPU load 57 % before.
+
+| candidate | seeds | patient | cautious | hunter | distance | steals per match | coins per steal (mean / p10 / p90) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| C1 fixed 0.35 | 301–600 | **27.3 %** | **33.0 %** | **39.7 %** | 12.7 | 1458.1 | 2.7 / 1 / 4 |
+| C1 fixed 0.35 | 1–300 (Round 5) | **35.0 %** | **32.8 %** | **32.2 %** | 3.3 | — | — |
+| C2 random 0–0.5 | 301–600 | **28.2 %** | **39.7 %** | **32.1 %** | 12.8 | 1291.8 | 2.1 / 1 / 3 |
+| C2 random 0–0.5 | 1–300 (Round 6) | **35.5 %** | **35.3 %** | **29.2 %** | 8.3 | 1298.9 | 2.1 / 1 / 3 |
+
+Both stay within 25–42 % for all three on both seed sets, with less margin on the fresh seeds
+(C1 hunter 2.3 points below the upper edge, C2 patient 3.2 above the lower edge). Secured
+median / p10 / p90 within 0.5 of seeds 1–300 for every style.
+
+**Who robs whom** (new report field `stealsByPair`, seeds 301–600, steals per match): only
+hunters steal. Hunters rob hunters 1366.1 times (C1, 93.7 % of all steals) and 1185.1 (C2,
+91.7 %); patient bots 51.9 / 62.2 times, cautious bots 40.1 / 44.6 times.
+
+**Code**: the task expected none; the steal matrix needed one count. `balance.ts` 102 → 122
+(the observer's event loop moved into `countEvents`, which also counts the strategy pair;
+`perStrategy` replaces four copies of the `Object.fromEntries(STRATEGIES…)` cast);
+`balance.test.ts` 36 → 45 (test "counts every steal once in the thief × victim strategy
+matrix"). Reused: `simulate`'s per-tick observer, the steal event's thief and victim ids, the
+fairness tool with `--configs`. Removed: the inline event loop and the four casts. Noticed,
+left: on seeds 301–600 the Winter side won only 18.7 % with C2 (25.0 % on seeds 1–300).
+Full tables in docs/BALANCE.md "Round 7"; raw data `reports/rule-trials/round7-*.json`.
+
+NEEDS OWNER: C1 (fixed 0.35) or C2 (random 0–0.5) for the game. Nothing merged.

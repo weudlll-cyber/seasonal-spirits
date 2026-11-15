@@ -62,14 +62,15 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-k. **Rule trials — owner decision** (sessions 2026-11-15-RULES, -RULES-2 and -RULES-3,
-`feat/rule-trials`, not merged). Measured (CLOSED, BALANCE.md "Round 4" to "Round 6"): R3 as
-built hands the game to the hunters; R1 + R2 at the default steal share leaves the hunters at
-50.3 %. With R1 + R2 at 2 coins per second, two steal shares meet 25–42 % for all three at
-N = 300: fixed 0.35 (35.0 / 32.8 / 32.2 %) and a random share 0–0.5 (35.5 / 35.3 / 29.2 %);
-a random 0.2–0.5 does not (hunter 46.3 %). Done when: the owner has decided which
-configuration goes into the game (fixed 0.35, random 0–0.5 or 0.2–0.5), with the trial
-values (`swapMinIn` 6; `escortRadius` 50 / 90 if R3 at all), and config.ts carries it.
+k. **Rule trials — owner decision** (sessions 2026-11-15-RULES, -RULES-2, -RULES-3 and
+2026-11-16-RULES-4, `feat/rule-trials`, not merged). Measured (CLOSED, BALANCE.md "Round 4" to
+"Round 7"): R3 as built hands the game to the hunters; R1 + R2 at the default steal share
+leaves the hunters at 50.3 %. With R1 + R2 at 2 coins per second, two steal shares meet 25–42 %
+for all three at N = 300 on seeds 1–300 and again on fresh seeds 301–600: C1 fixed 0.35
+(35.0 / 32.8 / 32.2 %, then 27.3 / 33.0 / 39.7 %) and C2 random 0–0.5 (35.5 / 35.3 / 29.2 %,
+then 28.2 / 39.7 / 32.1 %); a random 0.2–0.5 does not (hunter 46.3 %). Done when: the owner
+has decided which candidate goes into the game (C1 or C2), with the trial values
+(`swapMinIn` 6; `escortRadius` 50 / 90 if R3 at all), and config.ts carries it.
 
 ## CLOSED
 
@@ -275,6 +276,12 @@ values (`swapMinIn` 6; `escortRadius` 50 / 90 if R3 at all), and config.ts carri
   fixed 0.35; A meets 25–42 % at N = 300, B does not; BALANCE.md "Round 6", raw data
   `reports/rule-trials/round6-*.json`; no default changed — commit "docs: Round 6, a random
   steal share" on `feat/rule-trials`.
+- 2026-11-16 — **Round 7: the two fair candidates on fresh seeds**: C1 (fixed 0.35) and C2
+  (random 0–0.5), R1 + R2, 2 coins/s, N = 300 on seeds 301–600; both stay within 25–42 %, both
+  12.7–12.8 points from even; steals by thief × victim strategy (new report field
+  `stealsByPair`): 92–94 % hunters robbing hunters; BALANCE.md "Round 7", raw data
+  `reports/rule-trials/round7-*.json`; no default changed — commit "feat: Round 7, fair
+  candidates on fresh seeds, steal matrix" on `feat/rule-trials`.
 
 ## CHECKS DONE
 
@@ -417,3 +424,7 @@ values (`swapMinIn` 6; `escortRadius` 50 / 90 if R3 at all), and config.ts carri
 | 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round6-configs-30.json --matches 30 --seed 1 --jobs 3` (A, B, fixed 0.35)                                                                    | `b5abda9`                                                                                                                            | 52.5 s, CPU load 43 % before; A 26.7 / 43.3 / 30.0 %, B 18.3 / 30.0 / 51.7 %, fixed 0.35 30.0 / 33.3 / 36.7 %                                                                                                                       | `reports/rule-trials/round6-n30.json`                                                          |
 | 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round6-configs-300.json --matches 300 --seed 1 --jobs 2` (A, B)                                                                              | same                                                                                                                                 | 4 min 9 s, CPU load 50 % before; A 35.5 / 35.3 / 29.2 % (within 25–42 %), B 19.9 / 33.7 / 46.3 %                                                                                                                                    | `reports/rule-trials/round6-n300.json`                                                         |
 | 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: Round 6, a random steal share"                                                                      | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `b5abda9` and `1a45d23` on `feat/rule-trials`                                                                                        | CI for `b5abda9` cancelled (superseded by the next push), CodeQL success; CI and CodeQL for `1a45d23` success (CI 43768059333, CodeQL 43768059348)                                                                                  | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 21 related test files / 116 tests)                                                                                                        | working tree committed as "feat: Round 7, fair candidates on fresh seeds, steal matrix"                                              | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | `pnpm fairness --configs reports/rule-trials/round7-configs.json --matches 300 --seed 301 --jobs 2` (C1, C2)                                                                              | same tree                                                                                                                            | 4 min 17 s, CPU load 57 % before; C1 27.3 / 33.0 / 39.7 %, C2 28.2 / 39.7 / 32.1 % (both within 25–42 %)                                                                                                                            | `reports/rule-trials/round7-n300.json`                                                         |
+| 2026-11-16 | format check of the changed Markdown and JSON                                                                                                                                             | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |

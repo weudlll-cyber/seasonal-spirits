@@ -913,3 +913,62 @@ start).
 - Swaps stay part of the game: 8.8 (A), 8.2 (B), 9.1 (fixed 0.35) per match.
 
 Nothing here changes a default; the owner decides between fixed 0.35, A and B.
+
+## Round 7 — the two fair candidates on fresh seeds (2026-11-16, `feat/rule-trials`)
+
+Round 6 showed equal mean shares acting very differently, so an in-band result might belong to
+seeds 1–300. Round 7 runs the two in-band candidates on seeds never used before (301–600).
+
+**Config of both rows**: `DEFAULT_CONFIG` on `feat/rule-trials` with **R1 `swapMode` 'ratio'
+(`swapMinIn` 6), R2 `swappedStealProof` true, R3 `escortRadius` 0, `coinSpawnPerSecond` 2**;
+everything else default (`carrySpeedFactor` 0.7, `stealCooldownMs` 1000, `secureDurationMs`
+2500, `swapOut` 15), and:
+
+- **C1**: `stealShare` 0.35 fixed (the Round 5 configuration).
+- **C2**: `stealShare` 0, `stealShareMax` 0.5 (Round 6 variant A).
+
+Configurations: `reports/rule-trials/round7-configs.json`. Command: `pnpm fairness --configs
+reports/rule-trials/round7-configs.json --matches 300 --seed 301 --jobs 2 --out
+reports/rule-trials/round7-n300.json` (4 min 17 s; CPU load 57 % before the start). N = 300
+matches each (3600 patient, 3600 cautious, 2400 hunter players). Bold: all three within
+25–42 %. The seeds 1–300 rows are Round 5 (C1) and Round 6 (C2), not re-run.
+
+| candidate       | N (seeds)     | patient    | cautious   | hunter     | distance | patient secured (median / p10 / p90) | cautious secured   | hunter secured    | teams won (Sp / Su / Au / Wi) | swaps per match (mean) | steals per match (mean / median) | coins per steal (mean / p10 / p90) |
+| --------------- | ------------- | ---------- | ---------- | ---------- | -------- | ------------------------------------ | ------------------ | ----------------- | ----------------------------- | ---------------------- | -------------------------------- | ---------------------------------- |
+| C1 fixed 0.35   | 300 (301–600) | **27.3 %** | **33.0 %** | **39.7 %** | 12.7     | 13.0 / 8.5 / 22.5                    | 17.0 / 10.0 / 24.5 | 15.5 / 7.5 / 26.0 | 21.6 / 25.9 / 23.3 / 29.1 %   | 8.9                    | 1458.1 / 1449.0                  | 2.7 / 1 / 4                        |
+| C1 fixed 0.35   | 300 (1–300)   | **35.0 %** | **32.8 %** | **32.2 %** | 3.3      | 13.5 / 8.5 / 22.5                    | 16.5 / 10.0 / 24.5 | 15.5 / 7.5 / 26.0 | 23.5 / 27.7 / 26.7 / 22.2 %   | 9.1                    | —                                | —                                  |
+| C2 random 0–0.5 | 300 (301–600) | **28.2 %** | **39.7 %** | **32.1 %** | 12.8     | 13.5 / 9.0 / 22.5                    | 16.5 / 10.0 / 25.0 | 15.5 / 8.0 / 25.0 | 24.2 / 26.5 / 30.7 / 18.7 %   | 8.1                    | 1291.8 / 1284.0                  | 2.1 / 1 / 3                        |
+| C2 random 0–0.5 | 300 (1–300)   | **35.5 %** | **35.3 %** | **29.2 %** | 8.3      | 13.5 / 8.5 / 23.0                    | 16.5 / 10.0 / 25.0 | 15.5 / 8.0 / 25.0 | 25.7 / 25.5 / 23.8 / 25.0 %   | 8.8                    | 1298.9 / 1295.0                  | 2.1 / 1 / 3                        |
+
+### Who robs whom (seeds 301–600)
+
+New report field `stealsByPair` (`src/balance.ts`): steals per match by thief strategy ×
+victim strategy, counted in the same tick observer as the other steal figures. Mean per
+match; in brackets the share of all steals.
+
+| thief → victim | patient      | cautious     | hunter          |
+| -------------- | ------------ | ------------ | --------------- |
+| C1: hunter     | 51.9 (3.6 %) | 40.1 (2.8 %) | 1366.1 (93.7 %) |
+| C2: hunter     | 62.2 (4.8 %) | 44.6 (3.5 %) | 1185.1 (91.7 %) |
+
+Patient and cautious bots never steal (0 in every cell, both candidates): stealing is only the
+hunter strategy's action.
+
+### Round 7: what the numbers say
+
+- **Both candidates stay within 25–42 % on the fresh seeds**: C1 27.3 / 33.0 / 39.7 %, C2
+  28.2 / 39.7 / 32.1 % (patient / cautious / hunter, N = 300, seeds 301–600) — and on seeds
+  1–300 before (C1 35.0 / 32.8 / 32.2 %, C2 35.5 / 35.3 / 29.2 %).
+- **The margin is smaller than seeds 1–300 suggested.** Both are now 12.7–12.8 points from an
+  even split (before 3.3 and 8.3). C1's hunters moved from 32.2 % to 39.7 %, 2.3 points below
+  the upper edge; C2's patient bots from 35.5 % to 28.2 %, 3.2 points above the lower edge.
+  The same configuration differs by up to 7.7 points between two sets of 300 seeds; on these
+  numbers neither candidate is clearly fairer than the other.
+- **Secured values match across seed sets** (median / p10 / p90 within 0.5 of seeds 1–300 for
+  every strategy and both candidates).
+- **Almost all stealing is hunters robbing hunters**: 93.7 % (C1) and 91.7 % (C2) of all
+  steals; hunters rob patient and cautious bots about 90–110 times per match together.
+- Teams: C1 21.6–29.1 %, C2 18.7–30.7 % (Winter low on these seeds; on seeds 1–300 Winter was
+  25.0 %).
+
+Nothing here changes a default; the owner decides between C1 and C2.
