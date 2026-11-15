@@ -98,6 +98,14 @@ hidden under the top bar).
   token logos replace them later), so a Summer coin no longer looks like a Team Summer
   ghost. Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. The
   ground takes a cast of the current season's colour.
+- **Picking up.** Ghosts and coins are drawn with the game core's sizes (`ghostRadius`,
+  `coinRadius`; render `ghostRadiusPx`, `coinRadiusPx`, tested), and the field coins come
+  from the same buffered moment as the interpolated ghosts (`stateAt` in packages/protocol),
+  so a coin disappears exactly when the drawn ghost touches it — no prediction. Before
+  2026-11-15 the coins came from the newest state while the ghosts are drawn 100 ms behind:
+  a coin vanished up to 30 field units before the ghost reached it. Only in a phone's
+  "Overview" are the shapes drawn larger than their size (at least 4 px for a ghost, 3 px for
+  a coin), so there they touch slightly before the pickup.
 - **Names.** Every ghost on screen is named (`placeLabels`, `packages/render/src/labels.ts`,
   tested; owner's observation 2026-11-15: unnamed dots): the own one "You" (with its coin
   count), a carrier its name and coin count ("Bot 7 · 3"), any other ghost — for players —

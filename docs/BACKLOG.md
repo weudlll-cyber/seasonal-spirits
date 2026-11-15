@@ -60,11 +60,10 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-j. **Session 2026-11-15-CD, remaining parts.** Stacked branches from `fix/dots-and-packs`.
-Done when each is built, tested, documented and pushed: coin pickup when the drawn shapes
-touch (`fix/pickup`); help overlay and server-authoritative steal feedback
-(`feat/help-feedback`); the fairness search — bot sanity, grid search, stage 2, swap
-comparison — in BALANCE.md (`feat/fairness`).
+j. **Session 2026-11-15-CD, remaining parts.** Stacked branches from `fix/pickup`. Done when
+each is built, tested, documented and pushed: help overlay and server-authoritative steal
+feedback (`feat/help-feedback`); the fairness search — bot sanity, grid search, stage 2,
+swap comparison — in BALANCE.md (`feat/fairness`).
 
 ## CLOSED
 
@@ -213,6 +212,13 @@ comparison — in BALANCE.md (`feat/fairness`).
   `bots.waypointMs` 4000). Tests `labels.test.ts`, `bots/packs.test.ts` (fails on master),
   `readability.e2e.ts`; balance N = 30 in BALANCE.md — commit "fix: every ghost named, no
   moving packs" on `fix/dots-and-packs`.
+- 2026-11-15 — **coin pickup when the drawn shapes touch** (owner's observation (c)): one
+  size definition in game-core (`ghostRadius()`, `coinRadius`, `touchesCoin`; placeholders
+  `ghostRadius` 14, `ghostGrowthPerCoin` 0.5, `ghostGrowthMax` 16, `coinRadius` 10 replace
+  `pickupRadius` 30) used by the server's pickup and the client's drawing; the client draws
+  the field coins of the moment its ghosts are drawn at (`stateAt`). Tests in
+  `field.test.ts`, `interpolation.test.ts`, `sizes.test.ts` — commit "fix: coins are picked up
+  when the drawn shapes touch" on `fix/pickup`.
 
 ## CHECKS DONE
 
@@ -320,3 +326,6 @@ comparison — in BALANCE.md (`feat/fairness`).
 | 2026-11-15 | `pnpm e2e`                                                                                                                                                                                | same tree                                                                                                                            | 5 passed, 1 skipped (spectator at phone size, by design)                                                                                                                                                                            | screenshots in `reports/screens/latest/`                                                       |
 | 2026-11-15 | own full match via Playwright (scratch script, desktop, Near then Overview) against `pnpm dev` with the new bots                                                                          | `880759a`                                                                                                                            | 5:00 played, place 25 of 32 (5.5 secured, blind route); no ghost without a label, no label under the bar, no page errors                                                                                                            | sheet `reports/session-2026-11-15-cd.md`, `crowd-near.png`, `crowd-overview.png`               |
 | 2026-11-15 | format check of the changed Markdown (docs only, no tests)                                                                                                                                | working tree committed as "docs: own match notes for unnamed dots and packs"                                                         | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | pickup measurement: server rule (`field.ts`), drawn sizes (`ghosts.ts`, `field.ts` in render), render buffer (`BUFFER_MS`) read from the code                                             | `0186d90`                                                                                                                            | server 30 units centre to centre; drawn touch 24 (empty) to 40 (big carrier); coins from the newest state, ghosts 100 ms behind (up to 30 units at full speed)                                                                      | sheet `reports/session-2026-11-15-cd.md`                                                       |
+| 2026-11-15 | `pnpm verify:changed` (26 files: format, lint, typecheck, 20 related test files / 106 tests)                                                                                              | working tree committed as "fix: coins are picked up when the drawn shapes touch"                                                     | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | `pnpm e2e`                                                                                                                                                                                | same tree                                                                                                                            | 5 passed, 1 skipped (spectator at phone size, by design)                                                                                                                                                                            | screenshots in `reports/screens/latest/`                                                       |

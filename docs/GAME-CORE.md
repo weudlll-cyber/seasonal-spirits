@@ -35,7 +35,12 @@ spawning, the countdown, the end.
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
   The state carries the season clock: current, next, index, time left in the season.
 - **Coins.** Only coins of the current season spawn, at `coinSpawnPerSecond` all match long,
-  up to `maxFieldCoins`. A ghost within `pickupRadius` picks a coin up.
+  up to `maxFieldCoins`. A ghost picks a coin up when their drawn shapes touch: centre
+  distance at most the ghost's radius plus `coinRadius` (`touchesCoin` in `src/geometry.ts`).
+  A ghost's radius is `ghostRadius` plus `ghostGrowthPerCoin` per carried coin, at most
+  `ghostGrowthMax` more (`ghostRadius()`); the client draws with the same function. Before
+  2026-11-15 a fixed `pickupRadius` of 30 against differently drawn sizes made pickups look
+  early for empty ghosts and late for big carriers.
 - **Teams and shrines.** Four teams; team 0 to 3 have their shrines inset from the four
   corners. Ghosts start around their own shrine.
 - **Soft separation** (owner decision 2026-11-15). After the moves, every two ghosts closer
@@ -118,7 +123,10 @@ fails.
 | `fieldSize`             | 2000    | placeholder (Phase 0 world)                                             |
 | `ghostSpeed`            | 300     | placeholder (units/s, Phase 0 speed)                                    |
 | `carrySpeedFactor`      | 0.7     | placeholder (CONCEPT.md §8: carrying slows; the factor is open)         |
-| `pickupRadius`          | 30      | placeholder                                                             |
+| `ghostRadius`           | 14      | placeholder (an empty ghost, as drawn)                                  |
+| `ghostGrowthPerCoin`    | 0.5     | placeholder (a carrier is larger, CONCEPT.md §2a)                       |
+| `ghostGrowthMax`        | 16      | placeholder                                                             |
+| `coinRadius`            | 10      | placeholder (a field coin, as drawn)                                    |
 | `coinSpawnPerSecond`    | 2       | placeholder (CONCEPT.md leaves the rate open)                           |
 | `maxFieldCoins`         | 60      | placeholder                                                             |
 | `offSeasonValueFactor`  | 0.5     | CONCEPT.md §2a, §10 decision 2                                          |

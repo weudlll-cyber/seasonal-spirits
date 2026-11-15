@@ -3,7 +3,7 @@
 // arrow keep out of the thumb zones of the HUD controls. Returns what it drew, for the
 // browser specs.
 
-import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
+import type { CoinState, GhostState, ServerState } from '@seasonal-spirits/protocol';
 import {
   CLOCK_HEIGHT,
   SHRINES,
@@ -42,6 +42,7 @@ const ARROW_INSET = 34; // pixels between the screen edge and the shrine arrow
 export interface Frame {
   ghosts: GhostState[];
   latest: ServerState | undefined;
+  coins: CoinState[]; // the field coins at the moment the ghosts are drawn at (main.ts)
   ownId: number | null;
   own: GhostState | undefined;
   ownTeam: number | null; // a player's team; null for spectators
@@ -96,7 +97,7 @@ export function drawScene(
   let shrineLabel: Rect | null = null;
   belowBar(view, () => {
     const field = { ownTeam: f.ownTeam, nowMs: performance.now(), blocked: f.hud.controls };
-    shrineLabel = drawField(view, f.latest, field);
+    shrineLabel = drawField(view, f.latest && { ...f.latest, coins: f.coins }, field);
     const style = { ownId: f.ownId, season: f.latest?.season ?? 0, trails, labelAll: !f.playing };
     labels = drawGhosts(view, f.ghosts, style);
   });

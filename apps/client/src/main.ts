@@ -11,6 +11,7 @@ import {
   STATE_RESULT,
   interpolate,
   latestServerMs,
+  stateAt,
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
@@ -99,6 +100,9 @@ function snapshot(now: number): Frame {
   return {
     ghosts,
     latest,
+    // The coins of the moment the ghosts are drawn at, so a pickup shows when the drawn ghost
+    // touches the coin, not a render buffer earlier.
+    coins: (target === null ? latest : stateAt(conn.buffer, target))?.coins ?? [],
     ownId,
     own: ghosts.find((g) => g.id === ownId),
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,

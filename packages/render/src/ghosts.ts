@@ -9,6 +9,7 @@ import {
   ghostName,
   ghostTag,
 } from '@seasonal-spirits/protocol';
+import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
@@ -45,7 +46,9 @@ export interface GhostStyle {
 }
 
 export function ghostRadiusPx(v: View, g: GhostState): number {
-  return Math.max(6, (14 + Math.min(16, g.carried / 2)) * v.scale);
+  // The game core's size (the server picks a coin up when the drawn shapes touch); at least
+  // 4 px, so a ghost stays visible in a phone's Overview, the only view that small.
+  return Math.max(4, ghostRadius(DEFAULT_CONFIG, g.carried) * v.scale);
 }
 
 // Returns the labels as drawn (the client's browser specs read them).

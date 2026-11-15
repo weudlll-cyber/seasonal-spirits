@@ -66,3 +66,32 @@ route secured 5.5, place 25 of 32. Screenshots `reports/screens/latest/crowd-nea
 Noticed: some labels sit on the bodies of neighbouring ghosts; ghosts crowd densely at the
 shrines near the end of a season; in "Near" the label of a bottom shrine of another team
 can be cut by the screen edge; some carriers hold 20 coins and more (Bot 14 · 21).
+
+## 3. Coin pickup (`fix/pickup`)
+
+**Measured.** The server picked a coin up when the centres were at most `pickupRadius` = 30
+field units apart. The client drew an empty ghost with radius 14 (growing by 0.5 per carried
+coin up to 30) and a coin with radius 10, at least 6 px and 4 px. So the drawn shapes touch
+at 24 units for an empty ghost — it took coins 6 units early — and at up to 40 for a big
+carrier — the coin vanished only once it was 10 units under its body. On top, the client
+draws the ghosts 100 ms behind the newest state (render buffer, `BUFFER_MS` in main.ts) but
+drew the coins from the newest state: at full speed (300 units/s) the drawn ghost was still
+up to 30 units short when the coin disappeared. On a phone in "Near" (0.37 px per unit) the
+6 px and 4 px minimums also enlarged both shapes. **Cause:** two sizes for one thing, and
+coins and ghosts drawn from different moments.
+
+**Fixed.** One definition in game-core: `ghostRadius(cfg, carried)` and `coinRadius` (new
+placeholders `ghostRadius` 14, `ghostGrowthPerCoin` 0.5, `ghostGrowthMax` 16, `coinRadius`
+10 — the drawn values; `pickupRadius` is gone). The server picks up when they touch
+(`touchesCoin`); render draws with them (`ghostRadiusPx`, `coinRadiusPx`, minimums lowered
+to 4 px and 3 px so "Near" is exact at both sizes). The client takes the field coins from
+the buffered state of the moment the ghosts are drawn at (`stateAt`), so a coin disappears
+when the drawn ghost touches it; no prediction. Only a phone's "Overview" still draws the
+shapes larger than their size.
+
+Tests: `field.test.ts` "an empty ghost / a carrier of 10 / a carrier at full size picks up a
+coin at touching distance and not half a unit further" (fails on the old code: 24.5 was
+taken); `interpolation.test.ts` "gives the field coins of the moment the ghosts are drawn
+at, not the newest ones"; `sizes.test.ts` "draws a ghost with the game core radius, growing
+with its coins", "draws a coin with the game core radius". This changes the balance a little
+(an empty ghost reaches 24 instead of 30, a big carrier up to 40); part 5 starts from here.
