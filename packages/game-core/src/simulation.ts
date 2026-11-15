@@ -45,6 +45,7 @@ export function simulate(
   cfg: GameConfig,
   seed: number,
   roster: (Roster & { strategy: Strategy })[] = botRoster(32),
+  afterTick?: (s: Readonly<MatchState>) => void, // tests watch every tick through it
 ): SimulationReport {
   const match = new Match(cfg, seed, roster);
   const bots = new Map<number, Bot>(roster.map((r) => [r.id, createBot(cfg, r.strategy)]));
@@ -59,6 +60,7 @@ export function simulate(
     for (const e of next.events)
       if (e.type === 'halving') halvings.push({ event: e, carriedBefore });
     negativeSeen ||= hasNegativeCount(next);
+    afterTick?.(next);
   }
   return {
     seed,

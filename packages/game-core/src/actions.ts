@@ -88,7 +88,12 @@ export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost): void {
   }
 }
 
-function nearestOpponentCarrier(cfg: GameConfig, s: MatchState, thief: Ghost): Ghost | null {
+// The ghost a steal by `thief` would rob right now; the hunter bot reads it too.
+export function nearestOpponentCarrier(
+  cfg: GameConfig,
+  s: Readonly<MatchState>,
+  thief: Readonly<Ghost>,
+): Ghost | null {
   let best: Ghost | null = null;
   let bestD = Infinity;
   for (const g of s.ghosts) {

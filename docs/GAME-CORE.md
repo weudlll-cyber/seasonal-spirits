@@ -72,8 +72,12 @@ mode, then acts on it:
   everything.
 - **cautious**: collects; at `bots.cautiousSecureAt` coins, and with anything at all when
   the next halving or the end comes near, walks home and banks.
-- **hunter**: chases the nearest opponent carrier and steals in range; at
-  `bots.hunterSecureAt` coins, or in the last season with anything, walks home and banks.
+- **hunter**: chases the nearest opponent carrier that carries more than the hunter itself,
+  walks right onto it, and steals when the carrier a steal would hit (the nearest in range)
+  is richer too; at `bots.hunterSecureAt` coins, or in the last season with anything, walks
+  home and banks. Before 2026-11-15 a hunter chased every carrier: in a pack the hunters
+  robbed each other, a rounded-up steal always moved a single coin, the loot circulated, and
+  the pack stood still for minutes (`src/bots/hunter.test.ts`).
 
 "Near" (`deadlineNear` in `src/bots/common.ts`): the time left in the season is just enough
 to walk home at carrying speed, secure, and keep `bots.deadlineMarginMs` spare.
