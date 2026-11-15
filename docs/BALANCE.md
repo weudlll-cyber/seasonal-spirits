@@ -21,10 +21,18 @@ each other, not how people will play. No config default was changed: the owner d
 
 ## Configurations
 
-Every row uses `DEFAULT_CONFIG` of `packages/game-core/src/config.ts` at this commit
-(5-minute match, halving at every season change, swap 10 → 15, half value off-season,
-secure 2.5 s, steal range 60, steal cooldown 1 s, field 2000, speed 300, max 60 field coins,
-bots: cautious banks at 5, hunter at 8, deadline margin 3 s) with one change:
+Every row uses `DEFAULT_CONFIG` of `packages/game-core/src/config.ts` (5-minute match,
+halving at every season change, swap 10 → 15, half value off-season, secure 2.5 s, steal
+range 60, steal cooldown 1 s, field 2000, speed 300, max 60 field coins, bots: cautious banks
+at 5, hunter at 8, deadline margin 3 s) with one change. Two rounds:
+
+- **Round 1** (2026-11-14): before the hunter fix and soft separation (no separation; a
+  hunter chased every carrier).
+- **Round 2** (2026-11-15, `fix/ui-overlaps`): after both — hunters rob only carriers richer
+  than themselves (docs/GAME-CORE.md, "Bots"), ghosts softly push each other apart
+  (`separationRadius` 28, `separationStrength` 0.5).
+
+The variants:
 
 | Name                  | Change                       | `stealShare` | `coinSpawnPerSecond` | `carrySpeedFactor` |
 | --------------------- | ---------------------------- | ------------ | -------------------- | ------------------ |
@@ -36,9 +44,10 @@ bots: cautious banks at 5, hunter at 8, deadline margin 3 s) with one change:
 | carrySpeedFactor=0.5  | carriers much slower         | 0.5          | 2                    | 0.5                |
 | carrySpeedFactor=0.85 | carriers barely slower       | 0.5          | 2                    | 0.85               |
 
-## Stage 1 — 30 matches each (seeds 1–30)
+## Round 1, stage 1 — 30 matches each (seeds 1–30), 2026-11-14
 
-Command: `pnpm balance --matches 30 --seed 1 --variant all`.
+Before the hunter fix and separation. Command: `pnpm balance --matches 30 --seed 1 --variant
+all`.
 
 #### current — N = 30 matches, seeds 1–30
 
@@ -56,41 +65,6 @@ Command: `pnpm balance --matches 30 --seed 1 --variant all`.
 | Winter | 16.7 %               |
 
 Field coins gone at the halvings, per match (N = 30): mean 35.1, median 35.0, p10 20.0, p90 46.0
-
-#### current after the hunter fix and soft separation (2026-11-15) — N = 30, seeds 1–30
-
-Same command, same seeds, on `feat/readability`: hunters no longer rob each other in a
-standing pack (docs/GAME-CORE.md, "Bots"), and ghosts softly push each other apart
-(`separationRadius` 28, `separationStrength` 0.5). Stage 1 and 2 above and below are from
-before both changes.
-
-| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
-| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
-| patient  | 0.0 %                    | 3.6  | 2.8    | 1.0  | 7.5  | 360     |
-| cautious | 26.7 %                   | 21.3 | 21.0   | 12.0 | 32.0 | 360     |
-| hunter   | 73.3 %                   | 21.9 | 19.5   | 10.5 | 38.0 | 240     |
-
-| Team   | Matches won (N = 30) |
-| ------ | -------------------- |
-| Spring | 30.0 %               |
-| Summer | 23.3 %               |
-| Autumn | 23.3 %               |
-| Winter | 23.3 %               |
-
-Field coins gone at the halvings, per match (N = 30): mean 13.8, median 13.0, p10 8.0, p90 21.0
-
-To tell the two changes apart, the same 30 matches ran once more with the hunter fix but
-`separationStrength` 0 (a one-off scratch run through `runBalance`, not a variant of the
-command): best player patient 26.7 %, cautious 3.3 %, hunter 70.0 %; mean secured value
-patient 6.5 (median 1.0), cautious 18.4 (17.0), hunter 27.7 (24.0); field coins gone at the
-halvings 28.9 per match.
-
-Reading: the hunter fix moves most. Before it, the hunters of a match spent most of it robbing
-each other in one standing pack (the "stuck bots"); now they go after the patient bots, who
-carry their coins the longest, and the patient strategy collapses (mean 21.8 → 3.6).
-Separation adds a little: crowds around a coin or a shrine spread, the cautious bots bank a
-bit more, the hunters a bit less, and fewer coins are left on the field at the halvings.
-Teams stay even. No default was changed; this is input for the owner's decision (BACKLOG d).
 
 #### stealShare=0.25 — N = 30 matches, seeds 1–30
 
@@ -194,7 +168,7 @@ Field coins gone at the halvings, per match (N = 30): mean 38.5, median 36.0, p1
 
 Field coins gone at the halvings, per match (N = 30): mean 31.0, median 31.0, p10 14.0, p90 48.0
 
-### Which variants go to stage 2
+### Round 1: which variants go to stage 2
 
 Distance of a variant from the current config: the sum of the absolute differences of the
 three "best player of the match" shares (N = 30 each).
@@ -211,7 +185,7 @@ three "best player of the match" shares (N = 30 each).
 (current: patient 56.7 %, cautious 0.0 %, hunter 43.3 %.) Stage 2 runs the current config,
 `stealShare=0.25` and `coinSpawnPerSecond=1`.
 
-## Stage 2 — 300 matches each (seeds 1–300)
+## Round 1, stage 2 — 300 matches each (seeds 1–300), 2026-11-14
 
 Command: `pnpm balance --matches 300 --seed 1 --variant current --variant stealShare=0.25
 --variant coinSpawnPerSecond=1`.
@@ -267,7 +241,7 @@ Field coins gone at the halvings, per match (N = 300): mean 32.6, median 31.0, p
 
 Field coins gone at the halvings, per match (N = 300): mean 10.9, median 10.0, p10 6.0, p90 17.0
 
-## What the numbers say
+## Round 1: what the numbers said (before the hunter fix and separation)
 
 - **Patient dominates the top, cautious the middle.** With the current config (N = 300) the
   best player of a match is patient in 66.5 %, hunter in 33.5 %, cautious never. But the
@@ -290,3 +264,239 @@ Field coins gone at the halvings, per match (N = 300): mean 10.9, median 10.0, p
 - **Carry speed** (stage 1, N = 30) moves the shares by 10–13 points either way; not run at 300.
 
 Nothing here changes a default; the owner decides.
+
+## Round 2, stage 1 — 30 matches each (seeds 1–30), 2026-11-15
+
+After the hunter fix and separation (config above). Command: `pnpm balance --matches 30
+--seed 1 --variant all`.
+
+#### current — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 3.6  | 2.8    | 1.0  | 7.5  | 360     |
+| cautious | 26.7 %                   | 21.3 | 21.0   | 12.0 | 32.0 | 360     |
+| hunter   | 73.3 %                   | 21.9 | 19.5   | 10.5 | 38.0 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 30.0 %               |
+| Summer | 23.3 %               |
+| Autumn | 23.3 %               |
+| Winter | 23.3 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 13.8, median 13.0, p10 8.0, p90 21.0
+
+To tell the two changes apart, the same 30 matches ran once with the hunter fix but
+`separationStrength` 0 (a one-off scratch run through `runBalance` on 2026-11-15, not a
+variant of the command): best player patient 26.7 %, cautious 3.3 %, hunter 70.0 %; mean
+secured value patient 6.5 (median 1.0), cautious 18.4 (17.0), hunter 27.7 (24.0); field coins
+gone at the halvings 28.9 per match. The hunter fix moves most; separation adds a little.
+
+#### stealShare=0.25 — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 4.2  | 3.0    | 1.0  | 8.5  | 360     |
+| cautious | 58.3 %                   | 22.2 | 21.5   | 13.0 | 33.0 | 360     |
+| hunter   | 41.7 %                   | 19.2 | 18.0   | 8.5  | 32.0 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 23.3 %               |
+| Summer | 23.3 %               |
+| Autumn | 26.7 %               |
+| Winter | 26.7 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 13.1, median 13.0, p10 8.0, p90 17.0
+
+#### stealShare=0.75 — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 4.3  | 3.0    | 1.0  | 8.5  | 360     |
+| cautious | 10.0 %                   | 20.0 | 19.0   | 10.0 | 31.0 | 360     |
+| hunter   | 90.0 %                   | 22.8 | 20.8   | 1.0  | 47.5 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 16.7 %               |
+| Summer | 26.7 %               |
+| Autumn | 26.7 %               |
+| Winter | 30.0 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 11.8, median 12.0, p10 8.0, p90 14.0
+
+#### coinSpawnPerSecond=1 — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10 | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | --- | ---- | ------- |
+| patient  | 0.0 %                    | 1.9  | 1.5    | 0.5 | 4.0  | 360     |
+| cautious | 54.4 %                   | 10.5 | 9.5    | 5.5 | 16.5 | 360     |
+| hunter   | 45.6 %                   | 9.2  | 9.0    | 2.0 | 17.0 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 20.0 %               |
+| Summer | 38.3 %               |
+| Autumn | 20.0 %               |
+| Winter | 21.7 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 4.3, median 4.0, p10 2.0, p90 6.0
+
+#### coinSpawnPerSecond=3 — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 5.4  | 4.0    | 1.0  | 11.5 | 360     |
+| cautious | 10.0 %                   | 31.9 | 32.0   | 18.5 | 46.0 | 360     |
+| hunter   | 90.0 %                   | 37.2 | 33.5   | 14.0 | 62.5 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 30.0 %               |
+| Summer | 23.3 %               |
+| Autumn | 16.7 %               |
+| Winter | 30.0 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 23.3, median 22.5, p10 15.0, p90 33.0
+
+#### carrySpeedFactor=0.5 — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 3.7  | 3.0    | 1.0  | 7.5  | 360     |
+| cautious | 45.0 %                   | 21.2 | 20.5   | 12.0 | 31.0 | 360     |
+| hunter   | 55.0 %                   | 19.9 | 18.3   | 7.5  | 34.0 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 6.7 %                |
+| Summer | 25.0 %               |
+| Autumn | 46.7 %               |
+| Winter | 21.7 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 18.9, median 18.5, p10 12.0, p90 27.0
+
+#### carrySpeedFactor=0.85 — N = 30 matches, seeds 1–30
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 3.5  | 2.5    | 0.5  | 7.0  | 360     |
+| cautious | 33.3 %                   | 21.3 | 20.0   | 11.0 | 34.0 | 360     |
+| hunter   | 66.7 %                   | 22.7 | 20.5   | 9.5  | 38.5 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 23.3 %               |
+| Summer | 20.0 %               |
+| Autumn | 30.0 %               |
+| Winter | 26.7 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 10.6, median 10.5, p10 7.0, p90 14.0
+
+### Round 2: which variants go to stage 2
+
+Same rule as round 1: the sum of the absolute differences of the three "best player of the
+match" shares from the current config (patient 0.0 %, cautious 26.7 %, hunter 73.3 %;
+N = 30 each).
+
+| Variant               | patient | cautious | hunter | Distance    |
+| --------------------- | ------- | -------- | ------ | ----------- |
+| stealShare=0.25       | 0.0 %   | 58.3 %   | 41.7 % | 63.3 points |
+| coinSpawnPerSecond=1  | 0.0 %   | 54.4 %   | 45.6 % | 55.6 points |
+| carrySpeedFactor=0.5  | 0.0 %   | 45.0 %   | 55.0 % | 36.7 points |
+| stealShare=0.75       | 0.0 %   | 10.0 %   | 90.0 % | 33.3 points |
+| coinSpawnPerSecond=3  | 0.0 %   | 10.0 %   | 90.0 % | 33.3 points |
+| carrySpeedFactor=0.85 | 0.0 %   | 33.3 %   | 66.7 % | 13.3 points |
+
+Stage 2 runs the current config, `stealShare=0.25` and `coinSpawnPerSecond=1` — the same
+two as in round 1.
+
+## Round 2, stage 2 — 300 matches each (seeds 1–300), 2026-11-15
+
+Command: `pnpm balance --matches 300 --seed 1 --variant current --variant stealShare=0.25
+--variant coinSpawnPerSecond=1`.
+
+#### current — N = 300 matches, seeds 1–300
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 1.7 %                    | 3.8  | 3.0    | 1.0  | 7.5  | 3600    |
+| cautious | 32.3 %                   | 21.5 | 21.0   | 12.0 | 31.5 | 3600    |
+| hunter   | 66.0 %                   | 21.3 | 19.5   | 8.0  | 37.0 | 2400    |
+
+| Team   | Matches won (N = 300) |
+| ------ | --------------------- |
+| Spring | 29.8 %                |
+| Summer | 22.7 %                |
+| Autumn | 25.2 %                |
+| Winter | 22.3 %                |
+
+Field coins gone at the halvings, per match (N = 300): mean 12.8, median 12.0, p10 8.0, p90 18.0
+
+#### stealShare=0.25 — N = 300 matches, seeds 1–300
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 4.1  | 3.0    | 1.0  | 8.0  | 3600    |
+| cautious | 70.0 %                   | 22.8 | 22.0   | 13.0 | 33.5 | 3600    |
+| hunter   | 30.0 %                   | 18.4 | 17.5   | 8.0  | 30.0 | 2400    |
+
+| Team   | Matches won (N = 300) |
+| ------ | --------------------- |
+| Spring | 24.3 %                |
+| Summer | 25.5 %                |
+| Autumn | 25.8 %                |
+| Winter | 24.3 %                |
+
+Field coins gone at the halvings, per match (N = 300): mean 12.5, median 12.0, p10 8.0, p90 18.0
+
+#### coinSpawnPerSecond=1 — N = 300 matches, seeds 1–300
+
+| Strategy | Best player of the match | Mean | Median | p10 | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | --- | ---- | ------- |
+| patient  | 0.3 %                    | 1.8  | 1.5    | 0.5 | 3.5  | 3600    |
+| cautious | 55.6 %                   | 10.7 | 10.0   | 6.0 | 17.0 | 3600    |
+| hunter   | 44.1 %                   | 9.4  | 9.0    | 2.0 | 17.0 | 2400    |
+
+| Team   | Matches won (N = 300) |
+| ------ | --------------------- |
+| Spring | 23.0 %                |
+| Summer | 27.2 %                |
+| Autumn | 27.3 %                |
+| Winter | 22.5 %                |
+
+Field coins gone at the halvings, per match (N = 300): mean 4.2, median 4.0, p10 2.0, p90 7.0
+
+## Round 2: what the numbers say (after the hunter fix and separation)
+
+- **Patient has collapsed in every configuration.** Best player at most 1.7 % (current,
+  N = 300), mean secured value 1.8 to 5.4 in every row (round 1: 21.3 at N = 300). The
+  patient bot carries its coins the longest (it holds 10 for a swap), and the hunters,
+  who no longer rob each other, now find it. No variant tried here brings it back; that
+  takes a change to the bots or to a rule, and is the owner's decision.
+- **Current config: hunter on top, cautious close behind.** Best player hunter 66.0 %,
+  cautious 32.3 %, patient 1.7 % (N = 300); the means of cautious (21.5) and hunter (21.3)
+  are almost equal — the hunter wins more matches with a wider spread (p10 8.0, p90 37.0
+  against 12.0 / 31.5).
+- **Which strategy dominates under each variant:** hunter under the current config (66.0 %,
+  N = 300), `stealShare=0.75` (90.0 %, N = 30), `coinSpawnPerSecond=3` (90.0 %, N = 30),
+  `carrySpeedFactor=0.85` (66.7 %, N = 30) and narrowly `carrySpeedFactor=0.5` (55.0 %,
+  N = 30); cautious under `stealShare=0.25` (70.0 %, N = 300) and `coinSpawnPerSecond=1`
+  (55.6 %, N = 300).
+- **Closest together:** measured as the sum of the distances of the three best-player shares
+  from an even split (33.3 % each), the current config is closest (65.3 points, N = 300),
+  with `coinSpawnPerSecond=1` (66.2, N = 300) and both carry-speed variants (66.7 each,
+  N = 30) next to it; `stealShare=0.25` 73.3 (N = 300), `stealShare=0.75` and
+  `coinSpawnPerSecond=3` 113.3 (N = 30). Because patient is near 0 % everywhere, every
+  variant is about 65 points or more from even; between cautious and hunter alone the most
+  even are `carrySpeedFactor=0.5` (45.0 / 55.0, N = 30) and `coinSpawnPerSecond=1`
+  (55.6 / 44.1, N = 300).
+- **stealShare is still the strongest lever between hunter and cautious:** 0.25 turns the
+  top from hunter (66.0 %) to cautious (70.0 %), N = 300 each.
+- **Teams stay fair:** 22.3 % to 29.8 % per team (N = 300, all three rows).
+- **Fewer field coins lost at the halvings:** 12.8 per match with the current config
+  (N = 300; round 1: 32.6) — the bots now spread out and pick the field cleaner.
+
+Nothing here changes a default; the owner decides (BACKLOG d).

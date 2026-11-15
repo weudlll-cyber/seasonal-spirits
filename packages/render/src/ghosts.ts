@@ -6,7 +6,7 @@ import { GHOST_BOT, GHOST_CARRIER, GHOST_SECURING, ghostName } from '@seasonal-s
 import type { GhostState } from '@seasonal-spirits/protocol';
 import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
-import { circle, sx, sy, type View } from './view.js';
+import { circle, sx, sy, visibleArea, type View } from './view.js';
 
 const TRAIL_POINTS = 12;
 
@@ -147,7 +147,7 @@ function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): 
       carried: g.carried,
     });
   }
-  const placed = placeLabels(candidates, v.top);
+  const placed = placeLabels(candidates, visibleArea(v));
   ctx.textAlign = 'center';
   ctx.fillStyle = TEXT;
   for (const p of placed) {

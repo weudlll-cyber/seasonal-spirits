@@ -3,7 +3,7 @@
 // server's numbers, the HALVING announcement with its flash, and notices.
 
 import type { GameAction, OfferState, ServerState } from '@seasonal-spirits/protocol';
-import { seasonName, value } from '@seasonal-spirits/render';
+import { seasonName, value, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
 
@@ -82,6 +82,37 @@ export function bindMute(toggle: () => boolean, muted: boolean): void {
     button.textContent = label(now);
     button.setAttribute('aria-pressed', String(now));
   });
+}
+
+// What of the HUD lies on the field (session 2026-11-15-B). Controls: the visible action or
+// shrine buttons (bottom right); shrine labels move away from them. Thumb zones: the
+// controls plus, on touch screens, where the left thumb rests on the joystick (bottom
+// left); the shrine arrow keeps out of all of them, and the camera may look past the
+// field's bottom edge by their height so the field rises above them.
+const STICK_ZONE = { width: 220, height: 260 }; // pixels, at most half the screen wide
+
+export interface HudOnField {
+  controls: Rect[];
+  zones: Rect[];
+}
+
+export function hudOnField(): HudOnField {
+  const controls: Rect[] = [];
+  const { left, top, right, bottom, width } = el('actions').getBoundingClientRect();
+  // A plain object: a DOMRect's fields are getters that copying (and the specs) would lose.
+  if (width > 0) controls.push({ left, top, right, bottom });
+  const zones = [...controls];
+  const body = document.body.classList;
+  if (body.contains('touch') && !body.contains('spectating')) {
+    const { innerWidth: w, innerHeight: h } = window;
+    zones.push({
+      left: 0,
+      top: h - STICK_ZONE.height,
+      right: Math.min(w / 2, STICK_ZONE.width),
+      bottom: h,
+    });
+  }
+  return { controls, zones };
 }
 
 export { el };

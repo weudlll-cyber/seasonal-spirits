@@ -1,14 +1,7 @@
 // Seasonal Spirits — the "Your shrine" arrow at the screen edge in "Near" (owner's play test
 // 2026-11-15: players lost their own shrine). Placement is pure and tested; drawing is below.
 
-import { TEXT } from '@seasonal-spirits/render';
-
-export interface Rect {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-}
+import { TEXT, type Rect } from '@seasonal-spirits/render';
 
 export interface EdgeArrow {
   x: number;
@@ -16,17 +9,47 @@ export interface EdgeArrow {
   angle: number; // radians, 0 = pointing right
 }
 
-const inside = (r: Rect, p: { x: number; y: number }): boolean =>
+type Point = { x: number; y: number };
+
+const inside = (r: Rect, p: Point): boolean =>
   p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
 
+// Strictly inside: a spot on the edge of a rectangle to avoid is clear of it.
+const covers = (r: Rect, p: Point): boolean =>
+  p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom;
+
+const grow = (r: Rect, by: number): Rect => ({
+  left: r.left - by,
+  top: r.top - by,
+  right: r.right + by,
+  bottom: r.bottom + by,
+});
+
+// Out of every rectangle in `avoid` (grown by `inset`): the nearest spot just past one of
+// its sides that is still inside the screen's inset frame and in no other rectangle; the
+// point itself when it is clear, or when nothing is.
+function clearOf(at: Point, frame: Rect, avoid: readonly Rect[]): Point {
+  const hit = avoid.find((r) => covers(r, at));
+  if (!hit) return at;
+  const spots = [
+    { x: at.x, y: hit.top },
+    { x: at.x, y: hit.bottom },
+    { x: hit.left, y: at.y },
+    { x: hit.right, y: at.y },
+  ].filter((p) => inside(frame, p) && !avoid.some((r) => covers(r, p)));
+  const dist = (p: Point): number => Math.hypot(p.x - at.x, p.y - at.y);
+  return spots.sort((a, b) => dist(a) - dist(b))[0] ?? at;
+}
+
 // Null while `target` (screen pixels) is inside `screen`. Otherwise the point `inset` pixels
-// inside the edge on the line from the screen's centre to the target, pointing at it; if
-// that point falls on `avoid` (the minimap), it moves just below it.
+// inside the edge on the line from the screen's centre to the target, pointing at it. When
+// that point falls on something in `avoid` (the minimap, the thumb zones of joystick and
+// action button), it moves along the edge just past it.
 export function edgeArrow(
   screen: Rect,
-  target: { x: number; y: number },
+  target: Point,
   inset: number,
-  avoid?: Rect,
+  avoid: readonly Rect[] = [],
 ): EdgeArrow | null {
   if (inside(screen, target)) return null;
   const cx = (screen.left + screen.right) / 2;
@@ -39,9 +62,13 @@ export function edgeArrow(
     dx === 0 ? Infinity : halfW / Math.abs(dx),
     dy === 0 ? Infinity : halfH / Math.abs(dy),
   );
-  const at = { x: cx + dx * k, y: cy + dy * k };
-  if (avoid && inside(avoid, at)) at.y = avoid.bottom + inset;
-  return { ...at, angle: Math.atan2(dy, dx) };
+  const frame = grow(screen, -inset);
+  const at = clearOf(
+    { x: cx + dx * k, y: cy + dy * k },
+    frame,
+    avoid.map((r) => grow(r, inset)),
+  );
+  return { ...at, angle: Math.atan2(target.y - at.y, target.x - at.x) };
 }
 
 export function drawArrow(ctx: CanvasRenderingContext2D, a: EdgeArrow, colour: string): void {
