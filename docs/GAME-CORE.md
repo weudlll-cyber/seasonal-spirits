@@ -84,8 +84,13 @@ Three small state machines over the public state (`src/bots/strategies.ts`); eac
 mode, then acts on it:
 
 - **patient**: collects and holds; when the next halving comes near, walks home and swaps
-  its coins of the current season (at least `swapIn`); before the match end, banks
-  everything.
+  its coins of the current season (at least `swapIn`) — or, with fewer, banks them, unless
+  the next season's coins it carries are more; before the match end, banks everything. With
+  at least `swapIn` coins and an opponent within `bots.threatRange` it goes home at once to
+  swap or bank. Both added on 2026-11-15: it used to carry a full load past hunters without
+  reacting (robbed 356 times in five seeded matches) and let the halving halve its coins
+  (734 old-season coins carried into halvings); after the fix 236 and 102, and its secured
+  value rose from 183 to 852.5 (session sheet 2026-11-15-CD).
 - **cautious**: collects; at `bots.cautiousSecureAt` coins, and with anything at all when
   the next halving or the end comes near, walks home and banks.
 - **hunter**: chases the nearest opponent carrier that carries more than the hunter itself,
@@ -151,3 +156,4 @@ fails.
 | `bots.arriveRadius`     | 20      | placeholder                                                             |
 | `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)             |
 | `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                 |
+| `bots.threatRange`      | 150     | placeholder (a loaded patient bot goes home when an opponent is closer) |

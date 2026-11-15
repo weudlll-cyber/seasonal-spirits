@@ -25,18 +25,25 @@ describe('hunter bots', () => {
     expect(bot(m.state, a).action).toBe('steal');
   });
 
-  it('let no bot stand still longer than 3 s in a seeded match, except while securing', () => {
-    const last = new Map<number, { x: number; y: number; stillMs: number }>();
-    let longest = 0;
-    simulate(DEFAULT_CONFIG, 1, undefined, (s) => {
-      for (const g of s.ghosts) {
-        const p = last.get(g.id);
-        const still = p !== undefined && p.x === g.x && p.y === g.y && g.securingUntilMs === null;
-        const stillMs = still ? p.stillMs + SIM_TICK_MS : 0;
-        longest = Math.max(longest, stillMs);
-        last.set(g.id, { x: g.x, y: g.y, stillMs });
-      }
-    });
-    expect(longest).toBeLessThanOrEqual(3000);
-  });
+  // A whole match: about 1 s alone, more beside the rest of the suite on a busy machine.
+  it(
+    'let no bot stand still longer than 3 s in a seeded match, except while securing',
+    {
+      timeout: 20_000,
+    },
+    () => {
+      const last = new Map<number, { x: number; y: number; stillMs: number }>();
+      let longest = 0;
+      simulate(DEFAULT_CONFIG, 1, undefined, (s) => {
+        for (const g of s.ghosts) {
+          const p = last.get(g.id);
+          const still = p !== undefined && p.x === g.x && p.y === g.y && g.securingUntilMs === null;
+          const stillMs = still ? p.stillMs + SIM_TICK_MS : 0;
+          longest = Math.max(longest, stillMs);
+          last.set(g.id, { x: g.x, y: g.y, stillMs });
+        }
+      });
+      expect(longest).toBeLessThanOrEqual(3000);
+    },
+  );
 });

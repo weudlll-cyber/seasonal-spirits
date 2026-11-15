@@ -135,3 +135,35 @@ second stack 3934/5934) "the Steal button is lit only with a target, and both si
 steal get a message". Screenshots `desktop-help.png`, `phone-help.png`, `desktop-steal.png`.
 The first version of the feedback spec failed: the robbing hunter had walked off with the
 loot by the time Space was pressed; it now presses as soon as the button lights.
+
+## 5. Fairness search (`feat/fairness`)
+
+### Step A — bot sanity
+
+Traced where every strategy's coins go over five seeded matches (scratch script, seeds 1–5,
+12 patient, 12 cautious, 8 hunter bots each). Two faults of the patient bot that no
+reasonable player would make:
+
+1. **It carried a full load past opponents without reacting**: loads up to 42 coins, robbed
+   356 times (1269 coins). Fix: with at least `swapIn` coins and an opponent within
+   `bots.threatRange` (150 units, new placeholder) it goes home at once and swaps, or banks.
+2. **It let the halving halve its coins**: near a halving with fewer than 10 coins of the
+   season it kept collecting — 734 old-season coins were carried into halvings. Fix: it
+   banks them, unless the next season's coins it carries (from a swap) are more.
+
+After the fix: robbed 236 times (517 coins), 102 old-season coins carried into halvings,
+secured value 183 → 852.5 (same five matches). Swaps stay rare (8): a patient bot seldom
+holds 10 coins of one season. Noticed and left (not the patient strategy): hunters still rob
+each other back and forth when one is richer — 6801 steals between hunters in five matches.
+
+Stage 1 again, current config, N = 30 (seeds 1–30): best player patient 10.0 % (before
+0.0 %), cautious 41.7 % (6.7 %), hunter 48.3 % (93.3 %); mean secured value 13.7 / 16.9 /
+17.2.
+
+### Step B — timing
+
+One configuration of 30 matches: 19.8 s (`time pnpm --filter … balance-cli.ts --matches 30`),
+with 48 % CPU load from other work on the PC (the running `pnpm dev`: 32 bots, Vite, viewer).
+The whole grid of 288 configurations would take about 96 minutes in one process — under
+3 hours, so no dimension was dropped. It ran with 8 parallel processes on 14 cores (CPU load
+51 % just before the start) through the new `pnpm fairness`.

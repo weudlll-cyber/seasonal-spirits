@@ -10,6 +10,7 @@ export interface BotConfig {
   arriveRadius: number;
   deadlineMarginMs: number;
   waypointMs: number;
+  threatRange: number;
 }
 
 export interface GameConfig {
@@ -91,5 +92,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     // A collector with no coin of its own walks to a waypoint that moves on this often, so
     // collectors spread over the field instead of sharing one coin (2026-11-15).
     waypointMs: 4000, // placeholder — owner decides
+    // A patient bot with at least swapIn coins goes home when an opponent comes this close
+    // (2026-11-15: it used to carry a full load past hunters without reacting).
+    threatRange: 150, // placeholder — owner decides
   },
 };

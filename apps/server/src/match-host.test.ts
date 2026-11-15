@@ -88,20 +88,27 @@ describe('match host shrine offers', () => {
 });
 
 describe('match host state size', () => {
-  it('never sends more than 1 KB in a whole 32-bot match, the halvings included', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
-    let max = 0;
-    let halvings = 0;
-    for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
-      const bytes = encodeState({ ...s, tick: 0, serverMs: 0 }).byteLength;
-      max = Math.max(max, bytes);
-      if (s.flags & STATE_HALVING_EVENT) halvings++;
-    }
-    expect(halvings).toBe(3);
-    expect(max).toBeLessThan(1024);
-    // Bots never get offers: a full field (maxFieldCoins) is the bound, 34 + 13 · 32 + 4 · 60.
-    expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
-  });
+  // A whole match: about 1–2 s alone, more beside the rest of the suite on a busy machine.
+  it(
+    'never sends more than 1 KB in a whole 32-bot match, the halvings included',
+    {
+      timeout: 20_000,
+    },
+    () => {
+      const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+      let max = 0;
+      let halvings = 0;
+      for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
+        const bytes = encodeState({ ...s, tick: 0, serverMs: 0 }).byteLength;
+        max = Math.max(max, bytes);
+        if (s.flags & STATE_HALVING_EVENT) halvings++;
+      }
+      expect(halvings).toBe(3);
+      expect(max).toBeLessThan(1024);
+      // Bots never get offers: a full field (maxFieldCoins) is the bound, 34 + 13 · 32 + 4 · 60.
+      expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
+    },
+  );
 });
 
 describe('match host lifecycle', () => {

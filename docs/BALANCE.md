@@ -317,6 +317,30 @@ Field coins gone at the halvings, per match (N = 30): mean 12.9, median 13.0, p1
 Spread-out collectors are easier prey: hunters rise from 73.3 % to 93.3 % best player; the
 fairness search (session 2026-11-15-CD, part 5) starts from here.
 
+#### current after the pickup fix and the patient bot's fixes (2026-11-15, `feat/fairness`) — N = 30, seeds 1–30
+
+Same command and seeds, on top of the row above: pickup when the drawn shapes touch
+(`ghostRadius` 14 + growth, `coinRadius` 10 instead of `pickupRadius` 30), and the patient
+bot banks before a halving it cannot swap for and goes home with a load when an opponent
+comes within `bots.threatRange` (150; docs/GAME-CORE.md, "Bots").
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 10.0 %                   | 13.7 | 13.5   | 9.0  | 19.5 | 360     |
+| cautious | 41.7 %                   | 16.9 | 16.0   | 10.0 | 24.5 | 360     |
+| hunter   | 48.3 %                   | 17.2 | 16.0   | 8.5  | 27.5 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 30.0 %               |
+| Summer | 16.7 %               |
+| Autumn | 30.0 %               |
+| Winter | 23.3 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 20.8, median 20.0, p10 15.0, p90 26.0
+
+The fairness search below starts from this configuration.
+
 #### stealShare=0.25 — N = 30 matches, seeds 1–30
 
 | Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
