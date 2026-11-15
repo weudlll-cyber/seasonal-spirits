@@ -1,15 +1,16 @@
 // Seasonal Spirits — what the owner's play tests of 2026-11-15 asked for, at desktop and phone
 // size: "You are Team <Season>", the own shrine labelled, in "Near" the minimap and the
 // "Your shrine" arrow when the shrine is out of sight, V or the corner button switching to
-// "Overview" and the choice surviving a reload. In every sampled frame: no name label under
-// the top bar or past the screen edge, the arrow out of the thumb zones, the shrine label
+// "Overview" and the choice surviving a reload. In every sampled frame: every ghost named, no
+// name label under the top bar, past the screen edge, on another label or on a shrine label,
+// every shrine label wholly in view, the arrow out of the thumb zones, the own shrine label
 // under no control; the corner buttons sit in the band, not on the field.
 // Screenshots: <size>-near.png, <size>-hud.png and <size>-overview.png in
 // reports/screens/latest/.
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { overlaps } from '@seasonal-spirits/render';
+import { overlaps, type Rect } from '@seasonal-spirits/render';
 import {
   SCREENS,
   joystick,
@@ -39,19 +40,37 @@ function rectsWhole(v: ClientView): boolean {
   );
 }
 
+const labelBox = (l: ClientView['labels'][number]): Rect => ({
+  left: l.x - l.width / 2,
+  right: l.x + l.width / 2,
+  top: l.y - LABEL_HEIGHT,
+  bottom: l.y,
+});
+
 // Every ghost on screen named (owner's observation 2026-11-15: unnamed dots); no label under
-// the bar or past the screen edge.
-function labelFaults(v: ClientView, width: number): string[] {
+// the bar or past the screen edge, none on another label or a shrine label; every shrine
+// label in view lies wholly inside it (session 2026-11-15-CD: names on the ghost next door,
+// shrine and ghost labels on each other, a foreign shrine's label below the screen).
+function labelFaults(v: ClientView, screen: { width: number; height: number }): string[] {
   const faults: string[] = [];
   const named = new Set(v.labels.map((l) => l.id));
   for (const g of v.ghostsShown) {
     if (!named.has(g.id)) faults.push(`ghost ${g.id} without a label`);
   }
-  for (const l of v.labels) {
-    if (l.y - LABEL_HEIGHT < v.barBottom) faults.push(`label "${l.text}" under the bar`);
-    if (l.x - l.width / 2 < 0 || l.x + l.width / 2 > width) {
-      faults.push(`label "${l.text}" past the screen edge`);
+  v.labels.forEach((l, i) => {
+    const b = labelBox(l);
+    if (b.top < v.barBottom) faults.push(`label "${l.text}" under the bar`);
+    if (b.left < 0 || b.right > screen.width) faults.push(`label "${l.text}" past the screen edge`);
+    if (v.labels.some((o, j) => j > i && overlaps(b, labelBox(o)))) {
+      faults.push(`label "${l.text}" on another label`);
     }
+    if (v.shrineLabels.some((s) => overlaps(b, s)))
+      faults.push(`label "${l.text}" on a shrine label`);
+  });
+  for (const s of v.shrineLabels) {
+    const inside =
+      s.left >= 0 && s.right <= screen.width && s.top >= v.barBottom && s.bottom <= screen.height;
+    if (!inside) faults.push(`shrine label at ${JSON.stringify(s)} not wholly in view`);
   }
   return faults;
 }
@@ -59,8 +78,11 @@ function labelFaults(v: ClientView, width: number): string[] {
 // What is wrong with the HUD in the current frame; empty when nothing is.
 async function hudFaults(page: Page): Promise<string[]> {
   const v = await view(page);
-  const width = await page.evaluate(() => window.innerWidth);
-  const faults = labelFaults(v, width);
+  const screen = await page.evaluate(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
+  const faults = labelFaults(v, screen);
   if (!rectsWhole(v)) faults.push('a zone or control arrived without its edges');
   const at = v.arrowAt;
   const inZone = (z: (typeof v.zones)[number]): boolean =>

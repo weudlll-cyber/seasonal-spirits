@@ -104,12 +104,13 @@ function frame(): void {
   // Ghosts are interpolated; coins and clock come from the newest state.
   const latest = buffer.at(-1)?.state;
   trails.record(ghosts);
-  drawField(fitField(ctx, CLOCK_HEIGHT), latest);
+  const shrineLabels = drawField(fitField(ctx, CLOCK_HEIGHT), latest);
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
     ownId: null,
     season: latest?.season ?? 0,
     trails,
     labelAll: true,
+    avoid: shrineLabels.all,
   });
   drawClock(ctx, latest);
 

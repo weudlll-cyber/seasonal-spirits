@@ -104,17 +104,57 @@ describe('name labels', () => {
   });
 });
 
+// Session 2026-11-15-CD: some names sat on the ghost next door, and ghost and shrine labels
+// did not avoid each other.
+describe('name labels keep clear of ghosts and shrine labels', () => {
+  it('never puts a name on a neighbouring ghost', () => {
+    // B stands right where A's name would go above A.
+    const a = at(1, 300, 300, { full: 'Bot 1 · 5', carried: 5 });
+    const b = at(2, 300, 262);
+    const placed = placeLabels([a, b], AREA);
+    const bodyOf = (c: LabelCandidate) => ({
+      left: c.x - c.r,
+      right: c.x + c.r,
+      top: c.y - c.r,
+      bottom: c.y + c.r,
+    });
+    for (const p of placed) {
+      const other = p.id === 1 ? b : a;
+      expect(overlaps(box(p), bodyOf(other)), `${p.text} on the other ghost`).toBe(false);
+    }
+    expect(placed).toHaveLength(2);
+  });
+
+  it('keeps names clear of a shrine label', () => {
+    const shrineLabel = { left: 260, right: 340, top: 260, bottom: 290 }; // above the ghost
+    const placed = placeLabels([at(1, 300, 300, { carried: 3 })], AREA, [shrineLabel]);
+    expect(placed).toHaveLength(1);
+    expect(overlaps(box(placed[0] as PlacedLabel), shrineLabel)).toBe(false);
+  });
+});
+
 describe('shrine label', () => {
   const shrine = { x: 700, y: 600, r: 50 };
   const text = { width: 80, height: 16 };
 
+  const boxOf = (p: { x: number; y: number }) => ({
+    left: p.x - text.width / 2,
+    right: p.x + text.width / 2,
+    top: p.y - text.height,
+    bottom: p.y,
+  });
+  const inArea = (p: { x: number; y: number }): boolean => {
+    const b = boxOf(p);
+    return b.left >= AREA.left && b.right <= AREA.right && b.top >= TOP && b.bottom <= AREA.bottom;
+  };
+
   it('sits below the shrine when nothing covers that spot', () => {
-    expect(shrineLabelAt(shrine, text, [])).toEqual({ x: 700, y: 600 + 50 + 16 + 4 });
+    expect(shrineLabelAt(shrine, text, [], AREA)).toEqual({ x: 700, y: 600 + 50 + 16 + 4 });
   });
 
   it('moves above the shrine when a HUD control covers the spot below', () => {
     const steal = { left: 660, top: 660, right: 760, bottom: 760 };
-    const p = shrineLabelAt(shrine, text, [steal]);
+    const p = shrineLabelAt(shrine, text, [steal], AREA);
     expect(p.x).toBe(700);
     expect(p.y).toBeLessThan(shrine.y - shrine.r);
   });
@@ -122,7 +162,29 @@ describe('shrine label', () => {
   it('moves beside the shrine when a control covers it from below to above', () => {
     // The Steal button over the whole shrine and the spots below and above it.
     const steal = { left: 650, top: 520, right: 760, bottom: 700 };
-    const p = shrineLabelAt(shrine, text, [steal]);
+    const p = shrineLabelAt(shrine, text, [steal], AREA);
     expect(p.x + text.width / 2).toBeLessThanOrEqual(steal.left);
+  });
+
+  it('stays in view for a shrine at the bottom edge of the view', () => {
+    const low = { x: 400, y: 680, r: 50 }; // the spot below lies under the screen
+    const p = shrineLabelAt(low, text, [], AREA);
+    expect(inArea(p)).toBe(true);
+    expect(p.y).toBeLessThan(low.y);
+  });
+
+  it('moves inside when a shrine sits in the corner of the view', () => {
+    const corner = { x: 790, y: 695, r: 50 }; // no spot fits: below, above cut, left, right out
+    const p = shrineLabelAt(corner, { width: 120, height: 16 }, [], {
+      ...AREA,
+      top: 640,
+    });
+    expect(p.x + 60).toBeLessThanOrEqual(AREA.right);
+    expect(p.y).toBeLessThanOrEqual(AREA.bottom);
+  });
+
+  it('keeps the label of a shrine out of view out of view', () => {
+    const away = { x: 400, y: 900, r: 50 };
+    expect(inArea(shrineLabelAt(away, text, [], AREA))).toBe(false);
   });
 });

@@ -7,7 +7,7 @@ import { DEFAULT_CONFIG, shrinePositions } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';
 import { LINE, TEXT, ground, seasonColour, seasonName } from './palette.js';
 import { shrineLabelAt } from './labels.js';
-import { FIELD, circle, sx, sy, type Rect, type View } from './view.js';
+import { FIELD, circle, overlaps, sx, sy, visibleArea, type Rect, type View } from './view.js';
 
 export const SHRINES = shrinePositions(DEFAULT_CONFIG);
 const GRID = 250; // field units between the faint ground lines
@@ -19,12 +19,18 @@ export interface FieldStyle {
   blocked: readonly Rect[]; // HUD controls on the field: shrine labels move away from them
 }
 
-// Returns the box of the own shrine's label, or null without an own team (browser specs).
+// Where the shrine labels were drawn: the own one (null without an own team; the browser
+// specs read it) and every one at least partly in view, for the ghost labels to keep clear of.
+export interface ShrineLabels {
+  own: Rect | null;
+  all: Rect[];
+}
+
 export function drawField(
   v: View,
   s: ServerState | undefined,
   style: FieldStyle = { ownTeam: null, nowMs: 0, blocked: [] },
-): Rect | null {
+): ShrineLabels {
   const { ctx } = v;
   const season = s?.season ?? 0;
   ctx.fillStyle = '#05080b';
@@ -42,15 +48,17 @@ export function drawField(
   }
   ctx.stroke();
   ctx.strokeRect(sx(v, 0), sy(v, 0), FIELD * v.scale, FIELD * v.scale);
-  let ownLabel: Rect | null = null;
+  const labels: ShrineLabels = { own: null, all: [] };
+  const area = visibleArea(v);
   for (const [team, p] of SHRINES.entries()) {
     const own = team === style.ownTeam;
     drawShrine(v, p, team, own ? style.nowMs : null);
-    const box = drawShrineLabel(v, { ...p, team, own }, style.blocked);
-    if (own) ownLabel = box;
+    const box = drawShrineLabel(v, { ...p, team, own }, style.blocked, area);
+    if (overlaps(box, area)) labels.all.push(box);
+    if (own) labels.own = box;
   }
   if (s) drawCoins(v, s);
-  return ownLabel;
+  return labels;
 }
 
 // `pulseAt` is set for the own shrine only: a breathing glow, a solid rim, "Your shrine".
@@ -79,12 +87,14 @@ function drawShrine(
   ctx.setLineDash([]);
 }
 
-// "Your shrine" or "<Season> shrine", below the shrine unless a HUD control covers that spot
-// (then above, left or right of it, shrineLabelAt in labels.ts). Returns the label's box.
+// "Your shrine" or "<Season> shrine", below the shrine unless that spot is out of view or a
+// HUD control covers it (then above, left or right of it, shrineLabelAt in labels.ts).
+// Returns the label's box.
 function drawShrineLabel(
   v: View,
   shrine: { x: number; y: number; team: number; own: boolean },
   blocked: readonly Rect[],
+  area: Rect,
 ): Rect {
   const { team, own } = shrine;
   const { ctx } = v;
@@ -94,7 +104,7 @@ function drawShrineLabel(
   ctx.font = `bold ${size}px system-ui, sans-serif`;
   const text = { width: ctx.measureText(label).width, height: size + 2 };
   const at = { x: sx(v, shrine.x), y: sy(v, shrine.y), r };
-  const p = shrineLabelAt(at, text, blocked);
+  const p = shrineLabelAt(at, text, blocked, area);
   ctx.fillStyle = own ? TEXT : seasonColour(team);
   ctx.textAlign = 'center';
   ctx.fillText(label, p.x, p.y);

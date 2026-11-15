@@ -1,8 +1,8 @@
 // Seasonal Spirits — where the ghosts' name labels and the shrine labels go. Every ghost on
-// screen carries a label or at least its short tag, never two on top of each other, never
-// under the top bar or past the screen edge; a shrine label never under a HUD control (owner's
-// play tests 2026-11-15). Pure: positions and widths in, placements out, tested without a
-// canvas.
+// screen carries a label or at least its short tag, never two on top of each other, never on
+// another ghost or a shrine label, never under the top bar or past the screen edge; a shrine
+// label never under a HUD control and never out of view (owner's play tests 2026-11-15).
+// Pure: positions and widths in, placements out, tested without a canvas.
 
 import { overlaps, type Rect } from './view.js';
 
@@ -104,14 +104,26 @@ function toPlaced(c: LabelCandidate, s: Spot, box: Rect): PlacedLabel {
   };
 }
 
-// `area` is the visible field: below the bar, inside the screen. The own label is placed
-// first, then the others, the one carrying more coins first. The result is in drawing order,
-// the own label last so it sits on top.
-export function placeLabels(candidates: readonly LabelCandidate[], area: Rect): PlacedLabel[] {
+// `area` is the visible field: below the bar, inside the screen; `avoid` are boxes already
+// drawn there (the shrine labels). Every ghost's body counts as taken too, so no name sits on
+// a neighbouring ghost (session 2026-11-15-CD: names landed on the ghost next door). The own
+// label is placed first, then the others, the one carrying more coins first. The result is in
+// drawing order, the own label last so it sits on top.
+export function placeLabels(
+  candidates: readonly LabelCandidate[],
+  area: Rect,
+  avoid: readonly Rect[] = [],
+): PlacedLabel[] {
   const order = [...candidates].sort(
     (a, b) => Number(b.own) - Number(a.own) || b.carried - a.carried || a.id - b.id,
   );
-  const taken: Rect[] = [];
+  const bodies = candidates.map((c) => ({
+    left: c.x - c.r,
+    right: c.x + c.r,
+    top: c.y - c.r,
+    bottom: c.y + c.r,
+  }));
+  const taken: Rect[] = [...avoid, ...bodies];
   const placed = order.map((c) => {
     const p = choose(c, area, taken);
     taken.push({
@@ -126,12 +138,17 @@ export function placeLabels(candidates: readonly LabelCandidate[], area: Rect): 
 }
 
 // A shrine's label (shrine centre `x`, `y`, radius `r` in pixels): below the shrine, or the
-// first of above, left and right that no HUD control covers; below when every spot is
-// covered. Returns the label's centre x and baseline.
+// first of above, left and right that lies inside `area` (the visible field) and that no HUD
+// control covers. When none is both, the first spot inside the area; when none is inside but
+// the shrine's centre is (a shrine at the very edge of the view), the spot below moved
+// inside; a shrine out of view keeps its label out of view. A shrine at the bottom edge of
+// the view used to put its label below the screen (session 2026-11-15-CD). Returns the
+// label's centre x and baseline.
 export function shrineLabelAt(
   at: { x: number; y: number; r: number },
   text: { width: number; height: number },
   blocked: readonly Rect[],
+  area: Rect,
 ): { x: number; y: number } {
   const side = at.r + 8 + text.width / 2;
   const middle = at.y + text.height / 2;
@@ -147,6 +164,27 @@ export function shrineLabelAt(
     top: p.y - text.height,
     bottom: p.y,
   });
-  const clear = spots.find((p) => !blocked.some((b) => overlaps(b, box(p))));
-  return clear ?? spots[0] ?? at;
+  const inside = spots.filter((p) => within(area, box(p)));
+  const clear = inside.find((p) => !blocked.some((b) => overlaps(b, box(p))));
+  const below = spots[0] ?? at;
+  const centreInView = within(area, { left: at.x, right: at.x, top: at.y, bottom: at.y });
+  return clear ?? inside[0] ?? (centreInView ? moveInside(area, below, text) : below);
+}
+
+function within(area: Rect, r: Rect): boolean {
+  return (
+    r.left >= area.left && r.right <= area.right && r.top >= area.top && r.bottom <= area.bottom
+  );
+}
+
+function moveInside(
+  area: Rect,
+  p: { x: number; y: number },
+  text: { width: number; height: number },
+): { x: number; y: number } {
+  const half = text.width / 2;
+  return {
+    x: Math.min(Math.max(p.x, area.left + half), area.right - half),
+    y: Math.min(Math.max(p.y, area.top + text.height), area.bottom),
+  };
 }

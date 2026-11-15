@@ -117,8 +117,10 @@ hidden under the top bar).
   - A spectator always sees the whole field and has no view button.
 - **Shrines.** The own shrine glows, breathes gently and is labelled "Your shrine"; the
   others keep "<Season> shrine". A shrine label sits below its shrine, or above, left or
-  right of it when a visible control (the action or shrine buttons) covers that spot
-  (`shrineLabelAt`, tested).
+  right of it when that spot is out of view or a visible control (the action or shrine
+  buttons) covers it; a shrine in a corner of the view moves its label inside
+  (`shrineLabelAt`, tested). Before 2026-11-16 a shrine at the bottom edge of the view put
+  its label below the screen.
 - **Ghosts and coins.** Ghosts are circles in their team colour; the own ghost has a white
   ring and the label "You". Carriers are larger, glow, leave a short trail and show name and
   coin count; a ring shows their coins: solid in the current season's colour, dashed grey
@@ -138,10 +140,12 @@ hidden under the top bar).
   tested; owner's observation 2026-11-15: unnamed dots): the own one "You" (with its coin
   count), a carrier its name and coin count ("Bot 7 · 3"), any other ghost — for players —
   its tag, the bot's number ("7", "P5" for a player); spectators see full names. Labels never
-  overlap: the own label first and on top, then the carriers, richest first, each at the
-  first free spot — the full text above or below the ghost, then its tag above, below, right
-  or left, then the tag further out joined to the ghost by a thin leader line. Nothing is
-  drawn under the bar, and a label at the screen edge is moved inside.
+  overlap each other, another ghost or a shrine label (since 2026-11-16; before, names could
+  sit on the ghost next door or on a shrine label): the own label first and on top, then the
+  carriers, richest first, each at the first free spot — the full text above or below the
+  ghost, then its tag above, below, right or left, then the tag further out joined to the
+  ghost by a thin leader line. Nothing is drawn under the bar, and a label at the screen
+  edge is moved inside.
 - **Separation.** Ghosts softly push each other apart in the game core (docs/GAME-CORE.md),
   so crowds no longer stack on one point.
 - The season clock at the top shows the four seasons of the match in order, the current one
@@ -186,9 +190,10 @@ coins, and the result screen with the bridge box. Screenshots of each step go to
 visible and not cut off, the corner buttons inside the band, in "Near" the minimap, the own
 shrine in sight at home with its label drawn, the arrow once the shrine is out of sight and
 gone again at home, V (desktop) or the button (phone) switching to "Overview" and the
-choice surviving a reload. In every frame it samples while walking: every ghost on screen named, no label under the bar
-or past the screen edge, the arrow out of the thumb zones, the own shrine label under no
-control and not under the minimap. Screenshots `<size>-hud.png`, `<size>-near.png` and
+choice surviving a reload. In every frame it samples while walking: every ghost on screen
+named, no label under the bar, past the screen edge, on another label or on a shrine label,
+every shrine label in view wholly inside it, the arrow out of the thumb zones, the own shrine
+label under no control and not under the minimap. Screenshots `<size>-hud.png`, `<size>-near.png` and
 `<size>-overview.png`. The spectator spec also checks that a spectator has no team line and
 no view button.
 

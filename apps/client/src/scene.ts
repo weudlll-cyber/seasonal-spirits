@@ -26,6 +26,7 @@ import {
   visibleArea,
   type PlacedLabel,
   type Rect,
+  type ShrineLabels,
   type Trails,
   type View,
 } from '@seasonal-spirits/render';
@@ -66,6 +67,7 @@ export interface Drawn {
   arrowAt: { x: number; y: number } | null;
   shrineOnScreen: boolean; // the own shrine with its "Your shrine" label is in sight
   shrineLabel: Rect | null; // where "Your shrine" was drawn on the field
+  shrineLabels: Rect[]; // every shrine label at least partly in view
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
@@ -103,14 +105,19 @@ export function drawScene(
   ctx.fillRect(0, 0, ctx.canvas.width, view.top);
   trails.record(f.ghosts);
   let labels: PlacedLabel[] = [];
-  let shrineLabel: Rect | null = null;
+  let shrineLabels: ShrineLabels = { own: null, all: [] };
   let stealRing = false;
   belowBar(view, () => {
     const field = { ownTeam: f.ownTeam, nowMs: performance.now(), blocked: f.hud.controls };
-    shrineLabel = drawField(view, f.latest && { ...f.latest, coins: f.coins }, field);
+    shrineLabels = drawField(view, f.latest && { ...f.latest, coins: f.coins }, field);
     stealRing = drawStealRing(view, f);
-    const style = { ownId: f.ownId, season: f.latest?.season ?? 0, trails, labelAll: !f.playing };
-    labels = drawGhosts(view, f.ghosts, style);
+    labels = drawGhosts(view, f.ghosts, {
+      ownId: f.ownId,
+      season: f.latest?.season ?? 0,
+      trails,
+      labelAll: !f.playing,
+      avoid: shrineLabels.all,
+    });
   });
   drawClock(ctx, f.latest);
   const shrine = ownShrine(view, f.ownTeam);
@@ -123,7 +130,8 @@ export function drawScene(
     arrow: arrow !== null,
     arrowAt: arrow && { x: arrow.x, y: arrow.y },
     shrineOnScreen,
-    shrineLabel: shrineOnScreen ? shrineLabel : null,
+    shrineLabel: shrineOnScreen ? shrineLabels.own : null,
+    shrineLabels: shrineLabels.all,
     controls: f.hud.controls,
     zones: f.hud.zones,
     labels,

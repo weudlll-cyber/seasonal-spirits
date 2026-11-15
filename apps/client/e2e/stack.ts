@@ -49,6 +49,7 @@ export interface ClientView {
   shrineOnScreen: boolean;
   arrowAt: { x: number; y: number } | null;
   shrineLabel: Rect | null;
+  shrineLabels: Rect[];
   controls: Rect[];
   zones: Rect[];
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];

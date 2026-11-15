@@ -15,7 +15,7 @@ import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 import { MUTED, SHIELD, TEXT, seasonColour } from './palette.js';
-import { circle, sx, sy, visibleArea, type View } from './view.js';
+import { circle, sx, sy, visibleArea, type Rect, type View } from './view.js';
 
 const TRAIL_POINTS = 12;
 
@@ -45,6 +45,7 @@ export interface GhostStyle {
   season: number; // the current season, the colour of full-value coins
   trails: Trails;
   labelAll: boolean; // every ghost named (spectators, the viewer), not just carriers
+  avoid: readonly Rect[]; // boxes the names keep clear of: the shrine labels (drawField)
 }
 
 export function ghostRadiusPx(v: View, g: GhostState): number {
@@ -181,7 +182,8 @@ function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): 
   const area = visibleArea(v);
   const shown = (c: LabelCandidate): boolean =>
     c.x >= area.left && c.x <= area.right && c.y >= area.top && c.y <= area.bottom;
-  const placed = placeLabels(ghosts.map((g) => candidateOf(v, g, style)).filter(shown), area);
+  const candidates = ghosts.map((g) => candidateOf(v, g, style)).filter(shown);
+  const placed = placeLabels(candidates, area, style.avoid);
   ctx.strokeStyle = MUTED;
   ctx.lineWidth = 1;
   for (const p of placed) {
