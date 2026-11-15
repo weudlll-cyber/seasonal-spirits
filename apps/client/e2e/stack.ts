@@ -37,8 +37,13 @@ export interface ClientView {
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];
 }
 
-export function view(page: Page): Promise<ClientView> {
-  return page.evaluate(() => (window as unknown as { __client: ClientView }).__client);
+// Waits for the client's first frame: right after a (re)load window.__client does not exist
+// yet (a reload in readability.e2e.ts read it too early in CI once).
+export async function view(page: Page): Promise<ClientView> {
+  const handle = await page.waitForFunction(
+    () => (window as unknown as { __client?: ClientView }).__client,
+  );
+  return (await handle.jsonValue()) as ClientView;
 }
 
 export function ownShrine(team: number): { x: number; y: number } {
