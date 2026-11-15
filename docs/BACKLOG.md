@@ -16,8 +16,10 @@ requests, and the Renovate app. Done when: all four are on and a test push of a 
 secret is refused.
 
 b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
-`packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)). Done when: the
-owner has decided each and config.ts carries the source.
+`packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), among them since
+2026-11-15 `bots.waypointMs`, `bots.threatRange`, `ghostRadius`, `ghostGrowthPerCoin`,
+`ghostGrowthMax` and `coinRadius`. Done when: the owner has decided each and config.ts
+carries the source.
 
 c. **First playable version — owner part.** Built and checked with Playwright (CLOSED).
 Still open: the owner plays it on the PC (`pnpm dev`, http://localhost:5930) and on a phone
@@ -25,14 +27,14 @@ in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 (CONCEPT.md §8: built with plain Canvas 2D, no framework). Done when: the owner has played
 a match on both and decided whether the Canvas client stays.
 
-d. **Balance — owner decision: the 25–42 % target.** Owner decision 2026-11-15: each
-strategy's best player wins 25–42 % of matches. The fairness search (BALANCE.md, "Round 3",
-CLOSED) found no configuration that holds it at N = 300: 7 of 288 grid configurations passed
-at N = 30, none at N = 300; the closest (stealShare 0.25, 1 coin/s, carry 0.7, cooldown 2 s,
-secure 3 s) gives patient 25.1 %, cautious 44.0 %, hunter 30.9 %. By the owner's rule the
-target goes back to the owner. Done when: the owner has decided — keep searching (other
-bots, values near 1 coin per second), widen the band, or change a rule — and config.ts
-carries the decision.
+d. **Fairness target — 25–42 % for all three styles.** Owner decision 2026-11-15: each
+strategy's best player wins 25–42 % of matches. No configuration met it at N = 300; at
+1 coin/s no swap happens — rule question with the owner. (Fairness search in BALANCE.md,
+"Round 3", CLOSED: 7 of 288 grid configurations passed at N = 30, none at N = 300; the
+closest — stealShare 0.25, 1 coin/s, carry 0.7, cooldown 2 s, secure 3 s — gives patient
+25.1 %, cautious 44.0 %, hunter 30.9 %.) Done when: the owner has decided — keep searching
+(other bots, values near 1 coin per second), widen the band, or change a rule — and
+config.ts carries the decision.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -61,13 +63,6 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 2026-11-15; the overlaps found in the own match are fixed on `fix/ui-overlaps` (CLOSED).
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
-
-j. **Session 2026-11-15-CD — owner part.** Four stacked branches, nothing merged:
-`fix/dots-and-packs` → `fix/pickup` → `feat/help-feedback` → `feat/fairness`. Done when:
-the owner has played the client (names on every ghost, coin pickup, help, lit Steal button,
-steal messages), decided the new placeholders (`bots.waypointMs`, `bots.threatRange`,
-`ghostRadius`, `ghostGrowthPerCoin`, `ghostGrowthMax`, `coinRadius`), and the stack is
-merged or dropped.
 
 ## CLOSED
 
@@ -238,6 +233,13 @@ merged or dropped.
   N = 300; no default changed — commits "feat: patient bot fixes, fairness tool, grid stage
   1" and "docs: fairness stage 2, swap comparison, session sheet 2026-11-15-CD" on
   `feat/fairness`.
+- 2026-11-15 — **session 2026-11-15-CD merged into `master`** with the owner's approval of
+  2026-11-15: unnamed dots, moving packs, coin pickup, help and steal feedback, fairness
+  search (the four stacked branches `fix/dots-and-packs` → `fix/pickup` →
+  `feat/help-feedback` → `feat/fairness`, merged as one through `feat/fairness`) — merge
+  commit "merge: unnamed dots, packs, coin pickup, help and steal feedback, fairness search".
+  The branches are deleted on origin. The owner's play test is in c, the new placeholders in
+  b2, the fairness target stays open in d.
 
 ## CHECKS DONE
 
