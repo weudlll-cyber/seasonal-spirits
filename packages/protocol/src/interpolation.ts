@@ -69,12 +69,8 @@ function lerpGhosts(a: GhostState[], b: GhostState[], t: number): GhostState[] {
       out.push({ ...gb });
       continue;
     }
-    out.push({
-      id: gb.id,
-      x: ga.x + (gb.x - ga.x) * t,
-      y: ga.y + (gb.y - ga.y) * t,
-      flags: gb.flags,
-    });
+    // Position blends; everything else (team, carried, flags) is the newer state's.
+    out.push({ ...gb, x: ga.x + (gb.x - ga.x) * t, y: ga.y + (gb.y - ga.y) * t });
   }
   return out;
 }

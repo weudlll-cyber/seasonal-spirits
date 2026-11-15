@@ -6,6 +6,9 @@
 
 import type { GhostState } from './state.js';
 
+// The detector looks at positions only.
+type Placed = Pick<GhostState, 'id' | 'x' | 'y'>;
+
 export interface JumpDetectorOptions {
   speedUnitsPerSecond: number;
 }
@@ -20,7 +23,7 @@ export class JumpDetector {
   }
 
   // Returns the number of ghosts that jumped this frame.
-  observe(frameTimeMs: number, ghosts: GhostState[]): number {
+  observe(frameTimeMs: number, ghosts: readonly Placed[]): number {
     if (this.previous === null) {
       this.previous = snapshot(ghosts);
       this.previousTime = frameTimeMs;
@@ -42,7 +45,7 @@ export class JumpDetector {
   }
 }
 
-function snapshot(ghosts: GhostState[]): Map<number, { x: number; y: number }> {
+function snapshot(ghosts: readonly Placed[]): Map<number, { x: number; y: number }> {
   const m = new Map<number, { x: number; y: number }>();
   for (const g of ghosts) m.set(g.id, { x: g.x, y: g.y });
   return m;

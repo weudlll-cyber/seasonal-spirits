@@ -61,21 +61,32 @@ half value outside the coin's own season.
 
 ### 2b. The halving
 
-At a fixed moment known to all — the turn from Autumn to Winter, 3:45 of 5:00 (decided
-2026-11-14):
+In reality every change of season is a halving, and the game does the same (decided
+2026-11-14, afternoon; section 13):
 
-- **All carried, unsecured coins are halved.** The halves of all ghosts drop into the map
-  centre as the "Great Halving Loot", for whoever fetches them and brings them home.
-- **Afterwards only half as many coins fall onto the field.** Coins become scarce; stealing
-  becomes the main source. (Mirror: after the halving, less is produced.)
+- **Every season change inside a match is a halving** — in a 5-minute match at 1:15, 2:30
+  and 3:45, generally at every season boundary before the match end. The match end itself
+  is not one.
+- **At a halving the old season's coins stop falling and the new season's coins fall from
+  then on.** Old coins still lying on the field disappear. Each season's coins look
+  different (the season's own colour now, the real token logo later). The spawn rate stays
+  the same.
+- **Carried coins are not halved.** A carried coin of a season that is no longer current is
+  worth half (the value rule of 2a), so every halving is a deadline: secure or swap before
+  it. (Mirror: the token that leaves its season loses its premium; the patient holder has
+  already swapped into the next one.)
 
-The halving is staged, not just computed (decided 2026-11-14): a **countdown** on the season
-clock from 10 seconds before, for players and spectators alike; an on-screen **announcement**
-("HALVING") at the cut; a **screen effect** (short flash, every carrier's coins visibly split,
-the halves fly to the centre and land there as a glowing pool); and **one sound** — the only
-sound Phase 1 needs. The countdown is part of the mechanics: it makes the deadline visible to
+The halving is staged, not just computed, at every season change: a **countdown** on the
+season clock from 10 seconds before, for players and spectators alike; a large on-screen
+**announcement** ("HALVING — Summer is in season", with the new season's name) at the cut; a
+**short flash**, the new season's coins starting to fall and every carrier's old-season coins
+visibly switching to a "half value" look; and **one recognisable tone** — the only sound
+Phase 1 needs. The countdown is part of the mechanics: it makes the deadline visible to
 newcomers who cannot read the clock yet. Cheap (a server timestamp plus a client effect), so
 it belongs in Phase 1.
+
+Dropped with this decision: halving of carried coins, the centre pool ("Great Halving
+Loot"), the halved spawn rate after the halving, and the single halving moment at 3:45.
 
 ### 2c. The four rule changes from earlier drafts
 
@@ -207,8 +218,8 @@ numbers. Decision: continue, change technology, or change the concept.
 
 **Phase 1 — the game with its core.** One map, four teams, website login with player data from
 the website, **one** embedded website chat room (slug `seasonal-spirits`), season clock, coins of
-the four kinds with value by season, hold / swap / secure, stealing, halving (pool plus
-scarcity, with countdown, announcement, effect and one sound), 5-minute match, spectator view
+the four kinds with value by season, hold / swap / secure, stealing, a halving at every season
+change (with countdown, announcement, effect and one tone), 5-minute match, spectator view
 (no prediction), bots, practice match, bridge box, configuration file.
 
 **Fun gate.** One evening with the owner and members in a call. One question: does the game
@@ -227,8 +238,9 @@ extra maps, commentator view, admin panel UI, better bot behaviour, special form
    Phase 3 specials.
 2. Starting values: swap 10 → 15 of the next season; half value outside the own season; both
    configurable.
-3. Halving: carried coins halved + pool in the centre + half as many coins afterwards; at the
-   Autumn → Winter turn; staged with countdown, announcement, effect and one sound.
+3. Halving: staged with countdown, announcement, effect and one sound. Its mechanics were
+   replaced on the afternoon of 2026-11-14 by section 13 (every season change is a halving;
+   carried coins keep their count; no pool, no halved spawn rate).
 4. Bridge box after the match with "Start here", simulator link, "No financial advice";
    switchable, on by default.
 5. Fun gate tests the game, not knowledge; no mandatory testers without crypto knowledge.
@@ -285,3 +297,23 @@ the "embedded only" exception note in `docs/GAME-INTEGRATION.md`.
 **Noted for Phase 1, not decided:** where the call runs that spectators hear (section 5). The
 website documentation tells games not to assume embedded calls (`docs/GAME-INTEGRATION.md`
 §8); for Phase 0 a normal website call in parallel to the probe is enough.
+
+## 13. Owner decision of 2026-11-14 (afternoon): halving = season change
+
+Replaces the halving mechanics of section 2b and decision 3 of section 10; the staging stays.
+
+1. Every season change inside a match is a halving: at 75 s, 150 s and 225 s of a 5-minute
+   match, generally at every season boundary before the match end. The match end is not one.
+2. At a halving the old season's coins stop falling and the new season's coins fall from
+   then on; old coins still on the field disappear. The coins of each season look different
+   (each season's own colour now, the real token logo later). The spawn rate stays the same.
+3. Carried coins are not halved. A carried coin of a season that is no longer current is
+   worth half (the existing value rule), so every halving is a deadline: secure or swap
+   before it.
+4. The old mechanics are removed completely: halving of carried coins, the centre pool, the
+   halved spawn rate, the single halving moment.
+5. The state carries a countdown during the 10 s before every season change and a one-tick
+   halving event carrying the new season, each time.
+
+The unchanged spawn rate in point 2 was added by the planning side, not by the owner; the
+balance simulation checks it.

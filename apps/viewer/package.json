@@ -10,9 +10,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@seasonal-spirits/protocol": "workspace:*"
+    "@seasonal-spirits/game-core": "workspace:*",
+    "@seasonal-spirits/protocol": "workspace:*",
+    "@seasonal-spirits/render": "workspace:*"
   },
   "devDependencies": {
-    "vite": "^5.4.11"
+    "vite": "8.3.4"
   }
 }

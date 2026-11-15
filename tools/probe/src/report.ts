@@ -2,6 +2,7 @@
 // Pure functions, split from main.ts so the verdict can be tested without a probe run.
 
 import os from 'node:os';
+import { COIN_BYTES, GHOST_BYTES, HEADER_BYTES } from '@seasonal-spirits/protocol';
 import type { ServerMetrics } from '@seasonal-spirits/server';
 import type { HeadlessSpectator } from './spectator.js';
 
@@ -45,7 +46,8 @@ export function evaluateCriteria(
 ): Criteria {
   return {
     hzUnder30Cpu: metrics.achievedHz >= cfg.tickHz * 0.95 && metrics.cpuPercentOfOneCore <= 30,
-    bytesUnder1Kb: metrics.stateBytes < 1024,
+    // The size varies with the coins on the field; the largest message decides.
+    bytesUnder1Kb: metrics.maxStateBytes < 1024,
     jumpsPer60s: summary.jumpsPer60s,
   };
 }
@@ -70,7 +72,10 @@ export function renderReport(r: ReportInput): string {
   lines.push('');
   lines.push('## Configuration');
   lines.push('```');
-  lines.push(JSON.stringify(r.cfg, null, 2));
+  // The report directory is a machine path (it may name the user); it stays out of the report.
+  lines.push(
+    JSON.stringify(r.cfg, (key, value: unknown) => (key === 'reportDir' ? undefined : value), 2),
+  );
   lines.push('```');
   lines.push('');
   lines.push('## Server numbers');
@@ -78,8 +83,13 @@ export function renderReport(r: ReportInput): string {
   lines.push(`- server CPU: **${r.metrics.cpuPercentOfOneCore.toFixed(2)} %** of one core`);
   lines.push(`- max tick duration: **${r.metrics.maxTickMs} ms**`);
   lines.push(`- clients connected: ${r.metrics.clients}`);
-  lines.push(`- ghosts on map: ${r.metrics.ghosts}`);
-  lines.push(`- bytes per state message: **${r.metrics.stateBytes}** (header 9 + 6 per ghost)`);
+  lines.push(
+    `- ghosts in the match: ${r.metrics.ghosts} (${r.metrics.players} steered by players)`,
+  );
+  lines.push(
+    `- bytes per state message: last ${r.metrics.stateBytes}, max **${r.metrics.maxStateBytes}** ` +
+      `(header ${HEADER_BYTES} + ${GHOST_BYTES} per ghost + ${COIN_BYTES} per field coin)`,
+  );
   lines.push('');
   lines.push('## Spectator numbers');
   lines.push(`- states received: ${r.summary.statesReceived}`);

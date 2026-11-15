@@ -9,7 +9,17 @@ function s(serverMs: number, x: number, y: number): BufferedState {
     state: {
       tick: serverMs,
       serverMs,
-      ghosts: [{ id: 1, x, y, flags: 0 }],
+      matchMs: serverMs,
+      season: 0,
+      seasonNumber: 0,
+      seasonLeftMs: 75_000,
+      countdownMs: null,
+      flags: 0,
+      nextMatchMs: 0,
+      teamSecured: [0, 0, 0, 0],
+      ghosts: [{ id: 1, x, y, team: 0, carried: 0, offSeason: 0, secured: 0, flags: 0 }],
+      coins: [],
+      offers: [],
     },
   };
 }

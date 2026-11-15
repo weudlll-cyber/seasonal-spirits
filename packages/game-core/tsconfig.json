@@ -1,0 +1,11 @@
+// Seasonal Spirits — game-core project: pure match logic, no host APIs.
+// Node types only for the simulate command (process.argv, console).
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}

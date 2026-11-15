@@ -1,0 +1,36 @@
+# Seasonal Spirits — CodeQL code scanning for JavaScript and TypeScript.
+# Static security analysis on every push, every pull request and weekly, so new queries also
+# run against unchanged code. Results go to GitHub code scanning (docs/SECURITY.md).
+name: CodeQL
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [master]
+  schedule:
+    # Mondays 04:23 UTC.
+    - cron: '23 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Only this job uploads results to code scanning.
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: javascript-typescript
+          # TypeScript is analysed from source; no build needed.
+          build-mode: none
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0

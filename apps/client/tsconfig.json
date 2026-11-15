@@ -1,0 +1,10 @@
+// Seasonal Spirits — player client project: the browser source and its Vite config.
+// Node types for vite.config.ts (ports, LAN mode from process.env) and the Playwright specs.
+{
+  "extends": "../../tsconfig.bundler.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src", "e2e", "vite.config.ts"]
+}

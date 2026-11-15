@@ -1,0 +1,87 @@
+// Seasonal Spirits — the client's controls and messages on top of the canvas (DOM, so they are
+// real buttons): the one action button, at the own shrine "Secure (…)" and "Swap (…)" with the
+// server's numbers, the HALVING announcement with its flash, and notices.
+
+import type { GameAction, OfferState, ServerState } from '@seasonal-spirits/protocol';
+import { seasonName, value } from '@seasonal-spirits/render';
+
+const ANNOUNCE_MS = 3500;
+
+// An element of index.html, checked to be of the expected kind.
+function el<T extends HTMLElement>(id: string, kind: new () => T): T;
+function el(id: string): HTMLElement;
+function el(id: string, kind: new () => HTMLElement = HTMLElement): HTMLElement {
+  const found = document.getElementById(id);
+  if (!(found instanceof kind)) throw new Error(`client: #${id} missing from index.html`);
+  return found;
+}
+
+export class Hud {
+  private readonly steal = el('steal', HTMLButtonElement);
+  private readonly secure = el('secure', HTMLButtonElement);
+  private readonly swap = el('swap', HTMLButtonElement);
+  private readonly shrine = el('shrine');
+  private readonly announce = el('announce');
+  private readonly flash = el('flash');
+  private readonly notice = el('notice');
+  private announceTimer: number | undefined;
+
+  constructor(act: (a: GameAction) => void) {
+    // pointerdown, not click: a thumb on the right button must not wait for its release.
+    const bind = (b: HTMLButtonElement, a: GameAction): void => {
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (!b.disabled) act(a);
+      });
+    };
+    bind(this.steal, 'steal');
+    bind(this.secure, 'secure');
+    bind(this.swap, 'swap');
+  }
+
+  // Players only: the shrine buttons replace the action button while the server sends an
+  // offer for the own ghost; every number on them is the server's.
+  showControls(playing: boolean, offer: OfferState | undefined, season: number): void {
+    this.steal.hidden = !playing || offer !== undefined;
+    this.shrine.hidden = !playing || offer === undefined;
+    if (!offer) return;
+    this.secure.textContent = `Secure (${value(offer.secureValue)})`;
+    this.secure.disabled = offer.secureValue === 0;
+    this.swap.textContent =
+      `Swap (${offer.swapCoins} ${seasonName(season + 1)}, worth ` +
+      `${value(offer.swapValueNow)} now / ${value(offer.swapValueLater)} later)`;
+    this.swap.disabled = offer.swapCoins === 0;
+  }
+
+  // CONCEPT.md §2b: "HALVING — <Season> is in season", a short flash, at every halving.
+  halving(s: ServerState): void {
+    this.announce.textContent = `HALVING — ${seasonName(s.season)} is in season`;
+    this.announce.hidden = false;
+    this.flash.classList.remove('go');
+    this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation
+    this.flash.classList.add('go');
+    window.clearTimeout(this.announceTimer);
+    this.announceTimer = window.setTimeout(() => {
+      this.announce.hidden = true;
+    }, ANNOUNCE_MS);
+  }
+
+  say(text: string | null): void {
+    this.notice.textContent = text ?? '';
+    this.notice.hidden = text === null;
+  }
+}
+
+export function bindMute(toggle: () => boolean, muted: boolean): void {
+  const button = el('mute', HTMLButtonElement);
+  const label = (m: boolean): string => (m ? 'Sound off' : 'Sound on');
+  button.textContent = label(muted);
+  button.setAttribute('aria-pressed', String(muted));
+  button.addEventListener('click', () => {
+    const now = toggle();
+    button.textContent = label(now);
+    button.setAttribute('aria-pressed', String(now));
+  });
+}
+
+export { el };

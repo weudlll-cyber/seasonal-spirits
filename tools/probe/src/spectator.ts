@@ -14,6 +14,7 @@ import {
   trimBuffer,
   type BufferedState,
 } from '@seasonal-spirits/protocol';
+import { toUint8Array } from './raw.js';
 
 export interface SpectatorOptions {
   url: string;
@@ -61,8 +62,8 @@ export class HeadlessSpectator {
     this.ws.on('open', () => {
       this.ws.send(JSON.stringify({ kind: 'spectator' }));
     });
-    this.ws.on('message', (data: RawData) => {
-      this.inbound.push(rawToUint8Array(data));
+    this.ws.on('message', (data: RawData, isBinary: boolean) => {
+      if (isBinary) this.inbound.push(toUint8Array(data));
     });
     this.ws.on('error', () => {
       // swallowed
@@ -120,24 +121,4 @@ export class HeadlessSpectator {
       statesPerSecondInWindow: this.statesPerSecond.value(now) / 60,
     };
   }
-}
-
-function rawToUint8Array(data: RawData): Uint8Array {
-  if (data instanceof ArrayBuffer) return new Uint8Array(data);
-  if (data instanceof Uint8Array) return data;
-  if (Array.isArray(data)) {
-    const total = data.reduce((n, b) => n + b.byteLength, 0);
-    const out = new Uint8Array(total);
-    let o = 0;
-    for (const b of data) {
-      out.set(new Uint8Array(b.buffer, b.byteOffset, b.byteLength), o);
-      o += b.byteLength;
-    }
-    return out;
-  }
-  return new Uint8Array(
-    (data as Buffer).buffer,
-    (data as Buffer).byteOffset,
-    (data as Buffer).byteLength,
-  );
 }

@@ -2,7 +2,7 @@
 
 import { defineConfig } from 'vite';
 
-const port = Number(process.env.VIEWER_PORT ?? 5930);
+const port = Number(process.env.VIEWER_PORT ?? 5931);
 const serverPort = Number(process.env.PORT ?? 3930);
 
 export default defineConfig({
