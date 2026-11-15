@@ -1,9 +1,10 @@
 # Session 2026-11-15-CD — unnamed dots, moving packs, coin pickup, help and feedback, fairness
 
-**Client: http://localhost:5930** — to be confirmed at the handover.
+**Client: http://localhost:5930** — `pnpm dev` running from `feat/fairness` (the newest finished
+branch); viewer http://localhost:5931, stop with `pnpm dev:stop`.
 
 Started from `master` (`9c2d85a`). Branches, stacked: `fix/dots-and-packs` → `fix/pickup` →
-`feat/help-feedback` → `feat/fairness`. Nothing merged. In progress.
+`feat/help-feedback` → `feat/fairness`. Nothing merged.
 
 ## 1. What the unnamed dots are (`fix/dots-and-packs`)
 
@@ -167,3 +168,67 @@ with 48 % CPU load from other work on the PC (the running `pnpm dev`: 32 bots, V
 The whole grid of 288 configurations would take about 96 minutes in one process — under
 3 hours, so no dimension was dropped. It ran with 8 parallel processes on 14 cores (CPU load
 51 % just before the start) through the new `pnpm fairness`.
+
+### Step B — grid, stage 2, swap comparison (docs/BALANCE.md, "Round 3")
+
+- Stage 1: 288 configurations × 30 matches (seeds 1–30), 26 min 20 s. **7 of 288** have all
+  three strategies within 25–42 %, all with 1 coin per second.
+- Stage 2: those 7 × 300 matches (seeds 1–300), 6 min 7 s. **None holds the band at
+  N = 300.** Closest: stealShare 0.25, 1 coin/s, carry 0.7, cooldown 2000 ms, secure 3000 ms
+  — patient 25.1 %, cautious 44.0 %, hunter 30.9 % (distance 21.3). Next: 0.35 / 1 / 0.5 /
+  3000 / 3000 — 19.5 / 38.7 / 41.8 % (27.7); 0.15 / 1 / 0.7 / 2000 / 2000 — 23.9 / 47.9 /
+  28.2 % (29.2).
+- Secured value per player and match in those three (mean / median / p10 / p90): about 7–8
+  for every strategy — e.g. the best: patient 7.8 / 7.5 / 5.0 / 11.0, cautious 8.0 / 8.0 /
+  4.5 / 12.0, hunter 7.5 / 7.5 / 2.5 / 12.0. Teams 20–34 % each.
+- Swap comparison (rule change, owner decides), best configuration, N = 30: 10 → 18 and
+  10 → 12 both 38.3 / 31.7 / 30.0 % — identical to 10 → 15, because at one coin per second
+  no bot ever holds 10 coins of one season.
+- By the owner's rule, the 25–42 % target goes back to the owner.
+
+## Branches (stacked, nothing merged)
+
+`fix/dots-and-packs` → `fix/pickup` → `feat/help-feedback` → `feat/fairness`; heads and CI
+in the owner's report (this sheet is part of the last commit).
+
+## Files (lines before → after, against master `9c2d85a`)
+
+Game core: `bots/common.ts` 55 → 99, `bots/strategies.ts` 81 → 97, `config.ts` 82 → 99,
+`actions.ts` 108 → 125, `geometry.ts` 35 → 46, `field.ts` 45 → 47, new `fairness.ts` 63,
+`fairness-cli.ts` 141, tests: new `bots/packs.test.ts` 69, `fairness.test.ts` 29, `field.test.ts`
+68 → 91, `bots/hunter.test.ts` 42 → 49, `bots/strategies.test.ts` 48 → 50. Protocol:
+`messages.ts` 47 → 63, `server-message.ts` 36 → 44, `interpolation.ts` 84 → 94, `state.ts` 191
+→ 193, tests 42 → 60 and 48 → 61. Render: `labels.ts` 107 → 152, `ghosts.ts` 159 → 180,
+`field.ts` 130 → 136, tests `labels.test.ts` 101 → 128, new `sizes.test.ts` 27. Server:
+`match-host.ts` 152 → 182, `server.ts` 295 → 300, `wire.ts` 80 → 86, `main.ts` 48 → 52, new
+`scenario.ts` 35, `match-host.test.ts` 130 → 185. Client: `scene.ts` 144 → 188, `main.ts` 156
+→ 183, `hud.ts` 118 → 139, `connection.ts` 100 → 104, `index.html` 308 → 353, new `help.ts`
+101; e2e: `playwright.config.ts` 51 → 80, `stack.ts` 133 → 149, `readability.e2e.ts` 150 →
+161, new `help.e2e.ts` 36, `feedback.e2e.ts` 37. Docs: BALANCE 502 → 663, CLIENT 160 → 205,
+GAME-CORE 133 → 159, SERVER 106 → 113, THREATS 79 → 83, BACKLOG 296 → about 360. Data:
+`reports/fairness/stage1-grid.json`, `stage2.json`, `swap-comparison.json`.
+
+- **Reused:** `ghostName` beside the new `ghostTag`; `overlaps`/`visibleArea` for the label
+  spots; `simulate` with its per-tick observer for the pack test; `nearestOpponentCarrier`
+  inside the new `canSteal`, which `trySteal` now uses too; `parseServerMessage` for the
+  steal notice; `envChoice` for `SCENARIO`; the guarded storage helper for "help seen";
+  `SEASON_COLOURS` in the help drawings; `runBalance` under `pnpm fairness`; the round-1
+  distance rule for the fairness yardstick.
+- **Removed:** `pickupRadius`; the hard-coded drawn sizes 14/16/10 in render; the "hide or
+  shorten to the coin count" label rule; the "nearest coin" collector target; the old
+  per-ghost label candidate shape (`above`/`below`/`short`).
+- **Noticed, left:** hunters rob each other back and forth when one is richer (6801 steals
+  between hunters in five matches); some labels sit on neighbouring ghost bodies; shrine and
+  name labels are not deconflicted with each other; a bottom shrine label of another team can
+  leave the screen in "Near"; the whole-match tests needed an explicit 20 s timeout under
+  load; in a phone's "Overview" the shapes are still drawn larger than their size.
+
+## NEEDS OWNER
+
+- **The 25–42 % target**: no configuration of the grid reaches it at N = 300 (closest:
+  cautious 44.0 %); by the owner's rule it goes back to the owner — keep searching (other
+  bots, other values, more coin rates near 1), widen the band, or change a rule.
+- New placeholders: `bots.waypointMs` 4000, `bots.threatRange` 150, `ghostRadius` 14,
+  `ghostGrowthPerCoin` 0.5, `ghostGrowthMax` 16, `coinRadius` 10.
+- Play the client: names on every ghost, the help, the lit Steal button and steal messages.
+- Unchanged: the other placeholders, separation values, the four GitHub settings.

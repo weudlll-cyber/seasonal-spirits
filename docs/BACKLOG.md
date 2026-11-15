@@ -25,12 +25,14 @@ in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 (CONCEPT.md §8: built with plain Canvas 2D, no framework). Done when: the owner has played
 a match on both and decided whether the Canvas client stays.
 
-d. **Balance — owner decision.** Two rounds in [BALANCE.md](BALANCE.md) (CLOSED). Round 2
-(after the hunter fix and separation, N = 300): hunter best player in 66.0 % of the matches,
-cautious 32.3 %, patient 1.7 % (mean 3.8); `stealShare=0.25` turns it to cautious 70.0 %;
-no variant tried brings patient back; teams stay even (22.3–29.8 %). Done when: the owner
-has decided whether to change `stealShare`, `coinSpawnPerSecond`, `carrySpeedFactor`, the
-separation values or the bots (patient in particular), and config.ts carries the decision.
+d. **Balance — owner decision: the 25–42 % target.** Owner decision 2026-11-15: each
+strategy's best player wins 25–42 % of matches. The fairness search (BALANCE.md, "Round 3",
+CLOSED) found no configuration that holds it at N = 300: 7 of 288 grid configurations passed
+at N = 30, none at N = 300; the closest (stealShare 0.25, 1 coin/s, carry 0.7, cooldown 2 s,
+secure 3 s) gives patient 25.1 %, cautious 44.0 %, hunter 30.9 %. By the owner's rule the
+target goes back to the owner. Done when: the owner has decided — keep searching (other
+bots, values near 1 coin per second), widen the band, or change a rule — and config.ts
+carries the decision.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -60,10 +62,12 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-j. **Session 2026-11-15-CD, fairness search** (`feat/fairness` from `feat/help-feedback`).
-Done when: the patient bot's obvious faults are fixed and described, the grid search stage
-1, stage 2 and the swap comparison are in BALANCE.md with N, seeds and config per row, and
-pushed.
+j. **Session 2026-11-15-CD — owner part.** Four stacked branches, nothing merged:
+`fix/dots-and-packs` → `fix/pickup` → `feat/help-feedback` → `feat/fairness`. Done when:
+the owner has played the client (names on every ghost, coin pickup, help, lit Steal button,
+steal messages), decided the new placeholders (`bots.waypointMs`, `bots.threatRange`,
+`ghostRadius`, `ghostGrowthPerCoin`, `ghostGrowthMax`, `coinRadius`), and the stack is
+merged or dropped.
 
 ## CLOSED
 
@@ -226,6 +230,14 @@ pushed.
   `SCENARIO=steal` for the specs; THREATS rows 26a, 29, 30. Tests in
   `server-message.test.ts`, `match-host.test.ts`, `help.e2e.ts`, `feedback.e2e.ts` — commit
   "feat: help overlay and steal feedback" on `feat/help-feedback`.
+- 2026-11-15 — **fairness search** (owner decision (e)): the patient bot's two faults fixed
+  (it goes home with a load when an opponent is close, `bots.threatRange`; it banks before a
+  halving it cannot swap for); `pnpm fairness`; stage 1 (288 configurations × 30 matches),
+  stage 2 (7 × 300) and the swap 10 → 18 / 10 → 12 comparison in BALANCE.md "Round 3" with
+  the raw reports in `reports/fairness/`: no configuration holds 25–42 % for all three at
+  N = 300; no default changed — commits "feat: patient bot fixes, fairness tool, grid stage
+  1" and "docs: fairness stage 2, swap comparison, session sheet 2026-11-15-CD" on
+  `feat/fairness`.
 
 ## CHECKS DONE
 
@@ -345,3 +357,8 @@ pushed.
 | 2026-11-15 | timing of one 30-match configuration (`time … balance-cli.ts --matches 30`)                                                                                                               | same tree                                                                                                                            | 19.8 s, with 48 % CPU load from the running `pnpm dev`                                                                                                                                                                              | sheet                                                                                          |
 | 2026-11-15 | `pnpm fairness --grid --matches 30 --seed 1 --jobs 8` (288 configurations, stage 1)                                                                                                       | same tree                                                                                                                            | 26 min 20 s (CPU 51 % before the start); 7 of 288 have all three strategies within 25–42 %                                                                                                                                          | `reports/fairness/stage1-grid.json`, docs/BALANCE.md                                           |
 | 2026-11-15 | `pnpm verify:changed` during and after the grid (toolchain changed: all format, lint, typecheck, 31 files / 157 tests)                                                                    | same tree                                                                                                                            | first two runs: whole-match tests timed out at 5 s beside the grid and `pnpm dev` (1 s alone); with an explicit 20 s timeout green                                                                                                  | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL for the stack                                                                                                                              | `880759a`, `0457126`, `1af4636`                                                                                                      | success each (CI 43738767827, 43740646374, 43742298502)                                                                                                                                                                             | `gh run list`                                                                                  |
+| 2026-11-15 | `pnpm fairness --configs <the 7 stage-1 passes> --matches 300 --seed 1 --jobs 7` (stage 2)                                                                                                | `7910509`                                                                                                                            | 6 min 7 s (CPU 15 % before); 0 of 7 hold 25–42 %; closest 25.1 / 44.0 / 30.9 %                                                                                                                                                      | `reports/fairness/stage2.json`, docs/BALANCE.md                                                |
+| 2026-11-15 | `pnpm fairness --configs <best with swapOut 18 and 12> --matches 30 --seed 1` (rule-change comparison)                                                                                    | same                                                                                                                                 | both 38.3 / 31.7 / 30.0 %, identical to swap 10 → 15: no bot swaps at 1 coin/s                                                                                                                                                      | `reports/fairness/swap-comparison.json`                                                        |
+| 2026-11-15 | best-player shares averaged per coin rate over the grid (scratch query of `stage1-grid.json`)                                                                                             | same                                                                                                                                 | 1 /s 14.6 / 38.4 / 47.1 %, 1.5 /s 13.9 / 52.7 / 33.4 %, 2 /s 12.8 / 58.6 / 28.6 %, 3 /s 16.5 / 56.3 / 27.2 % — corrected a wrong first summary line                                                                                 | docs/BALANCE.md                                                                                |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: fairness stage 2, swap comparison, session sheet 2026-11-15-CD"                                     | green                                                                                                                                                                                                                               | same commit                                                                                    |

@@ -548,3 +548,116 @@ Field coins gone at the halvings, per match (N = 300): mean 4.2, median 4.0, p10
   (N = 300; round 1: 32.6) — the bots now spread out and pick the field cleaner.
 
 Nothing here changes a default; the owner decides (BACKLOG d).
+
+## Round 3 — the fairness search (2026-11-15, `feat/fairness`)
+
+Owner decision 2026-11-15: each strategy's best player wins between 25 % and 42 % of the
+matches; if no setting reaches that, the rule goes back to the owner.
+
+**Base config of every row**: `DEFAULT_CONFIG` of `packages/game-core/src/config.ts` on
+`feat/fairness` — 5-minute match, halving at every season change, swap 10 → 15 (except the
+comparison below), half value off-season, steal range 60, field 2000, speed 300, max 60
+field coins, separation 28 / 0.5, ghost radius 14 (+0.5 per coin, at most +16), coin radius
+10, bots: cautious banks at 5, hunter at 8, deadline margin 3 s, waypoint 4 s, threat range
+150 — with the five values each row names. Bots: 3 patient, 3 cautious, 2 hunters per team,
+teams rotating (as above). Tool: `pnpm fairness` (`src/fairness-cli.ts`, `src/fairness.ts`);
+every report in full in `reports/fairness/*.json`.
+
+Measure: **distance** = sum of the distances of the three "best player of the match" shares
+from 33.3 %, in points (0 = even).
+
+### Stage 1 — 288 configurations × 30 matches (seeds 1–30)
+
+Grid: `stealShare` {0.15, 0.25, 0.35, 0.5} × `coinSpawnPerSecond` {1, 1.5, 2, 3} ×
+`carrySpeedFactor` {0.5, 0.7, 0.85} × `stealCooldownMs` {1000, 2000, 3000} ×
+`secureDurationMs` {2000, 3000}. Command: `pnpm fairness --grid --matches 30 --seed 1 --jobs
+8 --out reports/fairness/stage1-grid.json` (26 min 20 s, 8 processes on 14 cores; one
+configuration alone 19.8 s with 48 % CPU load from a running `pnpm dev`; the whole grid was
+under 3 hours, so no dimension was dropped).
+
+**7 of 288 have all three strategies within 25–42 % (N = 30 each)** — all with 1 coin per
+second. The 20 closest to even (all 288 in the JSON file):
+
+| stealShare | spawn/s | carry | cooldown ms | secure ms | patient | cautious | hunter | distance |
+| ---------- | ------- | ----- | ----------- | --------- | ------- | -------- | ------ | -------- |
+| 0.25       | 1       | 0.5   | 2000        | 3000      | 36.7 %  | 31.7 %   | 31.7 % | 6.7      |
+| 0.15       | 1       | 0.85  | 3000        | 3000      | 38.3 %  | 31.7 %   | 30.0 % | 10.0     |
+| 0.25       | 1       | 0.7   | 2000        | 3000      | 38.3 %  | 31.7 %   | 30.0 % | 10.0     |
+| 0.15       | 1       | 0.7   | 2000        | 2000      | 27.8 %  | 38.3 %   | 33.9 % | 11.1     |
+| 0.35       | 1       | 0.5   | 3000        | 3000      | 26.7 %  | 38.3 %   | 35.0 % | 13.3     |
+| 0.25       | 1       | 0.5   | 1000        | 2000      | 28.3 %  | 41.7 %   | 30.0 % | 16.7     |
+| 0.5        | 1       | 0.5   | 2000        | 3000      | 26.7 %  | 41.7 %   | 31.7 % | 16.7     |
+| 0.5        | 1.5     | 0.5   | 2000        | 2000      | 23.3 %  | 33.3 %   | 43.3 % | 20.0     |
+| 0.25       | 1       | 0.85  | 2000        | 3000      | 23.3 %  | 38.3 %   | 38.3 % | 20.0     |
+| 0.5        | 3       | 0.5   | 1000        | 2000      | 23.3 %  | 38.3 %   | 38.3 % | 20.0     |
+| 0.25       | 1       | 0.85  | 1000        | 2000      | 28.3 %  | 45.0 %   | 26.7 % | 23.3     |
+| 0.5        | 3       | 0.5   | 3000        | 3000      | 21.7 %  | 39.4 %   | 38.9 % | 23.3     |
+| 0.15       | 1       | 0.7   | 1000        | 2000      | 20.7 %  | 41.0 %   | 38.3 % | 25.3     |
+| 0.25       | 1       | 0.7   | 1000        | 2000      | 21.1 %  | 46.1 %   | 32.8 % | 25.6     |
+| 0.35       | 1.5     | 0.5   | 1000        | 3000      | 26.7 %  | 46.7 %   | 26.7 % | 26.7     |
+| 0.35       | 1.5     | 0.5   | 2000        | 2000      | 20.0 %  | 37.2 %   | 42.8 % | 26.7     |
+| 0.5        | 2       | 0.5   | 1000        | 3000      | 20.0 %  | 33.3 %   | 46.7 % | 26.7     |
+| 0.5        | 3       | 0.5   | 1000        | 3000      | 20.0 %  | 33.3 %   | 46.7 % | 26.7     |
+| 0.25       | 1       | 0.85  | 2000        | 2000      | 20.0 %  | 41.7 %   | 38.3 % | 26.7     |
+| 0.5        | 1       | 0.5   | 3000        | 3000      | 20.0 %  | 40.0 %   | 40.0 % | 26.7     |
+
+The current default (0.5 / 2 / 0.7 / 1000 / 2500) is not in the grid (secure 2500 ms); its own
+N = 30 row above: 10.0 % / 41.7 % / 48.3 %, distance 46.7.
+
+### Stage 2 — the 7 qualifying configurations × 300 matches (seeds 1–300)
+
+Command: `pnpm fairness --configs <the 7> --matches 300 --seed 1 --jobs 7 --out
+reports/fairness/stage2.json` (6 min 7 s; CPU load 15 % before the start). Best player share
+and secured value per player and match (mean / median / p10 / p90), N = 300 matches each
+(3600 patient, 3600 cautious, 2400 hunter players):
+
+| stealShare | spawn/s | carry | cooldown ms | secure ms | patient    | cautious   | hunter     | distance | patient secured        | cautious secured       | hunter secured         | teams won   |
+| ---------- | ------- | ----- | ----------- | --------- | ---------- | ---------- | ---------- | -------- | ---------------------- | ---------------------- | ---------------------- | ----------- |
+| 0.25       | 1       | 0.7   | 2000        | 3000      | 25.1 %     | **44.0 %** | 30.9 %     | 21.3     | 7.8 / 7.5 / 5.0 / 11.0 | 8.0 / 8.0 / 4.5 / 12.0 | 7.5 / 7.5 / 2.5 / 12.0 | 22.8–27.7 % |
+| 0.35       | 1       | 0.5   | 3000        | 3000      | **19.5 %** | 38.7 %     | 41.8 %     | 27.7     | 7.2 / 7.0 / 4.0 / 11.0 | 7.7 / 7.0 / 4.0 / 12.0 | 7.5 / 7.5 / 1.5 / 13.0 | 20.8–27.5 % |
+| 0.15       | 1       | 0.7   | 2000        | 2000      | **23.9 %** | **47.9 %** | 28.2 %     | 29.2     | 7.9 / 8.0 / 5.0 / 11.5 | 8.3 / 8.0 / 5.0 / 12.5 | 7.3 / 7.5 / 2.0 / 12.0 | 21.3–28.5 % |
+| 0.25       | 1       | 0.5   | 1000        | 2000      | 26.2 %     | **49.3 %** | **24.5 %** | 32.0     | 7.7 / 7.5 / 4.5 / 11.0 | 8.0 / 7.5 / 4.5 / 12.0 | 7.3 / 7.5 / 2.5 / 12.0 | 21.5–28.8 % |
+| 0.15       | 1       | 0.85  | 3000        | 3000      | **22.9 %** | **49.5 %** | 27.6 %     | 32.3     | 7.9 / 8.0 / 4.5 / 11.5 | 8.3 / 8.0 / 5.0 / 12.0 | 7.4 / 7.5 / 2.5 / 12.0 | 21.2–30.3 % |
+| 0.25       | 1       | 0.5   | 2000        | 3000      | 28.2 %     | **52.0 %** | **19.8 %** | 37.3     | 7.6 / 7.0 / 4.5 / 11.0 | 7.9 / 7.5 / 4.5 / 12.0 | 7.1 / 7.0 / 3.0 / 11.0 | 20.3–34.0 % |
+| 0.5        | 1       | 0.5   | 2000        | 3000      | **13.6 %** | 40.9 %     | **45.5 %** | 39.4     | 7.2 / 7.0 / 4.0 / 11.0 | 7.6 / 7.0 / 4.0 / 12.0 | 7.6 / 7.5 / 2.0 / 13.0 | 21.8–28.2 % |
+
+Bold: outside 25–42 %. **None of the 7 holds the band at N = 300.** The closest — stealShare
+0.25, 1 coin/s, carry 0.7, cooldown 2000 ms, secure 3000 ms — misses by 2 points (cautious
+44.0 %). At N = 30 a share moves by several points from seed to seed; the stage-1 passes
+were partly luck.
+
+### Comparison only — swap 10 → 18 and 10 → 12 (rule change, owner decides)
+
+CONCEPT.md §10 decision 2 (swap 10 → 15) is not to be changed; this only shows what it would
+do. The best stage-2 configuration with `swapOut` 18 and 12, N = 30 (seeds 1–30) each:
+
+| swapOut | patient | cautious | hunter | distance |
+| ------- | ------- | -------- | ------ | -------- |
+| 18      | 38.3 %  | 31.7 %   | 30.0 % | 10.0     |
+| 12      | 38.3 %  | 31.7 %   | 30.0 % | 10.0     |
+
+Both equal the same configuration with swap 10 → 15 at N = 30 (stage 1: 38.3 % / 31.7 % /
+30.0 %): at one coin per second no bot ever holds 10 coins of one season, so the swap never
+happens and its rate changes nothing. The swap only matters with more coins on the field.
+
+### Round 3: what the numbers say
+
+- **No configuration of the grid reaches 25–42 % for all three strategies at N = 300.** The
+  closest misses by 2 points (cautious 44.0 %). By the owner's rule, the question goes back
+  to the owner.
+- **Only one coin per second comes close.** All 7 stage-1 passes and the whole stage-2 field
+  have `coinSpawnPerSecond` 1. Averaged over the 72 grid configurations of each rate (N = 30
+  each), the best-player shares are patient / cautious / hunter 14.6 / 38.4 / 47.1 % at 1
+  coin per second, 13.9 / 52.7 / 33.4 % at 1.5, 12.8 / 58.6 / 28.6 % at 2 and 16.5 / 56.3 /
+  27.2 % at 3: with more coins the cautious bot runs away with it, at one coin the hunters
+  lead, and the patient bot stays at 13–17 % everywhere.
+- **Where it comes close, everyone is poor.** At 1 coin per second the secured value per
+  player and match is about 7–8 for every strategy (median 7.0–8.0); the strategies differ
+  mostly in the spread (hunter p10 1.5–3.0, cautious and patient 4.0–5.0). Teams stay fair
+  (20–34 % per team).
+- **Cautious is the lever's other end**: whatever makes hunters weaker (lower stealShare,
+  longer cooldown) hands the share to the cautious bot, not to the patient one.
+- **The swap rate does not help here**: at one coin per second no bot swaps (comparison
+  above).
+
+Nothing here changes a default; the owner decides (BACKLOG d).
