@@ -1,8 +1,9 @@
 // Seasonal Spirits — the player client: joins the match, steers one ghost, shows the match.
 // Development mode, no sign-in: the server gives a free slot (a bot leaves) or, when every
 // slot has a player, lets the client watch. With ?spectate=1 it only watches (CONCEPT.md §5):
-// the whole field, every name, the clock and the halving staging, no controls. Draws with packages/render, interpolates with
-// packages/protocol; everything shown comes from the server's state.
+// the whole field, every name, the clock and the halving staging, no controls. Draws with
+// packages/render (scene.ts), interpolates with packages/protocol; everything shown comes
+// from the server's state.
 
 import {
   RenderClock,
@@ -10,24 +11,16 @@ import {
   STATE_RESULT,
   interpolate,
   latestServerMs,
-  type GhostState,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import {
-  CLOCK_HEIGHT,
-  Trails,
-  drawClock,
-  drawField,
-  drawGhosts,
-  fitField,
-  follow,
-} from '@seasonal-spirits/render';
-import { CLIENT_CONFIG } from './config.js';
+import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
 import { Hud, bindMute, el } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { ResultScreen } from './result.js';
+import { drawScene, type Drawn, type Frame } from './scene.js';
 import { HalvingTone } from './sound.js';
+import { ViewToggle } from './view-mode.js';
 
 const BUFFER_MS = 100; // render this far behind the newest state (docs/PHASE0.md)
 
@@ -50,6 +43,10 @@ document.body.classList.toggle('spectating', spectate);
 
 const tone = new HalvingTone();
 bindMute(() => tone.toggleMute(), tone.muted);
+const viewButton = el('view', HTMLButtonElement);
+// A spectator by URL has no view choice (and its keys do nothing).
+const viewToggle = spectate ? null : new ViewToggle(viewButton);
+const teamLine = el('team');
 const trails = new Trails();
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 const result = new ResultScreen();
@@ -93,48 +90,43 @@ const controls: Controls = {
 bindKeyboard(controls);
 bindJoystick(el('stick'), el('knob'), controls);
 
-interface Frame {
-  ghosts: GhostState[];
-  latest: ServerState | undefined;
-  ownId: number | null;
-  own: GhostState | undefined;
-  playing: boolean;
-  over: boolean;
-}
-
 function snapshot(now: number): Frame {
   const target = renderClock.target(now, latestServerMs(conn.buffer));
   const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
   const latest = conn.buffer.at(-1)?.state;
   const ownId = conn.welcome?.ghost ?? null;
+  const playing = conn.mode === 'player';
   return {
     ghosts,
     latest,
     ownId,
     own: ghosts.find((g) => g.id === ownId),
-    playing: conn.mode === 'player',
+    ownTeam: playing ? (conn.welcome?.team ?? null) : null,
+    playing,
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
   };
 }
 
-// A player's camera follows its ghost; a spectator sees the whole field.
-function draw(f: Frame): void {
-  const view =
-    f.playing && f.own
-      ? follow(ctx, CLOCK_HEIGHT, f.own, CLIENT_CONFIG.cameraSpan)
-      : fitField(ctx, CLOCK_HEIGHT);
-  const season = f.latest?.season ?? 0;
-  trails.record(f.ghosts);
-  drawField(view, f.latest);
-  drawGhosts(view, f.ghosts, { ownId: f.ownId, season, trails, labelAll: !f.playing });
-  drawClock(ctx, f.latest);
-  const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
-  hud.showControls(f.playing && !f.over, offer, season);
-  result.update(f.latest, f.over, f.ownId);
+// "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
+function showTeam(team: number | null): void {
+  teamLine.hidden = team === null;
+  if (team === null) return;
+  teamLine.textContent = `You are Team ${seasonName(team)}`;
+  teamLine.style.color = seasonColour(team);
 }
 
-// Read by the Playwright specs: what this client knows, never more than it shows.
-function expose(f: Frame): void {
+function draw(f: Frame): Drawn {
+  const drawn = drawScene(ctx, f, viewToggle?.mode ?? 'overview', trails);
+  showTeam(f.ownTeam);
+  viewButton.hidden = !f.playing;
+  const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
+  hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0);
+  result.update(f.latest, f.over, f.ownId);
+  return drawn;
+}
+
+// Read by the Playwright specs: what this client knows and drew, never more than it shows.
+function expose(f: Frame, drawn: Drawn): void {
   (window as unknown as { __client: unknown }).__client = {
     mode: conn.mode,
     ghost: f.ownId,
@@ -144,6 +136,7 @@ function expose(f: Frame): void {
     coins: f.latest?.coins.length ?? 0,
     halvings,
     result: f.over,
+    ...drawn,
   };
 }
 
@@ -151,8 +144,7 @@ function frame(): void {
   const now = performance.now();
   conn.flush(now);
   const f = snapshot(now);
-  draw(f);
-  expose(f);
+  expose(f, draw(f));
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

@@ -153,9 +153,24 @@
           opacity: 0;
         }
       }
+      /* Under the canvas season clock (64 px): the team band, 40 px (scene.ts TEAM_BAND). */
+      #team {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        background: rgba(5, 8, 11, 0.92);
+        pointer-events: none;
+      }
       #notice {
         position: fixed;
-        top: 74px;
+        top: 114px;
         left: 50%;
         transform: translateX(-50%);
         background: var(--panel);
@@ -165,12 +180,21 @@
         max-width: 90vw;
         text-align: center;
       }
-      #mute {
+      #corner {
         position: fixed;
-        top: 74px;
+        top: 114px;
         right: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+      #corner button {
         padding: 6px 10px;
         font-size: 13px;
+      }
+      body.spectating #view {
+        display: none;
       }
       #result {
         position: fixed;
@@ -239,7 +263,11 @@
     <div id="flash"></div>
     <div id="announce" role="status" hidden></div>
     <div id="notice" role="status" hidden></div>
-    <button id="mute" type="button" aria-pressed="false">Sound on</button>
+    <div id="team" hidden></div>
+    <div id="corner">
+      <button id="view" type="button">View: Near</button>
+      <button id="mute" type="button" aria-pressed="false">Sound on</button>
+    </div>
     <div id="result" hidden>
       <div class="card">
         <h2>Result</h2>

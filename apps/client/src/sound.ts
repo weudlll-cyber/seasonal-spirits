@@ -2,6 +2,8 @@
 // halving, generated with Web Audio (no audio file). Browsers allow sound only after a user
 // gesture, so the context starts on the first key or touch; the mute choice is remembered.
 
+import { readSetting, writeSetting } from './storage.js';
+
 const MUTE_KEY = 'seasonal-spirits.muted';
 
 export class HalvingTone {
@@ -9,7 +11,7 @@ export class HalvingTone {
   muted: boolean;
 
   constructor() {
-    this.muted = localStorage.getItem(MUTE_KEY) === '1';
+    this.muted = readSetting(MUTE_KEY) === '1';
     const unlock = (): void => {
       this.ctx ??= new AudioContext();
       void this.ctx.resume();
@@ -20,7 +22,7 @@ export class HalvingTone {
 
   toggleMute(): boolean {
     this.muted = !this.muted;
-    localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0');
+    writeSetting(MUTE_KEY, this.muted ? '1' : '0');
     return this.muted;
   }
 

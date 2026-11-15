@@ -9,6 +9,11 @@ message (docs/SERVER.md). Development mode only: there is no sign-in yet (CONCEP
 | File                       | What it holds                                                                |
 | -------------------------- | ---------------------------------------------------------------------------- |
 | `src/main.ts`              | Wiring and the frame loop: interpolate, draw, buttons, result, test hook     |
+| `src/scene.ts`             | One canvas frame: field, ghosts, labels below the bar, clock, Near extras    |
+| `src/view-mode.ts`         | "Near" / "Overview": the corner button and V, remembered                     |
+| `src/minimap.ts`           | The minimap in "Near"                                                        |
+| `src/arrow.ts`             | The "Your shrine" arrow at the screen edge (placement tested)                |
+| `src/storage.ts`           | Remembered choices (mute, view) in localStorage, safe when storage throws    |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, sending      |
 | `src/input.ts`             | Keyboard and the touch joystick                                              |
 | `src/hud.ts`               | Action button, shrine buttons, HALVING announcement and flash, notices, mute |
@@ -44,7 +49,8 @@ the hello.
 
 ## Controls (CONCEPT.md §8)
 
-- Keyboard: WASD or arrows to move, Space for the action (steal), 1 Secure, 2 Swap.
+- Keyboard: WASD or arrows to move, Space for the action (steal), 1 Secure, 2 Swap, V
+  switches the view.
 - Touch (the primary pointer is a finger): a joystick appears where the left thumb touches
   the left half of the screen; the action button sits under the right thumb. The buttons
   never reach into the left half.
@@ -57,14 +63,38 @@ the hello.
 
 ## Screen
 
-- The camera follows the own ghost (about 1100 field units on the shorter side, never past
-  the field edge); a spectator sees the whole field.
-- The own ghost has a white ring and the label "You". Carriers are larger, glow, leave a
-  short trail and show name and coin count. A ring around a carrier shows its coins: solid
-  in the current season's colour, dashed grey for coins worth half now.
-- Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. Field coins
-  are discs in their season's colour (the token logos replace them later). The ground takes
-  a cast of the current season's colour.
+Built for readability after the owner's play test of 2026-11-15 (team unclear, own shrine
+lost, only part of the field visible, coins looking like ghosts, names overlapping and
+hidden under the top bar).
+
+- **Top bar.** The season clock, and for players a band below it: "You are Team <Season>",
+  large, in the team colour (spectators see no such line). The field, the ghosts and every
+  label are drawn only below the bar (`belowBar` in `packages/render/src/view.ts`).
+- **View modes** (owner decision 2026-11-15), the corner button "View: Near / Overview" or V,
+  remembered in the browser; every player starts in "Near":
+  - "Near": the camera follows the own ghost (about 1100 field units on the shorter side,
+    never past the field edge). A minimap in the top-left corner below the bar shows the
+    whole field: every shrine (the own one ringed), coins as dots, other ghosts as tiny dots
+    in their team colours, the own ghost white, and the part the camera shows. When the own
+    shrine is out of sight an arrow at the screen edge points to it, labelled "Your shrine"
+    (never under the minimap). Phone and desktop alike.
+  - "Overview": the whole field fits the screen.
+  - A spectator always sees the whole field and has no view button.
+- **Shrines.** The own shrine glows, breathes gently and is labelled "Your shrine"; the
+  others keep "<Season> shrine".
+- **Ghosts and coins.** Ghosts are circles in their team colour; the own ghost has a white
+  ring and the label "You". Carriers are larger, glow, leave a short trail and show name and
+  coin count; a ring shows their coins: solid in the current season's colour, dashed grey
+  for coins worth half now. Field coins are small diamonds in their season's colour (the
+  token logos replace them later), so a Summer coin no longer looks like a Team Summer
+  ghost. Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. The
+  ground takes a cast of the current season's colour.
+- **Names** never overlap (`placeLabels`, `packages/render/src/labels.ts`, tested): the own
+  label is always drawn, on top, below its ghost when above would reach under the bar; of
+  the others the one carrying more coins keeps its name, a colliding carrier falls back to
+  its coin count, anything else that collides is not drawn; nothing is drawn under the bar.
+- **Separation.** Ghosts softly push each other apart in the game core (docs/GAME-CORE.md),
+  so crowds no longer stack on one point.
 - The season clock at the top shows the four seasons of the match in order, the current one
   highlighted, the time left and the next season; the team values sit on the right when the
   screen is wide enough.
@@ -103,6 +133,14 @@ shrine and read both labelled buttons, see a HALVING announcement and the new se
 coins, and the result screen with the bridge box. Screenshots of each step go to
 `reports/screens/latest/` (git-ignored). CI runs it as its own job (`e2e`).
 
+`e2e/readability.e2e.ts` (both sizes) checks the play test's points: "You are Team …"
+visible, the own shrine in sight at the start, in "Near" the minimap, the arrow once the
+shrine is out of sight and gone again at home, V (desktop) or the button (phone) switching
+to "Overview" and the choice surviving a reload, and no label reaching under the top bar;
+screenshots `<size>-near.png` and `<size>-overview.png`. The spectator spec also checks that
+a spectator has no team line and no view button.
+
 `window.__client` is written every frame for these tests: mode, own ghost and team, own
-position and carried coins, season, field coin count, halvings seen, result shown — only
-what the screen shows already.
+position and carried coins, season, field coin count, halvings seen, result shown, and what
+the frame drew (view mode, bottom of the bar, minimap, arrow, own shrine in sight, the
+placed labels) — only what the screen shows already.

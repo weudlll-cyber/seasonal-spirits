@@ -22,6 +22,10 @@ test('a spectator watches a halving and the result and sends nothing after its h
   await expect(page.locator('#notice')).toHaveText('Watching the match.');
   await expect(page.locator('#actions')).toBeHidden();
   await expect(page.locator('#stick')).toBeHidden();
+  // No team, no view choice: a spectator sees the whole field.
+  await expect(page.locator('#team')).toBeHidden();
+  await expect(page.locator('#view')).toBeHidden();
+  expect((await view(page)).view).toBe('spectator');
 
   // Keys do nothing for a spectator.
   for (const key of ['KeyD', 'Space', 'Digit1', 'Digit2']) await page.keyboard.press(key);

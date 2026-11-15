@@ -4,6 +4,7 @@
 
 import { GHOST_BOT, GHOST_CARRIER, GHOST_SECURING, ghostName } from '@seasonal-spirits/protocol';
 import type { GhostState } from '@seasonal-spirits/protocol';
+import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
 import { circle, sx, sy, type View } from './view.js';
 
@@ -41,10 +42,15 @@ export function ghostRadiusPx(v: View, g: GhostState): number {
   return Math.max(6, (14 + Math.min(16, g.carried / 2)) * v.scale);
 }
 
-export function drawGhosts(v: View, ghosts: readonly GhostState[], style: GhostStyle): void {
+// Returns the labels as drawn (the client's browser specs read them).
+export function drawGhosts(
+  v: View,
+  ghosts: readonly GhostState[],
+  style: GhostStyle,
+): PlacedLabel[] {
   for (const g of ghosts) if (g.flags & GHOST_CARRIER) drawTrail(v, g, style.trails);
   for (const g of ghosts) drawBody(v, g, style);
-  for (const g of ghosts) drawLabel(v, g, style);
+  return drawLabels(v, ghosts, style);
 }
 
 function drawTrail(v: View, g: GhostState, trails: Trails): void {
@@ -112,16 +118,42 @@ function drawCoinRing(v: View, g: GhostState, r: number, season: number): void {
   ctx.setLineDash([]);
 }
 
+const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;
+
 // Carriers and the own ghost carry their name and coin count; others only with labelAll.
-function drawLabel(v: View, g: GhostState, style: GhostStyle): void {
-  const own = g.id === style.ownId;
-  if (!own && g.carried === 0 && !style.labelAll) return;
+// Where they would overlap, placeLabels decides (labels.ts); a carrier's short text is its
+// coin count.
+function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): PlacedLabel[] {
   const { ctx } = v;
-  const name = own ? 'You' : ghostName(g.id, (g.flags & GHOST_BOT) !== 0);
-  const text = g.carried > 0 ? `${name} · ${g.carried}` : name;
-  ctx.font = `${own ? 'bold ' : ''}12px system-ui, sans-serif`;
+  const candidates: LabelCandidate[] = [];
+  for (const g of ghosts) {
+    const own = g.id === style.ownId;
+    if (!own && g.carried === 0 && !style.labelAll) continue;
+    const name = own ? 'You' : ghostName(g.id, (g.flags & GHOST_BOT) !== 0);
+    const full = g.carried > 0 ? `${name} · ${g.carried}` : name;
+    const short = g.carried > 0 && !own ? String(g.carried) : null;
+    const r = ghostRadiusPx(v, g);
+    ctx.font = labelFont(own);
+    candidates.push({
+      id: g.id,
+      x: sx(v, g.x),
+      above: sy(v, g.y) - r - 8,
+      below: sy(v, g.y) + r + 8 + LABEL_HEIGHT,
+      full,
+      fullWidth: ctx.measureText(full).width,
+      short,
+      shortWidth: short === null ? 0 : ctx.measureText(short).width,
+      own,
+      carried: g.carried,
+    });
+  }
+  const placed = placeLabels(candidates, v.top);
   ctx.textAlign = 'center';
   ctx.fillStyle = TEXT;
-  ctx.fillText(text, sx(v, g.x), sy(v, g.y) - ghostRadiusPx(v, g) - 8);
+  for (const p of placed) {
+    ctx.font = labelFont(p.own);
+    ctx.fillText(p.text, p.x, p.y);
+  }
   ctx.textAlign = 'start';
+  return placed;
 }

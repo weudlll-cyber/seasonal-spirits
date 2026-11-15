@@ -23,6 +23,13 @@ export interface ClientView {
   coins: number;
   halvings: number;
   result: boolean;
+  // What the frame drew (apps/client/src/scene.ts, Drawn).
+  view: 'near' | 'overview' | 'spectator';
+  barBottom: number;
+  minimap: boolean;
+  arrow: boolean;
+  shrineOnScreen: boolean;
+  labels: { id: number; text: string; x: number; y: number; own: boolean }[];
 }
 
 export function view(page: Page): Promise<ClientView> {

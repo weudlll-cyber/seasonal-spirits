@@ -60,3 +60,15 @@ export function circle(v: View, x: number, y: number, radiusPx: number): void {
   v.ctx.beginPath();
   v.ctx.arc(sx(v, x), sy(v, y), radiusPx, 0, Math.PI * 2);
 }
+
+// Everything drawn inside `draw` stays below the top bar: no ghost, coin or label under it
+// (owner's play test 2026-11-15).
+export function belowBar(v: View, draw: () => void): void {
+  const { ctx } = v;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, v.top, ctx.canvas.width, ctx.canvas.height - v.top);
+  ctx.clip();
+  draw();
+  ctx.restore();
+}
