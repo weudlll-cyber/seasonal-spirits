@@ -8,6 +8,7 @@ import { pickUpCoins, spawnCoins, type Spawner } from './field.js';
 import { clamp, clampDirection, shrineOf, shrinePositions } from './geometry.js';
 import { applyHalving } from './halving.js';
 import { mulberry32 } from './rng.js';
+import { separateGhosts } from './separation.js';
 import { emptyCounts, isLastSeason, seasonClock, totalCount } from './seasons.js';
 import {
   TEAMS,
@@ -55,7 +56,7 @@ export class Match {
   }
 
   // One step. Order: time and season (a season turn is a halving), each ghost's intent (by
-  // id), pick-ups, spawning, the countdown, the end. Intents of unknown ids are ignored.
+  // id), soft separation, pick-ups, spawning, the countdown, the end. Intents of unknown ids are ignored.
   tick(dtMs: number, intents: ReadonlyMap<number, Intent>): Readonly<MatchState> {
     const s = this.s;
     s.events = [];
@@ -66,6 +67,7 @@ export class Match {
     s.clock = seasonClock(this.cfg, s.elapsedMs);
     if (s.clock.index !== prevSeason) applyHalving(s);
     for (const g of s.ghosts) this.applyIntent(g, intents.get(g.id), dtMs);
+    separateGhosts(this.cfg, s);
     pickUpCoins(this.cfg, s);
     spawnCoins(this.cfg, s, this.spawner, dtMs);
     // The countdown runs before every halving; the last season ends with the match instead.

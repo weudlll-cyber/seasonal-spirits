@@ -17,6 +17,7 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 | `src/field.ts`      | Coin spawning and picking up                                                                           |
 | `src/actions.ts`    | Swap, secure, steal — each checks its own conditions; the shrine offer                                 |
 | `src/halving.ts`    | The halving at a season turn                                                                           |
+| `src/separation.ts` | Soft separation: ghosts closer than `separationRadius` drift apart                                     |
 | `src/geometry.ts`   | Distances, clamping, shrine positions                                                                  |
 | `src/rng.ts`        | `mulberry32`, shared with the probe bots                                                               |
 | `src/bots/`         | The three strategies (`strategies.ts`) and what they share (`common.ts`)                               |
@@ -26,8 +27,8 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 ## One tick
 
 In this order: time and season (a season turn is a halving), each ghost's intent by id (a
-securing ghost only completes its secure), picking up field coins, spawning, the countdown,
-the end.
+securing ghost only completes its secure), soft separation, picking up field coins,
+spawning, the countdown, the end.
 
 ## The rules as built
 
@@ -37,6 +38,13 @@ the end.
   up to `maxFieldCoins`. A ghost within `pickupRadius` picks a coin up.
 - **Teams and shrines.** Four teams; team 0 to 3 have their shrines inset from the four
   corners. Ghosts start around their own shrine.
+- **Soft separation** (owner decision 2026-11-15). After the moves, every two ghosts closer
+  than `separationRadius` are pushed apart by `separationStrength` of the overlap, half each,
+  summed before they are applied (the order of the ghosts does not matter); ghosts on the
+  same point part along an angle from their ids. Never out of the field, no hard blocking,
+  no physics. A securing ghost is never moved (it stands still); its neighbour takes the
+  whole push. `separationRadius` stays below `stealRange`, so a thief beside a carrier can
+  still steal.
 - **Carrying.** A ghost with any coin moves at `carrySpeedFactor` of its speed. Carried coins
   are public state (CONCEPT.md §2a: a carrier is visible).
 - **Value.** A coin is worth 1 in its own season and `offSeasonValueFactor` (½) outside it.
@@ -114,6 +122,8 @@ fails.
 | `stealRange`            | 60      | placeholder (CONCEPT.md leaves the range open)                          |
 | `stealShare`            | 0.5     | placeholder (CONCEPT.md leaves the share open)                          |
 | `stealCooldownMs`       | 1000    | placeholder                                                             |
+| `separationRadius`      | 28      | placeholder (two ghost bodies touching; below `stealRange`)             |
+| `separationStrength`    | 0.5     | placeholder (share of the overlap removed per tick)                     |
 | `halvingCountdownMs`    | 10 000  | CONCEPT.md §2b, §13: before every halving                               |
 | `reconnectGraceMs`      | 12 000  | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot         |
 | `resultPauseMs`         | 15 000  | placeholder (result screen before the next match)                       |

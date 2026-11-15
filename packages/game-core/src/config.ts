@@ -31,6 +31,8 @@ export interface GameConfig {
   stealRange: number;
   stealShare: number;
   stealCooldownMs: number;
+  separationRadius: number;
+  separationStrength: number;
   halvingCountdownMs: number;
   reconnectGraceMs: number;
   resultPauseMs: number;
@@ -59,6 +61,11 @@ export const DEFAULT_CONFIG: GameConfig = {
   stealRange: 60, // placeholder — owner decides (CONCEPT.md leaves the range open)
   stealShare: 0.5, // placeholder — owner decides (CONCEPT.md leaves the share open)
   stealCooldownMs: 1000, // placeholder — owner decides
+  // Owner decision 2026-11-15: ghosts softly push each other apart. Two ghosts closer than the
+  // radius (two bodies touching) drift apart by the strength share of the overlap per tick;
+  // the radius must stay below stealRange so a thief beside a carrier can still steal.
+  separationRadius: 28, // placeholder — owner decides
+  separationStrength: 0.5, // placeholder — owner decides
   // CONCEPT.md §2b / §13: every season turn inside a match is a halving, counted down from
   // 10 s before.
   halvingCountdownMs: 10_000,

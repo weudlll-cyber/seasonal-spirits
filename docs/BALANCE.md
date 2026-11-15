@@ -57,6 +57,41 @@ Command: `pnpm balance --matches 30 --seed 1 --variant all`.
 
 Field coins gone at the halvings, per match (N = 30): mean 35.1, median 35.0, p10 20.0, p90 46.0
 
+#### current after the hunter fix and soft separation (2026-11-15) — N = 30, seeds 1–30
+
+Same command, same seeds, on `feat/readability`: hunters no longer rob each other in a
+standing pack (docs/GAME-CORE.md, "Bots"), and ghosts softly push each other apart
+(`separationRadius` 28, `separationStrength` 0.5). Stage 1 and 2 above and below are from
+before both changes.
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 3.6  | 2.8    | 1.0  | 7.5  | 360     |
+| cautious | 26.7 %                   | 21.3 | 21.0   | 12.0 | 32.0 | 360     |
+| hunter   | 73.3 %                   | 21.9 | 19.5   | 10.5 | 38.0 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 30.0 %               |
+| Summer | 23.3 %               |
+| Autumn | 23.3 %               |
+| Winter | 23.3 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 13.8, median 13.0, p10 8.0, p90 21.0
+
+To tell the two changes apart, the same 30 matches ran once more with the hunter fix but
+`separationStrength` 0 (a one-off scratch run through `runBalance`, not a variant of the
+command): best player patient 26.7 %, cautious 3.3 %, hunter 70.0 %; mean secured value
+patient 6.5 (median 1.0), cautious 18.4 (17.0), hunter 27.7 (24.0); field coins gone at the
+halvings 28.9 per match.
+
+Reading: the hunter fix moves most. Before it, the hunters of a match spent most of it robbing
+each other in one standing pack (the "stuck bots"); now they go after the patient bots, who
+carry their coins the longest, and the patient strategy collapses (mean 21.8 → 3.6).
+Separation adds a little: crowds around a coin or a shrine spread, the cautious bots bank a
+bit more, the hunters a bit less, and fewer coins are left on the field at the halvings.
+Teams stay even. No default was changed; this is input for the owner's decision (BACKLOG d).
+
 #### stealShare=0.25 — N = 30 matches, seeds 1–30
 
 | Strategy | Best player of the match | Mean | Median | p10 | p90  | Players |

@@ -25,11 +25,13 @@ in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 (CONCEPT.md §8: built with plain Canvas 2D, no framework). Done when: the owner has played
 a match on both and decided whether the Canvas client stays.
 
-d. **Balance — owner decision.** Both stages are in [BALANCE.md](BALANCE.md) (CLOSED):
-teams are fair; patient bots are the best player in two thirds of the matches but most of
-them end with almost nothing; cautious is steady and never best; `stealShare` moves the
-hunters most. Done when: the owner has decided whether to change `stealShare`,
-`coinSpawnPerSecond`, `carrySpeedFactor` or the bots, and config.ts carries the decision.
+d. **Balance — owner decision.** Both stages are in [BALANCE.md](BALANCE.md) (CLOSED),
+from before the hunter fix and soft separation of 2026-11-15. Since then (N = 30): hunters
+are the best player in 73 % of the matches, cautious in 27 %, patient never (mean 3.6, was
+21.8); teams stay even. The variants were not re-run. Done when: the owner has decided
+whether to change `stealShare`, `coinSpawnPerSecond`, `carrySpeedFactor`, the separation
+values or the bots (possibly after a fresh stage 1 and 2), and config.ts carries the
+decision.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -55,13 +57,11 @@ when the system is stable. The website-session tasks from CONCEPT.md §12: slug
 under `/games/seasonal-spirits` with the website's sign-in.
 
 h. **Readability (session 2026-11-15-A, branch `feat/readability`).** From the owner's play
-test of 2026-11-15. Done when each is built, tested and in docs/CLIENT.md or GAME-CORE.md:
-soft separation of ghosts in the game core (stealing still works); view modes "Near" and
+test of 2026-11-15. Done when each is built, tested and in docs/CLIENT.md: view modes "Near" and
 "Overview" (button and V, remembered) with minimap and "Your shrine" arrow in "Near" and
 the field laid out below the top bar; "You are Team <Season>", the own shrine glowing and
 labelled, coins as diamonds; name labels that never overlap and never sit under the bar;
-Playwright specs for all of it with screenshots; one `pnpm balance` run with 30 matches
-recorded in BALANCE.md; one full match played.
+Playwright specs for all of it with screenshots; one full match played.
 
 ## CLOSED
 
@@ -158,6 +158,13 @@ recorded in BALANCE.md; one full match played.
   than itself, walks right onto it, and steals only when the carrier the core would rob
   (`nearestOpponentCarrier`, now exported) is richer too. Test `src/bots/hunter.test.ts` —
   commit "fix: hunters no longer rob each other in a standing pack" on `feat/readability`.
+- 2026-11-15 — **soft separation** (owner decision 2026-11-15): ghosts closer than
+  `separationRadius` (28) are pushed apart by `separationStrength` (0.5) of the overlap per
+  tick, half each, in the game core (`src/separation.ts`), never out of the field, a securing
+  ghost never moved; `stealRange` stays larger (tested); THREATS row 18a. Balance N = 30 after
+  the hunter fix and separation in BALANCE.md (hunters best player 73 %, patient collapsed;
+  BACKLOG d rewritten); no default changed — commit "feat: ghosts softly push each other
+  apart" on `feat/readability`.
 
 ## CHECKS DONE
 
@@ -226,3 +233,7 @@ recorded in BALANCE.md; one full match played.
 | 2026-11-15 | same reproduction after the full fix                                                                                                                                                      | working tree committed as "fix: hunters no longer rob each other in a standing pack"                                                 | seeds 1–20: 0 episodes                                                                                                                                                                                                              | same sheet                                                                                    |
 | 2026-11-15 | `src/bots/hunter.test.ts` against the old hunter (fix stashed)                                                                                                                            | `c7f3465` strategies with the new test                                                                                               | both tests fail; longest standstill 215 600 ms                                                                                                                                                                                      | same commit                                                                                   |
 | 2026-11-15 | `pnpm verify:changed` (toolchain changed in the stack: all format, lint, typecheck, 24 files / 121 tests)                                                                                 | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                   |
+| 2026-11-15 | stuck-bot reproduction with separation, seeds 1–20                                                                                                                                        | working tree committed as "feat: ghosts softly push each other apart"                                                                | 0 episodes                                                                                                                                                                                                                          | sheet `reports/session-2026-11-15-a.md`                                                       |
+| 2026-11-15 | `pnpm verify:changed` (all format, lint, typecheck, 25 files / 125 tests)                                                                                                                 | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                   |
+| 2026-11-15 | `pnpm balance --matches 30 --seed 1` (current config only)                                                                                                                                | same tree                                                                                                                            | patient best 0.0 % (mean 3.6), cautious 26.7 % (21.3), hunter 73.3 % (21.9); teams 23.3–30.0 %; 13.8 field coins gone per match                                                                                                     | docs/BALANCE.md                                                                               |
+| 2026-11-15 | same 30 matches with `separationStrength` 0 (scratch run through `runBalance`, to split hunter fix and separation)                                                                        | same tree                                                                                                                            | patient 26.7 % (mean 6.5), cautious 3.3 % (18.4), hunter 70.0 % (27.7); 28.9 field coins gone per match                                                                                                                             | docs/BALANCE.md                                                                               |
