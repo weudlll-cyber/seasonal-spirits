@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BalanceReport } from './balance.js';
-import { distanceFromEven, gridConfigs, meetsTarget } from './fairness.js';
+import { distanceFromEven, gridConfigs, meetsTarget, ruleGridConfigs } from './fairness.js';
 
 const report = (patient: number, cautious: number, hunter: number): BalanceReport =>
   ({ bestPlayerShare: { patient, cautious, hunter } }) as BalanceReport;
@@ -13,6 +13,16 @@ describe('fairness search', () => {
     const grid = gridConfigs();
     expect(grid).toHaveLength(288);
     expect(new Set(grid.map((c) => JSON.stringify(c))).size).toBe(288);
+  });
+
+  it('tries every one of the 24 rule-trial configurations once, today’s rules among them', () => {
+    const grid = ruleGridConfigs();
+    expect(grid).toHaveLength(24);
+    expect(new Set(grid.map((c) => JSON.stringify(c))).size).toBe(24);
+    const today = { swapMode: 'fixed', swappedStealProof: false, escortRadius: 0 };
+    expect(
+      grid.filter((c) => Object.entries(today).every(([k, v]) => c[k as keyof typeof c] === v)),
+    ).toHaveLength(2);
   });
 
   it('accepts a configuration only when all three strategies win 25–42 % of matches', () => {

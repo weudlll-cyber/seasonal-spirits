@@ -68,6 +68,22 @@ spawning, the countdown, the end.
   says whether a steal would take something now (the match runs, the thief is not securing,
   its cooldown is over, an opponent carrier is in range) — `trySteal` checks exactly that, and
   the server sends it to the clients as the lit Steal button.
+- **Rule trials** (owner decision 2026-11-15; measured in BALANCE.md "Round 4"). Three
+  switches, each acting in one place, whose defaults are today's game:
+  - **R1** `swapMode` `'ratio'` (default `'fixed'`): a swap takes all coins of the current
+    season from `swapMinIn` (6) on, at the same rate rounded down (6 → 9, 8 → 12, 10 → 15),
+    never in the last season. `swapMinimum` and the swap yield in `src/actions.ts`; the
+    shrine offer, `trySwap` and the patient bot read them. With `'fixed'` a swap in the last
+    season stays possible, as it always was (only the patient bot avoids it).
+  - **R2** `swappedStealProof` `true` (default `false`): the coins a swap gives are shielded
+    (`Ghost.shielded`) until the next halving (`applyHalving` clears it, as does a completed
+    secure); a steal takes only from the other coins.
+  - **R3** `escortRadius` > 0 (default 0, off; trials 50 and 90): a carrier with a teammate
+    within that radius cannot be robbed.
+  - R2 and R3 act through `isStealTarget` inside `nearestOpponentCarrier` — the one place
+    `canSteal` (the lit Steal button), `trySteal` and the hunter bot ask. Bots follow the
+    rules (the patient bot swaps from `swapMinimum`, hunters skip protected or escorted
+    carriers) but have no new behaviour: nobody seeks an escort.
 - **Halving** at every season turn inside the match (CONCEPT.md §2b, §13): 1:15, 2:30 and
   3:45 of a 5-minute match; the match end is not one. The old season's field coins disappear
   (counted in `stats.cleared`), the new season's coins fall at the same rate. Carried coins
@@ -139,6 +155,10 @@ fails.
 | `maxFieldCoins`         | 60      | placeholder                                                             |
 | `offSeasonValueFactor`  | 0.5     | CONCEPT.md §2a, §10 decision 2                                          |
 | `swapIn` / `swapOut`    | 10 / 15 | CONCEPT.md §2a, §10 decision 2                                          |
+| `swapMode`              | fixed   | rule trial R1 (default = today); `'ratio'` swaps from `swapMinIn`       |
+| `swapMinIn`             | 6       | placeholder (rule trial R1 value; used only with `'ratio'`)             |
+| `swappedStealProof`     | false   | rule trial R2 (default = today)                                         |
+| `escortRadius`          | 0       | rule trial R3 (default 0 = off = today; trial values 50, 90)            |
 | `secureDurationMs`      | 2500    | CONCEPT.md §2a: 2–3 s                                                   |
 | `shrineRadius`          | 80      | placeholder                                                             |
 | `shrineInset`           | 150     | placeholder                                                             |

@@ -4,6 +4,10 @@
 
 import type { Season } from './seasons.js';
 
+// 'fixed': swapIn coins at least, at swapIn → swapOut (today). 'ratio' (trial): from
+// swapMinIn coins, at the same rate, rounded down (6 → 9, 8 → 12, 10 → 15).
+export type SwapMode = 'fixed' | 'ratio';
+
 export interface BotConfig {
   cautiousSecureAt: number;
   hunterSecureAt: number;
@@ -29,6 +33,12 @@ export interface GameConfig {
   offSeasonValueFactor: number;
   swapIn: number;
   swapOut: number;
+  // Rule trials (owner decision 2026-11-15, docs/BALANCE.md "Round 4"): switches whose
+  // defaults are today's game.
+  swapMode: SwapMode;
+  swapMinIn: number;
+  swappedStealProof: boolean;
+  escortRadius: number;
   secureDurationMs: number;
   shrineRadius: number;
   shrineInset: number;
@@ -65,6 +75,11 @@ export const DEFAULT_CONFIG: GameConfig = {
   offSeasonValueFactor: 0.5, // CONCEPT.md §2a / §10 decision 2: half outside its season
   swapIn: 10, // CONCEPT.md §2a / §10 decision 2: 10 coins of the current season ...
   swapOut: 15, // CONCEPT.md §2a / §10 decision 2: ... become 15 of the next
+  // Rule trials (2026-11-15): every default below is today's game.
+  swapMode: 'fixed', // R1: 'ratio' swaps from swapMinIn coins
+  swapMinIn: 6, // placeholder — owner decides (R1 trial value; used only with 'ratio')
+  swappedStealProof: false, // R2: true = swapped coins cannot be stolen until the next halving
+  escortRadius: 0, // R3: > 0 = a carrier with a teammate this close cannot be robbed (off: 0)
   secureDurationMs: 2500, // CONCEPT.md §2a: securing takes 2–3 s
   shrineRadius: 80, // placeholder — owner decides
   shrineInset: 150, // placeholder — owner decides (distance of a shrine from its corner)

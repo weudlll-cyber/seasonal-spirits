@@ -1,6 +1,7 @@
 // Seasonal Spirits — the fairness search (owner decision 2026-11-15: each strategy's best
-// player wins between 25 % and 42 % of matches): the grid of configurations to try, and how
-// close a balance report comes to an even split. Pure; `fairness-cli.ts` runs it.
+// player wins between 25 % and 42 % of matches): the grids of configurations to try (values,
+// then the rule trials), and how close a balance report comes to an even split. Pure;
+// `fairness-cli.ts` runs it.
 
 import type { BalanceReport } from './balance.js';
 import { STRATEGIES } from './bots/strategies.js';
@@ -20,6 +21,9 @@ export type Overrides = Partial<
     | 'stealCooldownMs'
     | 'secureDurationMs'
     | 'swapOut'
+    | 'swapMode'
+    | 'swappedStealProof'
+    | 'escortRadius'
   >
 >;
 
@@ -46,6 +50,25 @@ export function gridConfigs(): Overrides[] {
               stealCooldownMs,
               secureDurationMs,
             });
+  return out;
+}
+
+// The rule-trial grid of session 2026-11-15-RULES (R1 swapMode, R2 swappedStealProof,
+// R3 escortRadius 50 and 90, both at 1.5 and 2 coins per second): 2 × 2 × 3 × 2 = 24.
+export const RULE_GRID = {
+  swapMode: ['fixed', 'ratio'],
+  swappedStealProof: [false, true],
+  escortRadius: [0, 50, 90],
+  coinSpawnPerSecond: [1.5, 2],
+} as const;
+
+export function ruleGridConfigs(): Overrides[] {
+  const out: Overrides[] = [];
+  for (const swapMode of RULE_GRID.swapMode)
+    for (const swappedStealProof of RULE_GRID.swappedStealProof)
+      for (const escortRadius of RULE_GRID.escortRadius)
+        for (const coinSpawnPerSecond of RULE_GRID.coinSpawnPerSecond)
+          out.push({ swapMode, swappedStealProof, escortRadius, coinSpawnPerSecond });
   return out;
 }
 

@@ -62,11 +62,11 @@ function print(name: string, r: BalanceReport): void {
   r.teamWinShare.forEach((w, t) => {
     console.log(`| ${TEAM_NAMES[t] ?? '?'} | ${pct(w)} |`);
   });
-  console.log(
-    `\nField coins gone at the halvings, per match (N = ${n}): ` +
-      `mean ${num(r.clearedPerMatch.mean)}, median ${num(r.clearedPerMatch.median)}, ` +
-      `p10 ${num(r.clearedPerMatch.p10)}, p90 ${num(r.clearedPerMatch.p90)}`,
-  );
+  const perMatch = (label: string, x: Spread): string =>
+    `${label}, per match (N = ${n}): mean ${num(x.mean)}, median ${num(x.median)}, ` +
+    `p10 ${num(x.p10)}, p90 ${num(x.p90)}`;
+  console.log(`\n${perMatch('Field coins gone at the halvings', r.clearedPerMatch)}`);
+  console.log(perMatch('Swaps', r.swapsPerMatch));
 }
 
 const argv = process.argv.slice(2);

@@ -64,6 +64,11 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
+k. **Rule trials — measurement** (session 2026-11-15-RULES, `feat/rule-trials`). The three
+switches are built (CLOSED). Done when: stage 1 (24 configurations × 30 matches), stage 2
+(300 matches) and the results with a recommendation are in BALANCE.md "Round 4", the raw
+data in `reports/rule-trials/`, and pushed.
+
 ## CLOSED
 
 - 2026-11-14 — repository skeleton, toolchain, CI, docs, Phase 0 network probe (server,
@@ -240,6 +245,13 @@ placeholders (`separationRadius`, `separationStrength`).
   commit "merge: unnamed dots, packs, coin pickup, help and steal feedback, fairness search".
   The branches are deleted on origin. The owner's play test is in c, the new placeholders in
   b2, the fairness target stays open in d.
+- 2026-11-15 — **rule-trial switches** (owner decision 2026-11-15): R1 `swapMode`
+  ('fixed' | 'ratio', `swapMinIn` 6 placeholder), R2 `swappedStealProof`, R3 `escortRadius`,
+  all defaults today's game, each in one place (`swapMinimum`/swap yield, `Ghost.shielded`,
+  `isStealTarget` in `nearestOpponentCarrier`); swaps per match in the balance report;
+  `pnpm fairness --rules-grid`. Tests `rules.test.ts`, `fairness.test.ts`; defaults reproduce
+  the last default N = 30 row exactly — commit "feat: rule-trial switches R1–R3, defaults
+  unchanged" on `feat/rule-trials`.
 
 ## CHECKS DONE
 
@@ -364,3 +376,6 @@ placeholders (`separationRadius`, `separationStrength`).
 | 2026-11-15 | `pnpm fairness --configs <best with swapOut 18 and 12> --matches 30 --seed 1` (rule-change comparison)                                                                                    | same                                                                                                                                 | both 38.3 / 31.7 / 30.0 %, identical to swap 10 → 15: no bot swaps at 1 coin/s                                                                                                                                                      | `reports/fairness/swap-comparison.json`                                                        |
 | 2026-11-15 | best-player shares averaged per coin rate over the grid (scratch query of `stage1-grid.json`)                                                                                             | same                                                                                                                                 | 1 /s 14.6 / 38.4 / 47.1 %, 1.5 /s 13.9 / 52.7 / 33.4 %, 2 /s 12.8 / 58.6 / 28.6 %, 3 /s 16.5 / 56.3 / 27.2 % — corrected a wrong first summary line                                                                                 | docs/BALANCE.md                                                                                |
 | 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: fairness stage 2, swap comparison, session sheet 2026-11-15-CD"                                     | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI and CodeQL for the merge                                                                                                                                                          | `d4ae550` on `master`                                                                                                                | success (CI 43754246037, CodeQL 43754246045)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
+| 2026-11-15 | defaults check: `pnpm balance --matches 30 --seed 1` with the rule switches at their defaults                                                                                             | working tree committed as "feat: rule-trial switches R1–R3, defaults unchanged"                                                      | identical to the last default N = 30 row: 10.0 / 41.7 / 48.3 %, means 13.7 / 16.9 / 17.2, teams 30.0 / 16.7 / 30.0 / 23.3 %, 20.8 coins gone                                                                                        | sheet `reports/session-2026-11-15-rules.md`                                                    |
+| 2026-11-15 | `pnpm verify:changed` (14 files: format, lint, typecheck, 20 related test files / 111 tests); no e2e — client untouched, the default state unchanged                                      | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |

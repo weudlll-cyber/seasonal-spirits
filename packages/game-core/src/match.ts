@@ -113,6 +113,7 @@ function newGhost(r: Roster, home: Vec, spread: number, rng: () => number): Ghos
     x: home.x + (rng() - 0.5) * spread,
     y: home.y + (rng() - 0.5) * spread,
     carried: emptyCounts(),
+    shielded: emptyCounts(),
     securedValue: 0,
     securingUntilMs: null,
     securingSeason: null,

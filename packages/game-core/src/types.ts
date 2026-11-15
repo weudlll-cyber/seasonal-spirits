@@ -18,6 +18,9 @@ export interface Ghost {
   x: number;
   y: number;
   carried: SeasonCounts;
+  // Of the carried coins, those got from a swap that no steal can take until the next
+  // halving (rule trial R2, swappedStealProof); all zero while the rule is off.
+  shielded: SeasonCounts;
   securedValue: number;
   securingUntilMs: number | null; // a secure in progress ends at this match time
   securingSeason: Season | null; // the season whose values the secure banks at

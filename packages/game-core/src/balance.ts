@@ -23,6 +23,7 @@ export interface BalanceReport {
   secured: Record<Strategy, Spread>; // per player and match
   teamWinShare: number[]; // index = team; ties split
   clearedPerMatch: Spread; // field coins that disappeared at the halvings
+  swapsPerMatch: Spread; // swaps by all ghosts in a match: whether swapping happens at all
 }
 
 export function rotatedRoster(match: number): ReturnType<typeof botRoster> {
@@ -37,9 +38,14 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
   >;
   const teamWins = TEAMS.map(() => 0);
   const cleared: number[] = [];
+  const swaps: number[] = [];
   for (let k = 0; k < matches; k++) {
     const roster = rotatedRoster(k);
-    const r = simulate(cfg, firstSeed + k, roster);
+    let swapped = 0;
+    const r = simulate(cfg, firstSeed + k, roster, (s) => {
+      for (const e of s.events) if (e.type === 'swap') swapped++;
+    });
+    swaps.push(swapped);
     const strategyOf = new Map(roster.map((x) => [x.id, x.strategy]));
     const top = Math.max(...r.result.players.map((p) => p.secured));
     const winners = r.result.players.filter((p) => p.secured === top);
@@ -67,6 +73,7 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
     >,
     teamWinShare: teamWins.map(share),
     clearedPerMatch: spread(cleared),
+    swapsPerMatch: spread(swaps),
   };
 }
 
