@@ -62,13 +62,14 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-k. **Rule trials — owner decision** (sessions 2026-11-15-RULES and -RULES-2,
-`feat/rule-trials`, not merged). Measured (CLOSED, BALANCE.md "Round 4" and "Round 5"): R3
-as built hands the game to the hunters; R1 + R2 at the default steal share leaves the
-hunters at 50.3 %; R1 + R2 with `stealShare` 0.35 at 2 coins per second meets 25–42 % for all
-three at N = 300 (35.0 / 32.8 / 32.2 %, 9.1 swaps per match). Done when: the owner has
-decided which configuration goes into the game, with the trial values (`swapMinIn` 6;
-`escortRadius` 50 / 90 if R3 at all), and config.ts carries it.
+k. **Rule trials — owner decision** (sessions 2026-11-15-RULES, -RULES-2 and -RULES-3,
+`feat/rule-trials`, not merged). Measured (CLOSED, BALANCE.md "Round 4" to "Round 6"): R3 as
+built hands the game to the hunters; R1 + R2 at the default steal share leaves the hunters at
+50.3 %. With R1 + R2 at 2 coins per second, two steal shares meet 25–42 % for all three at
+N = 300: fixed 0.35 (35.0 / 32.8 / 32.2 %) and a random share 0–0.5 (35.5 / 35.3 / 29.2 %);
+a random 0.2–0.5 does not (hunter 46.3 %). Done when: the owner has decided which
+configuration goes into the game (fixed 0.35, random 0–0.5 or 0.2–0.5), with the trial
+values (`swapMinIn` 6; `escortRadius` 50 / 90 if R3 at all), and config.ts carries it.
 
 ## CLOSED
 
@@ -269,6 +270,11 @@ decided which configuration goes into the game, with the trial values (`swapMinI
   least one coin per steal; steals per match and coins per steal in the balance report.
   Tests `steal-share.test.ts`; the fixed-0.35 reference reproduces the Round 5 stage-1 row
   exactly — commit "feat: random steal share switch, default fixed" on `feat/rule-trials`.
+- 2026-11-15 — **Round 6: a random steal share measured**: A (0–0.5) and B (0.2–0.5), R1 + R2,
+  2 coins/s, at N = 30 and N = 300, with steals per match and coins per steal, against the
+  fixed 0.35; A meets 25–42 % at N = 300, B does not; BALANCE.md "Round 6", raw data
+  `reports/rule-trials/round6-*.json`; no default changed — commit "docs: Round 6, a random
+  steal share" on `feat/rule-trials`.
 
 ## CHECKS DONE
 
@@ -408,3 +414,6 @@ decided which configuration goes into the game, with the trial values (`swapMinI
 | 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `91582ae` on `feat/rule-trials`                                                                                                      | success (CI 43763974002, CodeQL 43763973986)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
 | 2026-11-15 | `pnpm verify:changed` (format, lint, typecheck, 21 related test files / 115 tests)                                                                                                        | working tree committed as "feat: random steal share switch, default fixed"                                                           | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-15 | default check: the fixed-0.35 reference (R1 + R2, 2 coins/s) at N = 30 through `pnpm fairness`                                                                                            | same tree                                                                                                                            | identical to the Round 5 stage-1 row: 30.0 / 33.3 / 36.7 %, 10.1 swaps per match                                                                                                                                                    | `reports/rule-trials/round6-n30.json` (next commit)                                            |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round6-configs-30.json --matches 30 --seed 1 --jobs 3` (A, B, fixed 0.35)                                                                    | `b5abda9`                                                                                                                            | 52.5 s, CPU load 43 % before; A 26.7 / 43.3 / 30.0 %, B 18.3 / 30.0 / 51.7 %, fixed 0.35 30.0 / 33.3 / 36.7 %                                                                                                                       | `reports/rule-trials/round6-n30.json`                                                          |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round6-configs-300.json --matches 300 --seed 1 --jobs 2` (A, B)                                                                              | same                                                                                                                                 | 4 min 9 s, CPU load 50 % before; A 35.5 / 35.3 / 29.2 % (within 25–42 %), B 19.9 / 33.7 / 46.3 %                                                                                                                                    | `reports/rule-trials/round6-n300.json`                                                         |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: Round 6, a random steal share"                                                                      | green                                                                                                                                                                                                                               | same commit                                                                                    |

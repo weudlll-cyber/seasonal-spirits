@@ -848,3 +848,68 @@ before the start — other work on the PC). N = 300 matches each (3600 patient, 
   36.7 → 35.0 / 32.8 / 32.2 %), as in Round 4 — stage 2 for the closest rows was worth it.
 
 Nothing here changes a default; the owner decides which configuration goes into the game.
+
+## Round 6 — a random steal share (2026-11-15, `feat/rule-trials`)
+
+Owner decision 2026-11-15: before the Round 5 configuration goes into the game, measure a
+random steal share. New switch `stealShareMax` (absent by default = today's fixed share): each
+steal draws its share once, uniformly from [`stealShare`, `stealShareMax`], from the match's
+seeded random source; at least one coin per steal (docs/GAME-CORE.md, "Rule trials").
+
+**Config of every row**: `DEFAULT_CONFIG` on `feat/rule-trials` (as Round 5) with **R1
+`swapMode` 'ratio' (`swapMinIn` 6), R2 `swappedStealProof` true, R3 `escortRadius` 0,
+`coinSpawnPerSecond` 2**, and the steal share each row names:
+
+- **A**: `stealShare` 0, `stealShareMax` 0.5 (share drawn from 0–0.5, mean 0.25).
+- **B**: `stealShare` 0.2, `stealShareMax` 0.5 (share drawn from 0.2–0.5, mean 0.35).
+- **Reference**: `stealShare` 0.35 fixed — at N = 300 the Round 5 run (not re-run); at N = 30
+  re-run for its steal figures, reproducing the Round 5 stage-1 row exactly.
+
+Configurations: `reports/rule-trials/round6-configs-30.json`, `round6-configs-300.json`.
+Steals per match count every steal of all 32 bots (most are hunters robbing each other back
+and forth); coins per steal over every steal of every match.
+
+### N = 300 (seeds 1–300)
+
+Command: `pnpm fairness --configs reports/rule-trials/round6-configs-300.json --matches 300
+--seed 1 --jobs 2 --out reports/rule-trials/round6-n300.json` (4 min 9 s; CPU load 50 % before
+the start). Bold: all three within 25–42 %. The reference row is Round 5's
+(`round5-stage2.json`), which did not record steals.
+
+| steal share          | N (seeds)   | patient    | cautious   | hunter     | distance | patient secured (median / p10 / p90) | cautious secured   | hunter secured    | teams won (Sp / Su / Au / Wi) | swaps per match (mean / median) | steals per match (mean / median) | coins per steal (mean / p10 / p90) |
+| -------------------- | ----------- | ---------- | ---------- | ---------- | -------- | ------------------------------------ | ------------------ | ----------------- | ----------------------------- | ------------------------------- | -------------------------------- | ---------------------------------- |
+| 0–0.5                | 300 (1–300) | **35.5 %** | **35.3 %** | **29.2 %** | 8.3      | 13.5 / 8.5 / 23.0                    | 16.5 / 10.0 / 25.0 | 15.5 / 8.0 / 25.0 | 25.7 / 25.5 / 23.8 / 25.0 %   | 8.8 / 8.0                       | 1298.9 / 1295.0                  | 2.1 / 1.0 / 3.0                    |
+| 0.2–0.5              | 300 (1–300) | 19.9 %     | 33.7 %     | 46.3 %     | 26.8     | 13.0 / 8.0 / 21.0                    | 16.0 / 10.0 / 24.5 | 16.5 / 8.0 / 27.5 | 23.5 / 30.2 / 27.3 / 19.0 %   | 8.2 / 8.0                       | 1356.4 / 1350.0                  | 2.4 / 1.0 / 4.0                    |
+| fixed 0.35 (Round 5) | 300 (1–300) | **35.0 %** | **32.8 %** | **32.2 %** | 3.3      | 13.5 / 8.5 / 22.5                    | 16.5 / 10.0 / 24.5 | 15.5 / 7.5 / 26.0 | 23.5 / 27.7 / 26.7 / 22.2 %   | 9.1 / 9.0                       | —                                | —                                  |
+
+### N = 30 (seeds 1–30)
+
+Command: `pnpm fairness --configs reports/rule-trials/round6-configs-30.json --matches 30 --seed
+1 --jobs 3 --out reports/rule-trials/round6-n30.json` (52.5 s; CPU load 43 % before the
+start).
+
+| steal share | N (seeds) | patient    | cautious   | hunter     | distance | patient secured (median / p10 / p90) | cautious secured   | hunter secured    | teams won (Sp / Su / Au / Wi) | swaps per match (mean / median) | steals per match (mean / median) | coins per steal (mean / p10 / p90) |
+| ----------- | --------- | ---------- | ---------- | ---------- | -------- | ------------------------------------ | ------------------ | ----------------- | ----------------------------- | ------------------------------- | -------------------------------- | ---------------------------------- |
+| fixed 0.35  | 30 (1–30) | **30.0 %** | **33.3 %** | **36.7 %** | 6.7      | 13.5 / 8.0 / 22.5                    | 17.0 / 10.0 / 24.5 | 14.5 / 7.0 / 26.5 | 33.3 / 26.7 / 13.3 / 26.7 %   | 10.1 / 10.0                     | 1469.9 / 1473.5                  | 2.7 / 1.0 / 5.0                    |
+| 0–0.5       | 30 (1–30) | 26.7 %     | 43.3 %     | 30.0 %     | 20.0     | 13.5 / 8.0 / 22.0                    | 17.0 / 11.0 / 25.0 | 15.5 / 8.0 / 25.5 | 36.7 / 20.0 / 20.0 / 23.3 %   | 8.7 / 9.0                       | 1304.2 / 1307.0                  | 2.1 / 1.0 / 3.0                    |
+| 0.2–0.5     | 30 (1–30) | 18.3 %     | 30.0 %     | 51.7 %     | 36.7     | 13.0 / 8.0 / 22.5                    | 16.5 / 10.0 / 25.5 | 15.8 / 7.5 / 28.5 | 25.0 / 38.3 / 23.3 / 13.3 %   | 8.1 / 7.5                       | 1368.0 / 1333.0                  | 2.4 / 1.0 / 4.0                    |
+
+### Round 6: what the numbers say
+
+- **A (0–0.5) stays within 25–42 % at N = 300**: patient 35.5 %, cautious 35.3 %, hunter
+  29.2 % (distance 8.3) — as fair as the fixed 0.35 (35.0 / 32.8 / 32.2 %, distance 3.3), a
+  little further from even. **B (0.2–0.5) does not**: hunter 46.3 %, patient 19.9 %.
+- **A random share is not its mean.** B's mean share is the reference's 0.35, yet the hunters'
+  share is 46.3 % instead of 32.2 %; A's mean is 0.25, yet the hunters get 29.2 % where the
+  fixed 0.25 gave them 12.0 % (Round 5, N = 300). What a random share does cannot be read
+  from its mean; it has to be measured (why, these runs do not show).
+- **The spread of secured values barely changes.** Median / p10 / p90 per player and match at
+  N = 300: patient 13.5 / 8.5 / 23.0 (A), 13.0 / 8.0 / 21.0 (B), 13.5 / 8.5 / 22.5 (fixed
+  0.35); cautious 16.5 / 10.0 / 25.0, 16.0 / 10.0 / 24.5, 16.5 / 10.0 / 24.5; hunter 15.5 /
+  8.0 / 25.0, 16.5 / 8.0 / 27.5, 15.5 / 7.5 / 26.0. The random share moves who ends up best,
+  not how much a player secures. Teams stay fair (A 23.8–25.7 %).
+- **Smaller steals, a few fewer**: coins per steal A 2.1 (p10 1, p90 3), B 2.4 (1 / 4), fixed
+  0.35 2.7 (1 / 5, N = 30); steals per match A 1299, B 1356, fixed 0.35 1470 (N = 30).
+- Swaps stay part of the game: 8.8 (A), 8.2 (B), 9.1 (fixed 0.35) per match.
+
+Nothing here changes a default; the owner decides between fixed 0.35, A and B.

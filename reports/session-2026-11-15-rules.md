@@ -141,3 +141,48 @@ up to 5 points against N = 300.
 
 NEEDS OWNER: which configuration goes into the game — the measured candidate is R1 + R2 with
 `stealShare` 0.35 at `coinSpawnPerSecond` 2 (and with it the R1 trial value `swapMinIn` 6).
+
+## Round 6 — a random steal share (session 2026-11-15-RULES-3)
+
+**Switch** (`packages/game-core`): `stealShareMax`, absent by default = today's fixed share.
+When set above `stealShare`, each steal draws its share once, uniformly from [`stealShare`,
+`stealShareMax`], from the match's one seeded random source (`mulberry32(seed)`, the one that
+places the ghosts and spawns the coins — no `Math.random`; without the switch nothing is
+drawn, so today's matches are identical). Applied to every season as before (rounded up,
+shielded coins excluded); a steal that would round to nothing takes one coin from the
+victim's richest season. `canSteal` and `isStealTarget` unchanged. New helper
+`stealShareFor`; `trySteal` takes the match's `rng`. The balance report also counts steals
+per match and coins per steal; the fairness summary shows a drawn share as its range.
+
+Tests (`packages/game-core/src/steal-share.test.ts`): "draws every share inside [stealShare,
+stealShareMax]", "keeps today's fixed share by default and draws nothing", "gives the same
+steals for the same seed", "takes at least one coin even when the drawn share is 0". Default
+check: the fixed-0.35 reference at N = 30 reproduces the Round 5 stage-1 row exactly (30.0 /
+33.3 / 36.7 %, 10.1 swaps per match).
+
+**Measurement** (R1 + R2 on, escort off, 2 coins/s; A = share 0–0.5, B = 0.2–0.5): N = 30 in
+52.5 s (CPU load 43 % before), N = 300 in 4 min 9 s (CPU load 50 % before).
+
+| at N = 300 | patient | cautious | hunter | steals per match | coins per steal (mean / p10 / p90) |
+| --- | --- | --- | --- | --- | --- |
+| A 0–0.5 | **35.5 %** | **35.3 %** | **29.2 %** | 1298.9 | 2.1 / 1 / 3 |
+| B 0.2–0.5 | 19.9 % | 33.7 % | 46.3 % | 1356.4 | 2.4 / 1 / 4 |
+| fixed 0.35 (Round 5) | **35.0 %** | **32.8 %** | **32.2 %** | 1469.9 (N = 30) | 2.7 / 1 / 5 (N = 30) |
+
+A stays within 25–42 % for all three; B does not. The secured values barely change (medians
+and p10/p90 within about 2 per style across the three); the random share moves who ends up
+best, not how much a player secures. A random share is not its mean (B's mean is 0.35, yet
+the hunters get 46.3 %). Full tables in docs/BALANCE.md "Round 6"; raw data
+`reports/rule-trials/round6-*.json`.
+
+Files: `actions.ts` 155 → 177, `balance.ts` 89 → 102, `balance-cli.ts` 78 → 84, `config.ts`
+114 → 117, `match.ts` 122 → 124, `fairness.ts` 86 → 87, `fairness-cli.ts` 149 → 152, new
+`steal-share.test.ts` 66; docs: GAME-CORE, BALANCE, BACKLOG. Reused: the match's seeded
+`mulberry32` source, `simulate`'s per-tick observer and `spread` for the steal figures, the
+fairness tool, `test-helpers`. Removed: the per-season move code in `trySteal` (now one
+`take` helper used for the share and the one-coin minimum). Noticed, left: steals per match
+are about 1300–1470, nearly all hunters robbing each other back and forth (seen before,
+Round 3); why a random share differs from its mean these runs do not show.
+
+NEEDS OWNER: fixed 0.35, A (0–0.5) or B (0.2–0.5) for the game — A and fixed 0.35 both meet
+25–42 % at N = 300, B does not.

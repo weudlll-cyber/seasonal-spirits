@@ -1,0 +1,18 @@
+[
+  {
+    "swapMode": "ratio",
+    "swappedStealProof": true,
+    "escortRadius": 0,
+    "coinSpawnPerSecond": 2,
+    "stealShare": 0,
+    "stealShareMax": 0.5
+  },
+  {
+    "swapMode": "ratio",
+    "swappedStealProof": true,
+    "escortRadius": 0,
+    "coinSpawnPerSecond": 2,
+    "stealShare": 0.2,
+    "stealShareMax": 0.5
+  }
+]
