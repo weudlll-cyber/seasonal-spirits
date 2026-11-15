@@ -24,6 +24,7 @@ export type Overrides = Partial<
     | 'swapMode'
     | 'swappedStealProof'
     | 'escortRadius'
+    | 'stealShareMax'
   >
 >;
 

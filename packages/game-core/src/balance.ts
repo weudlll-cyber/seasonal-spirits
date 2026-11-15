@@ -24,6 +24,8 @@ export interface BalanceReport {
   teamWinShare: number[]; // index = team; ties split
   clearedPerMatch: Spread; // field coins that disappeared at the halvings
   swapsPerMatch: Spread; // swaps by all ghosts in a match: whether swapping happens at all
+  stealsPerMatch: Spread; // steals by all ghosts in a match
+  coinsPerSteal: Spread; // coins one steal took, over every steal of every match
 }
 
 export function rotatedRoster(match: number): ReturnType<typeof botRoster> {
@@ -39,13 +41,22 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
   const teamWins = TEAMS.map(() => 0);
   const cleared: number[] = [];
   const swaps: number[] = [];
+  const steals: number[] = [];
+  const stealCoins: number[] = []; // coins of every single steal, over all matches
   for (let k = 0; k < matches; k++) {
     const roster = rotatedRoster(k);
     let swapped = 0;
+    let stole = 0;
     const r = simulate(cfg, firstSeed + k, roster, (s) => {
-      for (const e of s.events) if (e.type === 'swap') swapped++;
+      for (const e of s.events) {
+        if (e.type === 'swap') swapped++;
+        if (e.type !== 'steal') continue;
+        stole++;
+        stealCoins.push(e.coins);
+      }
     });
     swaps.push(swapped);
+    steals.push(stole);
     const strategyOf = new Map(roster.map((x) => [x.id, x.strategy]));
     const top = Math.max(...r.result.players.map((p) => p.secured));
     const winners = r.result.players.filter((p) => p.secured === top);
@@ -74,6 +85,8 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
     teamWinShare: teamWins.map(share),
     clearedPerMatch: spread(cleared),
     swapsPerMatch: spread(swaps),
+    stealsPerMatch: spread(steals),
+    coinsPerSteal: spread(stealCoins),
   };
 }
 

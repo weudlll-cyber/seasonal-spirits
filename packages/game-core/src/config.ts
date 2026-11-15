@@ -45,6 +45,9 @@ export interface GameConfig {
   startSpread: number;
   stealRange: number;
   stealShare: number;
+  // Rule trial (2026-11-15, BALANCE.md "Round 6"): when set above stealShare, each steal draws
+  // its share from [stealShare, stealShareMax]. Absent by default: today's fixed share.
+  stealShareMax?: number;
   stealCooldownMs: number;
   separationRadius: number;
   separationStrength: number;

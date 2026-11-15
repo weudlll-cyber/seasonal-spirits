@@ -67,6 +67,12 @@ function print(name: string, r: BalanceReport): void {
     `p10 ${num(x.p10)}, p90 ${num(x.p90)}`;
   console.log(`\n${perMatch('Field coins gone at the halvings', r.clearedPerMatch)}`);
   console.log(perMatch('Swaps', r.swapsPerMatch));
+  console.log(perMatch('Steals', r.stealsPerMatch));
+  const c = r.coinsPerSteal;
+  console.log(
+    `Coins per steal (N = ${c.n} steals): mean ${num(c.mean)}, median ${num(c.median)}, ` +
+      `p10 ${num(c.p10)}, p90 ${num(c.p90)}`,
+  );
 }
 
 const argv = process.argv.slice(2);

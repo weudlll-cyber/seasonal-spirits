@@ -4,7 +4,7 @@
 
 import type { GameConfig } from './config.js';
 import { distance, shrineOf } from './geometry.js';
-import { SEASONS, isLastSeason, nextSeason, totalCount, valueNow } from './seasons.js';
+import { SEASONS, isLastSeason, nextSeason, totalCount, valueNow, type Season } from './seasons.js';
 import type { Ghost, MatchState } from './types.js';
 
 export function atOwnShrine(cfg: GameConfig, s: MatchState, g: Ghost): boolean {
@@ -97,19 +97,41 @@ export function canSteal(
   );
 }
 
+// The share one steal takes: stealShare, or — rule trial, `stealShareMax` above it — drawn
+// once per steal, uniformly from [stealShare, stealShareMax], from the match's seeded random
+// source. Without stealShareMax nothing is drawn, so today's matches stay identical.
+export function stealShareFor(cfg: GameConfig, rng: () => number): number {
+  const max = cfg.stealShareMax;
+  if (max === undefined || max <= cfg.stealShare) return cfg.stealShare;
+  return cfg.stealShare + rng() * (max - cfg.stealShare);
+}
+
 // CONCEPT.md §2a, sentence 5, and §8: one action, no aiming. The target is the nearest
-// opponent carrier in range — never a teammate, never the thief itself.
-export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost): void {
+// opponent carrier in range — never a teammate, never the thief itself. `rng` is the match's
+// seeded random source (stealShareFor).
+export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost, rng: () => number): void {
   if (!canSteal(cfg, s, thief)) return;
   const victim = nearestOpponentCarrier(cfg, s, thief);
   if (!victim) return;
-  let coins = 0;
-  for (const season of SEASONS) {
-    // Shielded coins (rule trial R2) stay with the victim; all zero while the rule is off.
-    const n = Math.ceil((victim.carried[season] - victim.shielded[season]) * cfg.stealShare);
+  const share = stealShareFor(cfg, rng);
+  // Shielded coins (rule trial R2) stay with the victim; all zero while the rule is off.
+  const stealable = (season: Season): number => victim.carried[season] - victim.shielded[season];
+  const take = (season: Season, n: number): void => {
     victim.carried[season] -= n;
     thief.carried[season] += n;
+  };
+  let coins = 0;
+  for (const season of SEASONS) {
+    const n = Math.ceil(stealable(season) * share);
+    take(season, n);
     coins += n;
+  }
+  // A steal that takes something takes at least one coin: a drawn share near 0 rounds every
+  // season down to none (only possible with stealShareMax; a fixed share above 0 rounds up).
+  if (coins === 0) {
+    const richest = SEASONS.reduce((a, b) => (stealable(b) > stealable(a) ? b : a));
+    take(richest, 1);
+    coins = 1;
   }
   thief.lastStealMs = s.elapsedMs;
   s.events.push({ type: 'steal', thief: thief.id, victim: victim.id, coins });

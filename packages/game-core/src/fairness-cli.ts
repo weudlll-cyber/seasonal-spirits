@@ -118,8 +118,11 @@ function summary(rows: readonly Row[], top: number): string {
     const c = { ...DEFAULT_CONFIG, ...r.overrides };
     const b = r.report.bestPlayerShare;
     const rules = `${c.swapMode} | ${String(c.swappedStealProof)} | ${c.escortRadius}`;
+    // A drawn steal share (rule trial) shows as its range.
+    const share =
+      c.stealShareMax === undefined ? `${c.stealShare}` : `${c.stealShare}–${c.stealShareMax}`;
     lines.push(
-      `| ${c.stealShare} | ${c.coinSpawnPerSecond} | ${c.carrySpeedFactor} | ${c.stealCooldownMs} | ${c.secureDurationMs} | ${c.swapOut} | ${rules} | ${pct(b.patient)} | ${pct(b.cautious)} | ${pct(b.hunter)} | ${r.distance.toFixed(1)} | ${r.report.swapsPerMatch.mean.toFixed(1)} |`,
+      `| ${share} | ${c.coinSpawnPerSecond} | ${c.carrySpeedFactor} | ${c.stealCooldownMs} | ${c.secureDurationMs} | ${c.swapOut} | ${rules} | ${pct(b.patient)} | ${pct(b.cautious)} | ${pct(b.hunter)} | ${r.distance.toFixed(1)} | ${r.report.swapsPerMatch.mean.toFixed(1)} |`,
     );
   }
   return lines.join('\n');

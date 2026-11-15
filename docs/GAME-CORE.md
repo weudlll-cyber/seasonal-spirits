@@ -84,6 +84,14 @@ spawning, the countdown, the end.
     `canSteal` (the lit Steal button), `trySteal` and the hunter bot ask. Bots follow the
     rules (the patient bot swaps from `swapMinimum`, hunters skip protected or escorted
     carriers) but have no new behaviour: nobody seeks an escort.
+  - **Random steal share** (`stealShareMax`, absent by default; BALANCE.md "Round 6"): when
+    set above `stealShare`, each steal draws its share once, uniformly from [`stealShare`,
+    `stealShareMax`], from the match's seeded random source (`stealShareFor`; the same
+    `mulberry32` that places the ghosts and spawns the coins, so runs stay reproducible;
+    without the switch nothing is drawn and today's matches are identical). The share is
+    applied to every season as before (rounded up, shielded coins excluded); a steal that
+    would round to nothing takes one coin from the victim's richest season. Whether a steal
+    is possible (`canSteal`, `isStealTarget`) does not depend on the share.
 - **Halving** at every season turn inside the match (CONCEPT.md §2b, §13): 1:15, 2:30 and
   3:45 of a 5-minute match; the match end is not one. The old season's field coins disappear
   (counted in `stats.cleared`), the new season's coins fall at the same rate. Carried coins
@@ -159,6 +167,7 @@ fails.
 | `swapMinIn`             | 6       | placeholder (rule trial R1 value; used only with `'ratio'`)             |
 | `swappedStealProof`     | false   | rule trial R2 (default = today)                                         |
 | `escortRadius`          | 0       | rule trial R3 (default 0 = off = today; trial values 50, 90)            |
+| `stealShareMax`         | absent  | rule trial: random steal share up to this (absent = fixed = today)      |
 | `secureDurationMs`      | 2500    | CONCEPT.md §2a: 2–3 s                                                   |
 | `shrineRadius`          | 80      | placeholder                                                             |
 | `shrineInset`           | 150     | placeholder                                                             |
