@@ -38,7 +38,17 @@ export interface ServerSpectating {
   reason: 'full';
 }
 
-export type ServerMessage = ServerWelcome | ServerSpectating;
+// Server → the two players involved in a steal, as text, in the tick it happened: the client
+// shows "You stole 3 from Bot 7" or "Bot 7 stole 2 from you". Spectators and everyone else
+// get nothing (owner's observation 2026-11-15: stealing was not understood).
+export interface ServerSteal {
+  kind: 'steal';
+  thief: number; // ghost id
+  victim: number; // ghost id
+  coins: number;
+}
+
+export type ServerMessage = ServerWelcome | ServerSpectating | ServerSteal;
 
 // The name shown for a ghost, the same on every client. Development mode has no sign-in, so a
 // player is "Player <ghost>" until the website provides names (CONCEPT.md §12, point 2).

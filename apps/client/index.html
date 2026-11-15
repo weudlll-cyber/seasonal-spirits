@@ -58,6 +58,48 @@
         height: 96px;
         border-radius: 50%;
         font-weight: bold;
+        opacity: 0.45;
+      }
+      /* Lit only while the server says a steal would take something (GHOST_CAN_STEAL). */
+      #steal.lit {
+        opacity: 1;
+        border-color: #ffd54f;
+        box-shadow: 0 0 18px rgba(255, 213, 79, 0.6);
+      }
+      #toast {
+        position: fixed;
+        top: 160px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--panel);
+        border: 1px solid #ffd54f;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-weight: bold;
+        pointer-events: none;
+      }
+      #help {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(5, 8, 11, 0.8);
+        overflow: auto;
+      }
+      #help ol {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 10px;
+      }
+      #help li {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      #help li svg {
+        flex-shrink: 0;
       }
       #shrine {
         display: flex;
@@ -278,10 +320,13 @@
     <div id="band">
       <div id="team" hidden></div>
       <div id="corner">
+        <button id="help-open" type="button" aria-label="How to play">?</button>
         <button id="view" type="button">View: Near</button>
         <button id="mute" type="button" aria-pressed="false">Sound on</button>
       </div>
     </div>
+    <div id="toast" role="status" hidden></div>
+    <div id="help" role="dialog" aria-label="How to play" hidden></div>
     <div id="result" hidden>
       <div class="card">
         <h2>Result</h2>

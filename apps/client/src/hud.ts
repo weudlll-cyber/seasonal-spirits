@@ -6,6 +6,7 @@ import type { GameAction, OfferState, ServerState } from '@seasonal-spirits/prot
 import { seasonName, value, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
+const TOAST_MS = 2500; // how long a steal message stays
 
 // An element of index.html, checked to be of the expected kind.
 function el<T extends HTMLElement>(id: string, kind: new () => T): T;
@@ -24,7 +25,9 @@ export class Hud {
   private readonly announce = el('announce');
   private readonly flash = el('flash');
   private readonly notice = el('notice');
+  private readonly toastLine = el('toast');
   private announceTimer: number | undefined;
+  private toastTimer: number | undefined;
 
   constructor(act: (a: GameAction) => void) {
     // pointerdown, not click: a thumb on the right button must not wait for its release.
@@ -41,8 +44,16 @@ export class Hud {
 
   // Players only: the shrine buttons replace the action button while the server sends an
   // offer for the own ghost; every number on them is the server's.
-  showControls(playing: boolean, offer: OfferState | undefined, season: number): void {
+  // The Steal button is lit only while the server says a steal would take something now
+  // (GHOST_CAN_STEAL), dimmed otherwise; it can always be pressed.
+  showControls(
+    playing: boolean,
+    offer: OfferState | undefined,
+    season: number,
+    canSteal: boolean,
+  ): void {
     this.steal.hidden = !playing || offer !== undefined;
+    this.steal.classList.toggle('lit', canSteal);
     this.shrine.hidden = !playing || offer === undefined;
     if (!offer) return;
     this.secure.textContent = `Secure (${value(offer.secureValue)})`;
@@ -69,6 +80,16 @@ export class Hud {
   say(text: string | null): void {
     this.notice.textContent = text ?? '';
     this.notice.hidden = text === null;
+  }
+
+  // A short message for a steal this player took part in ("You stole 3 from Bot 7").
+  toast(text: string): void {
+    this.toastLine.textContent = text;
+    this.toastLine.hidden = false;
+    window.clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => {
+      this.toastLine.hidden = true;
+    }, TOAST_MS);
   }
 }
 

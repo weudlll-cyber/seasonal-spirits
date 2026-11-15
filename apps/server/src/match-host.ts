@@ -10,10 +10,12 @@ import {
   type Bot,
   type GameConfig,
   type Intent,
+  type MatchEvent,
   type Roster,
   type Strategy,
 } from '@seasonal-spirits/game-core';
-import type { GameAction } from '@seasonal-spirits/protocol';
+import type { GameAction, ServerSteal } from '@seasonal-spirits/protocol';
+import { stageSteal, type Scenario } from './scenario.js';
 import { toWire, type WireState } from './wire.js';
 
 export type { WireState } from './wire.js';
@@ -31,11 +33,14 @@ export class MatchHost {
   private seed: number;
   private hostMs = 0;
   private resultUntil: number | null = null;
+  private lastEvents: readonly MatchEvent[] = []; // of the tick just run
+  private readonly scenario: Scenario;
 
-  constructor(cfg: GameConfig, slots: number, firstSeed: number) {
+  constructor(cfg: GameConfig, slots: number, firstSeed: number, scenario: Scenario = 'none') {
     this.cfg = cfg;
     this.roster = botRoster(slots);
     this.seed = firstSeed;
+    this.scenario = scenario;
     this.match = new Match(cfg, this.seed, this.roster);
     for (const r of this.roster) this.control.set(r.id, this.botFor(r.id));
   }
@@ -51,6 +56,8 @@ export class MatchHost {
     }
     if (!pick) return null;
     this.control.set(pick.id, { kind: 'player', clientId, dx: 0, dy: 0, action: null });
+    // SCENARIO=steal (browser specs, development only): every joining player is staged.
+    if (this.scenario === 'steal') stageSteal(this.cfg, this.match.state, this.roster, pick.id);
     return { ghost: pick.id, team: pick.team };
   }
 
@@ -85,7 +92,10 @@ export class MatchHost {
       }
     }
     if (this.resultUntil !== null) {
-      if (this.hostMs < this.resultUntil) return this.wire(false, this.resultUntil - this.hostMs);
+      if (this.hostMs < this.resultUntil) {
+        this.lastEvents = [];
+        return this.wire(this.lastEvents, this.resultUntil - this.hostMs);
+      }
       // A new match: same slots and players, a fresh seed, everyone back at the shrines.
       this.resultUntil = null;
       this.seed++;
@@ -93,10 +103,28 @@ export class MatchHost {
     }
     const s = this.match.tick(dtMs, this.intents());
     if (s.ended) this.resultUntil = this.hostMs + this.cfg.resultPauseMs;
-    return this.wire(
-      s.events.some((e) => e.type === 'halving'),
-      s.ended ? this.cfg.resultPauseMs : 0,
-    );
+    this.lastEvents = s.events;
+    return this.wire(s.events, s.ended ? this.cfg.resultPauseMs : 0);
+  }
+
+  // The steal notices of the tick just run: one for each player involved, thief or victim;
+  // bots, standing ghosts and spectators get none.
+  stealNotices(): { clientId: number; message: ServerSteal }[] {
+    const out: { clientId: number; message: ServerSteal }[] = [];
+    for (const e of this.lastEvents) {
+      if (e.type !== 'steal') continue;
+      const message: ServerSteal = {
+        kind: 'steal',
+        thief: e.thief,
+        victim: e.victim,
+        coins: e.coins,
+      };
+      for (const ghost of [e.thief, e.victim]) {
+        const c = this.control.get(ghost);
+        if (c?.kind === 'player') out.push({ clientId: c.clientId, message });
+      }
+    }
+    return out;
   }
 
   private intents(): Map<number, Intent> {
@@ -113,12 +141,14 @@ export class MatchHost {
     return out;
   }
 
-  private wire(halvingEvent: boolean, nextMatchMs: number): WireState {
+  // `events` are those of the tick just run: during the result pause the match does not tick
+  // and its last events must not be sent again.
+  private wire(events: readonly MatchEvent[], nextMatchMs: number): WireState {
     return toWire(this.match.state, {
       cfg: this.cfg,
       result: this.match.result(),
       isBot: (ghost) => this.control.get(ghost)?.kind === 'bot',
-      halvingEvent,
+      events,
       nextMatchMs,
     });
   }

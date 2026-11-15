@@ -60,10 +60,10 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-j. **Session 2026-11-15-CD, remaining parts.** Stacked branches from `fix/pickup`. Done when
-each is built, tested, documented and pushed: help overlay and server-authoritative steal
-feedback (`feat/help-feedback`); the fairness search — bot sanity, grid search, stage 2,
-swap comparison — in BALANCE.md (`feat/fairness`).
+j. **Session 2026-11-15-CD, fairness search** (`feat/fairness` from `feat/help-feedback`).
+Done when: the patient bot's obvious faults are fixed and described, the grid search stage
+1, stage 2 and the swap comparison are in BALANCE.md with N, seeds and config per row, and
+pushed.
 
 ## CLOSED
 
@@ -219,6 +219,13 @@ swap comparison — in BALANCE.md (`feat/fairness`).
   the field coins of the moment its ghosts are drawn at (`stateAt`). Tests in
   `field.test.ts`, `interpolation.test.ts`, `sizes.test.ts` — commit "fix: coins are picked up
   when the drawn shapes touch" on `fix/pickup`.
+- 2026-11-15 — **help and steal feedback** (owner's observation (d)): help overlay with the
+  five rules and drawings made in code, once on the first visit and with "?"; the Steal
+  button lit only with the server's `GHOST_CAN_STEAL` (core `canSteal`), a range ring near
+  carriers, a steal notice `{"kind":"steal",…}` only to the two players involved; dev-only
+  `SCENARIO=steal` for the specs; THREATS rows 26a, 29, 30. Tests in
+  `server-message.test.ts`, `match-host.test.ts`, `help.e2e.ts`, `feedback.e2e.ts` — commit
+  "feat: help overlay and steal feedback" on `feat/help-feedback`.
 
 ## CHECKS DONE
 
@@ -329,3 +336,7 @@ swap comparison — in BALANCE.md (`feat/fairness`).
 | 2026-11-15 | pickup measurement: server rule (`field.ts`), drawn sizes (`ghosts.ts`, `field.ts` in render), render buffer (`BUFFER_MS`) read from the code                                             | `0186d90`                                                                                                                            | server 30 units centre to centre; drawn touch 24 (empty) to 40 (big carrier); coins from the newest state, ghosts 100 ms behind (up to 30 units at full speed)                                                                      | sheet `reports/session-2026-11-15-cd.md`                                                       |
 | 2026-11-15 | `pnpm verify:changed` (26 files: format, lint, typecheck, 20 related test files / 106 tests)                                                                                              | working tree committed as "fix: coins are picked up when the drawn shapes touch"                                                     | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-15 | `pnpm e2e`                                                                                                                                                                                | same tree                                                                                                                            | 5 passed, 1 skipped (spectator at phone size, by design)                                                                                                                                                                            | screenshots in `reports/screens/latest/`                                                       |
+| 2026-11-15 | `pnpm e2e help feedback` (first version)                                                                                                                                                  | intermediate                                                                                                                         | help passed at both sizes; feedback failed: the robbing hunter had walked away before Space was pressed — spec now presses while lit                                                                                                | sheet `reports/session-2026-11-15-cd.md`                                                       |
+| 2026-11-15 | `pnpm e2e feedback --repeat-each=3`                                                                                                                                                       | intermediate, spec fixed                                                                                                             | 3 passed (desktop), 3 skipped (phone, by design)                                                                                                                                                                                    | screenshot `desktop-steal.png`                                                                 |
+| 2026-11-15 | `pnpm verify:changed` (45 files: format, lint, typecheck, 22 related test files / 119 tests)                                                                                              | working tree committed as "feat: help overlay and steal feedback"                                                                    | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | `pnpm e2e` (all specs, two stacks)                                                                                                                                                        | same tree                                                                                                                            | 8 passed, 2 skipped (desktop-only specs at phone size)                                                                                                                                                                              | screenshots in `reports/screens/latest/`                                                       |

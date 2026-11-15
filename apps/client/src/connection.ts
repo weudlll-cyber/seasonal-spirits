@@ -10,6 +10,7 @@ import {
   type BufferedState,
   type GameAction,
   type ServerState,
+  type ServerSteal,
   type ServerWelcome,
 } from '@seasonal-spirits/protocol';
 
@@ -23,6 +24,7 @@ export type Mode = 'connecting' | 'player' | 'spectator' | 'closed';
 export interface ConnectionEvents {
   onState: (s: ServerState) => void; // every state, in order, before it is buffered
   onMode: (mode: Mode, reason: 'full' | null) => void;
+  onSteal: (steal: ServerSteal) => void; // a steal this player took part in
 }
 
 export class Connection {
@@ -90,6 +92,8 @@ export class Connection {
       this.setMode('player', null);
     } else if (msg?.kind === 'spectating') {
       this.setMode('spectator', msg.reason);
+    } else if (msg?.kind === 'steal' && this.mode === 'player') {
+      this.events.onSteal(msg);
     }
   }
 

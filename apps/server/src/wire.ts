@@ -6,16 +6,19 @@
 import {
   SEASONS,
   atOwnShrine,
+  canSteal,
   shrineOffer,
   totalCount,
   type GameConfig,
   type Ghost,
+  type MatchEvent,
   type MatchResult,
   type MatchState,
 } from '@seasonal-spirits/game-core';
 import {
   GHOST_AT_SHRINE,
   GHOST_BOT,
+  GHOST_CAN_STEAL,
   GHOST_CARRIER,
   GHOST_SECURING,
   STATE_HALVING_EVENT,
@@ -31,7 +34,7 @@ export interface WireContext {
   cfg: GameConfig;
   result: MatchResult;
   isBot: (ghost: number) => boolean;
-  halvingEvent: boolean;
+  events: readonly MatchEvent[]; // of the tick just run; none during the result pause
   nextMatchMs: number; // 0 outside the result pause
 }
 
@@ -52,7 +55,9 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
     seasonNumber: s.clock.index,
     seasonLeftMs: s.clock.timeLeftMs,
     countdownMs: s.halvingCountdownMs,
-    flags: (ctx.halvingEvent ? STATE_HALVING_EVENT : 0) | (s.ended ? STATE_RESULT : 0),
+    flags:
+      (ctx.events.some((e) => e.type === 'halving') ? STATE_HALVING_EVENT : 0) |
+      (s.ended ? STATE_RESULT : 0),
     nextMatchMs: ctx.nextMatchMs,
     teamSecured: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
     ghosts,
@@ -75,6 +80,7 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (carried > 0 ? GHOST_CARRIER : 0) |
       (g.securingUntilMs !== null ? GHOST_SECURING : 0) |
       (ctx.isBot(g.id) ? GHOST_BOT : 0) |
-      (atOwnShrine(ctx.cfg, s, g) ? GHOST_AT_SHRINE : 0),
+      (atOwnShrine(ctx.cfg, s, g) ? GHOST_AT_SHRINE : 0) |
+      (canSteal(ctx.cfg, s, g) ? GHOST_CAN_STEAL : 0),
   };
 }

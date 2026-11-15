@@ -64,7 +64,10 @@ spawning, the countdown, the end.
   later (full). A swap gives exactly the offered count.
 - **Steal** (one action, no aiming). The target is the nearest opponent carrier within
   `stealRange` — never a teammate, never the thief. The victim loses `ceil(n · stealShare)`
-  of each season's count to the thief; then the thief waits `stealCooldownMs`.
+  of each season's count to the thief; then the thief waits `stealCooldownMs`. `canSteal`
+  says whether a steal would take something now (the match runs, the thief is not securing,
+  its cooldown is over, an opponent carrier is in range) — `trySteal` checks exactly that, and
+  the server sends it to the clients as the lit Steal button.
 - **Halving** at every season turn inside the match (CONCEPT.md §2b, §13): 1:15, 2:30 and
   3:45 of a 5-minute match; the match end is not one. The old season's field coins disappear
   (counted in `stats.cleared`), the new season's coins fall at the same rate. Carried coins

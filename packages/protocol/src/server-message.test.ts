@@ -22,6 +22,24 @@ describe('parseServerMessage', () => {
     });
   });
 
+  it('reads a steal notice with only its known fields', () => {
+    const text = '{"kind":"steal","thief":7,"victim":3,"coins":2,"x":5}';
+    expect(parseServerMessage(text)).toEqual({ kind: 'steal', thief: 7, victim: 3, coins: 2 });
+  });
+
+  it('drops a steal notice with a ghost out of range, no coins, or a thief robbing itself', () => {
+    for (const text of [
+      '{"kind":"steal","thief":256,"victim":3,"coins":2}',
+      '{"kind":"steal","thief":7,"victim":-1,"coins":2}',
+      '{"kind":"steal","thief":7,"victim":3,"coins":0}',
+      '{"kind":"steal","thief":7,"victim":3,"coins":1.5}',
+      '{"kind":"steal","thief":7,"victim":7,"coins":2}',
+      '{"kind":"steal","thief":7,"victim":3}',
+    ]) {
+      expect(parseServerMessage(text), text).toBeNull();
+    }
+  });
+
   it('drops non-JSON, non-objects, other kinds and out-of-range fields', () => {
     for (const text of [
       'nope',

@@ -95,3 +95,43 @@ taken); `interpolation.test.ts` "gives the field coins of the moment the ghosts 
 at, not the newest ones"; `sizes.test.ts` "draws a ghost with the game core radius, growing
 with its coins", "draws a coin with the game core radius". This changes the balance a little
 (an empty ghost reaches 24 instead of 30, a big carrier up to 40); part 5 starts from here.
+
+## 4. Help and feedback (`feat/help-feedback`)
+
+**Help overlay** (`apps/client/src/help.ts`): the five rules of CONCEPT.md §2a in plain words,
+each with a small inline-SVG drawing made in code, and the controls for keyboard and touch; no
+crypto terms. Opens on the first visit (remembered in localStorage through the guarded
+storage helper), any time with "?" (key, or the "?" button in the band); one tap or any key
+closes it, and that key reaches no game control.
+
+**Steal feedback, server-authoritative:**
+
+- New ghost flag `GHOST_CAN_STEAL` (16) in the existing flags byte, from the core's new
+  `canSteal` (match running, not securing, cooldown over, an opponent carrier in range —
+  `trySteal` now uses the very same check). The Steal button is lit only while the own
+  ghost's flag is set, dimmed otherwise.
+- A faint dashed ring of the steal range around the own ghost while an opponent carrier is
+  within twice the range.
+- A new server → client text message `{"kind":"steal","thief","victim","coins"}`, read by the
+  shared `parseServerMessage`, sent by the server only to the two players involved, in the
+  tick it happened, never during the result pause; the client shows "You stole 3 from Bot 7"
+  / "Bot 7 stole 2 from you" for 2.5 s. Spectators get nothing.
+- First design (a steal list inside the binary state) dropped: with 32 steals in one tick
+  the worst-case state would have grown from 978 to 1107 bytes, past the Phase 0 bound of
+  1 KB; the text message to two sockets keeps the state size unchanged.
+- `SCENARIO=steal` (development server only, `envChoice` none/steal): every joining player
+  is placed in the middle with 6 coins beside an opponent hunter carrying nothing — the
+  seeded situation for the tests.
+
+THREATS rows 26a (scenario), 29 (steal notice), 30 (the flag).
+
+Tests: `server-message.test.ts` "reads a steal notice with only its known fields", "drops a
+steal notice with a ghost out of range, no coins, or a thief robbing itself";
+`match-host.test.ts` "tells a player robbed by a bot, and only that player", "lights the
+Steal flag only while a steal would take something, and tells the thief", "sends no notice
+to anyone for steals among bots"; `help.e2e.ts` (desktop and phone) "help appears on the
+first visit, not on the second, and opens again with '?'"; `feedback.e2e.ts` (desktop,
+second stack 3934/5934) "the Steal button is lit only with a target, and both sides of a
+steal get a message". Screenshots `desktop-help.png`, `phone-help.png`, `desktop-steal.png`.
+The first version of the feedback spec failed: the robbing hunter had walked off with the
+loot by the time Space was pressed; it now presses as soon as the button lights.
