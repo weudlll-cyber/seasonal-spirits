@@ -54,3 +54,15 @@ master code (seed 1: 36 050 ms, verified once with the fix stashed).
 Balance stage 1, current config, N = 30 (seeds 1–30), next to the round 2 row in
 docs/BALANCE.md: best player hunter 93.3 % (round 2: 73.3 %), cautious 6.7 % (26.7 %),
 patient 0.0 %; spread-out collectors are easier prey.
+
+### Own full match (Playwright, desktop, keyboard, dev server with the new bots)
+
+Waited for a fresh match, played 5:00 for Team Spring, first half "Near", second half
+"Overview" (V). Every sample checked: never a ghost on screen without a label (in
+"Overview" all 32 named every time), never a label under the bar, no page errors. My blind
+route secured 5.5, place 25 of 32. Screenshots `reports/screens/latest/crowd-near.png` and
+`crowd-overview.png` (git-ignored): crowds at the shrines are named with leader lines, the
+"Autumn shrine" label moves above its shrine where the Steal button covers the spot below.
+Noticed: some labels sit on the bodies of neighbouring ghosts; ghosts crowd densely at the
+shrines near the end of a season; in "Near" the label of a bottom shrine of another team
+can be cut by the screen edge; some carriers hold 20 coins and more (Bot 14 · 21).
