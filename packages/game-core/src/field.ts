@@ -3,7 +3,8 @@
 // at the same rate all match long (CONCEPT.md §13, point 2).
 
 import type { GameConfig } from './config.js';
-import { distance } from './geometry.js';
+import { touchesCoin } from './geometry.js';
+import { totalCount } from './seasons.js';
 import type { FieldCoin, MatchState } from './types.js';
 
 export interface Spawner {
@@ -27,12 +28,13 @@ export function spawnCoins(cfg: GameConfig, s: MatchState, sp: Spawner, dtMs: nu
   }
 }
 
-// Each idle ghost takes the field coins within reach, lowest ghost id first.
+// Each idle ghost takes the field coins its drawn body touches (geometry.ts touchesCoin),
+// lowest ghost id first.
 export function pickUpCoins(cfg: GameConfig, s: MatchState): void {
   const kept: FieldCoin[] = [];
   for (const coin of s.coins) {
     const taker = s.ghosts.find(
-      (g) => g.securingUntilMs === null && distance(g, coin) <= cfg.pickupRadius,
+      (g) => g.securingUntilMs === null && touchesCoin(cfg, g, totalCount(g.carried), coin),
     );
     if (taker) {
       taker.carried[coin.season]++;

@@ -3,7 +3,7 @@
 
 export * from './palette.js';
 export * from './view.js';
-export { SHRINES, drawField, type FieldStyle } from './field.js';
+export { SHRINES, coinRadiusPx, drawField, type FieldStyle } from './field.js';
 export { placeLabels, shrineLabelAt, type LabelCandidate, type PlacedLabel } from './labels.js';
 export { Trails, drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
 export { CLOCK_HEIGHT, drawClock, mmss, value } from './clock.js';

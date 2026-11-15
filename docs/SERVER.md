@@ -42,6 +42,13 @@ is encoded once and sent to every client that has said hello.
   CONCEPT.md §8: 10–15 s); then a bot takes over. Without the website sign-in a returning
   player cannot be recognised yet, so a reconnect is a new player.
 - A spectator says `{"kind":"spectator"}` and sends nothing after that.
+- After a steal, the two players involved — and nobody else — get one text message
+  `{"kind":"steal","thief":<id>,"victim":<id>,"coins":<n>}` in the tick it happened (none
+  during the result pause; THREATS row 29). The state flag `GHOST_CAN_STEAL` (16) marks
+  every ghost whose steal would take something now (the core's `canSteal`; THREATS row 30).
+- `SCENARIO=steal` (browser specs only, like the whole server development only): every
+  joining player is placed in the middle of the field with 6 coins beside an opponent
+  hunter carrying nothing (`src/scenario.ts`); `none` is the default.
 
 ## Match lifecycle
 

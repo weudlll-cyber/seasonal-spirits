@@ -24,6 +24,7 @@
     "probe": "pnpm --filter @seasonal-spirits/probe start",
     "simulate": "pnpm --filter @seasonal-spirits/game-core simulate",
     "balance": "pnpm --filter @seasonal-spirits/game-core balance",
+    "fairness": "pnpm --filter @seasonal-spirits/game-core fairness",
     "dev": "node scripts/dev.mjs",
     "dev:stop": "node scripts/dev.mjs stop"
   },

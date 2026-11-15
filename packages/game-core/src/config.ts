@@ -9,6 +9,8 @@ export interface BotConfig {
   hunterSecureAt: number;
   arriveRadius: number;
   deadlineMarginMs: number;
+  waypointMs: number;
+  threatRange: number;
 }
 
 export interface GameConfig {
@@ -18,7 +20,10 @@ export interface GameConfig {
   fieldSize: number;
   ghostSpeed: number;
   carrySpeedFactor: number;
-  pickupRadius: number;
+  ghostRadius: number;
+  ghostGrowthPerCoin: number;
+  ghostGrowthMax: number;
+  coinRadius: number;
   coinSpawnPerSecond: number;
   maxFieldCoins: number;
   offSeasonValueFactor: number;
@@ -48,7 +53,13 @@ export const DEFAULT_CONFIG: GameConfig = {
   ghostSpeed: 300, // placeholder — owner decides (units/s, Phase 0 speed)
   // CONCEPT.md §8: "carrying slows a ghost down"; the factor is open.
   carrySpeedFactor: 0.7, // placeholder — owner decides
-  pickupRadius: 30, // placeholder — owner decides
+  // The sizes the client draws and the server picks up with (geometry.ts ghostRadius): a coin
+  // is picked up when the drawn ghost and the drawn coin touch (2026-11-15; before, a fixed
+  // pickup radius of 30 against differently drawn sizes).
+  ghostRadius: 14, // placeholder — owner decides (an empty ghost)
+  ghostGrowthPerCoin: 0.5, // placeholder — owner decides (a carrier is larger, CONCEPT.md §2a)
+  ghostGrowthMax: 16, // placeholder — owner decides
+  coinRadius: 10, // placeholder — owner decides
   coinSpawnPerSecond: 2, // placeholder — owner decides (CONCEPT.md leaves the rate open)
   maxFieldCoins: 60, // placeholder — owner decides
   offSeasonValueFactor: 0.5, // CONCEPT.md §2a / §10 decision 2: half outside its season
@@ -78,5 +89,11 @@ export const DEFAULT_CONFIG: GameConfig = {
     arriveRadius: 20, // placeholder — owner decides (how close a bot steers to a target)
     // Spare time a bot keeps when it walks home to swap or secure before a halving.
     deadlineMarginMs: 3000, // placeholder — owner decides
+    // A collector with no coin of its own walks to a waypoint that moves on this often, so
+    // collectors spread over the field instead of sharing one coin (2026-11-15).
+    waypointMs: 4000, // placeholder — owner decides
+    // A patient bot with at least swapIn coins goes home when an opponent comes this close
+    // (2026-11-15: it used to carry a full load past hunters without reacting).
+    threatRange: 150, // placeholder — owner decides
   },
 };

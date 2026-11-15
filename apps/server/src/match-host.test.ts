@@ -6,6 +6,7 @@ import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import {
   GHOST_AT_SHRINE,
   GHOST_BOT,
+  GHOST_CAN_STEAL,
   STATE_HALVING_EVENT,
   STATE_RESULT,
   encodeState,
@@ -87,20 +88,27 @@ describe('match host shrine offers', () => {
 });
 
 describe('match host state size', () => {
-  it('never sends more than 1 KB in a whole 32-bot match, the halvings included', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
-    let max = 0;
-    let halvings = 0;
-    for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
-      const bytes = encodeState({ ...s, tick: 0, serverMs: 0 }).byteLength;
-      max = Math.max(max, bytes);
-      if (s.flags & STATE_HALVING_EVENT) halvings++;
-    }
-    expect(halvings).toBe(3);
-    expect(max).toBeLessThan(1024);
-    // Bots never get offers: a full field (maxFieldCoins) is the bound, 34 + 13 · 32 + 4 · 60.
-    expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
-  });
+  // A whole match: about 1–2 s alone, more beside the rest of the suite on a busy machine.
+  it(
+    'never sends more than 1 KB in a whole 32-bot match, the halvings included',
+    {
+      timeout: 20_000,
+    },
+    () => {
+      const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+      let max = 0;
+      let halvings = 0;
+      for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
+        const bytes = encodeState({ ...s, tick: 0, serverMs: 0 }).byteLength;
+        max = Math.max(max, bytes);
+        if (s.flags & STATE_HALVING_EVENT) halvings++;
+      }
+      expect(halvings).toBe(3);
+      expect(max).toBeLessThan(1024);
+      // Bots never get offers: a full field (maxFieldCoins) is the bound, 34 + 13 · 32 + 4 · 60.
+      expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
+    },
+  );
 });
 
 describe('match host lifecycle', () => {
@@ -126,5 +134,52 @@ describe('match host lifecycle', () => {
     expect(next?.flags ?? STATE_RESULT).toBe(0);
     expect(next?.matchMs).toBeLessThanOrEqual(150);
     expect(host.players()).toBe(1);
+  });
+});
+
+// Owner's observation 2026-11-15: stealing was not understood. The staged situation puts the
+// player beside an opponent hunter with nothing (scenario.ts).
+describe('match host steal feedback', () => {
+  const canSteal = (s: WireState, ghost: number): boolean =>
+    ((s.ghosts.find((g) => g.id === ghost)?.flags ?? 0) & GHOST_CAN_STEAL) !== 0;
+
+  it('tells a player robbed by a bot, and only that player', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 12, 1, 'steal');
+    const slot = host.join(1);
+    if (!slot) throw new Error('no slot');
+    const notices = [];
+    for (let t = 0; t < 2000; t += 50) {
+      host.tick(50);
+      notices.push(...host.stealNotices());
+    }
+    expect(notices.length).toBeGreaterThan(0);
+    expect(notices.every((n) => n.clientId === 1)).toBe(true);
+    expect(notices[0]?.message).toMatchObject({ kind: 'steal', victim: slot.ghost });
+  });
+
+  it('lights the Steal flag only while a steal would take something, and tells the thief', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 12, 1, 'steal');
+    const slot = host.join(1);
+    if (!slot) throw new Error('no slot');
+    // The hunter robs the player first; then the player has a carrier in range.
+    let s = host.tick(50);
+    for (let t = 0; t < 2000 && !canSteal(s, slot.ghost); t += 50) s = host.tick(50);
+    expect(canSteal(s, slot.ghost)).toBe(true);
+    host.act(1, 'steal');
+    host.tick(50);
+    const notices = host.stealNotices();
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.clientId).toBe(1);
+    expect(notices[0]?.message.thief).toBe(slot.ghost);
+    // Right after the steal the cooldown runs: the flag is off.
+    expect(canSteal(host.tick(50), slot.ghost)).toBe(false);
+  });
+
+  it('sends no notice to anyone for steals among bots', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    for (let t = 0; t < 60_000; t += 50) {
+      host.tick(50);
+      expect(host.stealNotices()).toEqual([]);
+    }
   });
 });

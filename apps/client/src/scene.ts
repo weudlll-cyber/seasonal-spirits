@@ -3,9 +3,11 @@
 // arrow keep out of the thumb zones of the HUD controls. Returns what it drew, for the
 // browser specs.
 
-import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import type { CoinState, GhostState, ServerState } from '@seasonal-spirits/protocol';
 import {
   CLOCK_HEIGHT,
+  circle,
   SHRINES,
   belowBar,
   drawClock,
@@ -42,6 +44,7 @@ const ARROW_INSET = 34; // pixels between the screen edge and the shrine arrow
 export interface Frame {
   ghosts: GhostState[];
   latest: ServerState | undefined;
+  coins: CoinState[]; // the field coins at the moment the ghosts are drawn at (main.ts)
   ownId: number | null;
   own: GhostState | undefined;
   ownTeam: number | null; // a player's team; null for spectators
@@ -61,6 +64,15 @@ export interface Drawn {
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
+  stealRing: boolean; // the own steal range is drawn (an opponent carrier is near)
+  ghostsShown: GhostOnScreen[]; // every ghost drawn inside the visible field, in pixels
+}
+
+export interface GhostOnScreen {
+  id: number;
+  carried: number;
+  x: number;
+  y: number;
 }
 
 // "Near" follows the own ghost; a spectator, "Overview" and a player not yet placed see all.
@@ -86,9 +98,11 @@ export function drawScene(
   trails.record(f.ghosts);
   let labels: PlacedLabel[] = [];
   let shrineLabel: Rect | null = null;
+  let stealRing = false;
   belowBar(view, () => {
     const field = { ownTeam: f.ownTeam, nowMs: performance.now(), blocked: f.hud.controls };
-    shrineLabel = drawField(view, f.latest, field);
+    shrineLabel = drawField(view, f.latest && { ...f.latest, coins: f.coins }, field);
+    stealRing = drawStealRing(view, f);
     const style = { ownId: f.ownId, season: f.latest?.season ?? 0, trails, labelAll: !f.playing };
     labels = drawGhosts(view, f.ghosts, style);
   });
@@ -107,7 +121,30 @@ export function drawScene(
     controls: f.hud.controls,
     zones: f.hud.zones,
     labels,
+    ghostsShown: onScreen(view, f.ghosts),
+    stealRing,
   };
+}
+
+// The own steal range as a faint ring while an opponent carrier is near (within twice the
+// range): what a press of Steal can reach (owner's observation 2026-11-15). Players only.
+function drawStealRing(view: View, f: Frame): boolean {
+  const own = f.playing ? f.own : undefined;
+  if (!own) return false;
+  const range = DEFAULT_CONFIG.stealRange;
+  const near = f.ghosts.some(
+    (g) =>
+      g.team !== own.team && g.carried > 0 && Math.hypot(g.x - own.x, g.y - own.y) <= 2 * range,
+  );
+  if (!near) return false;
+  const { ctx } = view;
+  ctx.strokeStyle = 'rgba(255, 213, 79, 0.45)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 4]);
+  circle(view, own.x, own.y, range * view.scale);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  return true;
 }
 
 interface OwnShrine {
@@ -141,4 +178,11 @@ function drawNear(
   const arrow = edgeArrow(shrine.screen, shrine.at, ARROW_INSET, [map, ...f.hud.zones]);
   if (arrow) drawArrow(ctx, arrow, seasonColour(shrine.team));
   return { map, arrow };
+}
+
+function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
+  const area = visibleArea(view);
+  return ghosts
+    .map((g) => ({ id: g.id, carried: g.carried, x: sx(view, g.x), y: sy(view, g.y) }))
+    .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);
 }

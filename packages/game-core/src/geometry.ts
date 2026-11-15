@@ -33,3 +33,14 @@ export function shrinePositions(cfg: GameConfig): Vec[] {
 export function shrineOf(shrines: readonly Vec[], team: Team): Vec {
   return shrines[team] ?? { x: 0, y: 0 };
 }
+
+// A ghost's radius: larger with every coin it carries, up to a limit (CONCEPT.md §2a: a
+// carrier is visible from afar). The server's pickup and the client's drawing both use it.
+export function ghostRadius(cfg: GameConfig, carried: number): number {
+  return cfg.ghostRadius + Math.min(cfg.ghostGrowthMax, carried * cfg.ghostGrowthPerCoin);
+}
+
+// True when the drawn ghost and the drawn coin touch: the pickup rule (2026-11-15).
+export function touchesCoin(cfg: GameConfig, ghost: Vec, carried: number, coin: Vec): boolean {
+  return distance(ghost, coin) <= ghostRadius(cfg, carried) + cfg.coinRadius;
+}

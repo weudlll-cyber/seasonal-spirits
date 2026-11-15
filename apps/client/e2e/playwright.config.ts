@@ -6,7 +6,13 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
-import { CLIENT_PORT, SERVER_PORT } from './stack.js';
+import {
+  CLIENT_PORT,
+  HELP_SEEN,
+  SERVER_PORT,
+  STEAL_CLIENT_PORT,
+  STEAL_SERVER_PORT,
+} from './stack.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const CI = process.env.CI !== undefined;
@@ -22,7 +28,13 @@ export default defineConfig({
   // One match server: the two sizes play one after the other.
   workers: 1,
   reporter: 'list',
-  use: { baseURL: `http://localhost:${CLIENT_PORT}`, trace: 'retain-on-failure' },
+  use: {
+    baseURL: `http://localhost:${CLIENT_PORT}`,
+    trace: 'retain-on-failure',
+    // The help overlay counts as seen, so it does not cover the field; help.e2e.ts starts
+    // with an empty storage instead.
+    storageState: { cookies: [], origins: [HELP_SEEN(CLIENT_PORT), HELP_SEEN(STEAL_CLIENT_PORT)] },
+  },
   projects: [
     {
       name: 'desktop',
@@ -44,6 +56,23 @@ export default defineConfig({
       cwd: ROOT,
       url: `http://localhost:${CLIENT_PORT}`,
       env: { CLIENT_PORT: String(CLIENT_PORT), SERVER_PORT: String(SERVER_PORT) },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    // The staged steal (feedback.e2e.ts): every joining player beside an opponent hunter.
+    {
+      command: 'pnpm --filter @seasonal-spirits/server start',
+      cwd: ROOT,
+      url: `http://127.0.0.1:${STEAL_SERVER_PORT}/metrics-lite`,
+      env: { PORT: String(STEAL_SERVER_PORT), SCENARIO: 'steal' },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: 'pnpm --filter @seasonal-spirits/client start',
+      cwd: ROOT,
+      url: `http://localhost:${STEAL_CLIENT_PORT}`,
+      env: { CLIENT_PORT: String(STEAL_CLIENT_PORT), SERVER_PORT: String(STEAL_SERVER_PORT) },
       reuseExistingServer: false,
       timeout: 60_000,
     },

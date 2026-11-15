@@ -18,6 +18,7 @@ import {
 } from '@seasonal-spirits/protocol';
 import { handleHttp } from './http-routes.js';
 import { MatchHost } from './match-host.js';
+import type { Scenario } from './scenario.js';
 
 export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
@@ -30,6 +31,7 @@ export interface ServerConfig {
   helloTimeoutMs: number; // a connection that has not said hello by then is closed
   devCors: boolean; // CORS `*` on /metrics-lite, development only
   firstSeed: number;
+  scenario?: Scenario; // a staged situation for the browser specs; none when left out
 }
 
 // WebSocket close code 1008: policy violation.
@@ -80,7 +82,7 @@ export class GameServer {
 
   constructor(cfg: ServerConfig) {
     this.cfg = cfg;
-    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed);
+    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed, cfg.scenario);
   }
 
   async listen(): Promise<void> {
@@ -145,6 +147,9 @@ export class GameServer {
       for (const c of this.clients.values()) {
         if (c.kind !== 'pending' && c.ws.readyState === c.ws.OPEN) c.ws.send(buf, { binary: true });
       }
+      // Only the two players involved hear of a steal (THREATS row 29).
+      for (const n of this.host.stealNotices())
+        this.clients.get(n.clientId)?.ws.send(JSON.stringify(n.message));
       this.maxTickMs = Math.max(this.maxTickMs, Date.now() - tickStart);
       this.ticksInWindow++;
       this.accumulator -= stepMs;

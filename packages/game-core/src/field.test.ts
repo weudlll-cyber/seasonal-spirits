@@ -1,6 +1,7 @@
 // Seasonal Spirits — coins on the field, movement and carrying.
 
 import { describe, expect, it } from 'vitest';
+import { ghostRadius } from './geometry.js';
 import { act, ghost, matchOf, quietConfig, runTo } from './test-helpers.js';
 
 describe('field coins', () => {
@@ -20,6 +21,28 @@ describe('field coins', () => {
     act(m, 1, { dx: 0, dy: 0 });
     expect(g.carried.spring).toBe(1);
     expect(m.state.coins).toEqual([]);
+  });
+
+  // Owner's observation 2026-11-15: a coin went sometimes before the ghost touched it,
+  // sometimes only after it had passed over. Now: exactly when the drawn shapes touch.
+  it.each([
+    ['an empty ghost', 0],
+    ['a carrier of 10', 10],
+    ['a carrier at full size', 60],
+  ])('%s picks up a coin at touching distance and not half a unit further', (_, carried) => {
+    const cfg = quietConfig();
+    const touching = ghostRadius(cfg, carried) + cfg.coinRadius;
+    for (const [gap, taken] of [
+      [touching, 1],
+      [touching + 0.5, 0],
+    ] as const) {
+      const m = matchOf(cfg, [{ id: 1, team: 0 }]);
+      const g = ghost(m, 1);
+      g.carried.summer = carried; // off-season coins: only the size matters here
+      m.state.coins.push({ id: 99, x: g.x + gap, y: g.y, season: 'spring' });
+      act(m, 1, { dx: 0, dy: 0 });
+      expect(g.carried.spring, `gap ${gap}`).toBe(taken);
+    }
   });
 });
 

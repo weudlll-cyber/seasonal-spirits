@@ -1,0 +1,116 @@
+[
+ {
+  "overrides": {
+   "stealShare": 0.25,
+   "coinSpawnPerSecond": 1,
+   "carrySpeedFactor": 0.7,
+   "stealCooldownMs": 2000,
+   "secureDurationMs": 3000,
+   "swapOut": 18
+  },
+  "report": {
+   "matches": 30,
+   "firstSeed": 1,
+   "bestPlayerShare": {
+    "patient": 0.38333333333333336,
+    "cautious": 0.31666666666666665,
+    "hunter": 0.3
+   },
+   "secured": {
+    "patient": {
+     "n": 360,
+     "mean": 7.843055555555556,
+     "median": 7.5,
+     "p10": 5,
+     "p90": 11.5
+    },
+    "cautious": {
+     "n": 360,
+     "mean": 7.8694444444444445,
+     "median": 7.5,
+     "p10": 4.5,
+     "p90": 11.5
+    },
+    "hunter": {
+     "n": 240,
+     "mean": 7.725,
+     "median": 8,
+     "p10": 3,
+     "p90": 11.5
+    }
+   },
+   "teamWinShare": [
+    0.3,
+    0.2,
+    0.2,
+    0.3
+   ],
+   "clearedPerMatch": {
+    "n": 30,
+    "mean": 4.066666666666666,
+    "median": 4,
+    "p10": 2,
+    "p90": 6
+   }
+  },
+  "distance": 10.000000000000004,
+  "meets": true
+ },
+ {
+  "overrides": {
+   "stealShare": 0.25,
+   "coinSpawnPerSecond": 1,
+   "carrySpeedFactor": 0.7,
+   "stealCooldownMs": 2000,
+   "secureDurationMs": 3000,
+   "swapOut": 12
+  },
+  "report": {
+   "matches": 30,
+   "firstSeed": 1,
+   "bestPlayerShare": {
+    "patient": 0.38333333333333336,
+    "cautious": 0.31666666666666665,
+    "hunter": 0.3
+   },
+   "secured": {
+    "patient": {
+     "n": 360,
+     "mean": 7.843055555555556,
+     "median": 7.5,
+     "p10": 5,
+     "p90": 11.5
+    },
+    "cautious": {
+     "n": 360,
+     "mean": 7.8694444444444445,
+     "median": 7.5,
+     "p10": 4.5,
+     "p90": 11.5
+    },
+    "hunter": {
+     "n": 240,
+     "mean": 7.725,
+     "median": 8,
+     "p10": 3,
+     "p90": 11.5
+    }
+   },
+   "teamWinShare": [
+    0.3,
+    0.2,
+    0.2,
+    0.3
+   ],
+   "clearedPerMatch": {
+    "n": 30,
+    "mean": 4.066666666666666,
+    "median": 4,
+    "p10": 2,
+    "p90": 6
+   }
+  },
+  "distance": 10.000000000000004,
+  "meets": true
+ }
+]

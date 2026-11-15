@@ -66,10 +66,27 @@ export function completeSecure(cfg: GameConfig, s: MatchState, g: Ghost): void {
   s.events.push({ type: 'secured', ghost: g.id, value });
 }
 
+// Whether a steal by `thief` would take something right now: the match runs, the thief is
+// not securing (a securing ghost does nothing else), its cooldown is over, and an opponent
+// carrier is in range. The server tells each player this (the lit Steal button); trySteal
+// checks exactly the same.
+export function canSteal(
+  cfg: GameConfig,
+  s: Readonly<MatchState>,
+  thief: Readonly<Ghost>,
+): boolean {
+  return (
+    !s.ended &&
+    thief.securingUntilMs === null &&
+    s.elapsedMs - thief.lastStealMs >= cfg.stealCooldownMs &&
+    nearestOpponentCarrier(cfg, s, thief) !== null
+  );
+}
+
 // CONCEPT.md §2a, sentence 5, and §8: one action, no aiming. The target is the nearest
 // opponent carrier in range — never a teammate, never the thief itself.
 export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost): void {
-  if (s.elapsedMs - thief.lastStealMs < cfg.stealCooldownMs) return;
+  if (!canSteal(cfg, s, thief)) return;
   const victim = nearestOpponentCarrier(cfg, s, thief);
   if (!victim) return;
   let coins = 0;

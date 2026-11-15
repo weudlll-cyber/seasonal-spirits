@@ -37,9 +37,11 @@ describe('bots before a halving', () => {
     g.carried.spring = 1;
     g.x = cfg.fieldSize; // the far corner from team 0's shrine
     g.y = cfg.fieldSize;
+    // A coin of its own just above it: until it turns home it goes for that coin.
+    m.state.coins.push({ id: 999, x: cfg.fieldSize, y: cfg.fieldSize - 200, season: 'spring' });
     // The walk home is about 12 s; with the secure and the margin, about 17.6 s are needed.
     runTo(m, 55_000); // 20 s left: not yet
-    expect(bot(m.state, g)).toEqual({ dx: 0, dy: 0 });
+    expect(bot(m.state, g)).toEqual({ dx: 0, dy: -1 });
     runTo(m, 58_000); // 17 s left: on the way
     const step = bot(m.state, g);
     expect(step.dx).toBeLessThan(0);

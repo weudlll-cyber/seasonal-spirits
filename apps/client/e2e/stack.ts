@@ -10,6 +10,20 @@ import type { Rect } from '@seasonal-spirits/render';
 
 export const SERVER_PORT = 3932;
 export const CLIENT_PORT = 5932;
+// A second stack with the staged steal (SCENARIO=steal, apps/server/src/scenario.ts).
+export const STEAL_SERVER_PORT = 3934;
+export const STEAL_CLIENT_PORT = 5934;
+
+// localStorage of a browser that has seen the help overlay (apps/client/src/help.ts).
+export const HELP_SEEN = (
+  port: number,
+): {
+  origin: string;
+  localStorage: { name: string; value: string }[];
+} => ({
+  origin: `http://localhost:${port}`,
+  localStorage: [{ name: 'seasonal-spirits.help-seen', value: '1' }],
+});
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export const SCREENS = path.join(ROOT, 'reports', 'screens', 'latest');
@@ -35,6 +49,8 @@ export interface ClientView {
   controls: Rect[];
   zones: Rect[];
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];
+  ghostsShown: { id: number; carried: number; x: number; y: number }[];
+  stealRing: boolean;
 }
 
 // Waits for the client's first frame: right after a (re)load window.__client does not exist

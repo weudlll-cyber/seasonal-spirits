@@ -3,6 +3,7 @@
 
 import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import { envChoice, envInt, refuseProduction } from './env.js';
+import { SCENARIOS } from './scenario.js';
 import { GameServer, type ServerConfig } from './server.js';
 
 const env = process.env;
@@ -32,6 +33,9 @@ const cfg: ServerConfig = {
   helloTimeoutMs: 10_000,
   devCors: true,
   firstSeed: envInt(env, 'SEED', 1, [0, 999_999_999]),
+  // A staged situation for the browser specs: "steal" puts every joining player beside a
+  // hunter (scenario.ts). Never set by `pnpm dev`.
+  scenario: envChoice(env, 'SCENARIO', 'none', SCENARIOS),
 };
 
 const server = new GameServer(cfg);

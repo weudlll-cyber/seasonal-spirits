@@ -6,7 +6,7 @@
 import type { GameConfig } from '../config.js';
 import { nearestOpponentCarrier } from '../actions.js';
 import { distance } from '../geometry.js';
-import { isLastSeason, totalCount } from '../seasons.js';
+import { isLastSeason, nextSeason, totalCount } from '../seasons.js';
 import type { Ghost, Intent, MatchState } from '../types.js';
 import { collect, deadlineNear, goHomeAnd, IDLE, type Bot } from './common.js';
 
@@ -15,10 +15,26 @@ export const STRATEGIES: readonly Strategy[] = ['patient', 'cautious', 'hunter']
 
 type Mode = 'collect' | 'swap' | 'secure';
 
+// An opponent within bots.threatRange: anyone there can steal from a carrier.
+function threatened(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): boolean {
+  return s.ghosts.some((g) => g.team !== me.team && distance(me, g) <= cfg.bots.threatRange);
+}
+
+// Holds coins for the swap chain (10 → 15 of the next season). Two faults fixed on
+// 2026-11-15 (session sheet 2026-11-15-CD): it carried a full load past opponents without
+// reacting — now, with at least swapIn coins and an opponent close, it goes home to swap or
+// bank; and with fewer than swapIn coins of the season it let the halving halve them — now it
+// banks them, unless the next season's coins it carries (from a swap) are worth more to it.
 function patientMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Mode {
+  const current = me.carried[s.clock.current];
+  const canSwap = current >= cfg.swapIn && !isLastSeason(cfg, s.clock);
+  if (totalCount(me.carried) >= cfg.swapIn && threatened(cfg, s, me)) {
+    return canSwap ? 'swap' : 'secure';
+  }
   if (!deadlineNear(cfg, s, me)) return 'collect';
   if (isLastSeason(cfg, s.clock)) return totalCount(me.carried) > 0 ? 'secure' : 'collect';
-  return me.carried[s.clock.current] >= cfg.swapIn ? 'swap' : 'collect';
+  if (canSwap) return 'swap';
+  return current > me.carried[nextSeason(s.clock.current)] ? 'secure' : 'collect';
 }
 
 function cautiousMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Mode {

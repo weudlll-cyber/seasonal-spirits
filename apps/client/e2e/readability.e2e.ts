@@ -39,17 +39,28 @@ function rectsWhole(v: ClientView): boolean {
   );
 }
 
-// What is wrong with the HUD in the current frame; empty when nothing is.
-async function hudFaults(page: Page): Promise<string[]> {
-  const v = await view(page);
-  const width = await page.evaluate(() => window.innerWidth);
+// Every ghost on screen named (owner's observation 2026-11-15: unnamed dots); no label under
+// the bar or past the screen edge.
+function labelFaults(v: ClientView, width: number): string[] {
   const faults: string[] = [];
+  const named = new Set(v.labels.map((l) => l.id));
+  for (const g of v.ghostsShown) {
+    if (!named.has(g.id)) faults.push(`ghost ${g.id} without a label`);
+  }
   for (const l of v.labels) {
     if (l.y - LABEL_HEIGHT < v.barBottom) faults.push(`label "${l.text}" under the bar`);
     if (l.x - l.width / 2 < 0 || l.x + l.width / 2 > width) {
       faults.push(`label "${l.text}" past the screen edge`);
     }
   }
+  return faults;
+}
+
+// What is wrong with the HUD in the current frame; empty when nothing is.
+async function hudFaults(page: Page): Promise<string[]> {
+  const v = await view(page);
+  const width = await page.evaluate(() => window.innerWidth);
+  const faults = labelFaults(v, width);
   if (!rectsWhole(v)) faults.push('a zone or control arrived without its edges');
   const at = v.arrowAt;
   const inZone = (z: (typeof v.zones)[number]): boolean =>

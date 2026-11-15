@@ -6,15 +6,21 @@
 // from the server's state.
 
 import {
+  GHOST_BOT,
+  GHOST_CAN_STEAL,
   RenderClock,
   STATE_HALVING_EVENT,
   STATE_RESULT,
+  ghostName,
   interpolate,
   latestServerMs,
+  stateAt,
   type ServerState,
+  type ServerSteal,
 } from '@seasonal-spirits/protocol';
 import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
+import { Help } from './help.js';
 import { Hud, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { ResultScreen } from './result.js';
@@ -74,7 +80,21 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
         : NOTICES[mode],
     );
   },
+  onSteal: (steal) => {
+    hud.toast(stealMessage(steal));
+  },
 });
+
+// "You stole 3 from Bot 7" / "Bot 7 stole 2 from you"; the other ghost named as everywhere.
+function stealMessage(steal: ServerSteal): string {
+  const own = conn.welcome?.ghost;
+  const other = steal.thief === own ? steal.victim : steal.thief;
+  const flags = conn.buffer.at(-1)?.state.ghosts.find((g) => g.id === other)?.flags ?? 0;
+  const name = ghostName(other, (flags & GHOST_BOT) !== 0);
+  return steal.thief === own
+    ? `You stole ${steal.coins} from ${name}`
+    : `${name} stole ${steal.coins} from you`;
+}
 const hud = new Hud((a) => {
   controls.act(a);
 });
@@ -89,6 +109,7 @@ const controls: Controls = {
 };
 bindKeyboard(controls);
 bindJoystick(el('stick'), el('knob'), controls);
+new Help(el('help'), el('help-open', HTMLButtonElement));
 
 function snapshot(now: number): Frame {
   const target = renderClock.target(now, latestServerMs(conn.buffer));
@@ -99,6 +120,9 @@ function snapshot(now: number): Frame {
   return {
     ghosts,
     latest,
+    // The coins of the moment the ghosts are drawn at, so a pickup shows when the drawn ghost
+    // touches the coin, not a render buffer earlier.
+    coins: (target === null ? latest : stateAt(conn.buffer, target))?.coins ?? [],
     ownId,
     own: ghosts.find((g) => g.id === ownId),
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,
@@ -126,7 +150,10 @@ function draw(f: Frame): Drawn {
   showTeam(f.ownTeam);
   viewButton.hidden = !f.playing;
   const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
-  hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0);
+  // The newest state's word, not the drawn (buffered) moment: the button answers the press now.
+  const ownFlags = f.latest?.ghosts.find((g) => g.id === f.ownId)?.flags ?? 0;
+  const canSteal = (ownFlags & GHOST_CAN_STEAL) !== 0;
+  hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0, canSteal);
   result.update(f.latest, f.over, f.ownId);
   return drawn;
 }

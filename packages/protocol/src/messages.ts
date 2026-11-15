@@ -38,10 +38,26 @@ export interface ServerSpectating {
   reason: 'full';
 }
 
-export type ServerMessage = ServerWelcome | ServerSpectating;
+// Server → the two players involved in a steal, as text, in the tick it happened: the client
+// shows "You stole 3 from Bot 7" or "Bot 7 stole 2 from you". Spectators and everyone else
+// get nothing (owner's observation 2026-11-15: stealing was not understood).
+export interface ServerSteal {
+  kind: 'steal';
+  thief: number; // ghost id
+  victim: number; // ghost id
+  coins: number;
+}
+
+export type ServerMessage = ServerWelcome | ServerSpectating | ServerSteal;
 
 // The name shown for a ghost, the same on every client. Development mode has no sign-in, so a
 // player is "Player <ghost>" until the website provides names (CONCEPT.md §12, point 2).
 export function ghostName(ghost: number, isBot: boolean): string {
   return `${isBot ? 'Bot' : 'Player'} ${ghost}`;
+}
+
+// The short tag of a ghost where its full name does not fit (a crowd): the bot's number, or
+// "P<ghost>" for a player — never nothing (owner's observation 2026-11-15).
+export function ghostTag(ghost: number, isBot: boolean): string {
+  return isBot ? String(ghost) : `P${ghost}`;
 }

@@ -2,7 +2,14 @@
 // sentence 5): larger, glowing, a short trail and its name. A ring around a carrier shows its
 // coins: solid for coins of the current season, dashed and grey for coins worth half now.
 
-import { GHOST_BOT, GHOST_CARRIER, GHOST_SECURING, ghostName } from '@seasonal-spirits/protocol';
+import {
+  GHOST_BOT,
+  GHOST_CARRIER,
+  GHOST_SECURING,
+  ghostName,
+  ghostTag,
+} from '@seasonal-spirits/protocol';
+import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
@@ -39,7 +46,9 @@ export interface GhostStyle {
 }
 
 export function ghostRadiusPx(v: View, g: GhostState): number {
-  return Math.max(6, (14 + Math.min(16, g.carried / 2)) * v.scale);
+  // The game core's size (the server picks a coin up when the drawn shapes touch); at least
+  // 4 px, so a ghost stays visible in a phone's Overview, the only view that small.
+  return Math.max(4, ghostRadius(DEFAULT_CONFIG, g.carried) * v.scale);
 }
 
 // Returns the labels as drawn (the client's browser specs read them).
@@ -120,34 +129,46 @@ function drawCoinRing(v: View, g: GhostState, r: number, season: number): void {
 
 const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;
 
-// Carriers and the own ghost carry their name and coin count; others only with labelAll.
-// Where they would overlap, placeLabels decides (labels.ts); a carrier's short text is its
-// coin count.
+// Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots): the own one
+// "You", a carrier its name and coin count, others — for players — just their tag, every name
+// with the tag as its fallback in a crowd (placeLabels, labels.ts).
+function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate {
+  const { ctx } = v;
+  const own = g.id === style.ownId;
+  const bot = (g.flags & GHOST_BOT) !== 0;
+  const tag = own ? 'You' : ghostTag(g.id, bot);
+  const name = own ? 'You' : ghostName(g.id, bot);
+  const full = g.carried > 0 ? `${name} · ${g.carried}` : own || style.labelAll ? name : tag;
+  ctx.font = labelFont(own);
+  return {
+    id: g.id,
+    x: sx(v, g.x),
+    y: sy(v, g.y),
+    r: ghostRadiusPx(v, g),
+    full,
+    fullWidth: ctx.measureText(full).width,
+    tag,
+    tagWidth: ctx.measureText(tag).width,
+    own,
+    carried: g.carried,
+  };
+}
+
 function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): PlacedLabel[] {
   const { ctx } = v;
-  const candidates: LabelCandidate[] = [];
-  for (const g of ghosts) {
-    const own = g.id === style.ownId;
-    if (!own && g.carried === 0 && !style.labelAll) continue;
-    const name = own ? 'You' : ghostName(g.id, (g.flags & GHOST_BOT) !== 0);
-    const full = g.carried > 0 ? `${name} · ${g.carried}` : name;
-    const short = g.carried > 0 && !own ? String(g.carried) : null;
-    const r = ghostRadiusPx(v, g);
-    ctx.font = labelFont(own);
-    candidates.push({
-      id: g.id,
-      x: sx(v, g.x),
-      above: sy(v, g.y) - r - 8,
-      below: sy(v, g.y) + r + 8 + LABEL_HEIGHT,
-      full,
-      fullWidth: ctx.measureText(full).width,
-      short,
-      shortWidth: short === null ? 0 : ctx.measureText(short).width,
-      own,
-      carried: g.carried,
-    });
+  const area = visibleArea(v);
+  const shown = (c: LabelCandidate): boolean =>
+    c.x >= area.left && c.x <= area.right && c.y >= area.top && c.y <= area.bottom;
+  const placed = placeLabels(ghosts.map((g) => candidateOf(v, g, style)).filter(shown), area);
+  ctx.strokeStyle = MUTED;
+  ctx.lineWidth = 1;
+  for (const p of placed) {
+    if (!p.leader) continue;
+    ctx.beginPath();
+    ctx.moveTo(p.leader.x, p.leader.y);
+    ctx.lineTo(p.x, p.y - LABEL_HEIGHT / 2);
+    ctx.stroke();
   }
-  const placed = placeLabels(candidates, visibleArea(v));
   ctx.textAlign = 'center';
   ctx.fillStyle = TEXT;
   for (const p of placed) {

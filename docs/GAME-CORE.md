@@ -35,7 +35,12 @@ spawning, the countdown, the end.
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
   The state carries the season clock: current, next, index, time left in the season.
 - **Coins.** Only coins of the current season spawn, at `coinSpawnPerSecond` all match long,
-  up to `maxFieldCoins`. A ghost within `pickupRadius` picks a coin up.
+  up to `maxFieldCoins`. A ghost picks a coin up when their drawn shapes touch: centre
+  distance at most the ghost's radius plus `coinRadius` (`touchesCoin` in `src/geometry.ts`).
+  A ghost's radius is `ghostRadius` plus `ghostGrowthPerCoin` per carried coin, at most
+  `ghostGrowthMax` more (`ghostRadius()`); the client draws with the same function. Before
+  2026-11-15 a fixed `pickupRadius` of 30 against differently drawn sizes made pickups look
+  early for empty ghosts and late for big carriers.
 - **Teams and shrines.** Four teams; team 0 to 3 have their shrines inset from the four
   corners. Ghosts start around their own shrine.
 - **Soft separation** (owner decision 2026-11-15). After the moves, every two ghosts closer
@@ -59,7 +64,10 @@ spawning, the countdown, the end.
   later (full). A swap gives exactly the offered count.
 - **Steal** (one action, no aiming). The target is the nearest opponent carrier within
   `stealRange` — never a teammate, never the thief. The victim loses `ceil(n · stealShare)`
-  of each season's count to the thief; then the thief waits `stealCooldownMs`.
+  of each season's count to the thief; then the thief waits `stealCooldownMs`. `canSteal`
+  says whether a steal would take something now (the match runs, the thief is not securing,
+  its cooldown is over, an opponent carrier is in range) — `trySteal` checks exactly that, and
+  the server sends it to the clients as the lit Steal button.
 - **Halving** at every season turn inside the match (CONCEPT.md §2b, §13): 1:15, 2:30 and
   3:45 of a 5-minute match; the match end is not one. The old season's field coins disappear
   (counted in `stats.cleared`), the new season's coins fall at the same rate. Carried coins
@@ -76,8 +84,13 @@ Three small state machines over the public state (`src/bots/strategies.ts`); eac
 mode, then acts on it:
 
 - **patient**: collects and holds; when the next halving comes near, walks home and swaps
-  its coins of the current season (at least `swapIn`); before the match end, banks
-  everything.
+  its coins of the current season (at least `swapIn`) — or, with fewer, banks them, unless
+  the next season's coins it carries are more; before the match end, banks everything. With
+  at least `swapIn` coins and an opponent within `bots.threatRange` it goes home at once to
+  swap or bank. Both added on 2026-11-15: it used to carry a full load past hunters without
+  reacting (robbed 356 times in five seeded matches) and let the halving halve its coins
+  (734 old-season coins carried into halvings); after the fix 236 and 102, and its secured
+  value rose from 183 to 852.5 (session sheet 2026-11-15-CD).
 - **cautious**: collects; at `bots.cautiousSecureAt` coins, and with anything at all when
   the next halving or the end comes near, walks home and banks.
 - **hunter**: chases the nearest opponent carrier that carries more than the hunter itself,
@@ -89,6 +102,14 @@ mode, then acts on it:
 
 "Near" (`deadlineNear` in `src/bots/common.ts`): the time left in the season is just enough
 to walk home at carrying speed, secure, and keep `bots.deadlineMarginMs` spare.
+
+"Collects" (`collect` in `src/bots/common.ts`): head for the nearest field coin that no other
+ghost is closer to; without such a coin, walk to the own waypoint — a point inside the square
+the shrines span, spread over the field by the ghost's id and moved on every
+`bots.waypointMs`, the next one as soon as it is reached. Before 2026-11-15 every collector
+took its nearest coin: neighbours shared one target, travelled as one pack of up to ten mixed
+ghosts for half a minute and more, and switched together to the next coin
+(`src/bots/packs.test.ts`).
 
 ## `pnpm simulate --seed <n>`
 
@@ -110,7 +131,10 @@ fails.
 | `fieldSize`             | 2000    | placeholder (Phase 0 world)                                             |
 | `ghostSpeed`            | 300     | placeholder (units/s, Phase 0 speed)                                    |
 | `carrySpeedFactor`      | 0.7     | placeholder (CONCEPT.md §8: carrying slows; the factor is open)         |
-| `pickupRadius`          | 30      | placeholder                                                             |
+| `ghostRadius`           | 14      | placeholder (an empty ghost, as drawn)                                  |
+| `ghostGrowthPerCoin`    | 0.5     | placeholder (a carrier is larger, CONCEPT.md §2a)                       |
+| `ghostGrowthMax`        | 16      | placeholder                                                             |
+| `coinRadius`            | 10      | placeholder (a field coin, as drawn)                                    |
 | `coinSpawnPerSecond`    | 2       | placeholder (CONCEPT.md leaves the rate open)                           |
 | `maxFieldCoins`         | 60      | placeholder                                                             |
 | `offSeasonValueFactor`  | 0.5     | CONCEPT.md §2a, §10 decision 2                                          |
@@ -131,3 +155,5 @@ fails.
 | `bots.hunterSecureAt`   | 8       | placeholder                                                             |
 | `bots.arriveRadius`     | 20      | placeholder                                                             |
 | `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)             |
+| `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                 |
+| `bots.threatRange`      | 150     | placeholder (a loaded patient bot goes home when an opponent is closer) |

@@ -1,7 +1,7 @@
 // Seasonal Spirits — interpolation + extrapolation tests.
 
 import { describe, expect, it } from 'vitest';
-import { interpolate, type BufferedState } from './interpolation.js';
+import { interpolate, stateAt, type BufferedState } from './interpolation.js';
 
 function s(serverMs: number, x: number, y: number): BufferedState {
   return {
@@ -44,5 +44,18 @@ describe('interpolate', () => {
     expect(r.underrun).toBe(true);
     expect(r.ghosts[0]?.x).toBe(42);
     expect(r.ghosts[0]?.y).toBe(7);
+  });
+});
+
+describe('stateAt', () => {
+  // A coin at x = 100 is picked up in the state of server time 100: drawn with the ghosts of
+  // render time 50, it must still lie there; from render time 100 on it is gone.
+  it('gives the field coins of the moment the ghosts are drawn at, not the newest ones', () => {
+    const before = s(0, 0, 0);
+    before.state.coins = [{ x: 100, y: 0 }];
+    const buffer = [before, s(100, 100, 0), s(200, 200, 0)];
+    expect(stateAt(buffer, 50)?.coins).toHaveLength(1);
+    expect(stateAt(buffer, 100)?.coins).toHaveLength(0);
+    expect(stateAt(buffer, -10)?.serverMs).toBe(0); // older than everything: the oldest
   });
 });

@@ -6,22 +6,23 @@ message (docs/SERVER.md). Development mode only: there is no sign-in yet (CONCEP
 
 ## Files
 
-| File                       | What it holds                                                                  |
-| -------------------------- | ------------------------------------------------------------------------------ |
-| `src/main.ts`              | Wiring and the frame loop: interpolate, draw, buttons, result, test hook       |
-| `src/scene.ts`             | One canvas frame: field, ghosts, labels below the bar, clock, Near extras      |
-| `src/view-mode.ts`         | "Near" / "Overview": the corner button and V, remembered                       |
-| `src/minimap.ts`           | The minimap in "Near", in the corner away from the own shrine (tested)         |
-| `src/arrow.ts`             | The "Your shrine" arrow at the screen edge (placement tested)                  |
-| `src/storage.ts`           | Remembered choices (mute, view) in localStorage, safe when storage throws      |
-| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, sending        |
-| `src/input.ts`             | Keyboard and the touch joystick                                                |
-| `src/hud.ts`               | Buttons, HALVING announcement and flash, notices, mute; HUD rects on the field |
-| `src/result.ts`            | Result screen and bridge box                                                   |
-| `src/sound.ts`             | The halving tone (Web Audio)                                                   |
-| `src/config.ts`            | Bridge box on/off and its links, camera span                                   |
-| `e2e/`                     | Playwright config, helpers, the player and the spectator specs                 |
-| `packages/render` (shared) | The Canvas drawing the client and the viewer share: field, ghosts, clock       |
+| File                       | What it holds                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `src/main.ts`              | Wiring and the frame loop: interpolate, draw, buttons, result, test hook        |
+| `src/scene.ts`             | One canvas frame: field, ghosts, labels below the bar, clock, Near extras       |
+| `src/view-mode.ts`         | "Near" / "Overview": the corner button and V, remembered                        |
+| `src/minimap.ts`           | The minimap in "Near", in the corner away from the own shrine (tested)          |
+| `src/arrow.ts`             | The "Your shrine" arrow at the screen edge (placement tested)                   |
+| `src/storage.ts`           | Remembered choices (mute, view, help seen) in localStorage, safe when it throws |
+| `src/help.ts`              | The help overlay: five rules with drawings made in code, the controls           |
+| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, sending         |
+| `src/input.ts`             | Keyboard and the touch joystick                                                 |
+| `src/hud.ts`               | Buttons, HALVING announcement and flash, notices, mute; HUD rects on the field  |
+| `src/result.ts`            | Result screen and bridge box                                                    |
+| `src/sound.ts`             | The halving tone (Web Audio)                                                    |
+| `src/config.ts`            | Bridge box on/off and its links, camera span                                    |
+| `e2e/`                     | Playwright config, helpers, the player and the spectator specs                  |
+| `packages/render` (shared) | The Canvas drawing the client and the viewer share: field, ghosts, clock        |
 
 Reused rather than rebuilt: the state decoding, interpolation, render clock and buffer
 trimming from `packages/protocol` (the same the viewer and the probe use), the server text
@@ -47,10 +48,32 @@ exact value `1` switches it on. The browser spec `e2e/spectate.e2e.ts` (desktop 
 watches a halving and the result and counts the frames sent to the match server: exactly
 the hello.
 
+## Help and steal feedback
+
+Owner's observation 2026-11-15: stealing was not understood.
+
+- **Help** (`src/help.ts`): an overlay with the five rules of CONCEPT.md §2a in plain words,
+  each with a small drawing made in code (inline SVG, no image files) — only the current
+  season's coins fall; a coin is worth 1 in its own season, ½ otherwise; at the own shrine
+  Secure banks now and Swap turns 10 into 15 of the next season; every season change is a
+  halving, secure or swap before it; carrying makes you bigger, glowing and slower, and
+  others can steal from you — plus the controls for keyboard and touch. It opens by itself
+  on the first visit (remembered in the browser), any time with "?" (the key or the band's
+  "?" button), and closes with one tap or any key; that key reaches no game control.
+- **Steal button**: lit only while the server says a steal would take something right now
+  (`GHOST_CAN_STEAL` in the state: the core's `canSteal` — an opponent carrier in range, the
+  cooldown over, not securing), dimmed otherwise; it can always be pressed.
+- **Range ring**: while an opponent carrier is within twice the steal range, a faint dashed
+  ring around the own ghost shows the steal range.
+- **Messages**: after a steal the two players involved see "You stole 3 from Bot 7" or
+  "Bot 7 stole 2 from you" for 2.5 s. The server sends this notice
+  (`{"kind":"steal",…}`, read by `parseServerMessage`) only to those two players;
+  spectators and everyone else get nothing (THREATS rows 29, 30).
+
 ## Controls (CONCEPT.md §8)
 
 - Keyboard: WASD or arrows to move, Space for the action (steal), 1 Secure, 2 Swap, V
-  switches the view.
+  switches the view, ? opens the help.
 - Touch (the primary pointer is a finger): a joystick appears where the left thumb touches
   the left half of the screen; the action button sits under the right thumb. The buttons
   never reach into the left half.
@@ -98,11 +121,22 @@ hidden under the top bar).
   token logos replace them later), so a Summer coin no longer looks like a Team Summer
   ghost. Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. The
   ground takes a cast of the current season's colour.
-- **Names** never overlap (`placeLabels`, `packages/render/src/labels.ts`, tested): the own
-  label is always drawn, on top, below its ghost when above would reach under the bar; of
-  the others the one carrying more coins keeps its name, a colliding carrier falls back to
-  its coin count, anything else that collides is not drawn; nothing is drawn under the bar,
-  and a name at the screen edge is moved inside instead of being cut off.
+- **Picking up.** Ghosts and coins are drawn with the game core's sizes (`ghostRadius`,
+  `coinRadius`; render `ghostRadiusPx`, `coinRadiusPx`, tested), and the field coins come
+  from the same buffered moment as the interpolated ghosts (`stateAt` in packages/protocol),
+  so a coin disappears exactly when the drawn ghost touches it — no prediction. Before
+  2026-11-15 the coins came from the newest state while the ghosts are drawn 100 ms behind:
+  a coin vanished up to 30 field units before the ghost reached it. Only in a phone's
+  "Overview" are the shapes drawn larger than their size (at least 4 px for a ghost, 3 px for
+  a coin), so there they touch slightly before the pickup.
+- **Names.** Every ghost on screen is named (`placeLabels`, `packages/render/src/labels.ts`,
+  tested; owner's observation 2026-11-15: unnamed dots): the own one "You" (with its coin
+  count), a carrier its name and coin count ("Bot 7 · 3"), any other ghost — for players —
+  its tag, the bot's number ("7", "P5" for a player); spectators see full names. Labels never
+  overlap: the own label first and on top, then the carriers, richest first, each at the
+  first free spot — the full text above or below the ghost, then its tag above, below, right
+  or left, then the tag further out joined to the ghost by a thin leader line. Nothing is
+  drawn under the bar, and a label at the screen edge is moved inside.
 - **Separation.** Ghosts softly push each other apart in the game core (docs/GAME-CORE.md),
   so crowds no longer stack on one point.
 - The season clock at the top shows the four seasons of the match in order, the current one
@@ -147,11 +181,22 @@ coins, and the result screen with the bridge box. Screenshots of each step go to
 visible and not cut off, the corner buttons inside the band, in "Near" the minimap, the own
 shrine in sight at home with its label drawn, the arrow once the shrine is out of sight and
 gone again at home, V (desktop) or the button (phone) switching to "Overview" and the
-choice surviving a reload. In every frame it samples while walking: no label under the bar
+choice surviving a reload. In every frame it samples while walking: every ghost on screen named, no label under the bar
 or past the screen edge, the arrow out of the thumb zones, the own shrine label under no
 control and not under the minimap. Screenshots `<size>-hud.png`, `<size>-near.png` and
 `<size>-overview.png`. The spectator spec also checks that a spectator has no team line and
 no view button.
+
+`e2e/help.e2e.ts` (both sizes, an empty browser storage): the help shows on the first visit
+with its five drawings, closes with a key or a tap, stays closed after a reload and opens
+again with "?" (key on desktop, button on the phone); screenshot `<size>-help.png`. Every
+other spec starts with the help marked as seen (`storageState` in the Playwright config).
+`e2e/feedback.e2e.ts` (desktop) runs against a second stack — server 3934 with
+`SCENARIO=steal`, client 5934 — where every joining player stands beside an opponent hunter
+carrying nothing (`apps/server/src/scenario.ts`, development only): the hunter robs the
+player ("… stole … from you"), the Steal button lights up with the range ring shown, Space
+robs it back ("You stole … from …"), walking away dims the button; screenshot
+`desktop-steal.png`.
 
 `window.__client` is written every frame for these tests: mode, own ghost and team, own
 position and carried coins, season, field coin count, halvings seen, result shown, and what
