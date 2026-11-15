@@ -1,6 +1,7 @@
 // Seasonal Spirits — one frame of the canvas: field, ghosts and labels below the top bar, the
-// season clock, and in "Near" the minimap and the "Your shrine" arrow. Returns what it drew,
-// for the browser specs.
+// season clock, and in "Near" the minimap and the "Your shrine" arrow. Shrine labels and the
+// arrow keep out of the thumb zones of the HUD controls. Returns what it drew, for the
+// browser specs.
 
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
 import {
@@ -15,16 +16,27 @@ import {
   seasonColour,
   sx,
   sy,
+  visibleArea,
   type PlacedLabel,
+  type Rect,
   type Trails,
   type View,
 } from '@seasonal-spirits/render';
-import { drawArrow, edgeArrow, type Rect } from './arrow.js';
+import { drawArrow, edgeArrow, type EdgeArrow } from './arrow.js';
 import { CLIENT_CONFIG } from './config.js';
+import type { HudOnField } from './hud.js';
 import { drawMinimap, minimapRect } from './minimap.js';
 import type { ViewMode } from './view-mode.js';
 
-export const TEAM_BAND = 40; // pixels of "You are Team <Season>" under the season clock
+// Pixels of the band under the season clock: the team line and the corner buttons
+// (index.html #band). Every client has it, so no control sits on the field.
+export const BAND_HEIGHT = 40;
+// What "Near" adds: the minimap and the shrine arrow, where they were drawn.
+interface NearExtras {
+  map: Rect | null;
+  arrow: EdgeArrow | null;
+}
+const NOTHING_NEAR: NearExtras = { map: null, arrow: null };
 const ARROW_INSET = 34; // pixels between the screen edge and the shrine arrow
 
 export interface Frame {
@@ -35,22 +47,30 @@ export interface Frame {
   ownTeam: number | null; // a player's team; null for spectators
   playing: boolean;
   over: boolean;
+  hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
 }
 
 export interface Drawn {
   view: ViewMode | 'spectator';
   barBottom: number; // pixels: nothing of the field is drawn above this line
-  minimap: boolean;
+  minimap: Rect | null; // where the minimap was drawn; null outside "Near"
   arrow: boolean;
+  arrowAt: { x: number; y: number } | null;
   shrineOnScreen: boolean; // the own shrine with its "Your shrine" label is in sight
+  shrineLabel: Rect | null; // where "Your shrine" was drawn on the field
+  controls: Rect[];
+  zones: Rect[];
   labels: PlacedLabel[];
 }
 
 // "Near" follows the own ghost; a spectator, "Overview" and a player not yet placed see all.
 function camera(ctx: CanvasRenderingContext2D, f: Frame, mode: ViewMode): View {
-  const top = f.ownTeam === null ? CLOCK_HEIGHT : CLOCK_HEIGHT + TEAM_BAND;
+  const top = CLOCK_HEIGHT + BAND_HEIGHT;
   const followed = f.playing && mode === 'near' ? f.own : undefined;
-  return followed ? follow(ctx, top, followed, CLIENT_CONFIG.cameraSpan) : fitField(ctx, top);
+  if (!followed) return fitField(ctx, top);
+  // The field may rise above the controls at the bottom of the screen (thumb zones).
+  const bottomPad = Math.max(0, ...f.hud.zones.map((z) => ctx.canvas.height - z.top));
+  return follow(ctx, top, followed, { span: CLIENT_CONFIG.cameraSpan, bottomPad });
 }
 
 export function drawScene(
@@ -65,20 +85,27 @@ export function drawScene(
   ctx.fillRect(0, 0, ctx.canvas.width, view.top);
   trails.record(f.ghosts);
   let labels: PlacedLabel[] = [];
+  let shrineLabel: Rect | null = null;
   belowBar(view, () => {
-    drawField(view, f.latest, { ownTeam: f.ownTeam, nowMs: performance.now() });
+    const field = { ownTeam: f.ownTeam, nowMs: performance.now(), blocked: f.hud.controls };
+    shrineLabel = drawField(view, f.latest, field);
     const style = { ownId: f.ownId, season: f.latest?.season ?? 0, trails, labelAll: !f.playing };
     labels = drawGhosts(view, f.ghosts, style);
   });
   drawClock(ctx, f.latest);
-  const shrine = ownShrine(ctx, view, f.ownTeam);
-  const arrow = near && shrine ? drawNear(ctx, view, f, shrine) : false;
+  const shrine = ownShrine(view, f.ownTeam);
+  const { map, arrow } = near && shrine ? drawNear(ctx, view, f, shrine) : NOTHING_NEAR;
+  const shrineOnScreen = shrine !== null && edgeArrow(shrine.screen, shrine.at, 0) === null;
   return {
     view: f.playing ? mode : 'spectator',
     barBottom: view.top,
-    minimap: near && shrine !== null,
-    arrow,
-    shrineOnScreen: shrine !== null && edgeArrow(shrine.screen, shrine.at, 0) === null,
+    minimap: map,
+    arrow: arrow !== null,
+    arrowAt: arrow && { x: arrow.x, y: arrow.y },
+    shrineOnScreen,
+    shrineLabel: shrineOnScreen ? shrineLabel : null,
+    controls: f.hud.controls,
+    zones: f.hud.zones,
     labels,
   };
 }
@@ -89,23 +116,21 @@ interface OwnShrine {
   screen: Rect; // the part of the canvas below the bar
 }
 
-function ownShrine(
-  ctx: CanvasRenderingContext2D,
-  view: View,
-  team: number | null,
-): OwnShrine | null {
+function ownShrine(view: View, team: number | null): OwnShrine | null {
   const home = team === null ? undefined : SHRINES[team];
   if (team === null || !home) return null;
-  return {
-    team,
-    at: { x: sx(view, home.x), y: sy(view, home.y) },
-    screen: { left: 0, top: view.top, right: ctx.canvas.width, bottom: ctx.canvas.height },
-  };
+  return { team, at: { x: sx(view, home.x), y: sy(view, home.y) }, screen: visibleArea(view) };
 }
 
-// The minimap, and the arrow when the own shrine is out of sight; true if the arrow is drawn.
-function drawNear(ctx: CanvasRenderingContext2D, view: View, f: Frame, shrine: OwnShrine): boolean {
-  const map = minimapRect(ctx.canvas.width, ctx.canvas.height, view.top);
+// The minimap, and the arrow when the own shrine is out of sight, clear of the minimap and
+// the thumb zones.
+function drawNear(
+  ctx: CanvasRenderingContext2D,
+  view: View,
+  f: Frame,
+  shrine: OwnShrine,
+): NearExtras {
+  const map = minimapRect(ctx.canvas.width, ctx.canvas.height, view.top, shrine.team);
   drawMinimap(ctx, map, {
     state: f.latest,
     ghosts: f.ghosts,
@@ -113,7 +138,7 @@ function drawNear(ctx: CanvasRenderingContext2D, view: View, f: Frame, shrine: O
     ownTeam: shrine.team,
     camera: view,
   });
-  const arrow = edgeArrow(shrine.screen, shrine.at, ARROW_INSET, map);
+  const arrow = edgeArrow(shrine.screen, shrine.at, ARROW_INSET, [map, ...f.hud.zones]);
   if (arrow) drawArrow(ctx, arrow, seasonColour(shrine.team));
-  return arrow !== null;
+  return { map, arrow };
 }

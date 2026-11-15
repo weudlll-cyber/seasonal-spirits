@@ -4,16 +4,27 @@
 // the field the camera shows.
 
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
-import { FIELD, LINE, SHRINES, TEXT, seasonColour, type View } from '@seasonal-spirits/render';
+import {
+  FIELD,
+  LINE,
+  SHRINES,
+  TEXT,
+  seasonColour,
+  type Rect,
+  type View,
+} from '@seasonal-spirits/render';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import type { Rect } from './arrow.js';
 
 const MARGIN = 10;
 
-// Top-left, just below the bar; about a quarter of the shorter screen side.
-export function minimapRect(width: number, height: number, top: number): Rect {
+// Just below the bar, in the top corner away from the own shrine's side of the field, so it
+// never covers the own shrine or its label (session 2026-11-15-B); about a quarter of the
+// shorter screen side.
+export function minimapRect(width: number, height: number, top: number, team: number): Rect {
   const size = Math.round(Math.min(180, Math.max(96, Math.min(width, height - top) * 0.28)));
-  return { left: MARGIN, top: top + MARGIN, right: MARGIN + size, bottom: top + MARGIN + size };
+  const shrineLeft = (SHRINES[team]?.x ?? 0) < FIELD / 2;
+  const left = shrineLeft ? width - MARGIN - size : MARGIN;
+  return { left, top: top + MARGIN, right: left + size, bottom: top + MARGIN + size };
 }
 
 export interface MinimapInput {

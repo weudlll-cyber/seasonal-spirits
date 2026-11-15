@@ -26,25 +26,34 @@ export function fitField(ctx: CanvasRenderingContext2D, top: number): View {
   };
 }
 
-// A camera centred on `at` that shows about `span` field units along the shorter side and
-// never looks past the field's edge.
+export interface Lens {
+  span: number; // field units along the shorter side of the screen
+  // Pixels the camera may look past the field's bottom edge, so the bottom of the field can
+  // rise above controls that sit at the bottom of the screen (touch screens); 0 elsewhere.
+  bottomPad: number;
+}
+
+// A camera centred on `at` that shows about `lens.span` field units along the shorter side
+// and never looks past the field's edge (except `lens.bottomPad` at the bottom).
 export function follow(
   ctx: CanvasRenderingContext2D,
   top: number,
   at: { x: number; y: number },
-  span: number,
+  lens: Lens,
 ): View {
   const { width, height } = ctx.canvas;
   const scale = Math.max(
-    Math.min(width, height - top) / span,
+    Math.min(width, height - top) / lens.span,
     Math.min(width, height - top) / FIELD,
   );
-  const clampCentre = (c: number, pixels: number): number => {
+  const clampCentre = (c: number, pixels: number, past: number): number => {
     const half = pixels / scale / 2;
-    return half * 2 >= FIELD ? FIELD / 2 : Math.max(half, Math.min(FIELD - half, c));
+    return half * 2 >= FIELD + past
+      ? (FIELD + past) / 2
+      : Math.max(half, Math.min(FIELD + past - half, c));
   };
-  const cx = clampCentre(at.x, width);
-  const cy = clampCentre(at.y, height - top);
+  const cx = clampCentre(at.x, width, 0);
+  const cy = clampCentre(at.y, height - top, lens.bottomPad / scale);
   return { ctx, scale, ox: width / 2 - cx * scale, oy: top + (height - top) / 2 - cy * scale, top };
 }
 
@@ -71,4 +80,27 @@ export function belowBar(v: View, draw: () => void): void {
   ctx.clip();
   draw();
   ctx.restore();
+}
+
+// A screen rectangle in pixels: the visible field, a HUD control, a label.
+export interface Rect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+// True when the two rectangles overlap or come closer than `gap` pixels.
+export function overlaps(a: Rect, b: Rect, gap = 0): boolean {
+  return (
+    a.left < b.right + gap &&
+    b.left < a.right + gap &&
+    a.top < b.bottom + gap &&
+    b.top < a.bottom + gap
+  );
+}
+
+// The part of the canvas the field is drawn in: below the bar, the whole width.
+export function visibleArea(v: View): Rect {
+  return { left: 0, top: v.top, right: v.ctx.canvas.width, bottom: v.ctx.canvas.height };
 }

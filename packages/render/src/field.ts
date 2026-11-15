@@ -6,7 +6,8 @@
 import { DEFAULT_CONFIG, shrinePositions } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';
 import { LINE, TEXT, ground, seasonColour, seasonName } from './palette.js';
-import { FIELD, circle, sx, sy, type View } from './view.js';
+import { shrineLabelAt } from './labels.js';
+import { FIELD, circle, sx, sy, type Rect, type View } from './view.js';
 
 export const SHRINES = shrinePositions(DEFAULT_CONFIG);
 const GRID = 250; // field units between the faint ground lines
@@ -15,13 +16,15 @@ const PULSE_MS = 1600; // one gentle breath of the own shrine's glow
 export interface FieldStyle {
   ownTeam: number | null; // the player's team: its shrine glows; null for spectators
   nowMs: number; // drives the pulse
+  blocked: readonly Rect[]; // HUD controls on the field: shrine labels move away from them
 }
 
+// Returns the box of the own shrine's label, or null without an own team (browser specs).
 export function drawField(
   v: View,
   s: ServerState | undefined,
-  style: FieldStyle = { ownTeam: null, nowMs: 0 },
-): void {
+  style: FieldStyle = { ownTeam: null, nowMs: 0, blocked: [] },
+): Rect | null {
   const { ctx } = v;
   const season = s?.season ?? 0;
   ctx.fillStyle = '#05080b';
@@ -39,10 +42,15 @@ export function drawField(
   }
   ctx.stroke();
   ctx.strokeRect(sx(v, 0), sy(v, 0), FIELD * v.scale, FIELD * v.scale);
-  SHRINES.forEach((p, team) => {
-    drawShrine(v, p, team, team === style.ownTeam ? style.nowMs : null);
-  });
+  let ownLabel: Rect | null = null;
+  for (const [team, p] of SHRINES.entries()) {
+    const own = team === style.ownTeam;
+    drawShrine(v, p, team, own ? style.nowMs : null);
+    const box = drawShrineLabel(v, { ...p, team, own }, style.blocked);
+    if (own) ownLabel = box;
+  }
   if (s) drawCoins(v, s);
+  return ownLabel;
 }
 
 // `pulseAt` is set for the own shrine only: a breathing glow, a solid rim, "Your shrine".
@@ -69,12 +77,34 @@ function drawShrine(
   ctx.lineWidth = pulseAt === null ? 2 : 4;
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = pulseAt === null ? colour : TEXT;
-  ctx.font = `bold ${Math.max(11, Math.round(r / 3))}px system-ui, sans-serif`;
+}
+
+// "Your shrine" or "<Season> shrine", below the shrine unless a HUD control covers that spot
+// (then above, left or right of it, shrineLabelAt in labels.ts). Returns the label's box.
+function drawShrineLabel(
+  v: View,
+  shrine: { x: number; y: number; team: number; own: boolean },
+  blocked: readonly Rect[],
+): Rect {
+  const { team, own } = shrine;
+  const { ctx } = v;
+  const r = DEFAULT_CONFIG.shrineRadius * v.scale;
+  const size = Math.max(11, Math.round(r / 3));
+  const label = own ? 'Your shrine' : `${seasonName(team)} shrine`;
+  ctx.font = `bold ${size}px system-ui, sans-serif`;
+  const text = { width: ctx.measureText(label).width, height: size + 2 };
+  const at = { x: sx(v, shrine.x), y: sy(v, shrine.y), r };
+  const p = shrineLabelAt(at, text, blocked);
+  ctx.fillStyle = own ? TEXT : seasonColour(team);
   ctx.textAlign = 'center';
-  const label = pulseAt === null ? `${seasonName(team)} shrine` : 'Your shrine';
-  ctx.fillText(label, sx(v, p.x), sy(v, p.y) + r + 16);
+  ctx.fillText(label, p.x, p.y);
   ctx.textAlign = 'start';
+  return {
+    left: p.x - text.width / 2,
+    right: p.x + text.width / 2,
+    top: p.y - text.height,
+    bottom: p.y,
+  };
 }
 
 // Every field coin is of the current season (CONCEPT.md §2a, sentence 1): a diamond (a

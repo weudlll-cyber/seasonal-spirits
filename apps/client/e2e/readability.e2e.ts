@@ -1,12 +1,25 @@
-// Seasonal Spirits — what the owner's play test of 2026-11-15 asked for, at desktop and phone
+// Seasonal Spirits — what the owner's play tests of 2026-11-15 asked for, at desktop and phone
 // size: "You are Team <Season>", the own shrine labelled, in "Near" the minimap and the
 // "Your shrine" arrow when the shrine is out of sight, V or the corner button switching to
-// "Overview" and the choice surviving a reload, and no name label under the top bar.
-// Screenshots: <size>-near.png and <size>-overview.png in reports/screens/latest/.
+// "Overview" and the choice surviving a reload. In every sampled frame: no name label under
+// the top bar or past the screen edge, the arrow out of the thumb zones, the shrine label
+// under no control; the corner buttons sit in the band, not on the field.
+// Screenshots: <size>-near.png, <size>-hud.png and <size>-overview.png in
+// reports/screens/latest/.
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { SCREENS, joystick, keyboard, ownShrine, steerTo, view, type Steering } from './stack.js';
+import { overlaps } from '@seasonal-spirits/render';
+import {
+  SCREENS,
+  joystick,
+  keyboard,
+  ownShrine,
+  steerTo,
+  view,
+  type ClientView,
+  type Steering,
+} from './stack.js';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
 const LABEL_HEIGHT = 14; // packages/render/src/labels.ts
@@ -18,13 +31,36 @@ async function joined(page: Page): Promise<number> {
   return (await view(page)).team ?? 0;
 }
 
-async function labelsBelowBar(page: Page): Promise<void> {
+// The HUD checks are only worth something if the rectangles arrived whole (a DOMRect copied
+// out of the page loses its fields).
+function rectsWhole(v: ClientView): boolean {
+  return [...v.zones, ...v.controls].every((r) =>
+    [r.left, r.top, r.right, r.bottom].every(Number.isFinite),
+  );
+}
+
+// What is wrong with the HUD in the current frame; empty when nothing is.
+async function hudFaults(page: Page): Promise<string[]> {
   const v = await view(page);
+  const width = await page.evaluate(() => window.innerWidth);
+  const faults: string[] = [];
   for (const l of v.labels) {
-    expect(l.y - LABEL_HEIGHT, `label "${l.text}" under the bar`).toBeGreaterThanOrEqual(
-      v.barBottom,
-    );
+    if (l.y - LABEL_HEIGHT < v.barBottom) faults.push(`label "${l.text}" under the bar`);
+    if (l.x - l.width / 2 < 0 || l.x + l.width / 2 > width) {
+      faults.push(`label "${l.text}" past the screen edge`);
+    }
   }
+  if (!rectsWhole(v)) faults.push('a zone or control arrived without its edges');
+  const at = v.arrowAt;
+  const inZone = (z: (typeof v.zones)[number]): boolean =>
+    at !== null && at.x > z.left && at.x < z.right && at.y > z.top && at.y < z.bottom;
+  if (v.zones.some(inZone)) faults.push(`arrow at ${JSON.stringify(at)} in a thumb zone`);
+  const label = v.shrineLabel;
+  if (label && v.controls.some((c) => overlaps(c, label)))
+    faults.push('shrine label under a control');
+  if (label && v.minimap && overlaps(v.minimap, label))
+    faults.push('shrine label under the minimap');
+  return faults;
 }
 
 async function switchView(page: Page, info: TestInfo): Promise<void> {
@@ -36,54 +72,74 @@ async function steering(page: Page, info: TestInfo): Promise<Steering> {
   return info.project.name === 'phone' ? joystick(page) : keyboard(page);
 }
 
-test('team line, own shrine, minimap and arrow in Near, Overview remembered, labels below the bar', async ({
+test('team line, own shrine, minimap and arrow in Near, Overview remembered, HUD never in the way', async ({
   page,
 }, info) => {
   const shot = (name: string): Promise<Buffer> =>
     page.screenshot({ path: path.join(SCREENS, `${info.project.name}-${name}.png`) });
+  // Every frame the spec samples is checked; the faults are reported together at the end.
+  const faults = new Set<string>();
+  const sample = async (): Promise<void> => {
+    for (const f of await hudFaults(page)) faults.add(f);
+  };
   await page.goto('/');
   const team = await joined(page);
   await expect(page.locator('#team')).toHaveText(`You are Team ${SEASON_NAMES[team] ?? ''}`);
   await expect(page.locator('#team')).toBeVisible();
+  const cut = await page.locator('#team').evaluate((e) => e.scrollWidth > e.clientWidth);
+  expect(cut, 'the team line is not cut off').toBe(false);
   const start = await view(page);
   expect(start.view).toBe('near');
-  expect(start.minimap).toBe(true);
-  await labelsBelowBar(page);
+  expect(start.minimap).not.toBeNull();
+  for (const id of ['#view', '#mute']) {
+    const box = await page.locator(id).boundingBox();
+    expect(box && box.y + box.height, `${id} sits in the band`).toBeLessThanOrEqual(
+      start.barBottom,
+    );
+  }
   const steer = await steering(page, info);
 
   // Home first (a player takes over a bot's ghost wherever it stands): the shrine in sight.
   const home = async (): Promise<boolean> => {
+    await sample();
     const v = await view(page);
     return v.shrineOnScreen && !v.arrow;
   };
   expect(await steerTo(page, steer, ownShrine(team), home), 'the own shrine in sight').toBe(true);
-  await labelsBelowBar(page);
+  expect((await view(page)).shrineLabel, 'the "Your shrine" label is drawn').not.toBeNull();
+  await shot('hud');
 
   // Out to the middle: the shrine leaves the screen and the arrow points to it.
-  const away = await steerTo(
-    page,
-    steer,
-    { x: 1000, y: 1000 },
-    async () => (await view(page)).arrow,
-  );
+  const away = await steerTo(page, steer, { x: 1000, y: 1000 }, async () => {
+    await sample();
+    return (await view(page)).arrow;
+  });
   expect(away, 'the "Your shrine" arrow appears with the shrine out of sight').toBe(true);
   expect((await view(page)).shrineOnScreen).toBe(false);
-  await labelsBelowBar(page);
   await shot('near');
 
   // Back home: the shrine is in sight again, the arrow goes.
   const back = await steerTo(page, steer, ownShrine(team), home);
   expect(back, 'the own shrine comes back into sight').toBe(true);
-  await labelsBelowBar(page);
 
-  // Overview: the whole field, no minimap; the choice survives a reload.
+  await sample();
+  await overviewSurvivesReload(page, info, () => shot('overview'));
+  expect([...faults]).toEqual([]);
+});
+
+// Overview: the whole field, no minimap; the choice survives a reload, and back to Near.
+async function overviewSurvivesReload(
+  page: Page,
+  info: TestInfo,
+  shot: () => Promise<unknown>,
+): Promise<void> {
   await switchView(page, info);
   await expect.poll(async () => (await view(page)).view).toBe('overview');
   const overview = await view(page);
-  expect(overview.minimap).toBe(false);
+  expect(overview.minimap).toBeNull();
   expect(overview.shrineOnScreen).toBe(true);
-  await labelsBelowBar(page);
-  await shot('overview');
+  expect(await hudFaults(page)).toEqual([]);
+  await shot();
   await page.reload();
   await joined(page);
   await expect.poll(async () => (await view(page)).view).toBe('overview');
@@ -91,4 +147,4 @@ test('team line, own shrine, minimap and arrow in Near, Overview remembered, lab
   await switchView(page, info);
   await expect.poll(async () => (await view(page)).view).toBe('near');
   await expect(page.locator('#view')).toHaveText('View: Near');
-});
+}

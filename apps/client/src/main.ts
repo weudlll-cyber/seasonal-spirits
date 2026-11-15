@@ -15,7 +15,7 @@ import {
 } from '@seasonal-spirits/protocol';
 import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
-import { Hud, bindMute, el } from './hud.js';
+import { Hud, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { ResultScreen } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
@@ -104,15 +104,21 @@ function snapshot(now: number): Frame {
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,
     playing,
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
+    hud: hudOnField(),
   };
 }
 
 // "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
+// On a narrow phone "You are " is hidden (index.html), so the team's name is never cut off.
 function showTeam(team: number | null): void {
   teamLine.hidden = team === null;
-  if (team === null) return;
-  teamLine.textContent = `You are Team ${seasonName(team)}`;
+  if (team === null || teamLine.dataset.team === String(team)) return;
+  const lead = document.createElement('span');
+  lead.className = 'lead';
+  lead.textContent = 'You are ';
+  teamLine.replaceChildren(lead, `Team ${seasonName(team)}`);
   teamLine.style.color = seasonColour(team);
+  teamLine.dataset.team = String(team);
 }
 
 function draw(f: Frame): Drawn {

@@ -8,18 +8,25 @@ const ctx = (width: number, height: number): CanvasRenderingContext2D =>
 
 describe('camera', () => {
   it('centres the own ghost in the middle of the field', () => {
-    const v = follow(ctx(800, 664), 64, { x: 1000, y: 1000 }, 1000);
+    const v = follow(ctx(800, 664), 64, { x: 1000, y: 1000 }, { span: 1000, bottomPad: 0 });
     expect(sx(v, 1000)).toBeCloseTo(400);
     expect(sy(v, 1000)).toBeCloseTo(64 + 300);
   });
 
   it('stops at the field edge instead of showing what lies beyond it', () => {
-    const v = follow(ctx(800, 664), 64, { x: 0, y: 0 }, 1000);
+    const v = follow(ctx(800, 664), 64, { x: 0, y: 0 }, { span: 1000, bottomPad: 0 });
     expect(sx(v, 0)).toBeCloseTo(0);
     expect(sy(v, 0)).toBeCloseTo(64);
-    const far = follow(ctx(800, 664), 64, { x: FIELD, y: FIELD }, 1000);
+    const far = follow(ctx(800, 664), 64, { x: FIELD, y: FIELD }, { span: 1000, bottomPad: 0 });
     expect(sx(far, FIELD)).toBeCloseTo(800);
     expect(sy(far, FIELD)).toBeCloseTo(664);
+  });
+
+  it('may look past the bottom edge by the pad, so the field rises above bottom controls', () => {
+    const v = follow(ctx(800, 664), 64, { x: FIELD, y: FIELD }, { span: 1000, bottomPad: 120 });
+    expect(sy(v, FIELD)).toBeCloseTo(664 - 120);
+    const mid = follow(ctx(800, 664), 64, { x: 1000, y: 1000 }, { span: 1000, bottomPad: 120 });
+    expect(sy(mid, 1000)).toBeCloseTo(64 + 300);
   });
 
   it('shows the whole field below the clock for spectators', () => {

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_CONFIG, shrinePositions } from '@seasonal-spirits/game-core';
 import type { CDPSession, Page } from '@playwright/test';
+import type { Rect } from '@seasonal-spirits/render';
 
 export const SERVER_PORT = 3932;
 export const CLIENT_PORT = 5932;
@@ -26,10 +27,14 @@ export interface ClientView {
   // What the frame drew (apps/client/src/scene.ts, Drawn).
   view: 'near' | 'overview' | 'spectator';
   barBottom: number;
-  minimap: boolean;
+  minimap: Rect | null;
   arrow: boolean;
   shrineOnScreen: boolean;
-  labels: { id: number; text: string; x: number; y: number; own: boolean }[];
+  arrowAt: { x: number; y: number } | null;
+  shrineLabel: Rect | null;
+  controls: Rect[];
+  zones: Rect[];
+  labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];
 }
 
 export function view(page: Page): Promise<ClientView> {

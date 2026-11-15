@@ -22,7 +22,31 @@ describe('shrine arrow', () => {
 
   it('moves below the minimap instead of hiding under it', () => {
     const minimap = { left: 10, top: 110, right: 190, bottom: 290 };
-    const a = edgeArrow(SCREEN, { x: -1000, y: -600 }, 30, minimap);
+    const a = edgeArrow(SCREEN, { x: -1000, y: -600 }, 30, [minimap]);
     expect(a?.y).toBe(320);
+  });
+
+  // A phone: 412 × 839 with the bar down to 104, the action button bottom right and the
+  // joystick's thumb zone bottom left (scene.ts thumbZones).
+  const PHONE = { left: 0, top: 104, right: 412, bottom: 839 };
+  const ACTION = { left: 300, top: 727, right: 412, bottom: 839 };
+  const STICK = { left: 0, top: 579, right: 206, bottom: 839 };
+  const clear = (p: { x: number; y: number }, r: typeof ACTION): boolean =>
+    p.x < r.left || p.x > r.right || p.y < r.top || p.y > r.bottom;
+
+  it('keeps out of the action button’s thumb zone and still points at the shrine', () => {
+    const target = { x: 900, y: 1300 };
+    const a = edgeArrow(PHONE, target, 34, [STICK, ACTION]);
+    expect(a).not.toBeNull();
+    if (!a) return;
+    expect(clear(a, ACTION)).toBe(true);
+    expect(a.x).toBeGreaterThanOrEqual(34);
+    expect(a.y).toBeLessThanOrEqual(839 - 34);
+    expect(a.angle).toBeCloseTo(Math.atan2(target.y - a.y, target.x - a.x));
+  });
+
+  it('keeps out of the joystick’s thumb zone', () => {
+    const a = edgeArrow(PHONE, { x: -500, y: 1400 }, 34, [STICK, ACTION]);
+    expect(a && clear(a, STICK)).toBe(true);
   });
 });

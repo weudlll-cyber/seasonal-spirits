@@ -56,10 +56,16 @@ when the system is stable. The website-session tasks from CONCEPT.md §12: slug
 "embedded only" exception note in `docs/GAME-INTEGRATION.md`. Done when: the game runs
 under `/games/seasonal-spirits` with the website's sign-in.
 
-h. **Readability — owner part.** Built, checked and played (CLOSED, branch
-`feat/readability`, not merged). Done when: the owner has played it on PC and phone and
-decided the two new separation placeholders, and whether the corner buttons may cover the
-own shrine's label at the top-right edge in "Near" (session sheet 2026-11-15-A).
+h. **Readability — owner part.** Built, checked and played; merged into `master` on
+2026-11-15; the overlaps found in the own match are fixed on `fix/ui-overlaps` (CLOSED).
+Done when: the owner has played it on PC and phone and decided the two separation
+placeholders (`separationRadius`, `separationStrength`).
+
+i. **Balance re-run (session 2026-11-15-B, `fix/ui-overlaps`).** Stage 1 (30 matches,
+current config and the six variants) and stage 2 (300 matches, current config and the two
+variants that differ most) after the hunter fix and separation. Done when: both stages
+are in BALANCE.md with N, seeds and config per row and an English summary; no default
+changed.
 
 ## CLOSED
 
@@ -176,6 +182,23 @@ own shrine's label at the top-right edge in "Near" (session sheet 2026-11-15-A).
 - 2026-11-15 — **own full match** on the dev server (desktop, Near then Overview), notes and
   the session sheet `reports/session-2026-11-15-a.md` — commit "docs: session sheet
   2026-11-15-A" on `feat/readability`.
+- 2026-11-15 — **stack merged into `master`** with the owner's approval of 2026-11-15:
+  safety net, game core, server match, halving per season, playable client, balance,
+  spectator, readability (each branch confirmed an ancestor of `feat/readability` first) —
+  merge commit `5b0500b`; master CI and CodeQL green. The eight branches are deleted on
+  origin and locally; `git ls-remote origin` shows only `master`.
+- 2026-11-15 — **UI overlaps from the own match** (session 2026-11-15-B): the corner
+  buttons moved into the band under the clock (every client has the band, no control on
+  the field there); the team line reads "Team <Season>" below 480 px instead of being cut
+  off; shrine labels move above, left or right of their shrine when a visible control
+  covers the spot below (`shrineLabelAt`); the "Your shrine" arrow keeps out of the thumb
+  zones of action buttons and joystick (`edgeArrow` with a list to avoid, `hudOnField`);
+  the minimap sits in the top corner away from the own shrine (it covered the Spring
+  shrine on a phone); the "Near" camera may look past the bottom edge by the controls'
+  height; names at the screen edge are moved inside (`placeLabels` takes the visible
+  area). Tests in `labels.test.ts`, `arrow.test.ts`, `minimap.test.ts`, `view.test.ts`,
+  `readability.e2e.ts` — commit "fix: HUD never covers the field's labels and arrow" on
+  `fix/ui-overlaps`.
 
 ## CHECKS DONE
 
@@ -258,3 +281,11 @@ own shrine's label at the top-right edge in "Near" (session sheet 2026-11-15-A).
 | 2026-11-15 | CodeQL                                                                                                                                                                                    | `2f677a8`, `abdc21a`, `c2a15b6`                                                                                                      | success each                                                                                                                                                                                                                        | `gh run list --branch feat/readability`                                                        |
 | 2026-11-15 | own full match via Playwright (scratch script, desktop, keyboard, Near then Overview) against `pnpm dev`                                                                                  | `c2a15b6`                                                                                                                            | 5:00 played, place 24 of 32 (4 secured, blind route), no page errors, no label under the bar                                                                                                                                        | sheet `reports/session-2026-11-15-a.md`, `fullmatch-result.png`                                |
 | 2026-11-15 | format check of the changed Markdown (docs only, no tests)                                                                                                                                | working tree committed as "docs: session sheet 2026-11-15-A"                                                                         | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | `git merge-base --is-ancestor origin/<branch> origin/feat/readability` for the seven older stack branches and master                                                                      | origin at `0d12775`                                                                                                                  | all contained                                                                                                                                                                                                                       | sheet `reports/session-2026-11-15-b.md`                                                        |
+| 2026-11-15 | full CI (verify, dependencies, e2e)                                                                                                                                                       | merge `5b0500b` on `master` (tree = `0d12775`)                                                                                       | success                                                                                                                                                                                                                             | [run 43714313685](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43714313685)  |
+| 2026-11-15 | CodeQL                                                                                                                                                                                    | merge `5b0500b` on `master`                                                                                                          | success                                                                                                                                                                                                                             | [run 43714313697](https://github.com/weudlll-cyber/seasonal-spirits/actions/runs/43714313697)  |
+| 2026-11-15 | `git merge-base --is-ancestor origin/<branch> origin/master` for all eight stack branches, then `git ls-remote --heads origin` after the deletes                                          | `5b0500b`                                                                                                                            | all in master; only `refs/heads/master` left                                                                                                                                                                                        | sheet                                                                                          |
+| 2026-11-15 | `pnpm e2e readability --repeat-each=3` (first version of the HUD checks)                                                                                                                  | intermediate tree                                                                                                                    | phone 2 of 3 failed: "shrine label under a control" (bottom shrines under the joystick zone and the Steal button); led to visible-controls-only for labels, four label spots, the camera's bottom pad                               | sheet                                                                                          |
+| 2026-11-15 | `pnpm e2e readability --repeat-each=4`                                                                                                                                                    | intermediate tree                                                                                                                    | all 8 failed: the zones arrived as empty objects (DOMRect fields are getters); now plain rectangles, and the spec fails on empty ones                                                                                               | sheet                                                                                          |
+| 2026-11-15 | `pnpm e2e` (all specs), then after the team-line fix `pnpm e2e readability --repeat-each=3`                                                                                               | working tree committed as "fix: HUD never covers the field's labels and arrow"                                                       | 5 passed, 1 skipped (spectator at phone size, by design); 6 passed                                                                                                                                                                  | screenshots `<size>-hud.png`, `-near.png`, `-overview.png`                                     |
+| 2026-11-15 | `pnpm verify:changed` (18 files: format, lint, typecheck, 4 related test files / 20 tests)                                                                                                | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
