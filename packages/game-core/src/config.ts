@@ -9,6 +9,7 @@ export interface BotConfig {
   hunterSecureAt: number;
   arriveRadius: number;
   deadlineMarginMs: number;
+  waypointMs: number;
 }
 
 export interface GameConfig {
@@ -78,5 +79,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     arriveRadius: 20, // placeholder — owner decides (how close a bot steers to a target)
     // Spare time a bot keeps when it walks home to swap or secure before a halving.
     deadlineMarginMs: 3000, // placeholder — owner decides
+    // A collector with no coin of its own walks to a waypoint that moves on this often, so
+    // collectors spread over the field instead of sharing one coin (2026-11-15).
+    waypointMs: 4000, // placeholder — owner decides
   },
 };

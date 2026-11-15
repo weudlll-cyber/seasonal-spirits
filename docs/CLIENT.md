@@ -98,11 +98,14 @@ hidden under the top bar).
   token logos replace them later), so a Summer coin no longer looks like a Team Summer
   ghost. Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. The
   ground takes a cast of the current season's colour.
-- **Names** never overlap (`placeLabels`, `packages/render/src/labels.ts`, tested): the own
-  label is always drawn, on top, below its ghost when above would reach under the bar; of
-  the others the one carrying more coins keeps its name, a colliding carrier falls back to
-  its coin count, anything else that collides is not drawn; nothing is drawn under the bar,
-  and a name at the screen edge is moved inside instead of being cut off.
+- **Names.** Every ghost on screen is named (`placeLabels`, `packages/render/src/labels.ts`,
+  tested; owner's observation 2026-11-15: unnamed dots): the own one "You" (with its coin
+  count), a carrier its name and coin count ("Bot 7 · 3"), any other ghost — for players —
+  its tag, the bot's number ("7", "P5" for a player); spectators see full names. Labels never
+  overlap: the own label first and on top, then the carriers, richest first, each at the
+  first free spot — the full text above or below the ghost, then its tag above, below, right
+  or left, then the tag further out joined to the ghost by a thin leader line. Nothing is
+  drawn under the bar, and a label at the screen edge is moved inside.
 - **Separation.** Ghosts softly push each other apart in the game core (docs/GAME-CORE.md),
   so crowds no longer stack on one point.
 - The season clock at the top shows the four seasons of the match in order, the current one
@@ -147,7 +150,7 @@ coins, and the result screen with the bridge box. Screenshots of each step go to
 visible and not cut off, the corner buttons inside the band, in "Near" the minimap, the own
 shrine in sight at home with its label drawn, the arrow once the shrine is out of sight and
 gone again at home, V (desktop) or the button (phone) switching to "Overview" and the
-choice surviving a reload. In every frame it samples while walking: no label under the bar
+choice surviving a reload. In every frame it samples while walking: every ghost on screen named, no label under the bar
 or past the screen edge, the arrow out of the thumb zones, the own shrine label under no
 control and not under the minimap. Screenshots `<size>-hud.png`, `<size>-near.png` and
 `<size>-overview.png`. The spectator spec also checks that a spectator has no team line and

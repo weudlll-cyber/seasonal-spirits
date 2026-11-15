@@ -90,6 +90,14 @@ mode, then acts on it:
 "Near" (`deadlineNear` in `src/bots/common.ts`): the time left in the season is just enough
 to walk home at carrying speed, secure, and keep `bots.deadlineMarginMs` spare.
 
+"Collects" (`collect` in `src/bots/common.ts`): head for the nearest field coin that no other
+ghost is closer to; without such a coin, walk to the own waypoint — a point inside the square
+the shrines span, spread over the field by the ghost's id and moved on every
+`bots.waypointMs`, the next one as soon as it is reached. Before 2026-11-15 every collector
+took its nearest coin: neighbours shared one target, travelled as one pack of up to ten mixed
+ghosts for half a minute and more, and switched together to the next coin
+(`src/bots/packs.test.ts`).
+
 ## `pnpm simulate --seed <n>`
 
 One full match, 32 bots (8 per team: 3 patient, 3 cautious, 2 hunters), in 50 ms ticks as
@@ -131,3 +139,4 @@ fails.
 | `bots.hunterSecureAt`   | 8       | placeholder                                                             |
 | `bots.arriveRadius`     | 20      | placeholder                                                             |
 | `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)             |
+| `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                 |

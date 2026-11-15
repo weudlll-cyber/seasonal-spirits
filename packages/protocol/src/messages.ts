@@ -45,3 +45,9 @@ export type ServerMessage = ServerWelcome | ServerSpectating;
 export function ghostName(ghost: number, isBot: boolean): string {
   return `${isBot ? 'Bot' : 'Player'} ${ghost}`;
 }
+
+// The short tag of a ghost where its full name does not fit (a crowd): the bot's number, or
+// "P<ghost>" for a player — never nothing (owner's observation 2026-11-15).
+export function ghostTag(ghost: number, isBot: boolean): string {
+  return isBot ? String(ghost) : `P${ghost}`;
+}

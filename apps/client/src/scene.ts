@@ -61,6 +61,14 @@ export interface Drawn {
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
+  ghostsShown: GhostOnScreen[]; // every ghost drawn inside the visible field, in pixels
+}
+
+export interface GhostOnScreen {
+  id: number;
+  carried: number;
+  x: number;
+  y: number;
 }
 
 // "Near" follows the own ghost; a spectator, "Overview" and a player not yet placed see all.
@@ -107,6 +115,7 @@ export function drawScene(
     controls: f.hud.controls,
     zones: f.hud.zones,
     labels,
+    ghostsShown: onScreen(view, f.ghosts),
   };
 }
 
@@ -141,4 +150,11 @@ function drawNear(
   const arrow = edgeArrow(shrine.screen, shrine.at, ARROW_INSET, [map, ...f.hud.zones]);
   if (arrow) drawArrow(ctx, arrow, seasonColour(shrine.team));
   return { map, arrow };
+}
+
+function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
+  const area = visibleArea(view);
+  return ghosts
+    .map((g) => ({ id: g.id, carried: g.carried, x: sx(view, g.x), y: sy(view, g.y) }))
+    .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);
 }

@@ -293,6 +293,30 @@ variant of the command): best player patient 26.7 %, cautious 3.3 %, hunter 70.0
 secured value patient 6.5 (median 1.0), cautious 18.4 (17.0), hunter 27.7 (24.0); field coins
 gone at the halvings 28.9 per match. The hunter fix moves most; separation adds a little.
 
+#### current after the pack fix (2026-11-15, `fix/dots-and-packs`) — N = 30, seeds 1–30
+
+Same command and seeds. Changed in the bots only: a collector goes for the nearest coin no
+other ghost is closer to, else patrols its own waypoint (`bots.waypointMs` 4000, placeholder;
+docs/GAME-CORE.md, "Bots"); before, neighbours shared one target coin and moved as packs.
+
+| Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
+| -------- | ------------------------ | ---- | ------ | ---- | ---- | ------- |
+| patient  | 0.0 %                    | 3.0  | 2.0    | 0.0  | 7.0  | 360     |
+| cautious | 6.7 %                    | 17.7 | 17.8   | 11.0 | 24.0 | 360     |
+| hunter   | 93.3 %                   | 25.5 | 23.0   | 12.0 | 40.0 | 240     |
+
+| Team   | Matches won (N = 30) |
+| ------ | -------------------- |
+| Spring | 26.7 %               |
+| Summer | 16.7 %               |
+| Autumn | 33.3 %               |
+| Winter | 23.3 %               |
+
+Field coins gone at the halvings, per match (N = 30): mean 12.9, median 13.0, p10 7.0, p90 19.0
+
+Spread-out collectors are easier prey: hunters rise from 73.3 % to 93.3 % best player; the
+fairness search (session 2026-11-15-CD, part 5) starts from here.
+
 #### stealShare=0.25 — N = 30 matches, seeds 1–30
 
 | Strategy | Best player of the match | Mean | Median | p10  | p90  | Players |
