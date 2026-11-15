@@ -11,19 +11,11 @@ export function atOwnShrine(cfg: GameConfig, s: MatchState, g: Ghost): boolean {
   return distance(g, shrineOf(s.shrines, g.team)) <= cfg.shrineRadius;
 }
 
-// The fewest coins of the current season a swap takes: swapIn (today) or, in the rule
-// trial R1 (`swapMode` 'ratio'), swapMinIn. The patient bot reads it too.
-export function swapMinimum(cfg: GameConfig): number {
-  return cfg.swapMode === 'ratio' ? cfg.swapMinIn : cfg.swapIn;
-}
-
-// CONCEPT.md §2a, sentence 3: 10 coins of the current season become 15 of the next. All
-// carried coins of the current season are swapped at that rate, rounded down
-// (10 → 15 → 22 → 33 for a patient player); fewer than swapMinimum give nothing. In 'ratio'
-// mode (6 → 9, 8 → 12) there is no swap in the last season, whose next season never comes.
+// CONCEPT.md §2a: all carried coins of the current season, from swapMinIn on, become coins of
+// the next season at swapIn → swapOut, rounded down (6 → 9, 8 → 12, 10 → 15; 10 → 15 → 22 → 33
+// for a patient player). No swap in the last season, whose next season never comes.
 function swapYield(cfg: GameConfig, s: Readonly<MatchState>, spent: number): number {
-  if (spent < swapMinimum(cfg)) return 0;
-  if (cfg.swapMode === 'ratio' && isLastSeason(cfg, s.clock)) return 0;
+  if (spent < cfg.swapMinIn || isLastSeason(cfg, s.clock)) return 0;
   return Math.floor((spent * cfg.swapOut) / cfg.swapIn);
 }
 
@@ -53,8 +45,8 @@ export function trySwap(cfg: GameConfig, s: MatchState, g: Ghost): void {
   if (!atOwnShrine(cfg, s, g) || got === 0) return;
   g.carried[from] = 0;
   g.carried[nextSeason(from)] += got;
-  // Rule trial R2: what a swap gives no steal can take until the next halving (halving.ts).
-  if (cfg.swappedStealProof) g.shielded[nextSeason(from)] += got;
+  // What a swap gives no steal can take until the next halving (halving.ts) or a secure.
+  g.shielded[nextSeason(from)] += got;
   s.events.push({ type: 'swap', ghost: g.id, from, spent, got });
 }
 
@@ -97,13 +89,13 @@ export function canSteal(
   );
 }
 
-// The share one steal takes: stealShare, or — rule trial, `stealShareMax` above it — drawn
-// once per steal, uniformly from [stealShare, stealShareMax], from the match's seeded random
-// source. Without stealShareMax nothing is drawn, so today's matches stay identical.
+// The share one steal takes, drawn once per steal, uniformly from [stealShareMin,
+// stealShareMax], from the match's seeded random source. With min = max (a fixed share)
+// nothing is drawn, so the random source is not advanced.
 export function stealShareFor(cfg: GameConfig, rng: () => number): number {
-  const max = cfg.stealShareMax;
-  if (max === undefined || max <= cfg.stealShare) return cfg.stealShare;
-  return cfg.stealShare + rng() * (max - cfg.stealShare);
+  const { stealShareMin: min, stealShareMax: max } = cfg;
+  if (max <= min) return min;
+  return min + rng() * (max - min);
 }
 
 // CONCEPT.md §2a, sentence 5, and §8: one action, no aiming. The target is the nearest
@@ -114,7 +106,7 @@ export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost, rng: () =
   const victim = nearestOpponentCarrier(cfg, s, thief);
   if (!victim) return;
   const share = stealShareFor(cfg, rng);
-  // Shielded coins (rule trial R2) stay with the victim; all zero while the rule is off.
+  // Shielded coins (got from a swap, until the next halving) stay with the victim.
   const stealable = (season: Season): number => victim.carried[season] - victim.shielded[season];
   const take = (season: Season, n: number): void => {
     victim.carried[season] -= n;
@@ -126,8 +118,8 @@ export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost, rng: () =
     take(season, n);
     coins += n;
   }
-  // A steal that takes something takes at least one coin: a drawn share near 0 rounds every
-  // season down to none (only possible with stealShareMax; a fixed share above 0 rounds up).
+  // A steal that takes something takes at least one coin: a drawn share of 0 takes nothing
+  // from any season (any share above 0 rounds up to at least one).
   if (coins === 0) {
     const richest = SEASONS.reduce((a, b) => (stealable(b) > stealable(a) ? b : a));
     take(richest, 1);
@@ -142,19 +134,15 @@ export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost, rng: () =
   }
 }
 
-// Whether a steal could take anything from `g`: it carries coins that are not shielded (rule
-// trial R2), and — rule trial R3, `escortRadius` > 0 — no teammate is within escortRadius.
-// The one place every steal decision asks: canSteal, trySteal and the hunter bot.
-export function isStealTarget(
-  cfg: GameConfig,
-  s: Readonly<MatchState>,
-  g: Readonly<Ghost>,
-): boolean {
-  if (totalCount(g.carried) - totalCount(g.shielded) <= 0) return false;
-  if (cfg.escortRadius <= 0) return true;
-  return !s.ghosts.some(
-    (m) => m.id !== g.id && m.team === g.team && distance(m, g) <= cfg.escortRadius,
-  );
+// Whether a steal could take anything from `g`: it carries coins that are not shielded. The
+// one place every steal decision asks: canSteal, trySteal and the hunter bot.
+export function isStealTarget(g: Readonly<Ghost>): boolean {
+  return totalCount(g.carried) - totalCount(g.shielded) > 0;
+}
+
+// Whether `g` carries swapped coins no steal can take; the clients draw a shield ring.
+export function carriesShielded(g: Readonly<Ghost>): boolean {
+  return totalCount(g.shielded) > 0;
 }
 
 // The ghost a steal by `thief` would rob right now; the hunter bot reads it too.
@@ -166,7 +154,7 @@ export function nearestOpponentCarrier(
   let best: Ghost | null = null;
   let bestD = Infinity;
   for (const g of s.ghosts) {
-    if (g.team === thief.team || !isStealTarget(cfg, s, g)) continue;
+    if (g.team === thief.team || !isStealTarget(g)) continue;
     const d = distance(g, thief);
     if (d <= cfg.stealRange && d < bestD) {
       best = g;

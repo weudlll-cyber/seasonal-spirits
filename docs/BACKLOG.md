@@ -18,21 +18,15 @@ secret is refused.
 b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
 `packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), among them since
 2026-11-15 `bots.waypointMs`, `bots.threatRange`, `ghostRadius`, `ghostGrowthPerCoin`,
-`ghostGrowthMax` and `coinRadius`. Done when: the owner has decided each and config.ts
-carries the source.
+`ghostGrowthMax` and `coinRadius`, and since 2026-11-16 (the fair rules, CONCEPT.md §14)
+`swapMinIn` (6), `stealShareMin` (0) and `stealShareMax` (0.5). Done when: the owner has
+decided each and config.ts carries the source.
 
 c. **First playable version — owner part.** Built and checked with Playwright (CLOSED).
 Still open: the owner plays it on the PC (`pnpm dev`, http://localhost:5930) and on a phone
 in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 (CONCEPT.md §8: built with plain Canvas 2D, no framework). Done when: the owner has played
 a match on both and decided whether the Canvas client stays.
-
-d. **Fairness target — 25–42 % for all three styles.** Owner decision 2026-11-15: each
-strategy's best player wins 25–42 % of matches. No value setting of today's rules met it at
-N = 300 (BALANCE.md "Round 3"); with the rule trials R1 + R2 and `stealShare` 0.35 at 2
-coins per second it is met: patient 35.0 %, cautious 32.8 %, hunter 32.2 % (N = 300,
-BALANCE.md "Round 5", on `feat/rule-trials`). Done when: the owner has decided which
-configuration goes into the game (see k) and config.ts carries it.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -62,15 +56,22 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-k. **Rule trials — owner decision** (sessions 2026-11-15-RULES, -RULES-2, -RULES-3 and
-2026-11-16-RULES-4, `feat/rule-trials`, not merged). Measured (CLOSED, BALANCE.md "Round 4" to
-"Round 7"): R3 as built hands the game to the hunters; R1 + R2 at the default steal share
-leaves the hunters at 50.3 %. With R1 + R2 at 2 coins per second, two steal shares meet 25–42 %
-for all three at N = 300 on seeds 1–300 and again on fresh seeds 301–600: C1 fixed 0.35
-(35.0 / 32.8 / 32.2 %, then 27.3 / 33.0 / 39.7 %) and C2 random 0–0.5 (35.5 / 35.3 / 29.2 %,
-then 28.2 / 39.7 / 32.1 %); a random 0.2–0.5 does not (hunter 46.3 %). Done when: the owner
-has decided which candidate goes into the game (C1 or C2), with the trial values
-(`swapMinIn` 6; `escortRadius` 50 / 90 if R3 at all), and config.ts carries it.
+l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-11-16; night
+2026-11-16, piece 4). In the result pause every client gets one recap: the result plus
+"Biggest steal", "Closest save" and "Last secure". Done when: it is built on the night
+branch, the owner has played it and merged it.
+
+m. **Final countdown before the match end** (idea from a Copilot review, owner decision
+2026-11-16; night 2026-11-16, piece 3). The halving's staging before the match end: "LAST
+CHANCE — secure now", then "MATCH OVER". Done when: it is built on the night branch, the
+owner has played it and merged it.
+
+n. **Team signals** (idea from a Copilot review, owner decision 2026-11-16; night
+2026-11-16, piece 5). "Attack" and "To shrine", only to the sender's own team. Done when: it
+is built on the night branch, the owner has played it and merged it.
+
+o. **A fixed map with routes** (idea from a Copilot review). Later, owner decides. Done
+when: the owner has decided whether and how.
 
 ## CLOSED
 
@@ -282,6 +283,28 @@ has decided which candidate goes into the game (C1 or C2), with the trial values
   `stealsByPair`): 92–94 % hunters robbing hunters; BALANCE.md "Round 7", raw data
   `reports/rule-trials/round7-*.json`; no default changed — commit "feat: Round 7, fair
   candidates on fresh seeds, steal matrix" on `feat/rule-trials`.
+- 2026-11-16 — **Fairness target met: 25–42 % for all three styles** (owner decision
+  2026-11-15; open item d until now). Measured with R1 + R2 at 2 coins/s: fixed share 0.35
+  35.0 / 32.8 / 32.2 % (Round 5, N = 300, seeds 1–300), random 0–0.5 35.5 / 35.3 / 29.2 %
+  (Round 6, N = 300, seeds 1–300) and 28.2 / 39.7 / 32.1 % (Round 7, N = 300, seeds 301–600),
+  fixed 0.35 on seeds 301–600 27.3 / 33.0 / 39.7 % (patient / cautious / hunter). The owner
+  chose the random share; the rules are adopted (next entry).
+- 2026-11-16 — **The fair rules adopted** (owner decision 2026-11-15/16, CONCEPT.md §14; open
+  item k until now): the swap from `swapMinIn` (6) at 10 → 15, never in the last season, is
+  the only swap rule (`swapMode` and the old path removed); swapped coins are steal-proof
+  until the next halving or a secure, unconditionally (`swappedStealProof` removed); the
+  steal share is drawn from [`stealShareMin`, `stealShareMax`] = [0, 0.5] (`stealShare`
+  renamed; min = max is a fixed share). `pnpm balance` with the new defaults on seeds 1–30
+  reproduces the Round 6 N = 30 row of variant A exactly. Shield flag `GHOST_SHIELDED` on the
+  wire (THREATS row 31) and a hexagonal shield in the client and the viewer; help, CONCEPT.md
+  §1 / §2a / §14, GAME-CORE, CLIENT, SERVER updated; dev-only `SCENARIO=shield` and
+  `shield.e2e.ts` — branch `feat/rule-trials`, merged into `master` (merge commit "merge:
+  fair rules — swap from 6, swapped coins safe, random steal 0–0.5, no escort").
+- 2026-11-16 — **R3 escort rule rejected and removed** (owner decision 2026-11-16): as built
+  it handed the game to the hunters (BALANCE.md "Round 4"); `escortRadius`, its branch in
+  `isStealTarget`, its tests and its fairness grid (`pnpm fairness --rules-grid`) are gone.
+  BALANCE.md keeps the rounds as history; their commands that name removed switches run
+  only on the trees they were measured on.
 
 ## CHECKS DONE
 
@@ -428,3 +451,9 @@ has decided which candidate goes into the game (C1 or C2), with the trial values
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 21 related test files / 116 tests)                                                                                                        | working tree committed as "feat: Round 7, fair candidates on fresh seeds, steal matrix"                                              | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-16 | `pnpm fairness --configs reports/rule-trials/round7-configs.json --matches 300 --seed 301 --jobs 2` (C1, C2)                                                                              | same tree                                                                                                                            | 4 min 17 s, CPU load 57 % before; C1 27.3 / 33.0 / 39.7 %, C2 28.2 / 39.7 / 32.1 % (both within 25–42 %)                                                                                                                            | `reports/rule-trials/round7-n300.json`                                                         |
 | 2026-11-16 | format check of the changed Markdown and JSON                                                                                                                                             | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `bf022b7` on `feat/rule-trials`                                                                                                      | success (CI 43773680467, CodeQL 43773680504)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-16 | `pnpm --filter @seasonal-spirits/game-core exec vitest run` (game-core, 14 files / 64 tests)                                                                                              | working tree of "feat: adopt the fair rules, shield ring"                                                                            | green after two refusal tests moved from 10 to 6 coins                                                                                                                                                                              | same commit                                                                                    |
+| 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1` with the new defaults                                                                                                              | same tree                                                                                                                            | 26.7 / 43.3 / 30.0 %, every number of the Round 6 N = 30 row of variant A reproduced; CPU load 40 % before                                                                                                                          | BALANCE.md "Adopted"                                                                           |
+| 2026-11-16 | `pnpm e2e help shield feedback` (desktop and phone; shield and feedback desktop only)                                                                                                     | same tree                                                                                                                            | 4 passed, 2 skipped by design                                                                                                                                                                                                       | `reports/screens/latest/desktop-shield.png` (git-ignored)                                      |
+| 2026-11-16 | one full match played on `pnpm dev` in Chromium, "Near" and "Overview" (scratch script, not committed)                                                                                    | same tree                                                                                                                            | result screen after 272 s; notes in `reports/night-2026-11-16.md` piece 1                                                                                                                                                           | `reports/screens/latest/play-*.png` (git-ignored)                                              |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 23 related test files / 127 tests)                                                                                                        | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |

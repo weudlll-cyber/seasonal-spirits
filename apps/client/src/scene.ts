@@ -4,7 +4,12 @@
 // browser specs.
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import type { CoinState, GhostState, ServerState } from '@seasonal-spirits/protocol';
+import {
+  GHOST_SHIELDED,
+  type CoinState,
+  type GhostState,
+  type ServerState,
+} from '@seasonal-spirits/protocol';
 import {
   CLOCK_HEIGHT,
   circle,
@@ -73,6 +78,7 @@ export interface GhostOnScreen {
   carried: number;
   x: number;
   y: number;
+  shielded: boolean; // drawn with the shield (GHOST_SHIELDED)
 }
 
 // "Near" follows the own ghost; a spectator, "Overview" and a player not yet placed see all.
@@ -183,6 +189,12 @@ function drawNear(
 function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
   const area = visibleArea(view);
   return ghosts
-    .map((g) => ({ id: g.id, carried: g.carried, x: sx(view, g.x), y: sy(view, g.y) }))
+    .map((g) => ({
+      id: g.id,
+      carried: g.carried,
+      x: sx(view, g.x),
+      y: sy(view, g.y),
+      shielded: (g.flags & GHOST_SHIELDED) !== 0,
+    }))
     .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);
 }

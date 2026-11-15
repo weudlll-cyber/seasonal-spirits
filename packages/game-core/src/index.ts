@@ -9,12 +9,11 @@ export { mulberry32 } from './rng.js';
 export {
   atOwnShrine,
   canSteal,
-  isStealTarget,
+  carriesShielded,
   shrineOffer,
-  swapMinimum,
   type ShrineOffer,
 } from './actions.js';
-export { ghostRadius, shrinePositions, touchesCoin } from './geometry.js';
+export { ghostRadius, shrineOf, shrinePositions, touchesCoin } from './geometry.js';
 export { createBot, STRATEGIES, type Strategy } from './bots/strategies.js';
 export type { Bot } from './bots/common.js';
 export {

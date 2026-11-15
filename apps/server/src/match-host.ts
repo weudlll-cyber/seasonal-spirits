@@ -15,7 +15,7 @@ import {
   type Strategy,
 } from '@seasonal-spirits/game-core';
 import type { GameAction, ServerSteal } from '@seasonal-spirits/protocol';
-import { stageSteal, type Scenario } from './scenario.js';
+import { stageShield, stageSteal, type Scenario } from './scenario.js';
 import { toWire, type WireState } from './wire.js';
 
 export type { WireState } from './wire.js';
@@ -56,8 +56,12 @@ export class MatchHost {
     }
     if (!pick) return null;
     this.control.set(pick.id, { kind: 'player', clientId, dx: 0, dy: 0, action: null });
-    // SCENARIO=steal (browser specs, development only): every joining player is staged.
+    // SCENARIO (browser specs, development only): every joining player is staged.
     if (this.scenario === 'steal') stageSteal(this.cfg, this.match.state, this.roster, pick.id);
+    if (this.scenario === 'shield') {
+      const still = stageShield(this.cfg, this.match.state, pick.id);
+      if (still !== null) this.control.set(still, { kind: 'standing', since: this.hostMs });
+    }
     return { ghost: pick.id, team: pick.team };
   }
 

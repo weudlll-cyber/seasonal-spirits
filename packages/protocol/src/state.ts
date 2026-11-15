@@ -20,6 +20,9 @@ export const GHOST_BOT = 4;
 export const GHOST_AT_SHRINE = 8; // inside its own team's shrine
 // A steal by this ghost would take something now (the core's canSteal): the lit Steal button.
 export const GHOST_CAN_STEAL = 16;
+// Carries swapped coins no steal can take until the next halving (the core's
+// carriesShielded): the shield ring.
+export const GHOST_SHIELDED = 32;
 
 export interface CoinState {
   x: number; // every field coin is of the current season

@@ -19,8 +19,9 @@ players steer themselves. Three rules follow from this purpose (decided 2026-11-
    in with the website account and plays.
 2. **The game teaches the Seasonal idea by playing, not by explaining.** After a few evenings
    a player knows the four names and their order, that each has its moment, that you hold the
-   one that is in season, swap it before the turn, and that everything gets scarcer after the
-   halving. That is how Seasonal Tokens work; nobody told them.
+   one that is in season, swap it before the turn, and that every turn of the season is a
+   halving after which the old season's coins are worth half. That is how Seasonal Tokens
+   work; nobody told them.
 3. **The bridge is voluntary and comes afterwards.** After the match, one box on the result
    screen explains that what was just played is how Seasonal Tokens work, with a "Start here"
    button to the website's path for newcomers and a "Try the simulator" button to
@@ -44,20 +45,25 @@ really in right now (the website's season clock provides that).
    coins. (Mirror: the token in season is produced fastest.)
 2. **A coin is worth its full value when secured in its own season; outside it, half.**
    (Mirror: the price rises in season.)
-3. **At the team's own shrine a player can swap carried coins: 10 coins of the current
-   season become 15 of the next season.** Those are worth half now, full when their season
-   comes. (Mirror: swap for more tokens of another kind; patience pays.)
+3. **At the team's own shrine a player can swap carried coins: from 6 coins of the current
+   season on, every 2 become 3 of the next season (6 → 9, 10 → 15), never in the last
+   season.** Those are worth half now, full when their season comes, and nobody can steal
+   them until the next halving. (Mirror: swap for more tokens of another kind; patience
+   pays.)
 4. **Or secure: bank now, at the current value, and nothing can happen to them any more.**
    Securing takes 2–3 seconds; the player is vulnerable meanwhile.
-5. **Whoever carries can be robbed and loses a part.** That is the market risk. A carrier is
-   visible: larger, brighter, with a trail and a name.
+5. **Whoever carries can be robbed and loses a random part, at least one coin.** That is the
+   market risk. A carrier is visible: larger, brighter, with a trail and a name; a carrier of
+   swapped coins shows a shield.
 
 A patient player who swaps every season and is never robbed turns 10 coins into 15, then
 22, then 33. A cautious one secures early and has little, but safely. A hunter collects
 little and takes it from the carriers. All three are valid; the clock decides which is wise.
 
 Starting values (decided 2026-11-14, both configurable): swap 10 → 15 of the next season;
-half value outside the coin's own season.
+half value outside the coin's own season. Adjusted on 2026-11-16 (section 14): the swap from
+6 coins at the same rate, swapped coins steal-proof until the next halving, a random steal
+share.
 
 ### 2b. The halving
 
@@ -317,3 +323,20 @@ Replaces the halving mechanics of section 2b and decision 3 of section 10; the s
 
 The unchanged spawn rate in point 2 was added by the planning side, not by the owner; the
 balance simulation checks it.
+
+## 14. Owner decisions of 2026-11-15/16: the fair rules
+
+Measured in balance rounds 4–7 (`docs/BALANCE.md`): with these rules each of the three styles
+(patient, cautious, hunter) has the best player of a match in 25–42 % of matches, on two
+separate sets of 300 seeded matches.
+
+1. **Swap from 6.** From 6 coins of the current season on (placeholder), all of them swap at
+   10 → 15, rounded down (6 → 9, 8 → 12, 10 → 15); no swap in the last season.
+2. **Swapped coins are safe until the next halving.** What a swap gives cannot be stolen until
+   the next season change or until it is secured. The ghost shows a shield while it carries
+   such coins.
+3. **A random steal share.** Each steal takes a share drawn anew between 0 and ½ of each
+   season's stealable coins (placeholders), rounded up, at least one coin.
+4. **No escort rule.** The trial rule "a carrier with a teammate close by cannot be robbed"
+   is removed; it handed the game to the hunters.
+5. Coin spawn stays at 2 per second.

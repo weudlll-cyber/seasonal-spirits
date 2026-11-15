@@ -1,6 +1,6 @@
-// Seasonal Spirits — the rule trial "random steal share" (owner decision 2026-11-15, BALANCE.md
-// "Round 6"): each steal draws its share from [stealShare, stealShareMax] with the match's
-// seeded random source; at least one coin; the default stays today's fixed share.
+// Seasonal Spirits — the drawn steal share (owner decision 2026-11-16, BALANCE.md "Round 6",
+// "Round 7"): each steal draws its share from [stealShareMin, stealShareMax] with the match's
+// seeded random source; at least one coin; min = max is a fixed share and draws nothing.
 
 import { describe, expect, it } from 'vitest';
 import { stealShareFor, trySteal } from './actions.js';
@@ -9,11 +9,9 @@ import { mulberry32 } from './rng.js';
 import { botRoster, simulate } from './simulation.js';
 import { ghost, matchOf, quietConfig } from './test-helpers.js';
 
-const RANGE = { stealShare: 0.2, stealShareMax: 0.5 };
-
 describe('random steal share', () => {
-  it('draws every share inside [stealShare, stealShareMax]', () => {
-    const cfg = { ...DEFAULT_CONFIG, ...RANGE };
+  it('draws every share inside [stealShareMin, stealShareMax]', () => {
+    const cfg = { ...DEFAULT_CONFIG, stealShareMin: 0.2, stealShareMax: 0.5 };
     const rng = mulberry32(7);
     const shares = Array.from({ length: 10_000 }, () => stealShareFor(cfg, rng));
     expect(Math.min(...shares)).toBeGreaterThanOrEqual(0.2);
@@ -23,22 +21,25 @@ describe('random steal share', () => {
     expect(Math.max(...shares)).toBeGreaterThan(0.49);
   });
 
-  it('keeps today’s fixed share by default and draws nothing', () => {
+  it('draws by default, from 0 to a half', () => {
+    expect([DEFAULT_CONFIG.stealShareMin, DEFAULT_CONFIG.stealShareMax]).toEqual([0, 0.5]);
+    expect(stealShareFor(DEFAULT_CONFIG, () => 0.5)).toBe(0.25);
+  });
+
+  it('takes a fixed share when min = max, without drawing', () => {
     let draws = 0;
     const counting = (): number => {
       draws++;
       return 0.5;
     };
-    expect(stealShareFor(DEFAULT_CONFIG, counting)).toBe(DEFAULT_CONFIG.stealShare);
-    expect(stealShareFor({ ...DEFAULT_CONFIG, stealShareMax: 0.5 }, counting)).toBe(0.5);
+    expect(stealShareFor(quietConfig(), counting)).toBe(0.5);
     expect(draws).toBe(0);
   });
 
   it('gives the same steals for the same seed', () => {
-    const cfg = { ...DEFAULT_CONFIG, ...RANGE };
     const stealsOf = (seed: number): string[] => {
       const out: string[] = [];
-      simulate(cfg, seed, botRoster(12), (s) => {
+      simulate(DEFAULT_CONFIG, seed, botRoster(12), (s) => {
         for (const e of s.events) if (e.type === 'steal') out.push(JSON.stringify(e));
       });
       return out;
@@ -49,7 +50,7 @@ describe('random steal share', () => {
   });
 
   it('takes at least one coin even when the drawn share is 0', () => {
-    const cfg = quietConfig({ stealShare: 0, stealShareMax: 0.5 });
+    const cfg = DEFAULT_CONFIG;
     const m = matchOf(cfg, [
       { id: 1, team: 0 },
       { id: 2, team: 1 },

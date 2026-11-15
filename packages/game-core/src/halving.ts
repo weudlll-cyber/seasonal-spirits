@@ -10,7 +10,7 @@ export function applyHalving(s: MatchState): void {
   const cleared = s.coins.length;
   s.coins = [];
   s.stats.cleared += cleared;
-  // Rule trial R2: swapped coins are steal-proof only until the next halving.
+  // Swapped coins are steal-proof only until the next halving.
   for (const g of s.ghosts) for (const season of SEASONS) g.shielded[season] = 0;
   s.events.push({
     type: 'halving',

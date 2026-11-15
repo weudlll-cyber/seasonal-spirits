@@ -4,7 +4,7 @@
 // takes from carriers richer than itself.
 
 import type { GameConfig } from '../config.js';
-import { isStealTarget, nearestOpponentCarrier, swapMinimum } from '../actions.js';
+import { isStealTarget, nearestOpponentCarrier } from '../actions.js';
 import { distance } from '../geometry.js';
 import { isLastSeason, nextSeason, totalCount } from '../seasons.js';
 import type { Ghost, Intent, MatchState } from '../types.js';
@@ -20,15 +20,15 @@ function threatened(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost
   return s.ghosts.some((g) => g.team !== me.team && distance(me, g) <= cfg.bots.threatRange);
 }
 
-// Holds coins for the swap chain (10 → 15 of the next season; from swapMinimum coins, which
-// is lower in the rule trial R1). Two faults fixed on 2026-11-15 (session sheet
+// Holds coins for the swap chain (10 → 15 of the next season; from swapMinIn coins). Two
+// faults fixed on 2026-11-15 (session sheet
 // 2026-11-15-CD): it carried a full load past opponents without reacting — now, with at least
 // swapIn coins and an opponent close, it goes home to swap or bank; and with too few coins of
 // the season to swap it let the halving halve them — now it banks them, unless the next
 // season's coins it carries (from a swap) are worth more to it.
 function patientMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Mode {
   const current = me.carried[s.clock.current];
-  const canSwap = current >= swapMinimum(cfg) && !isLastSeason(cfg, s.clock);
+  const canSwap = current >= cfg.swapMinIn && !isLastSeason(cfg, s.clock);
   if (totalCount(me.carried) >= cfg.swapIn && threatened(cfg, s, me)) {
     return canSwap ? 'swap' : 'secure';
   }
@@ -47,7 +47,7 @@ function cautiousMode(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Gho
 // Only a carrier richer than the hunter is prey. Without that rule hunters robbed each other:
 // a steal rounds up, so a single coin always changes hands, the loot circulated inside a
 // pack of hunters, none reached hunterSecureAt, and the pack stood still (2026-11-15). A
-// carrier no steal can touch (rule trials R2, R3: isStealTarget) is no prey either.
+// carrier of only swapped coins (isStealTarget) is no prey either.
 function nearestCarrier(
   cfg: GameConfig,
   s: Readonly<MatchState>,
@@ -57,7 +57,7 @@ function nearestCarrier(
   let best: Ghost | null = null;
   for (const g of s.ghosts) {
     if (g.team === me.team || totalCount(g.carried) <= own) continue;
-    if (!isStealTarget(cfg, s, g)) continue;
+    if (!isStealTarget(g)) continue;
     if (!best || distance(me, g) < distance(me, best)) best = g;
   }
   return best;

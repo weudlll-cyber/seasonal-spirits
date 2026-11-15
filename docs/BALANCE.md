@@ -972,3 +972,18 @@ hunter strategy's action.
   25.0 %).
 
 Nothing here changes a default; the owner decides between C1 and C2.
+
+## Adopted — the fair rules are the defaults (2026-11-16)
+
+Owner decision 2026-11-15/16 (CONCEPT.md §14): C2 goes into the game. The switches of Rounds
+4–7 are gone; their rules are the defaults: swap from `swapMinIn` 6, swapped coins steal-proof
+until the next halving, steal share drawn from [`stealShareMin`, `stealShareMax`] = [0, 0.5],
+no escort rule, 2 coins per second. Commands above that name `swapMode`,
+`swappedStealProof`, `escortRadius`, `stealShare` or `--rules-grid` run only on the trees they
+were measured on.
+
+**Equivalence check**: `pnpm balance --matches 30 --seed 1` with the new defaults (CPU load
+40 % before the start) gives exactly the Round 6 N = 30 row of variant A — best player
+patient 26.7 %, cautious 43.3 %, hunter 30.0 %; secured median / p10 / p90 13.5 / 8.0 / 22.0,
+17.0 / 11.0 / 25.0, 15.5 / 8.0 / 25.5; teams 36.7 / 20.0 / 20.0 / 23.3 %; 8.7 swaps and 1304.2
+steals per match.

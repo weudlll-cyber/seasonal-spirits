@@ -32,8 +32,8 @@ export class Match {
 
   constructor(cfg: GameConfig, seed: number, roster: readonly Roster[]) {
     this.cfg = cfg;
-    // The match's one seeded random source: start positions, coin spawns and — only with the
-    // rule trial stealShareMax — the share of each steal (actions.ts stealShareFor).
+    // The match's one seeded random source: start positions, coin spawns and the share of
+    // each steal (actions.ts stealShareFor).
     const rng = mulberry32(seed);
     const shrines = shrinePositions(cfg);
     this.spawner = { rng, acc: 0, nextId: 1 };

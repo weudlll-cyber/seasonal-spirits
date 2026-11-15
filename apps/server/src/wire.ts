@@ -7,6 +7,7 @@ import {
   SEASONS,
   atOwnShrine,
   canSteal,
+  carriesShielded,
   shrineOffer,
   totalCount,
   type GameConfig,
@@ -21,6 +22,7 @@ import {
   GHOST_CAN_STEAL,
   GHOST_CARRIER,
   GHOST_SECURING,
+  GHOST_SHIELDED,
   STATE_HALVING_EVENT,
   STATE_RESULT,
   type GhostState,
@@ -81,6 +83,7 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (g.securingUntilMs !== null ? GHOST_SECURING : 0) |
       (ctx.isBot(g.id) ? GHOST_BOT : 0) |
       (atOwnShrine(ctx.cfg, s, g) ? GHOST_AT_SHRINE : 0) |
-      (canSteal(ctx.cfg, s, g) ? GHOST_CAN_STEAL : 0),
+      (canSteal(ctx.cfg, s, g) ? GHOST_CAN_STEAL : 0) |
+      (carriesShielded(g) ? GHOST_SHIELDED : 0),
   };
 }

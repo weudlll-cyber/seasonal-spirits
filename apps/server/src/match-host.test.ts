@@ -7,6 +7,7 @@ import {
   GHOST_AT_SHRINE,
   GHOST_BOT,
   GHOST_CAN_STEAL,
+  GHOST_SHIELDED,
   STATE_HALVING_EVENT,
   STATE_RESULT,
   encodeState,
@@ -181,5 +182,32 @@ describe('match host steal feedback', () => {
       host.tick(50);
       expect(host.stealNotices()).toEqual([]);
     }
+  });
+});
+
+// Owner decision 2026-11-16: a ghost carrying steal-proof (swapped) coins shows a shield. The
+// staged situation puts the player in its own shrine beside a standing opponent that carries
+// only swapped coins (scenario.ts).
+describe('match host shield flag', () => {
+  const has = (s: WireState | undefined, ghost: number, bit: number): boolean =>
+    ((s?.ghosts.find((g) => g.id === ghost)?.flags ?? 0) & bit) !== 0;
+
+  it('marks a carrier of swapped coins, keeps Steal dimmed against it, until the halving', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 12, 1, 'shield');
+    const slot = host.join(1);
+    if (!slot) throw new Error('no slot');
+    const s = host.tick(50);
+    const me = s.ghosts.find((g) => g.id === slot.ghost);
+    const other = s.ghosts.find((g) => g.team !== slot.team && has(s, g.id, GHOST_SHIELDED));
+    if (!me || !other) throw new Error('not staged');
+    expect(Math.hypot(me.x - other.x, me.y - other.y)).toBeLessThanOrEqual(
+      DEFAULT_CONFIG.stealRange,
+    );
+    expect(has(s, slot.ghost, GHOST_CAN_STEAL)).toBe(false); // its only coins are steal-proof
+    expect(has(s, slot.ghost, GHOST_SHIELDED)).toBe(false);
+    host.act(1, 'swap');
+    expect(has(host.tick(50), slot.ghost, GHOST_SHIELDED)).toBe(true);
+    const later = runFor(host, DEFAULT_CONFIG.seasonDurationMs).at(-1);
+    expect(has(later, slot.ghost, GHOST_SHIELDED)).toBe(false);
   });
 });
