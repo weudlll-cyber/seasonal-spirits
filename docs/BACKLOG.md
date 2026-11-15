@@ -28,13 +28,11 @@ in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 a match on both and decided whether the Canvas client stays.
 
 d. **Fairness target — 25–42 % for all three styles.** Owner decision 2026-11-15: each
-strategy's best player wins 25–42 % of matches. No configuration met it at N = 300; at
-1 coin/s no swap happens — rule question with the owner. (Fairness search in BALANCE.md,
-"Round 3", CLOSED: 7 of 288 grid configurations passed at N = 30, none at N = 300; the
-closest — stealShare 0.25, 1 coin/s, carry 0.7, cooldown 2 s, secure 3 s — gives patient
-25.1 %, cautious 44.0 %, hunter 30.9 %.) Done when: the owner has decided — keep searching
-(other bots, values near 1 coin per second), widen the band, or change a rule — and
-config.ts carries the decision.
+strategy's best player wins 25–42 % of matches. No value setting of today's rules met it at
+N = 300 (BALANCE.md "Round 3"); with the rule trials R1 + R2 and `stealShare` 0.35 at 2
+coins per second it is met: patient 35.0 %, cautious 32.8 %, hunter 32.2 % (N = 300,
+BALANCE.md "Round 5", on `feat/rule-trials`). Done when: the owner has decided which
+configuration goes into the game (see k) and config.ts carries it.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -64,12 +62,13 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
 
-k. **Rule trials — owner decision** (session 2026-11-15-RULES, `feat/rule-trials`, not
-merged). Measured (CLOSED, BALANCE.md "Round 4"): no configuration meets 25–42 % at N = 300;
-R1 + R2 together come closest (patient 24.3 %, cautious 25.3 %, hunter 50.3 %, 8.6 swaps per
-match); R3 as built hands the game to the hunters. Done when: the owner has decided which
-rule, if any, goes into the game, the trial values (`swapMinIn` 6, `escortRadius` 50 / 90)
-and whether R1 + R2 is measured with a lower `stealShare` next.
+k. **Rule trials — owner decision** (sessions 2026-11-15-RULES and -RULES-2,
+`feat/rule-trials`, not merged). Measured (CLOSED, BALANCE.md "Round 4" and "Round 5"): R3
+as built hands the game to the hunters; R1 + R2 at the default steal share leaves the
+hunters at 50.3 %; R1 + R2 with `stealShare` 0.35 at 2 coins per second meets 25–42 % for all
+three at N = 300 (35.0 / 32.8 / 32.2 %, 9.1 swaps per match). Done when: the owner has
+decided which configuration goes into the game, with the trial values (`swapMinIn` 6;
+`escortRadius` 50 / 90 if R3 at all), and config.ts carries it.
 
 ## CLOSED
 
@@ -259,6 +258,11 @@ and whether R1 + R2 is measured with a lower `stealShare` next.
   recommendation (R1 + R2, not R3) in BALANCE.md "Round 4"; raw data in
   `reports/rule-trials/`; no default changed — commit "docs: rule trials stage 1 and 2,
   results" on `feat/rule-trials`.
+- 2026-11-15 — **Round 5: R1 + R2 with a smaller steal share** (owner decision 2026-11-15):
+  stage 1 (8 configurations × 30 matches), stage 2 (4 × 300); R1 + R2 with `stealShare`
+  0.35 at 2 coins per second meets 25–42 % for all three at N = 300; BALANCE.md "Round 5",
+  raw data `reports/rule-trials/round5-*.json`; no code change, no default changed — commit
+  "docs: Round 5, R1 + R2 with a smaller steal share" on `feat/rule-trials`.
 
 ## CHECKS DONE
 
@@ -391,3 +395,7 @@ and whether R1 + R2 is measured with a lower `stealShare` next.
 | 2026-11-15 | `pnpm fairness --configs <R1 + R2, 2 coins/s> --matches 300 --seed 1` (stage 2)                                                                                                           | same                                                                                                                                 | 2 min 24 s; 24.3 / 25.3 / 50.3 %, 8.6 swaps per match — not within 25–42 %                                                                                                                                                          | `reports/rule-trials/stage2.json`                                                              |
 | 2026-11-15 | escort check (scratch script, 5 seeds, escort 0 vs 50): robberies per victim strategy, hunter beside its team's other hunter                                                              | same                                                                                                                                 | hunters robbed 6801 → 5064, patient 236 → 329; hunter within 50 of the other hunter 15.8 % → 16.2 % of the time                                                                                                                     | sheet `reports/session-2026-11-15-rules.md`                                                    |
 | 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: rule trials stage 1 and 2, results"                                                                 | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `9bbe94b` on `feat/rule-trials`                                                                                                      | success (CI 43759513649, CodeQL 43759513702)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round5-configs.json --matches 30 --seed 1 --jobs 8` (Round 5 stage 1)                                                                        | `9bbe94b` (no code change since)                                                                                                     | 50.6 s, CPU load before reported 0 %; 1 of 8 within 25–42 % (0.35 / 2 coins/s)                                                                                                                                                      | `reports/rule-trials/round5-stage1.json`                                                       |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round5-stage2-configs.json --matches 300 --seed 1 --jobs 4` (Round 5 stage 2)                                                                | same                                                                                                                                 | 7 min 16 s, CPU load before 74 %; 0.35 / 2 coins/s: 35.0 / 32.8 / 32.2 % — within 25–42 % at N = 300                                                                                                                                | `reports/rule-trials/round5-stage2.json`                                                       |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: Round 5, R1 + R2 with a smaller steal share"                                                        | green                                                                                                                                                                                                                               | same commit                                                                                    |

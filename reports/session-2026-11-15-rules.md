@@ -108,3 +108,36 @@ Game core: `actions.ts` 125 → 155, `bots/strategies.ts` 97 → 104, `config.ts
 - Which rule, if any, goes into the game — the numbers point to R1 + R2 together, not R3.
 - Trial values as placeholders: `swapMinIn` 6 (R1), `escortRadius` 50 / 90 (R3).
 - Whether to measure R1 + R2 with a lower `stealShare` next.
+
+## Round 5 — R1 + R2 with a smaller steal share (session 2026-11-15-RULES-2)
+
+A measurement with the existing switches, no code change. R1 + R2 on (`swapMode` 'ratio',
+`swappedStealProof` true), `escortRadius` 0, other values default; grid `stealShare` {0.2,
+0.25, 0.3, 0.35} × `coinSpawnPerSecond` {2, 2.5}.
+
+- **Stage 1** (8 × 30 matches, seeds 1–30): 50.6 s, CPU load before the start reported as
+  0 %. 1 of 8 within 25–42 %: 0.35 / 2 coins/s (30.0 / 33.3 / 36.7 %).
+- **Stage 2** (4 × 300 matches, seeds 1–300: the hit and the 3 closest; third place was a
+  tie, so both ran): 7 min 16 s, CPU load 74 % before the start (other work on the PC).
+
+| stealShare | coins/s | patient | cautious | hunter | distance | swaps/match |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0.35 | 2 | **35.0 %** | **32.8 %** | **32.2 %** | 3.3 | 9.1 |
+| 0.35 | 2.5 | 25.2 % | 31.3 % | 43.5 % | 20.3 | 14.2 |
+| 0.3 | 2 | 37.2 % | 41.6 % | 21.3 % | 24.1 | 9.3 |
+| 0.25 | 2 | 39.7 % | 48.3 % | 12.0 % | 42.7 | 10.2 |
+
+**One configuration meets 25–42 % for all three at N = 300**: R1 + R2, stealShare 0.35, 2
+coins per second. Secured value per player and match (median / p10 / p90): patient 13.5 / 8.5
+/ 22.5, cautious 16.5 / 10.0 / 24.5, hunter 15.5 / 7.5 / 26.0; teams 22.2–27.7 %; 9.1 swaps
+per match. Full tables in docs/BALANCE.md "Round 5"; raw data
+`reports/rule-trials/round5-*.json`.
+
+Files: docs/BALANCE.md 782 → 850, BACKLOG 381 → 401; new data `round5-configs.json`,
+`round5-stage1.json`, `round5-stage2-configs.json`, `round5-stage2.json`; no source file.
+Noticed, left: the steal share is a narrow lever (0.3 leaves the hunters at 21.3 %, 0.5 at
+50.3 %); 2.5 coins/s with 0.35 gives the hunters 43.5 %; the N = 30 row of the winner moved by
+up to 5 points against N = 300.
+
+NEEDS OWNER: which configuration goes into the game — the measured candidate is R1 + R2 with
+`stealShare` 0.35 at `coinSpawnPerSecond` 2 (and with it the R1 trial value `swapMinIn` 6).
