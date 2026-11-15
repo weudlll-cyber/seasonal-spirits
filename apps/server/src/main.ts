@@ -34,7 +34,8 @@ const cfg: ServerConfig = {
   devCors: true,
   firstSeed: envInt(env, 'SEED', 1, [0, 999_999_999]),
   // A staged situation for the browser specs: "steal" puts every joining player beside a
-  // hunter (scenario.ts). Never set by `pnpm dev`.
+  // hunter, "shield" beside a carrier of steal-proof coins (scenario.ts). Never set by
+  // `pnpm dev`.
   scenario: envChoice(env, 'SCENARIO', 'none', SCENARIOS),
 };
 

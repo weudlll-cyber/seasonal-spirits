@@ -11,6 +11,9 @@ const GROUND = ['#121a0e', '#1c120b', '#1b160a', '#0b141c'] as const;
 export const TEXT = '#e6edf3';
 export const MUTED = '#8b98a5';
 export const LINE = '#22303c';
+// The shield around a carrier of swapped, steal-proof coins: ice-white, unlike any team colour
+// and unlike the yellow steal range.
+export const SHIELD = '#cfefff';
 
 export function seasonColour(i: number): string {
   return SEASON_COLOURS[i & 3] ?? TEXT;

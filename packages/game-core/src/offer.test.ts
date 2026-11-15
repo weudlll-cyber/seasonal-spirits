@@ -19,10 +19,10 @@ describe('shrine offer', () => {
     });
   });
 
-  it('offers no swap below 10 coins of the current season', () => {
+  it('offers no swap below swapMinIn (6) coins of the current season', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
     const g = placeAtShrine(m, 1);
-    g.carried.spring = 9;
+    g.carried.spring = 5;
     expect(shrineOffer(DEFAULT_CONFIG, m.state, g).swapCoins).toBe(0);
   });
 

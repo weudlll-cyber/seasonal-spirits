@@ -1,0 +1,10 @@
+[
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.2, "coinSpawnPerSecond": 2 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.2, "coinSpawnPerSecond": 2.5 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.25, "coinSpawnPerSecond": 2 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.25, "coinSpawnPerSecond": 2.5 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.3, "coinSpawnPerSecond": 2 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.3, "coinSpawnPerSecond": 2.5 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.35, "coinSpawnPerSecond": 2 },
+  { "swapMode": "ratio", "swappedStealProof": true, "escortRadius": 0, "stealShare": 0.35, "coinSpawnPerSecond": 2.5 }
+]

@@ -10,6 +10,8 @@ import {
   CLIENT_PORT,
   HELP_SEEN,
   SERVER_PORT,
+  SHIELD_CLIENT_PORT,
+  SHIELD_SERVER_PORT,
   STEAL_CLIENT_PORT,
   STEAL_SERVER_PORT,
 } from './stack.js';
@@ -33,7 +35,14 @@ export default defineConfig({
     trace: 'retain-on-failure',
     // The help overlay counts as seen, so it does not cover the field; help.e2e.ts starts
     // with an empty storage instead.
-    storageState: { cookies: [], origins: [HELP_SEEN(CLIENT_PORT), HELP_SEEN(STEAL_CLIENT_PORT)] },
+    storageState: {
+      cookies: [],
+      origins: [
+        HELP_SEEN(CLIENT_PORT),
+        HELP_SEEN(STEAL_CLIENT_PORT),
+        HELP_SEEN(SHIELD_CLIENT_PORT),
+      ],
+    },
   },
   projects: [
     {
@@ -73,6 +82,24 @@ export default defineConfig({
       cwd: ROOT,
       url: `http://localhost:${STEAL_CLIENT_PORT}`,
       env: { CLIENT_PORT: String(STEAL_CLIENT_PORT), SERVER_PORT: String(STEAL_SERVER_PORT) },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    // The staged shield (shield.e2e.ts): the player in its own shrine with coins to swap,
+    // beside a standing opponent that carries only steal-proof coins.
+    {
+      command: 'pnpm --filter @seasonal-spirits/server start',
+      cwd: ROOT,
+      url: `http://127.0.0.1:${SHIELD_SERVER_PORT}/metrics-lite`,
+      env: { PORT: String(SHIELD_SERVER_PORT), SCENARIO: 'shield' },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: 'pnpm --filter @seasonal-spirits/client start',
+      cwd: ROOT,
+      url: `http://localhost:${SHIELD_CLIENT_PORT}`,
+      env: { CLIENT_PORT: String(SHIELD_CLIENT_PORT), SERVER_PORT: String(SHIELD_SERVER_PORT) },
       reuseExistingServer: false,
       timeout: 60_000,
     },

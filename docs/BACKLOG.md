@@ -18,23 +18,15 @@ secret is refused.
 b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
 `packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), among them since
 2026-11-15 `bots.waypointMs`, `bots.threatRange`, `ghostRadius`, `ghostGrowthPerCoin`,
-`ghostGrowthMax` and `coinRadius`. Done when: the owner has decided each and config.ts
-carries the source.
+`ghostGrowthMax` and `coinRadius`, and since 2026-11-16 (the fair rules, CONCEPT.md §14)
+`swapMinIn` (6), `stealShareMin` (0) and `stealShareMax` (0.5). Done when: the owner has
+decided each and config.ts carries the source.
 
 c. **First playable version — owner part.** Built and checked with Playwright (CLOSED).
 Still open: the owner plays it on the PC (`pnpm dev`, http://localhost:5930) and on a phone
 in the same Wi-Fi (`pnpm dev --lan`), and decides the client framework question
 (CONCEPT.md §8: built with plain Canvas 2D, no framework). Done when: the owner has played
 a match on both and decided whether the Canvas client stays.
-
-d. **Fairness target — 25–42 % for all three styles.** Owner decision 2026-11-15: each
-strategy's best player wins 25–42 % of matches. No configuration met it at N = 300; at
-1 coin/s no swap happens — rule question with the owner. (Fairness search in BALANCE.md,
-"Round 3", CLOSED: 7 of 288 grid configurations passed at N = 30, none at N = 300; the
-closest — stealShare 0.25, 1 coin/s, carry 0.7, cooldown 2 s, secure 3 s — gives patient
-25.1 %, cautious 44.0 %, hunter 30.9 %.) Done when: the owner has decided — keep searching
-(other bots, values near 1 coin per second), widen the band, or change a rule — and
-config.ts carries the decision.
 
 e. **Phase 0 on the target server.** Run sheet ready (Docker, leaves nothing behind) in
 [PHASE0.md](PHASE0.md). Done when: the report from the VPS is recorded in PHASE0.md and
@@ -63,6 +55,23 @@ h. **Readability — owner part.** Built, checked and played; merged into `maste
 2026-11-15; the overlaps found in the own match are fixed on `fix/ui-overlaps` (CLOSED).
 Done when: the owner has played it on PC and phone and decided the two separation
 placeholders (`separationRadius`, `separationStrength`).
+
+l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-11-16; night
+2026-11-16, piece 4). In the result pause every client gets one recap: the result plus
+"Biggest steal", "Closest save" and "Last secure". Done when: it is built on the night
+branch, the owner has played it and merged it.
+
+m. **Final countdown before the match end** (idea from a Copilot review, owner decision
+2026-11-16; night 2026-11-16, piece 3). The halving's staging before the match end: "LAST
+CHANCE — secure now", then "MATCH OVER". Done when: it is built on the night branch, the
+owner has played it and merged it.
+
+n. **Team signals** (idea from a Copilot review, owner decision 2026-11-16; night
+2026-11-16, piece 5). "Attack" and "To shrine", only to the sender's own team. Done when: it
+is built on the night branch, the owner has played it and merged it.
+
+o. **A fixed map with routes** (idea from a Copilot review). Later, owner decides. Done
+when: the owner has decided whether and how.
 
 ## CLOSED
 
@@ -240,6 +249,62 @@ placeholders (`separationRadius`, `separationStrength`).
   commit "merge: unnamed dots, packs, coin pickup, help and steal feedback, fairness search".
   The branches are deleted on origin. The owner's play test is in c, the new placeholders in
   b2, the fairness target stays open in d.
+- 2026-11-15 — **rule-trial switches** (owner decision 2026-11-15): R1 `swapMode`
+  ('fixed' | 'ratio', `swapMinIn` 6 placeholder), R2 `swappedStealProof`, R3 `escortRadius`,
+  all defaults today's game, each in one place (`swapMinimum`/swap yield, `Ghost.shielded`,
+  `isStealTarget` in `nearestOpponentCarrier`); swaps per match in the balance report;
+  `pnpm fairness --rules-grid`. Tests `rules.test.ts`, `fairness.test.ts`; defaults reproduce
+  the last default N = 30 row exactly — commit "feat: rule-trial switches R1–R3, defaults
+  unchanged" on `feat/rule-trials`.
+- 2026-11-15 — **rule trials measured**: stage 1 (24 configurations × 30 matches), stage 2
+  (R1 + R2, 2 coins/s × 300), each rule alone against the default, swaps per match, and a
+  recommendation (R1 + R2, not R3) in BALANCE.md "Round 4"; raw data in
+  `reports/rule-trials/`; no default changed — commit "docs: rule trials stage 1 and 2,
+  results" on `feat/rule-trials`.
+- 2026-11-15 — **Round 5: R1 + R2 with a smaller steal share** (owner decision 2026-11-15):
+  stage 1 (8 configurations × 30 matches), stage 2 (4 × 300); R1 + R2 with `stealShare`
+  0.35 at 2 coins per second meets 25–42 % for all three at N = 300; BALANCE.md "Round 5",
+  raw data `reports/rule-trials/round5-*.json`; no code change, no default changed — commit
+  "docs: Round 5, R1 + R2 with a smaller steal share" on `feat/rule-trials`.
+- 2026-11-15 — **random steal share switch** (owner decision 2026-11-15): `stealShareMax`
+  (absent by default) draws each steal's share from [`stealShare`, `stealShareMax`] with the
+  match's seeded random source (`stealShareFor`, `trySteal` takes the match's `rng`); at
+  least one coin per steal; steals per match and coins per steal in the balance report.
+  Tests `steal-share.test.ts`; the fixed-0.35 reference reproduces the Round 5 stage-1 row
+  exactly — commit "feat: random steal share switch, default fixed" on `feat/rule-trials`.
+- 2026-11-15 — **Round 6: a random steal share measured**: A (0–0.5) and B (0.2–0.5), R1 + R2,
+  2 coins/s, at N = 30 and N = 300, with steals per match and coins per steal, against the
+  fixed 0.35; A meets 25–42 % at N = 300, B does not; BALANCE.md "Round 6", raw data
+  `reports/rule-trials/round6-*.json`; no default changed — commit "docs: Round 6, a random
+  steal share" on `feat/rule-trials`.
+- 2026-11-16 — **Round 7: the two fair candidates on fresh seeds**: C1 (fixed 0.35) and C2
+  (random 0–0.5), R1 + R2, 2 coins/s, N = 300 on seeds 301–600; both stay within 25–42 %, both
+  12.7–12.8 points from even; steals by thief × victim strategy (new report field
+  `stealsByPair`): 92–94 % hunters robbing hunters; BALANCE.md "Round 7", raw data
+  `reports/rule-trials/round7-*.json`; no default changed — commit "feat: Round 7, fair
+  candidates on fresh seeds, steal matrix" on `feat/rule-trials`.
+- 2026-11-16 — **Fairness target met: 25–42 % for all three styles** (owner decision
+  2026-11-15; open item d until now). Measured with R1 + R2 at 2 coins/s: fixed share 0.35
+  35.0 / 32.8 / 32.2 % (Round 5, N = 300, seeds 1–300), random 0–0.5 35.5 / 35.3 / 29.2 %
+  (Round 6, N = 300, seeds 1–300) and 28.2 / 39.7 / 32.1 % (Round 7, N = 300, seeds 301–600),
+  fixed 0.35 on seeds 301–600 27.3 / 33.0 / 39.7 % (patient / cautious / hunter). The owner
+  chose the random share; the rules are adopted (next entry).
+- 2026-11-16 — **The fair rules adopted** (owner decision 2026-11-15/16, CONCEPT.md §14; open
+  item k until now): the swap from `swapMinIn` (6) at 10 → 15, never in the last season, is
+  the only swap rule (`swapMode` and the old path removed); swapped coins are steal-proof
+  until the next halving or a secure, unconditionally (`swappedStealProof` removed); the
+  steal share is drawn from [`stealShareMin`, `stealShareMax`] = [0, 0.5] (`stealShare`
+  renamed; min = max is a fixed share). `pnpm balance` with the new defaults on seeds 1–30
+  reproduces the Round 6 N = 30 row of variant A exactly. Shield flag `GHOST_SHIELDED` on the
+  wire (THREATS row 31) and a hexagonal shield in the client and the viewer; help, CONCEPT.md
+  §1 / §2a / §14, GAME-CORE, CLIENT, SERVER updated; dev-only `SCENARIO=shield` and
+  `shield.e2e.ts` — branch `feat/rule-trials`, merged into `master` (merge commit "merge:
+  fair rules — swap from 6, swapped coins safe, random steal 0–0.5, no escort").
+- 2026-11-16 — **R3 escort rule rejected and removed** (owner decision 2026-11-16): as built
+  it handed the game to the hunters (BALANCE.md "Round 4"); `escortRadius`, its branch in
+  `isStealTarget`, its tests and its fairness grid (`pnpm fairness --rules-grid`) are gone.
+  BALANCE.md keeps the rounds as history; their commands that name removed switches run
+  only on the trees they were measured on.
 
 ## CHECKS DONE
 
@@ -364,3 +429,31 @@ placeholders (`separationRadius`, `separationStrength`).
 | 2026-11-15 | `pnpm fairness --configs <best with swapOut 18 and 12> --matches 30 --seed 1` (rule-change comparison)                                                                                    | same                                                                                                                                 | both 38.3 / 31.7 / 30.0 %, identical to swap 10 → 15: no bot swaps at 1 coin/s                                                                                                                                                      | `reports/fairness/swap-comparison.json`                                                        |
 | 2026-11-15 | best-player shares averaged per coin rate over the grid (scratch query of `stage1-grid.json`)                                                                                             | same                                                                                                                                 | 1 /s 14.6 / 38.4 / 47.1 %, 1.5 /s 13.9 / 52.7 / 33.4 %, 2 /s 12.8 / 58.6 / 28.6 %, 3 /s 16.5 / 56.3 / 27.2 % — corrected a wrong first summary line                                                                                 | docs/BALANCE.md                                                                                |
 | 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: fairness stage 2, swap comparison, session sheet 2026-11-15-CD"                                     | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI and CodeQL for the merge                                                                                                                                                          | `d4ae550` on `master`                                                                                                                | success (CI 43754246037, CodeQL 43754246045)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
+| 2026-11-15 | defaults check: `pnpm balance --matches 30 --seed 1` with the rule switches at their defaults                                                                                             | working tree committed as "feat: rule-trial switches R1–R3, defaults unchanged"                                                      | identical to the last default N = 30 row: 10.0 / 41.7 / 48.3 %, means 13.7 / 16.9 / 17.2, teams 30.0 / 16.7 / 30.0 / 23.3 %, 20.8 coins gone                                                                                        | sheet `reports/session-2026-11-15-rules.md`                                                    |
+| 2026-11-15 | `pnpm verify:changed` (14 files: format, lint, typecheck, 20 related test files / 111 tests); no e2e — client untouched, the default state unchanged                                      | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `f4a79b9` on `feat/rule-trials`                                                                                                      | success (CI 43758753341, CodeQL 43758753318)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-15 | `pnpm fairness --rules-grid --matches 30 --seed 1 --jobs 8` (stage 1)                                                                                                                     | `f4a79b9`                                                                                                                            | 3 min 1 s, CPU 29 % before; 1 of 24 within 25–42 % (R1 + R2, 2 coins/s: 26.7 / 31.7 / 41.7 %)                                                                                                                                       | `reports/rule-trials/stage1.json`, docs/BALANCE.md                                             |
+| 2026-11-15 | `pnpm fairness --configs <R1 + R2, 2 coins/s> --matches 300 --seed 1` (stage 2)                                                                                                           | same                                                                                                                                 | 2 min 24 s; 24.3 / 25.3 / 50.3 %, 8.6 swaps per match — not within 25–42 %                                                                                                                                                          | `reports/rule-trials/stage2.json`                                                              |
+| 2026-11-15 | escort check (scratch script, 5 seeds, escort 0 vs 50): robberies per victim strategy, hunter beside its team's other hunter                                                              | same                                                                                                                                 | hunters robbed 6801 → 5064, patient 236 → 329; hunter within 50 of the other hunter 15.8 % → 16.2 % of the time                                                                                                                     | sheet `reports/session-2026-11-15-rules.md`                                                    |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: rule trials stage 1 and 2, results"                                                                 | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `9bbe94b` on `feat/rule-trials`                                                                                                      | success (CI 43759513649, CodeQL 43759513702)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round5-configs.json --matches 30 --seed 1 --jobs 8` (Round 5 stage 1)                                                                        | `9bbe94b` (no code change since)                                                                                                     | 50.6 s, CPU load before reported 0 %; 1 of 8 within 25–42 % (0.35 / 2 coins/s)                                                                                                                                                      | `reports/rule-trials/round5-stage1.json`                                                       |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round5-stage2-configs.json --matches 300 --seed 1 --jobs 4` (Round 5 stage 2)                                                                | same                                                                                                                                 | 7 min 16 s, CPU load before 74 %; 0.35 / 2 coins/s: 35.0 / 32.8 / 32.2 % — within 25–42 % at N = 300                                                                                                                                | `reports/rule-trials/round5-stage2.json`                                                       |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: Round 5, R1 + R2 with a smaller steal share"                                                        | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `91582ae` on `feat/rule-trials`                                                                                                      | success (CI 43763974002, CodeQL 43763973986)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-15 | `pnpm verify:changed` (format, lint, typecheck, 21 related test files / 115 tests)                                                                                                        | working tree committed as "feat: random steal share switch, default fixed"                                                           | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | default check: the fixed-0.35 reference (R1 + R2, 2 coins/s) at N = 30 through `pnpm fairness`                                                                                            | same tree                                                                                                                            | identical to the Round 5 stage-1 row: 30.0 / 33.3 / 36.7 %, 10.1 swaps per match                                                                                                                                                    | `reports/rule-trials/round6-n30.json` (next commit)                                            |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round6-configs-30.json --matches 30 --seed 1 --jobs 3` (A, B, fixed 0.35)                                                                    | `b5abda9`                                                                                                                            | 52.5 s, CPU load 43 % before; A 26.7 / 43.3 / 30.0 %, B 18.3 / 30.0 / 51.7 %, fixed 0.35 30.0 / 33.3 / 36.7 %                                                                                                                       | `reports/rule-trials/round6-n30.json`                                                          |
+| 2026-11-15 | `pnpm fairness --configs reports/rule-trials/round6-configs-300.json --matches 300 --seed 1 --jobs 2` (A, B)                                                                              | same                                                                                                                                 | 4 min 9 s, CPU load 50 % before; A 35.5 / 35.3 / 29.2 % (within 25–42 %), B 19.9 / 33.7 / 46.3 %                                                                                                                                    | `reports/rule-trials/round6-n300.json`                                                         |
+| 2026-11-15 | format check of the changed Markdown and JSON (docs and data only, no tests)                                                                                                              | working tree committed as "docs: Round 6, a random steal share"                                                                      | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-15 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `b5abda9` and `1a45d23` on `feat/rule-trials`                                                                                        | CI for `b5abda9` cancelled (superseded by the next push), CodeQL success; CI and CodeQL for `1a45d23` success (CI 43768059333, CodeQL 43768059348)                                                                                  | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 21 related test files / 116 tests)                                                                                                        | working tree committed as "feat: Round 7, fair candidates on fresh seeds, steal matrix"                                              | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | `pnpm fairness --configs reports/rule-trials/round7-configs.json --matches 300 --seed 301 --jobs 2` (C1, C2)                                                                              | same tree                                                                                                                            | 4 min 17 s, CPU load 57 % before; C1 27.3 / 33.0 / 39.7 %, C2 28.2 / 39.7 / 32.1 % (both within 25–42 %)                                                                                                                            | `reports/rule-trials/round7-n300.json`                                                         |
+| 2026-11-16 | format check of the changed Markdown and JSON                                                                                                                                             | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `bf022b7` on `feat/rule-trials`                                                                                                      | success (CI 43773680467, CodeQL 43773680504)                                                                                                                                                                                        | `gh run list --branch feat/rule-trials`                                                        |
+| 2026-11-16 | `pnpm --filter @seasonal-spirits/game-core exec vitest run` (game-core, 14 files / 64 tests)                                                                                              | working tree of "feat: adopt the fair rules, shield ring"                                                                            | green after two refusal tests moved from 10 to 6 coins                                                                                                                                                                              | same commit                                                                                    |
+| 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1` with the new defaults                                                                                                              | same tree                                                                                                                            | 26.7 / 43.3 / 30.0 %, every number of the Round 6 N = 30 row of variant A reproduced; CPU load 40 % before                                                                                                                          | BALANCE.md "Adopted"                                                                           |
+| 2026-11-16 | `pnpm e2e help shield feedback` (desktop and phone; shield and feedback desktop only)                                                                                                     | same tree                                                                                                                            | 4 passed, 2 skipped by design                                                                                                                                                                                                       | `reports/screens/latest/desktop-shield.png` (git-ignored)                                      |
+| 2026-11-16 | one full match played on `pnpm dev` in Chromium, "Near" and "Overview" (scratch script, not committed)                                                                                    | same tree                                                                                                                            | result screen after 272 s; notes in `reports/night-2026-11-16.md` piece 1                                                                                                                                                           | `reports/screens/latest/play-*.png` (git-ignored)                                              |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 23 related test files / 127 tests)                                                                                                        | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |

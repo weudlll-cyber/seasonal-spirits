@@ -4,8 +4,12 @@ import { describe, expect, it } from 'vitest';
 import {
   COIN_BYTES,
   GHOST_AT_SHRINE,
+  GHOST_BOT,
   GHOST_BYTES,
+  GHOST_CAN_STEAL,
   GHOST_CARRIER,
+  GHOST_SECURING,
+  GHOST_SHIELDED,
   HEADER_BYTES,
   OFFER_BYTES,
   STATE_HALVING_EVENT,
@@ -68,6 +72,22 @@ describe('state encoding', () => {
   it('stays under 1 KB at the worst case: 32 ghosts, a full field of 60 coins, 32 offers', () => {
     expect(encodedSize(32, 60, 32)).toBe(978);
     expect(encodedSize(32, 60, 32)).toBeLessThan(1024);
+  });
+
+  it('keeps every ghost flag, the shield included, through a round trip', () => {
+    const all =
+      GHOST_CARRIER |
+      GHOST_SECURING |
+      GHOST_BOT |
+      GHOST_AT_SHRINE |
+      GHOST_CAN_STEAL |
+      GHOST_SHIELDED;
+    const s = sample(2, 0);
+    const [a, b] = s.ghosts;
+    if (a) a.flags = all;
+    if (b) b.flags = GHOST_SHIELDED;
+    const back = decodeState(encodeState(s)).ghosts;
+    expect(back.map((g) => g.flags)).toEqual([all, GHOST_SHIELDED]);
   });
 
   it('clamps out-of-range numbers instead of wrapping them', () => {

@@ -32,6 +32,8 @@ export class Match {
 
   constructor(cfg: GameConfig, seed: number, roster: readonly Roster[]) {
     this.cfg = cfg;
+    // The match's one seeded random source: start positions, coin spawns and the share of
+    // each steal (actions.ts stealShareFor).
     const rng = mulberry32(seed);
     const shrines = shrinePositions(cfg);
     this.spawner = { rng, acc: 0, nextId: 1 };
@@ -99,7 +101,7 @@ export class Match {
     const step = (this.cfg.ghostSpeed * (carrying ? this.cfg.carrySpeedFactor : 1) * dtMs) / 1000;
     g.x = clamp(g.x + dir.x * step, 0, this.cfg.fieldSize);
     g.y = clamp(g.y + dir.y * step, 0, this.cfg.fieldSize);
-    if (intent.action === 'steal') trySteal(this.cfg, this.s, g);
+    if (intent.action === 'steal') trySteal(this.cfg, this.s, g, this.spawner.rng);
     else if (intent.action === 'swap') trySwap(this.cfg, this.s, g);
     else if (intent.action === 'secure') trySecureStart(this.cfg, this.s, g);
   }
@@ -113,6 +115,7 @@ function newGhost(r: Roster, home: Vec, spread: number, rng: () => number): Ghos
     x: home.x + (rng() - 0.5) * spread,
     y: home.y + (rng() - 0.5) * spread,
     carried: emptyCounts(),
+    shielded: emptyCounts(),
     securedValue: 0,
     securingUntilMs: null,
     securingSeason: null,

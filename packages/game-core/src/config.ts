@@ -29,12 +29,14 @@ export interface GameConfig {
   offSeasonValueFactor: number;
   swapIn: number;
   swapOut: number;
+  swapMinIn: number;
   secureDurationMs: number;
   shrineRadius: number;
   shrineInset: number;
   startSpread: number;
   stealRange: number;
-  stealShare: number;
+  stealShareMin: number;
+  stealShareMax: number;
   stealCooldownMs: number;
   separationRadius: number;
   separationStrength: number;
@@ -63,14 +65,21 @@ export const DEFAULT_CONFIG: GameConfig = {
   coinSpawnPerSecond: 2, // placeholder — owner decides (CONCEPT.md leaves the rate open)
   maxFieldCoins: 60, // placeholder — owner decides
   offSeasonValueFactor: 0.5, // CONCEPT.md §2a / §10 decision 2: half outside its season
-  swapIn: 10, // CONCEPT.md §2a / §10 decision 2: 10 coins of the current season ...
-  swapOut: 15, // CONCEPT.md §2a / §10 decision 2: ... become 15 of the next
+  // CONCEPT.md §2a / §10 decision 2: coins of the current season swap at 10 → 15 of the next,
+  // rounded down; owner decision 2026-11-16 (BALANCE.md "Round 5" to "Round 7"): from swapMinIn
+  // coins on (6 → 9, 8 → 12, 10 → 15), never in the last season.
+  swapIn: 10,
+  swapOut: 15,
+  swapMinIn: 6, // placeholder — owner decides
   secureDurationMs: 2500, // CONCEPT.md §2a: securing takes 2–3 s
   shrineRadius: 80, // placeholder — owner decides
   shrineInset: 150, // placeholder — owner decides (distance of a shrine from its corner)
   startSpread: 60, // placeholder — owner decides (start area around the own shrine)
   stealRange: 60, // placeholder — owner decides (CONCEPT.md leaves the range open)
-  stealShare: 0.5, // placeholder — owner decides (CONCEPT.md leaves the share open)
+  // Owner decision 2026-11-16: each steal draws its share uniformly from [stealShareMin,
+  // stealShareMax] (min = max is a fixed share), at least one coin (BALANCE.md "Round 6", "Round 7").
+  stealShareMin: 0, // placeholder — owner decides
+  stealShareMax: 0.5, // placeholder — owner decides
   stealCooldownMs: 1000, // placeholder — owner decides
   // Owner decision 2026-11-15: ghosts softly push each other apart. Two ghosts closer than the
   // radius (two bodies touching) drift apart by the strength share of the overlap per tick;

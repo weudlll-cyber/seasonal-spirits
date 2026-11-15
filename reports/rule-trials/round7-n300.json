@@ -1,0 +1,191 @@
+[
+ {
+  "overrides": {
+   "swapMode": "ratio",
+   "swappedStealProof": true,
+   "escortRadius": 0,
+   "coinSpawnPerSecond": 2,
+   "stealShare": 0.35
+  },
+  "report": {
+   "matches": 300,
+   "firstSeed": 301,
+   "bestPlayerShare": {
+    "patient": 0.2733333333333333,
+    "cautious": 0.33,
+    "hunter": 0.39666666666666667
+   },
+   "secured": {
+    "patient": {
+     "n": 3600,
+     "mean": 14.54875,
+     "median": 13,
+     "p10": 8.5,
+     "p90": 22.5
+    },
+    "cautious": {
+     "n": 3600,
+     "mean": 17.072222222222223,
+     "median": 17,
+     "p10": 10,
+     "p90": 24.5
+    },
+    "hunter": {
+     "n": 2400,
+     "mean": 16.075,
+     "median": 15.5,
+     "p10": 7.5,
+     "p90": 26
+    }
+   },
+   "teamWinShare": [
+    0.21611111111111114,
+    0.2594444444444444,
+    0.23333333333333334,
+    0.2911111111111111
+   ],
+   "clearedPerMatch": {
+    "n": 300,
+    "mean": 18.78,
+    "median": 19,
+    "p10": 13,
+    "p90": 24
+   },
+   "swapsPerMatch": {
+    "n": 300,
+    "mean": 8.886666666666667,
+    "median": 9,
+    "p10": 5,
+    "p90": 13
+   },
+   "stealsPerMatch": {
+    "n": 300,
+    "mean": 1458.11,
+    "median": 1449,
+    "p10": 1334,
+    "p90": 1593
+   },
+   "coinsPerSteal": {
+    "n": 437433,
+    "mean": 2.6840659026639506,
+    "median": 3,
+    "p10": 1,
+    "p90": 4
+   },
+   "stealsByPair": {
+    "patient": {
+     "patient": 0,
+     "cautious": 0,
+     "hunter": 0
+    },
+    "cautious": {
+     "patient": 0,
+     "cautious": 0,
+     "hunter": 0
+    },
+    "hunter": {
+     "patient": 51.86,
+     "cautious": 40.11,
+     "hunter": 1366.14
+    }
+   }
+  },
+  "distance": 12.666666666666664,
+  "meets": true
+ },
+ {
+  "overrides": {
+   "swapMode": "ratio",
+   "swappedStealProof": true,
+   "escortRadius": 0,
+   "coinSpawnPerSecond": 2,
+   "stealShare": 0,
+   "stealShareMax": 0.5
+  },
+  "report": {
+   "matches": 300,
+   "firstSeed": 301,
+   "bestPlayerShare": {
+    "patient": 0.2816666666666667,
+    "cautious": 0.3972222222222222,
+    "hunter": 0.32111111111111107
+   },
+   "secured": {
+    "patient": {
+     "n": 3600,
+     "mean": 14.530416666666667,
+     "median": 13.5,
+     "p10": 9,
+     "p90": 22.5
+    },
+    "cautious": {
+     "n": 3600,
+     "mean": 17.12125,
+     "median": 16.5,
+     "p10": 10,
+     "p90": 25
+    },
+    "hunter": {
+     "n": 2400,
+     "mean": 15.96125,
+     "median": 15.5,
+     "p10": 8,
+     "p90": 25
+    }
+   },
+   "teamWinShare": [
+    0.24166666666666667,
+    0.265,
+    0.30666666666666664,
+    0.18666666666666668
+   ],
+   "clearedPerMatch": {
+    "n": 300,
+    "mean": 17.793333333333333,
+    "median": 18,
+    "p10": 14,
+    "p90": 22
+   },
+   "swapsPerMatch": {
+    "n": 300,
+    "mean": 8.113333333333333,
+    "median": 8,
+    "p10": 4,
+    "p90": 12
+   },
+   "stealsPerMatch": {
+    "n": 300,
+    "mean": 1291.8466666666666,
+    "median": 1284,
+    "p10": 1195,
+    "p90": 1405
+   },
+   "coinsPerSteal": {
+    "n": 387554,
+    "mean": 2.0917678568663978,
+    "median": 2,
+    "p10": 1,
+    "p90": 3
+   },
+   "stealsByPair": {
+    "patient": {
+     "patient": 0,
+     "cautious": 0,
+     "hunter": 0
+    },
+    "cautious": {
+     "patient": 0,
+     "cautious": 0,
+     "hunter": 0
+    },
+    "hunter": {
+     "patient": 62.17666666666667,
+     "cautious": 44.61666666666667,
+     "hunter": 1185.0533333333333
+    }
+   }
+  },
+  "distance": 12.777777777777777,
+  "meets": true
+ }
+]

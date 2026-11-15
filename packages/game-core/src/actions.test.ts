@@ -24,13 +24,13 @@ describe('swap at the own shrine', () => {
     expect(g.carried).toEqual({ spring: 0, summer: 0, autumn: 0, winter: 33 });
   });
 
-  it('is refused with fewer than 10 coins of the current season', () => {
+  it('is refused with fewer than swapMinIn (6) coins of the current season', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
     const g = placeAtShrine(m, 1);
-    g.carried.spring = 9;
+    g.carried.spring = 5;
     g.carried.summer = 20;
     act(m, 1, { dx: 0, dy: 0, action: 'swap' });
-    expect(g.carried).toEqual({ spring: 9, summer: 20, autumn: 0, winter: 0 });
+    expect(g.carried).toEqual({ spring: 5, summer: 20, autumn: 0, winter: 0 });
   });
 
   it('is refused away from the own shrine and at another team’s shrine', () => {

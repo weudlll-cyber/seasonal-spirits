@@ -6,9 +6,17 @@ import { Match, type Roster } from './match.js';
 import { shrineOf } from './geometry.js';
 import type { Ghost, Intent } from './types.js';
 
-// No spawning unless a test asks for it, so every coin in a test is placed by the test.
+// No spawning unless a test asks for it, so every coin in a test is placed by the test; a
+// fixed steal share of a half, so a test can count what a steal takes (steal-share.test.ts
+// tests the drawn share).
 export function quietConfig(over: Partial<GameConfig> = {}): GameConfig {
-  return { ...DEFAULT_CONFIG, coinSpawnPerSecond: 0, ...over };
+  return {
+    ...DEFAULT_CONFIG,
+    coinSpawnPerSecond: 0,
+    stealShareMin: 0.5,
+    stealShareMax: 0.5,
+    ...over,
+  };
 }
 
 export function matchOf(cfg: GameConfig, roster: Roster[]): Match {

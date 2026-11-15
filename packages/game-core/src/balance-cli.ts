@@ -9,8 +9,8 @@ import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 
 export const VARIANTS: Record<string, Partial<GameConfig>> = {
   current: {},
-  'stealShare=0.25': { stealShare: 0.25 },
-  'stealShare=0.75': { stealShare: 0.75 },
+  'stealShare=0.25': { stealShareMin: 0.25, stealShareMax: 0.25 },
+  'stealShare=0.75': { stealShareMin: 0.75, stealShareMax: 0.75 },
   'coinSpawnPerSecond=1': { coinSpawnPerSecond: 1 },
   'coinSpawnPerSecond=3': { coinSpawnPerSecond: 3 },
   'carrySpeedFactor=0.5': { carrySpeedFactor: 0.5 },
@@ -62,10 +62,16 @@ function print(name: string, r: BalanceReport): void {
   r.teamWinShare.forEach((w, t) => {
     console.log(`| ${TEAM_NAMES[t] ?? '?'} | ${pct(w)} |`);
   });
+  const perMatch = (label: string, x: Spread): string =>
+    `${label}, per match (N = ${n}): mean ${num(x.mean)}, median ${num(x.median)}, ` +
+    `p10 ${num(x.p10)}, p90 ${num(x.p90)}`;
+  console.log(`\n${perMatch('Field coins gone at the halvings', r.clearedPerMatch)}`);
+  console.log(perMatch('Swaps', r.swapsPerMatch));
+  console.log(perMatch('Steals', r.stealsPerMatch));
+  const c = r.coinsPerSteal;
   console.log(
-    `\nField coins gone at the halvings, per match (N = ${n}): ` +
-      `mean ${num(r.clearedPerMatch.mean)}, median ${num(r.clearedPerMatch.median)}, ` +
-      `p10 ${num(r.clearedPerMatch.p10)}, p90 ${num(r.clearedPerMatch.p90)}`,
+    `Coins per steal (N = ${c.n} steals): mean ${num(c.mean)}, median ${num(c.median)}, ` +
+      `p10 ${num(c.p10)}, p90 ${num(c.p90)}`,
   );
 }
 

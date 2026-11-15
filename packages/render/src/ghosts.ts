@@ -1,18 +1,20 @@
 // Seasonal Spirits — the ghosts: team colour, and a carrier visible from afar (CONCEPT.md §2a,
 // sentence 5): larger, glowing, a short trail and its name. A ring around a carrier shows its
-// coins: solid for coins of the current season, dashed and grey for coins worth half now.
+// coins: solid for coins of the current season, dashed and grey for coins worth half now; a
+// hexagonal shield around a carrier of swapped coins no steal can take.
 
 import {
   GHOST_BOT,
   GHOST_CARRIER,
   GHOST_SECURING,
+  GHOST_SHIELDED,
   ghostName,
   ghostTag,
 } from '@seasonal-spirits/protocol';
 import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
-import { MUTED, TEXT, seasonColour } from './palette.js';
+import { MUTED, SHIELD, TEXT, seasonColour } from './palette.js';
 import { circle, sx, sy, visibleArea, type View } from './view.js';
 
 const TRAIL_POINTS = 12;
@@ -93,6 +95,7 @@ function drawBody(v: View, g: GhostState, style: GhostStyle): void {
   ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
   if (g.carried > 0) drawCoinRing(v, g, r, style.season);
+  if (g.flags & GHOST_SHIELDED) drawShield(v, g, r);
   if (g.flags & GHOST_SECURING) {
     ctx.strokeStyle = TEXT;
     ctx.lineWidth = 2;
@@ -125,6 +128,25 @@ function drawCoinRing(v: View, g: GhostState, r: number, season: number): void {
   ctx.strokeStyle = MUTED;
   ctx.stroke();
   ctx.setLineDash([]);
+}
+
+// A hexagon outside the coin ring: a shape no other ring has, so it reads as "protected".
+function drawShield(v: View, g: GhostState, r: number): void {
+  const { ctx } = v;
+  const cx = sx(v, g.x);
+  const cy = sy(v, g.y);
+  const outer = r + 7;
+  ctx.strokeStyle = SHIELD;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 3;
+    const [x, y] = [cx + outer * Math.cos(a), cy + outer * Math.sin(a)];
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.stroke();
 }
 
 const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;

@@ -14,16 +14,19 @@ const EVEN = 1 / 3;
 export type Overrides = Partial<
   Pick<
     GameConfig,
-    | 'stealShare'
+    | 'stealShareMin'
+    | 'stealShareMax'
     | 'coinSpawnPerSecond'
     | 'carrySpeedFactor'
     | 'stealCooldownMs'
     | 'secureDurationMs'
     | 'swapOut'
+    | 'swapMinIn'
   >
 >;
 
-// The stage-1 grid of session 2026-11-15-CD: 4 × 4 × 3 × 3 × 2 = 288 configurations.
+// The stage-1 grid of session 2026-11-15-CD: 4 × 4 × 3 × 3 × 2 = 288 configurations, each
+// steal share fixed (min = max). Run then under the old swap rule (BALANCE.md "Round 3").
 export const GRID = {
   stealShare: [0.15, 0.25, 0.35, 0.5],
   coinSpawnPerSecond: [1, 1.5, 2, 3],
@@ -40,7 +43,8 @@ export function gridConfigs(): Overrides[] {
         for (const stealCooldownMs of GRID.stealCooldownMs)
           for (const secureDurationMs of GRID.secureDurationMs)
             out.push({
-              stealShare,
+              stealShareMin: stealShare,
+              stealShareMax: stealShare,
               coinSpawnPerSecond,
               carrySpeedFactor,
               stealCooldownMs,

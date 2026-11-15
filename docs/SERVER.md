@@ -45,10 +45,14 @@ is encoded once and sent to every client that has said hello.
 - After a steal, the two players involved — and nobody else — get one text message
   `{"kind":"steal","thief":<id>,"victim":<id>,"coins":<n>}` in the tick it happened (none
   during the result pause; THREATS row 29). The state flag `GHOST_CAN_STEAL` (16) marks
-  every ghost whose steal would take something now (the core's `canSteal`; THREATS row 30).
-- `SCENARIO=steal` (browser specs only, like the whole server development only): every
-  joining player is placed in the middle of the field with 6 coins beside an opponent
-  hunter carrying nothing (`src/scenario.ts`); `none` is the default.
+  every ghost whose steal would take something now (the core's `canSteal`; THREATS row 30);
+  `GHOST_SHIELDED` (32) every ghost carrying swapped, steal-proof coins (the core's
+  `carriesShielded`; THREATS row 31).
+- `SCENARIO` (browser specs only, like the whole server development only; `src/scenario.ts`;
+  `none` is the default): `steal` places every joining player in the middle of the field
+  with 6 coins beside an opponent hunter carrying nothing; `shield` places it in its own
+  shrine with `swapMinIn` coins of the season beside an opponent that carries only swapped
+  coins and stands still (no bot steers it, as for a disconnected player).
 
 ## Match lifecycle
 

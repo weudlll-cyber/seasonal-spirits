@@ -16,10 +16,13 @@ test('help appears on the first visit, not on the second, and opens again with "
   await page.goto('/');
   await expect(help).toBeVisible();
   await expect(help).toContainText('Only the coins of the current season fall');
-  await expect(help).toContainText('Swap turns 10 coins of this season into 15 of the next');
+  await expect(help).toContainText('from 6 on — into coins of the next: every 2 become 3');
+  await expect(help).toContainText('No swap in the last season');
+  await expect(help).toContainText('nobody can steal them until the next halving');
   await expect(help).toContainText('halving');
   await expect(help).toContainText('others can steal from you');
-  await expect(help.locator('svg')).toHaveCount(5);
+  await expect(help).toContainText('a random part of the coins');
+  await expect(help.locator('svg')).toHaveCount(6);
   await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-help.png`) });
   const phone = info.project.name === 'phone';
   if (phone) await help.tap();

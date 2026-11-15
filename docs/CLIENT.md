@@ -52,12 +52,14 @@ the hello.
 
 Owner's observation 2026-11-15: stealing was not understood.
 
-- **Help** (`src/help.ts`): an overlay with the five rules of CONCEPT.md §2a in plain words,
-  each with a small drawing made in code (inline SVG, no image files) — only the current
-  season's coins fall; a coin is worth 1 in its own season, ½ otherwise; at the own shrine
-  Secure banks now and Swap turns 10 into 15 of the next season; every season change is a
-  halving, secure or swap before it; carrying makes you bigger, glowing and slower, and
-  others can steal from you — plus the controls for keyboard and touch. It opens by itself
+- **Help** (`src/help.ts`): an overlay with the rules of CONCEPT.md §2a in plain words, each
+  with a small drawing made in code (inline SVG, no image files) — only the current season's
+  coins fall; a coin is worth 1 in its own season, ½ otherwise; at the own shrine Secure
+  banks now and Swap turns the season's coins, from 6 on, into the next season's (every 2
+  become 3; not in the last season — the numbers come from the game config); swapped coins
+  are safe until the next halving (the shield); every season change is a halving, secure or
+  swap before it; carrying makes you bigger, glowing and slower, and others can steal a
+  random part of your coins, at least one — plus the controls for keyboard and touch. It opens by itself
   on the first visit (remembered in the browser), any time with "?" (the key or the band's
   "?" button), and closes with one tap or any key; that key reaches no game control.
 - **Steal button**: lit only while the server says a steal would take something right now
@@ -65,6 +67,9 @@ Owner's observation 2026-11-15: stealing was not understood.
   cooldown over, not securing), dimmed otherwise; it can always be pressed.
 - **Range ring**: while an opponent carrier is within twice the steal range, a faint dashed
   ring around the own ghost shows the steal range.
+- **Shield**: a ghost carrying swapped coins (`GHOST_SHIELDED`) has an ice-white hexagon
+  around it (`packages/render/src/ghosts.ts`), drawn for every ghost in the client and the
+  viewer: those coins cannot be stolen until the next halving.
 - **Messages**: after a steal the two players involved see "You stole 3 from Bot 7" or
   "Bot 7 stole 2 from you" for 2.5 s. The server sends this notice
   (`{"kind":"steal",…}`, read by `parseServerMessage`) only to those two players;
