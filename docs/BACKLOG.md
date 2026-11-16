@@ -79,8 +79,11 @@ p. **Bridge box wording.** The result screen's bridge text (CONCEPT.md §8, word
 §1 dropped on 2026-11-16 (every season change is a halving; the old season's coins are
 worth half). Owner's text, left as it is. Done when: the owner has decided the wording.
 
-q. **Why hunters rob each other** — the bot change proposed in the night sheet 2026-11-16
-(piece 7), if it was reached. Done when: the owner has decided on the proposal.
+q. **Hunters robbing hunters** (measured in the night sheet 2026-11-16, piece 7: 92 % of all
+steals, a pair trading coins once a second for a median 4 s and up to 71 s). Proposal: a
+hunter hunts only a carrier richer by a margin (`bots.hunterPreyMargin`) and leaves the
+ghost it just robbed or was robbed by alone for a while (`bots.hunterGrudgeMs`). Done when:
+the owner has decided; if built, the Round 7 fairness check runs again on both seed sets.
 
 ## CLOSED
 
@@ -364,8 +367,12 @@ q. **Why hunters rob each other** — the bot change proposed in the night sheet
   the old swap rule (none left outside history); one `knip` 5.88.1 run: no unused files or
   dependencies, 16 exports nobody imports, all used inside their own file — the two added
   tonight lost their `export`, the 14 older ones are listed in the night sheet; every
-  tracked source file has its header; the docs carry no line references. Equivalence: `pnpm
-balance` on seeds 1–30 gives exactly the piece 1 row — commit "chore: clean-up sweep" on
+  tracked source file has its header; the docs carry no line references. Equivalence:
+  `pnpm balance` on seeds 1–30 gives exactly the piece 1 row — commit "chore: clean-up
+  sweep" on `feat/night-2026-11-16`.
+- 2026-11-16 — **Why hunters rob each other, measured** (night 2026-11-16, piece 7, no code
+  change): 10 seeded matches; the pattern, the cause and a proposed bot change in the night
+  sheet; the decision is OPEN q — commit "docs: why hunters rob each other" on
   `feat/night-2026-11-16`.
 
 ## CHECKS DONE
@@ -534,3 +541,5 @@ balance` on seeds 1–30 gives exactly the piece 1 row — commit "chore: clean-
 | 2026-11-16 | `pnpm dlx knip@5` (knip 5.88.1, one-off, not added to the repository or CI)                                                                                                               | night branch at `de48624`                                                                                                            | no unused files or dependencies; 8 unused exports and 8 unused exported types, all used inside their own file                                                                                                                       | night sheet, piece 6                                                                           |
 | 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1`                                                                                                                                    | night branch at `de48624` plus the sweep                                                                                             | identical to the piece 1 row: 26.7 / 43.3 / 30.0 %, 8.7 swaps, 1304.2 steals, 39 125 steals of 2.1 coins; CPU load 100 % before                                                                                                     | BALANCE.md "Adopted" (same numbers)                                                            |
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 30 related test files / 169 tests)                                                                                                        | working tree of "chore: clean-up sweep"                                                                                              | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | hunter-steal measurement: 10 seeded 32-bot matches (seeds 1–10, defaults) through `simulate`'s observer, scratch script outside the repository                                            | night branch at `f2d3166`                                                                                                            | 92.1 % hunter on hunter; distance median 26.2; thief every 1000 ms; robbed back within 10 s 83.7 %, median 0.9 s; 879 episodes of 4+ steals hold 9331 of 12 184                                                                     | night sheet, piece 7                                                                           |
+| 2026-11-16 | format check of the changed Markdown                                                                                                                                                      | working tree of "docs: why hunters rob each other"                                                                                   | green                                                                                                                                                                                                                               | same commit                                                                                    |
