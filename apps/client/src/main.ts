@@ -3,10 +3,12 @@
 // slot has a player, lets the client watch. With ?spectate=1 it only watches (CONCEPT.md §5):
 // the whole field, every name, the clock and the halving staging, no controls. Draws with
 // packages/render (scene.ts), interpolates with packages/protocol; everything shown comes
-// from the server's state.
+// from the server's state, only the own ghost is drawn ahead of it by the own input
+// (prediction.ts, display only).
 
 import {
   GHOST_CAN_STEAL,
+  GHOST_SECURING,
   RenderClock,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
@@ -14,7 +16,7 @@ import {
   STATE_TO_END,
   interpolate,
   latestServerMs,
-  stateAt,
+  type GhostState,
   type ServerRecap,
   type ServerState,
   type ServerSteal,
@@ -24,6 +26,7 @@ import { Connection, type Mode } from './connection.js';
 import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
+import { OwnPrediction, type ServerOwn } from './prediction.js';
 import { ResultScreen, nameIn } from './result.js';
 import { SignalMarkers } from './signals.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
@@ -56,7 +59,8 @@ const viewButton = el('view', HTMLButtonElement);
 const viewToggle = spectate ? null : new ViewToggle(viewButton);
 const teamLine = el('team');
 const trails = new Trails();
-const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
+const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
+const prediction = new OwnPrediction();
 const result = new ResultScreen();
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
@@ -132,18 +136,51 @@ bindKeyboard(controls);
 bindJoystick(el('stick'), el('knob'), controls);
 new Help(el('help'), el('help-open', HTMLButtonElement));
 
-function snapshot(now: number): Frame {
-  const target = renderClock.target(now, latestServerMs(conn.buffer));
-  const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
-  const latest = conn.buffer.at(-1)?.state;
-  const ownId = conn.welcome?.ghost ?? null;
-  const playing = conn.mode === 'player';
+// The moments one frame shows, in server time, for the latency measurement
+// (e2e/latency.measure.ts): the drawn ghosts (render target), the newest state, the coins.
+interface FrameTiming {
+  frameMs: number;
+  targetMs: number | null;
+  latestMs: number | null;
+  coinsMs: number | null;
+}
+
+// The own ghost in the newest state, as the prediction needs it; null while watching.
+function ownServer(ownId: number | null): ServerOwn | null {
+  const newest = conn.buffer.at(-1);
+  const g = newest?.state.ghosts.find((x) => x.id === ownId);
+  if (conn.mode !== 'player' || !newest || !g) return null;
   return {
+    x: g.x,
+    y: g.y,
+    carrying: g.carried > 0,
+    frozen: (g.flags & GHOST_SECURING) !== 0 || (newest.state.flags & STATE_RESULT) !== 0,
+    receivedAt: newest.receivedAt,
+  };
+}
+
+// Other ghosts a render buffer behind, smoothly; the own one where the own input has already
+// taken it (prediction.ts).
+function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
+  const predicted = prediction.update(now, conn.direction, ownServer(ownId));
+  const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
+  return ghosts.map((g) => (g.id === ownId && predicted ? { ...g, ...predicted } : g));
+}
+
+function snapshot(now: number): { f: Frame; timing: FrameTiming } {
+  const target = renderClock.target(now, latestServerMs(conn.buffer));
+  const ownId = conn.welcome?.ghost ?? null;
+  const ghosts = drawnGhosts(now, target, ownId);
+  const latest = conn.buffer.at(-1)?.state;
+  const playing = conn.mode === 'player';
+  const newestMs = latest?.serverMs ?? null;
+  const timing = { frameMs: now, targetMs: target, latestMs: newestMs, coinsMs: newestMs };
+  const f: Frame = {
     ghosts,
     latest,
-    // The coins of the moment the ghosts are drawn at, so a pickup shows when the drawn ghost
-    // touches the coin, not a render buffer earlier.
-    coins: (target === null ? latest : stateAt(conn.buffer, target))?.coins ?? [],
+    // The newest state's coins: the own ghost is drawn at the newest moment or ahead of it, so
+    // its pickups show when it touches a coin (reports/session-2026-11-16-human.md "Response").
+    coins: latest?.coins ?? [],
     ownId,
     own: ghosts.find((g) => g.id === ownId),
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,
@@ -152,6 +189,7 @@ function snapshot(now: number): Frame {
     hud: hudOnField(),
     markers: markers.active(now),
   };
+  return { f, timing };
 }
 
 // "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
@@ -186,8 +224,9 @@ function countdownOf(s: ServerState | undefined): { ms: number; toEnd: boolean }
 }
 
 // Read by the Playwright specs: what this client knows and drew, never more than it shows.
-function expose(f: Frame, drawn: Drawn): void {
+function expose(f: Frame, drawn: Drawn, timing: FrameTiming): void {
   (window as unknown as { __client: unknown }).__client = {
+    timing,
     mode: conn.mode,
     ghost: f.ownId,
     team: conn.welcome?.team ?? null,
@@ -205,8 +244,8 @@ function expose(f: Frame, drawn: Drawn): void {
 function frame(): void {
   const now = performance.now();
   conn.flush(now);
-  const f = snapshot(now);
-  expose(f, draw(f));
+  const { f, timing } = snapshot(now);
+  expose(f, draw(f), timing);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

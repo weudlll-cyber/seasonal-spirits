@@ -1,8 +1,8 @@
 // Seasonal Spirits — the client's one WebSocket: hello, welcome, states, steal notices, the
 // match recap, team signals, and what it sends.
 // A player sends only a direction and the one action (the server is the only truth); the
-// direction goes out when it changes, at most every SEND_INTERVAL_MS, so a player stays well
-// inside the server's 20 messages per second. A spectator sends nothing after its hello.
+// direction goes out as soon as it changes, within the gap of input-sender.ts. A spectator
+// sends nothing after its hello.
 
 import {
   decodeState,
@@ -19,9 +19,10 @@ import {
   type TeamSignal,
 } from '@seasonal-spirits/protocol';
 
+import { InputSender, type Direction } from './input-sender.js';
+
 declare const __SERVER_PORT__: number;
 
-const SEND_INTERVAL_MS = 100;
 const KEEP_STATES_MS = 2000;
 
 export type Mode = 'connecting' | 'player' | 'spectator' | 'closed';
@@ -40,9 +41,7 @@ export class Connection {
   welcome: ServerWelcome | null = null;
   private readonly ws: WebSocket;
   private readonly events: ConnectionEvents;
-  private dir = { dx: 0, dy: 0 };
-  private sentDir = { dx: 0, dy: 0 };
-  private lastSendAt = 0;
+  private readonly sender = new InputSender();
 
   constructor(hello: 'player' | 'spectator', events: ConnectionEvents) {
     this.events = events;
@@ -60,9 +59,15 @@ export class Connection {
     };
   }
 
-  // The latest direction; sent on the next flush if it changed.
+  // The direction the player holds now (the own ghost's prediction moves with it).
+  get direction(): Direction {
+    return this.sender.direction;
+  }
+
+  // The latest direction; sent at once if it changed (input-sender.ts).
   steer(dx: number, dy: number): void {
-    this.dir = { dx, dy };
+    this.sender.hold({ dx, dy });
+    this.flush(performance.now());
   }
 
   act(action: GameAction): void {
@@ -76,13 +81,11 @@ export class Connection {
     this.ws.send(JSON.stringify({ kind: 'signal', signal }));
   }
 
-  // Called once per frame: sends the direction if it changed and the interval has passed.
+  // Called at every change and once per frame: sends a change the gap held back.
   flush(now: number): void {
-    if (this.mode !== 'player' || now - this.lastSendAt < SEND_INTERVAL_MS) return;
-    if (this.dir.dx === this.sentDir.dx && this.dir.dy === this.sentDir.dy) return;
-    this.ws.send(JSON.stringify({ kind: 'input', ...this.dir }));
-    this.sentDir = this.dir;
-    this.lastSendAt = now;
+    if (this.mode !== 'player') return;
+    const dir = this.sender.due(now);
+    if (dir) this.ws.send(JSON.stringify({ kind: 'input', ...dir }));
   }
 
   private onMessage(data: unknown): void {

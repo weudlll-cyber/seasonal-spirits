@@ -16,12 +16,14 @@ message (docs/SERVER.md). Development mode only: there is no sign-in yet (CONCEP
 | `src/storage.ts`           | Remembered choices (mute, view, help seen) in localStorage, safe when it throws |
 | `src/help.ts`              | The help overlay: five rules with drawings made in code, the controls           |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, sending         |
+| `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated   |
+| `src/prediction.ts`        | Where the own ghost is drawn: by the own input, corrected to the server         |
 | `src/input.ts`             | Keyboard and the touch joystick                                                 |
 | `src/hud.ts`               | Buttons, HALVING announcement and flash, notices, mute; HUD rects on the field  |
 | `src/result.ts`            | Result screen and bridge box                                                    |
 | `src/sound.ts`             | The halving tone (Web Audio)                                                    |
 | `src/config.ts`            | Bridge box on/off and its links, camera span                                    |
-| `e2e/`                     | Playwright config, helpers, the player and the spectator specs                  |
+| `e2e/`                     | Playwright configs, helpers, the specs, the latency measurement                 |
 | `packages/render` (shared) | The Canvas drawing the client and the viewer share: field, ghosts, clock        |
 
 Reused rather than rebuilt: the state decoding, interpolation, render clock and buffer
@@ -92,8 +94,21 @@ Owner's observation 2026-11-15: stealing was not understood.
   "Secure (<value now>)" and "Swap (<n> <next season>, worth <now> now / <later> later)".
   The numbers are the server's offer for the own ghost (`offers` in the state), never
   computed by the client; a button is greyed out when it would do nothing.
-- The direction goes out when it changes, at most every 100 ms; actions go out at once.
-  That keeps a player well inside the server's 20 messages per second.
+- The direction goes out at once when it changes, unless the last one went out less than
+  60 ms ago (`SEND_GAP_MS`, `src/input-sender.ts`); then the next frame sends it. A direction
+  equal to the last one sent is never sent again. At most 17 directions in any second, so
+  with actions (sent at once) and signals a player stays inside the server's 20 messages per
+  second. Before 2026-11-16 the direction waited for the next frame and went out at most
+  every 100 ms.
+- **The own ghost answers at once** (session 2026-11-16-RESPONSE): it is drawn where the own
+  direction has already taken it, moved with the server's own movement rule (`stepGhost` in
+  game-core: speed, carrying, field edge) and pulled smoothly towards the server's position
+  (`src/prediction.ts`; the server's word counts as `PREDICTION_LAG_MS` old, a gap fades by
+  frame time / `CORRECTION_MS` per frame, above `SNAP_DISTANCE` it snaps). Display only:
+  nothing of it leaves the client, the server's position is the truth (THREATS row 36).
+  Every other ghost stays 100 ms behind the newest state, interpolated. Measured: a key
+  press shows on screen in 8 ms median (14 ms p90) against 113 ms (129 ms) before
+  (docs/BALANCE.md "Response").
 
 ## Screen
 
@@ -136,10 +151,12 @@ hidden under the top bar).
   ground takes a cast of the current season's colour.
 - **Picking up.** Ghosts and coins are drawn with the game core's sizes (`ghostRadius`,
   `coinRadius`; render `ghostRadiusPx`, `coinRadiusPx`, tested), and the field coins come
-  from the same buffered moment as the interpolated ghosts (`stateAt` in packages/protocol),
-  so a coin disappears exactly when the drawn ghost touches it — no prediction. Before
-  2026-11-15 the coins came from the newest state while the ghosts are drawn 100 ms behind:
-  a coin vanished up to 30 field units before the ghost reached it. Only in a phone's
+  from the newest state (since 2026-11-16): the own ghost is drawn at the newest moment or
+  ahead of it, and its coin disappears 66 ms (median) after the drawn shapes touch, against
+  197 ms with the coins of the buffered moment. The price: another ghost's coin disappears
+  about 114 ms before that ghost's drawn shape reaches it (32 ms after with the buffered
+  coins; docs/BALANCE.md "Response"). From 2026-11-15 to 2026-11-16 the coins came from the
+  buffered moment (`stateAt`, removed); before that from the newest state too. Only in a phone's
   "Overview" are the shapes drawn larger than their size (at least 4 px for a ghost, 3 px for
   a coin), so there they touch slightly before the pickup.
 - **Names.** Every ghost on screen is named (`placeLabels`, `packages/render/src/labels.ts`,
@@ -222,8 +239,20 @@ carrying nothing (`apps/server/src/scenario.ts`, development only): the hunter r
 player ("… stole … from you"), the Steal button lights up with the range ring shown, Space
 robs it back ("You stole … from …"), walking away dims the button; screenshot
 `desktop-steal.png`.
+`e2e/response.e2e.ts` (desktop): eight key presses from standing; the drawn own ghost moves
+within 50 ms of the key in the median (measured 8 ms; 113 ms before the prediction).
 
-`window.__client` is written every frame for these tests: mode, own ghost and team, own
+**`pnpm latency`** (on demand, never in `pnpm e2e`): `e2e/latency.measure.ts` with its own
+config (`e2e/latency.config.ts`, server 3938 with the default 5-minute match, client 5938,
+one desktop Chromium). It records every state, every message sent, every key and every frame
+(`e2e/recorder.ts`), collects coins for 90 s, presses a movement key 55 times from standing,
+and reads the recording (`e2e/latency.ts`): key → drawn moving with its parts (until sent,
+until the server's state shows it, until drawn), coin spawned → drawn, and the pickup offset
+for both coin sources. Writes `reports/response/latency-latest.json`; results in
+docs/BALANCE.md "Response".
+
+`window.__client` is written every frame for these tests: the frame's time and the server
+moments it shows (render target, newest state, coins), mode, own ghost and team, own
 position and carried coins, season, field coin count, halvings seen, result shown, and what
 the frame drew (view mode, bottom of the bar, minimap and arrow positions, own shrine in
 sight and its label's box, the controls and thumb zones on the field, the placed labels) —

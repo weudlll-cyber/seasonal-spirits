@@ -114,3 +114,94 @@ bot — no second match loop), `rotatedRoster` and `spread` from the balance, `s
 host's 32 fixed seats would need a seat change at each match start); the stand-in delays its
 own position too, which makes it overshoot the shrine at 1000 ms; the first raw file's
 groups carry no start time (the groups file has it).
+
+## Response (session 2026-11-16-RESPONSE, same branch)
+
+Task: measure the real client's own delay, make the own ghost answer at once (display only),
+measure again, and run the stand-in with the measured delays. Full tables in docs/BALANCE.md
+"Response"; summaries in `reports/response/latency-before.json` and `latency-after.json`.
+
+**Measuring** (`pnpm latency`, new): Playwright against its own stack (server 3938, default
+5-minute match, client 5938), one headless desktop Chromium. `e2e/recorder.ts` runs in the
+page before the client: it wraps `WebSocket` (every state with its arrival time, every text
+message sent), listens to every key and reads `window.__client` once per frame; `main.ts` now
+exposes the frame's time and the server moments it shows (render target, newest state,
+coins). `e2e/latency.ts` decodes the recording in Node with the protocol's own `decodeState`
+and `interpolate`. 90 s of collecting coins, then 55 key presses of 400 ms from standing; 50
+samples. Background: the owner's `pnpm dev` running, CPU busy 22–24 % of 14 cores.
+
+**Before → after** (median / p90, ms):
+
+- Key → own ghost drawn moving: **113 / 129 → 8 / 14**. Before: 10 until sent (the next
+  frame; the 100 ms interval did not bite from standing), 37 until a state with the moved ghost
+  arrived (tick wait and the way back), 64 render buffer (100 ms behind, less the one tick the
+  interpolation already blends towards). After: sent in 4, drawn in the next frame; the
+  server's state follows 31 ms after the send.
+- While steering (key changes every 50 ms during collecting, from the first runs before the
+  sampling was corrected): 221 / 351 → 8 / 16.
+- Coin spawned on the server → drawn: **122 / 125 → 10 / 18** (2–3 ms of that is the way from
+  the tick to the client).
+
+**The coin source**, pickup offset from the drawn shapes touching to the coin gone, worked out
+for both sources from one recording: own ghost (N = 9) **197 ms with the buffered moment's coins,
+66 ms with the newest state's** → the newest state's (the task's rule: the smaller own-ghost
+offset). Other ghosts (N = 286): 32 and −114 ms — their coins now vanish about a tenth of a
+second before the drawn ghost arrives. Before the prediction: own 17 / −84, others 31 / −82.
+
+**Built**: `input-sender.ts` — a changed direction goes out at once unless the last one went
+out under 60 ms ago (then the next frame sends it), never a repeat; at most 17 a second, so
+with actions and signals a player stays under the server's 20. Today's client had no resend of
+an unchanged direction, so there was no periodic resend to keep; the per-frame flush stays for
+a change the gap held back. `prediction.ts` — the own ghost moved by the held direction with
+game-core's `stepGhost` (the server's movement step, moved out of `Match.applyIntent`, now
+shared), standing while the server says securing or result; the server's position is taken as
+`PREDICTION_LAG_MS` (40) old and compared with the own path then; the gap fades by frame time /
+`CORRECTION_MS` (150) per frame, above `SNAP_DISTANCE` (100) it snaps (a new match). Every other
+ghost stays buffered. No new message, no validator change; THREATS row 36.
+
+**Stand-in** (desktop view, N = 30, seeds 1–30; delay = measured median + 250 ms): today's
+113 + 250 = 363 ms → 30.5 coins, 17.8 secured, rank 13.0 of 32; after the fix 8 + 250 = 258 ms
+→ 33.9, 17.0, 13.6. The simulation decides in whole 50 ms ticks (the newest state at least
+the delay old), so these act as 400 and 300 ms; the 258 ms row is the `desktop` row of Human
+round 1. **What it means**: for the stand-in about 100 ms less delay is worth 3 coins and
+nothing in rank. The stand-in sees its own ghost as late as the rest and aims perfectly, so
+it does not show what the fix changes for a real player: the own ghost now follows the key at
+once. The client's delay alone does not explain "almost impossible". Bots and rules unchanged:
+`pnpm balance --matches 30 --seed 1` gives the night's row exactly.
+
+**Tests**: `input-sender.test.ts` (at once on a change; never the last direction again; a
+change inside the gap waits and goes after it; at most 17 in any second under any key
+storm), `prediction.test.ts` (against a real `Match`: the same positions tick by tick for the
+same inputs, carrying and the field edge included; a small gap fades, not in one jump; a
+large one snaps; stands while the server holds it), `e2e/response.e2e.ts` (desktop: eight
+presses from standing, median at most 50 ms — today's p10 was 80 ms, so it fails without the
+fix). Removed with `stateAt`: its test.
+
+**Mistakes and corrections**: the first runs took the key samples from the collecting phase
+too (keys changing every 50 ms while moving), which mixed the gap and the send interval into
+"from standing"; sampling now starts at the first press from standing, the before run was
+repeated with today's sending and drawing restored for it. 40 s of collecting gave only 6 own
+pickups; 90 s gave 9 and 21.
+
+**Files** (lines before → after, against `3cce2d5`): client `src/main.ts` 212 → 251,
+`src/connection.ts` 132 → 135, new `src/input-sender.ts` 38, new `src/input-sender.test.ts` 46,
+new `src/prediction.ts` 98, new `src/prediction.test.ts` 83, `e2e/stack.ts` 155 → 198, new
+`e2e/recorder.ts` 68, new `e2e/latency.ts` 242, new `e2e/latency.measure.ts` 69, new
+`e2e/latency.config.ts` 46, new `e2e/response.e2e.ts` 30; game-core `geometry.ts` 46 → 64,
+`match.ts` 126 → 125, `index.ts` 26 → 34, `human-cli.ts` 67 → 76, `human/variants.ts` 50 → 56;
+protocol `interpolation.ts` 94 → 84, `interpolation.test.ts` 61 → 48; root `package.json` 43 →
+44 (`pnpm latency`), `README.md` 97 → 98; docs CLIENT 230 → 259, GAME-CORE 217 → 222, THREATS 89
+→ 91, BALANCE 1105 → 1189, BACKLOG 573 → (this commit); new
+`reports/response/latency-before.json`, `latency-after.json` (91 lines each). Reused:
+`decodeState`, `interpolate`, `RenderClock` and the state bits from the protocol; `spread`
+(now exported by game-core) for every median; `touchesCoin`, `ghostRadius` and `clamp` from
+game-core; the stand-in's `desktopAt` for the old 600 and 1000 ms rows too; `keyboard`,
+`view`, `HELP_SEEN` and the stack layout of the existing specs; the server's movement step
+itself (`stepGhost`). Removed: `stateAt` and its test, the 100 ms send interval, the
+duplicate movement arithmetic that would otherwise have lived in the client.
+
+**Noticed, left**: the viewer still draws coins from the newest state and ghosts 100 ms
+behind (its own concern, unchanged); Windows timers make the server's 50 ms ticks bursty (the
+"until the state arrived" part reaches 60 ms at p90); the probe's `BUFFER_MS` stays 100; a
+size guard for raw files (a CI check) is not built — the rule lives in `.gitignore` and
+BALANCE.md.

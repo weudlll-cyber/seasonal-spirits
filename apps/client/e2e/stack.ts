@@ -16,6 +16,9 @@ export const STEAL_CLIENT_PORT = 5934;
 // A third stack with the staged shield (SCENARIO=shield).
 export const SHIELD_SERVER_PORT = 3936;
 export const SHIELD_CLIENT_PORT = 5936;
+// The latency measurement's own stack (latency.config.ts): default seasons, no scenario.
+export const LATENCY_SERVER_PORT = 3938;
+export const LATENCY_CLIENT_PORT = 5938;
 
 // localStorage of a browser that has seen the help overlay (apps/client/src/help.ts).
 export const HELP_SEEN = (
@@ -30,9 +33,17 @@ export const HELP_SEEN = (
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export const SCREENS = path.join(ROOT, 'reports', 'screens', 'latest');
+export const LATENCY_OUT = path.join(ROOT, 'reports', 'response', 'latency-latest.json');
 
 // window.__client, written by apps/client/src/main.ts every frame.
 export interface ClientView {
+  // The frame's time and the server moments it shows (main.ts FrameTiming).
+  timing: {
+    frameMs: number;
+    targetMs: number | null;
+    latestMs: number | null;
+    coinsMs: number | null;
+  };
   mode: string;
   ghost: number | null;
   team: number | null;
@@ -124,6 +135,38 @@ export async function joystick(page: Page): Promise<Steering> {
       await touch('touchMove', origin.x + (dx / len) * 80, origin.y + (dy / len) * 80);
     },
   };
+}
+
+// Until the drawn own ghost has not moved for three polls in a row (at most 2 s).
+async function standStill(page: Page): Promise<void> {
+  let last = (await view(page)).own;
+  let still = 0;
+  for (let i = 0; i < 40 && still < 3; i++) {
+    await page.waitForTimeout(50);
+    const now = (await view(page)).own;
+    still = now && last && Math.hypot(now.x - last.x, now.y - last.y) < 0.5 ? still + 1 : 0;
+    last = now;
+  }
+}
+
+// `count` movement key presses of 400 ms, each from standing, towards the middle of the field
+// (latency.ts reads them); returns the page time the first one may start from.
+export async function pressFromStanding(
+  page: Page,
+  keys: Steering,
+  count: number,
+): Promise<number> {
+  const from = await page.evaluate(() => performance.now());
+  for (let i = 0; i < count; i++) {
+    await standStill(page);
+    const own = (await view(page)).own ?? { x: 1000, y: 1000 };
+    const horizontal = i % 2 === 0;
+    const sign = (horizontal ? own.x : own.y) < 1000 ? 1 : -1;
+    await keys.hold(horizontal ? sign : 0, horizontal ? 0 : sign);
+    await page.waitForTimeout(400);
+    await keys.hold(0, 0);
+  }
+  return from;
 }
 
 // Steer the own ghost until `done` holds or the time runs out; true if it held.

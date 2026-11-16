@@ -5,7 +5,7 @@
 import { completeSecure, trySecureStart, trySteal, trySwap } from './actions.js';
 import type { GameConfig } from './config.js';
 import { pickUpCoins, spawnCoins, type Spawner } from './field.js';
-import { clamp, clampDirection, shrineOf, shrinePositions } from './geometry.js';
+import { shrineOf, shrinePositions, stepGhost } from './geometry.js';
 import { applyHalving } from './halving.js';
 import { mulberry32 } from './rng.js';
 import { separateGhosts } from './separation.js';
@@ -98,11 +98,10 @@ export class Match {
       return;
     }
     if (!intent) return;
-    const dir = clampDirection(intent.dx, intent.dy);
-    const carrying = totalCount(g.carried) > 0;
-    const step = (this.cfg.ghostSpeed * (carrying ? this.cfg.carrySpeedFactor : 1) * dtMs) / 1000;
-    g.x = clamp(g.x + dir.x * step, 0, this.cfg.fieldSize);
-    g.y = clamp(g.y + dir.y * step, 0, this.cfg.fieldSize);
+    const from = { x: g.x, y: g.y, carrying: totalCount(g.carried) > 0 };
+    const to = stepGhost(this.cfg, from, intent, dtMs);
+    g.x = to.x;
+    g.y = to.y;
     if (intent.action === 'steal') trySteal(this.cfg, this.s, g, this.spawner.rng);
     else if (intent.action === 'swap') trySwap(this.cfg, this.s, g);
     else if (intent.action === 'secure') trySecureStart(this.cfg, this.s, g);

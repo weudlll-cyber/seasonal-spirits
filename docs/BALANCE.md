@@ -1103,3 +1103,87 @@ With T4 (deadline spread 10 s) the groups 5–10 s before a deadline fall to 258
   stand still to secure. They last seconds, not long (longest 6.2 s).
 
 Nothing here changes a default; the owner decides whether any trial goes into the game.
+
+## Response — the client's own delay (2026-11-16, `feat/human-feel`)
+
+Human round 1 ends on "a total delay well above 300 ms". This round measures the real client's
+part of it, makes the own ghost answer at once, and runs the stand-in with the measured delays.
+
+**Setup**: `pnpm latency` (docs/CLIENT.md): its own server (3938, 20 Hz, the default 5-minute
+match, 31 bots) and client (5938), one headless desktop Chromium at 1280 × 800; 90 s of
+collecting coins, then 55 movement key presses of 400 ms, each from standing; 50 samples for
+the key and the coin rows. Times are the frames' `requestAnimationFrame` times; the screen
+shows a frame up to one more refresh later (16.7 ms at 60 Hz). Background: the owner's
+`pnpm dev` running, CPU busy 22–24 % of 14 cores during each run. Summaries:
+`reports/response/latency-before.json`, `latency-after.json`.
+
+### Key press → own ghost drawn moving (ms, median / p90, N = 50)
+
+| Part                                                              | Before (today) | After (prediction) |
+| ----------------------------------------------------------------- | -------------- | ------------------ |
+| Whole: key → drawn moving                                         | 113 / 129      | 8 / 14             |
+| Key → direction sent                                              | 10 / 14        | 4 / 8              |
+| Sent → a state with the moved ghost arrived (tick wait, way back) | 37 / 60        | 31 / 50            |
+| That state arrived → drawn moving                                 | 64 / 75        | −27 / −10          |
+
+Before, a press from standing waited for the next frame (the 100 ms send interval did not bite
+from standing), up to a tick on the server, and then the render buffer: other ghosts and the
+own one are drawn 100 ms behind the newest state, and a movement shows once the render time
+passes the last state before it (100 ms less one tick). After, the own ghost moves in the next
+frame; the server's state follows about 30 ms later (the negative last row). p10: 80 ms
+before, 3 ms after. In the first two runs the samples also took in the collecting phase's key
+changes while moving (every 50 ms): there, before the change, the 100 ms send interval added
+up to 100 ms (221 / 351 ms), after it 8 / 16 ms.
+
+### Coin spawned on the server → drawn (ms, median / p90, N = 50)
+
+| Part                        | Before    | After   |
+| --------------------------- | --------- | ------- |
+| Whole                       | 122 / 125 | 10 / 18 |
+| Server tick → state arrived | 2 / 11    | 3 / 12  |
+| State arrived → coin drawn  | 118 / 123 | 6 / 8   |
+
+### The coin source: the pickup offset (ms, median, p10 – p90)
+
+From the first frame in which the drawn ghost and the drawn coin touch to the first frame
+without the coin; positive: the coin goes after the touch. Both coin sources are worked out
+from one recording (the frame's render target for the buffered moment, its newest state for
+the newest coins).
+
+| Ghost                    | Coins of the buffered moment (until today) | Coins of the newest state |
+| ------------------------ | ------------------------------------------ | ------------------------- |
+| Own, after (N = 9)       | **197** (183 – 223)                        | **66** (48 – 89)          |
+| Others, after (N = 286)  | 32 (0 – 50)                                | −114 (−132 – −85)         |
+| Own, before (N = 21)     | 17 (0 – 48)                                | −84 (−102 – −65)          |
+| Others, before (N = 231) | 31 (0 – 50)                                | −82 (−100 – −55)          |
+
+**Rule of the task: the smaller own-ghost offset wins — the newest state's coins** (66 ms
+against 197 ms with the prediction on). The price: another ghost's coin now disappears about
+114 ms before its drawn shape reaches it.
+
+### The stand-in with the measured delays (desktop view, N = 30, seeds 1–30)
+
+Delay = the measured key → movement median + 250 ms of human reaction. The simulation decides
+on the newest state at least the delay old, in 50 ms ticks, so a delay acts as the next whole
+tick up.
+
+| Delay                           | Acts as | Coins picked up | Secured | Rank (of 32) |
+| ------------------------------- | ------- | --------------- | ------- | ------------ |
+| Today: 113 + 250 = 363 ms       | 400 ms  | 30.5            | 17.8    | 13.0         |
+| After the fix: 8 + 250 = 258 ms | 300 ms  | 33.9            | 17.0    | 13.6         |
+
+(Means; the 258 ms row is the `desktop` row of Human round 1, the same matches.) Command:
+`pnpm human --matches 30 --seed 1 --variant desktop --reaction 363 --reaction 258`. Bots and
+rules unchanged: `pnpm balance --matches 30 --seed 1` still gives 26.7 / 43.3 / 30.0 %, 8.7
+swaps, 1304.2 steals, 39 125 steals.
+
+### Response: what the numbers say
+
+- **The client's own delay was about 110 ms from standing**, two thirds of it the render
+  buffer; while steering, up to 100 ms more from the send interval. With the prediction a key
+  shows in the next frame (8 ms median) and a new coin appears within 10 ms of its arrival.
+- **For the stand-in 100 ms less delay changes little**: 3.4 coins more, secured value and
+  rank within the spread of the matches (rank p10–p90 3–21). The stand-in sees its own ghost
+  as late as everything else and aims perfectly; a real player with the fix sees the own
+  ghost at once, which the model does not capture. What the owner felt as "almost
+  impossible" is not explained by the client's delay alone.

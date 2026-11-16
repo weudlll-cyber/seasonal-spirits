@@ -1,4 +1,5 @@
-// Seasonal Spirits — plane geometry of the map: distances, clamping, shrine positions.
+// Seasonal Spirits — plane geometry of the map: distances, clamping, one movement step,
+// shrine positions.
 // The map is a square 0..fieldSize; the four shrines sit inset from the four corners.
 
 import type { GameConfig } from './config.js';
@@ -17,6 +18,23 @@ export function clampDirection(dx: number, dy: number): Vec {
   if (!Number.isFinite(dx) || !Number.isFinite(dy)) return { x: 0, y: 0 };
   const mag = Math.hypot(dx, dy);
   return mag > 1 ? { x: dx / mag, y: dy / mag } : { x: dx, y: dy };
+}
+
+// One step of a ghost's movement: speed (slower while carrying), the direction clamped to
+// length 1, the field's edges. The server's tick (match.ts) and the client's prediction of the
+// own ghost (apps/client prediction.ts) both move with it, so they cannot drift apart.
+export function stepGhost(
+  cfg: GameConfig,
+  at: Vec & { carrying: boolean },
+  dir: { dx: number; dy: number },
+  dtMs: number,
+): Vec {
+  const d = clampDirection(dir.dx, dir.dy);
+  const step = (cfg.ghostSpeed * (at.carrying ? cfg.carrySpeedFactor : 1) * dtMs) / 1000;
+  return {
+    x: clamp(at.x + d.x * step, 0, cfg.fieldSize),
+    y: clamp(at.y + d.y * step, 0, cfg.fieldSize),
+  };
 }
 
 export function shrinePositions(cfg: GameConfig): Vec[] {

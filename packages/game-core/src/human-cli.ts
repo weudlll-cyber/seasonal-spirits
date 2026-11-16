@@ -1,6 +1,7 @@
-// Seasonal Spirits — `pnpm human --matches <n> --seed <s> [--variant <name> ...] [--out <file>]`:
-// the human round of session 2026-11-16-HUMAN (human/round.ts) for the named variants
-// (human/variants.ts; all without --variant). Prints a Markdown summary, every number with its
+// Seasonal Spirits — `pnpm human --matches <n> --seed <s> [--variant <name> ...]
+// [--reaction <ms> ...] [--out <file>]`: the human round of session 2026-11-16-HUMAN
+// (human/round.ts) for the named variants (human/variants.ts) and for desktop stand-ins with
+// the given delays; every variant without either. Prints a Markdown summary, every number with its
 // N, and writes every report to --out as JSON.
 
 import fs from 'node:fs';
@@ -9,7 +10,7 @@ import { STRATEGIES } from './bots/strategies.js';
 import { listArg, numberArg, textArg } from './cli-args.js';
 import { DEFAULT_CONFIG } from './config.js';
 import { runHumanRound, type HumanReport } from './human/round.js';
-import { HUMAN_VARIANTS, configOf } from './human/variants.js';
+import { HUMAN_VARIANTS, configOf, desktopAt } from './human/variants.js';
 
 const argv = process.argv.slice(2);
 const matches = numberArg(argv, '--matches', 30, 10_000);
@@ -22,8 +23,16 @@ if (unknown.length > 0) {
   );
   process.exit(2);
 }
-const chosen =
-  names.length > 0 ? HUMAN_VARIANTS.filter((v) => names.includes(v.name)) : HUMAN_VARIANTS;
+// `--reaction <ms>` (may repeat): the stand-in as a desktop player with that delay.
+const reactions = listArg(argv, '--reaction').map((raw) => {
+  if (!/^\d{1,4}$/.test(raw) || Number(raw) > 5000) {
+    console.error(`--reaction needs a whole number of ms from 0 to 5000, got "${raw}"`);
+    process.exit(2);
+  }
+  return desktopAt(Number(raw));
+});
+const named = HUMAN_VARIANTS.filter((v) => names.includes(v.name));
+const chosen = names.length + reactions.length > 0 ? [...named, ...reactions] : HUMAN_VARIANTS;
 
 const n1 = (x: number): string => x.toFixed(1);
 const cells = (s: Spread): string =>

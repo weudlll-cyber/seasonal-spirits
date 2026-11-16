@@ -19,7 +19,7 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 | `src/halving.ts`    | The halving at a season turn                                                                           |
 | `src/recap.ts`      | The match recap's three awards, folded from the events tick by tick                                    |
 | `src/separation.ts` | Soft separation: ghosts closer than `separationRadius` drift apart                                     |
-| `src/geometry.ts`   | Distances, clamping, shrine positions                                                                  |
+| `src/geometry.ts`   | Distances, clamping, one movement step, shrine positions                                               |
 | `src/rng.ts`        | `mulberry32`, shared with the probe bots                                                               |
 | `src/bots/`         | The three strategies (`strategies.ts`), what they share (`common.ts`), what they see (`perception.ts`) |
 | `src/human/`        | The human round: the stand-in, coin lives, shrine groups; `src/human-cli.ts` is `pnpm human`           |
@@ -54,7 +54,10 @@ spawning, the end, the countdown.
   whole push. `separationRadius` stays below `stealRange`, so a thief beside a carrier can
   still steal.
 - **Carrying.** A ghost with any coin moves at `carrySpeedFactor` of its speed. Carried coins
-  are public state (CONCEPT.md §2a: a carrier is visible).
+  are public state (CONCEPT.md §2a: a carrier is visible). One step of movement — speed,
+  carrying, the direction clamped to length 1, the field's edges — is `stepGhost` in
+  `src/geometry.ts`; the client's prediction of its own ghost moves with the same function
+  (docs/CLIENT.md).
 - **Value.** A coin is worth 1 in its own season and `offSeasonValueFactor` (½) outside it.
 - **Swap** (own shrine; owner decision 2026-11-16, CONCEPT.md §14). All carried coins of the
   current season, from `swapMinIn` (6) on, become `floor(n · swapOut / swapIn)` of the next
@@ -161,7 +164,9 @@ phone portrait 1100 × 2000, from the client's `cameraSpan` 1100), decides a rea
 It is a measuring instrument, never part of the balance pool. `round.ts` runs seeded matches
 with it; `coins.ts` follows every field coin from spawn to pickup or halving, `groups.ts`
 every group of more than four ghosts within twice a shrine's radius. Every pickup is a
-`pickup` event (`src/field.ts`).
+`pickup` event (`src/field.ts`). `--reaction <ms>` (may repeat) adds a desktop stand-in with
+that delay (`desktopAt` in `variants.ts`); the delay counts in whole ticks: the stand-in
+decides on the newest state at least that old, so 258 ms act as 300 ms and 363 ms as 400 ms.
 
 ## `pnpm simulate --seed <n>`
 

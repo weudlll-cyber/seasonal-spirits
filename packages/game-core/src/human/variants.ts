@@ -23,14 +23,20 @@ const v = (
   botSeats: number | null = null,
 ): NamedVariant => ({ name, sight, bots, botSeats });
 
+// The stand-in as a desktop player with another delay: `pnpm human --reaction <ms>` (session
+// 2026-11-16-RESPONSE: the client's measured delay plus a human's 250 ms).
+export function desktopAt(reactionMs: number): NamedVariant {
+  return v(`desktop-${reactionMs}`, { view: DESKTOP_VIEW, reactionMs });
+}
+
 export const HUMAN_VARIANTS: readonly NamedVariant[] = [
   v('bots', null),
   v('desktop', DESKTOP),
   v('phone', { view: PHONE_VIEW, reactionMs: HUMAN_REACTION_MS }),
   v('full-no-delay', { view: null, reactionMs: 0 }),
   // Sensitivity of the 300 ms placeholder: a slower human, same view.
-  v('desktop-600', { view: DESKTOP_VIEW, reactionMs: 600 }),
-  v('desktop-1000', { view: DESKTOP_VIEW, reactionMs: 1000 }),
+  desktopAt(600),
+  desktopAt(1000),
   v('T1', DESKTOP, T1),
   v('T2', DESKTOP, T2),
   v('T1+T2', DESKTOP, { ...T1, ...T2 }),
