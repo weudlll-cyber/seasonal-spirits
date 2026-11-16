@@ -36,7 +36,6 @@ interface LookScene {
 function markersOf(g: GhostState, ownId: number): LegendMarker[] {
   const m: LegendMarker[] = [];
   if (g.flags & GHOST_CARRIER) m.push('carrier', 'trail');
-  if (g.offSeason > 0) m.push('half');
   if (g.flags & GHOST_SECURING) m.push('securing');
   if (g.id === ownId) m.push('own');
   return m;
@@ -95,8 +94,10 @@ function drawLook(scene: LookScene): void {
   });
   drawClock(ctx, state);
   const area = visibleArea(view);
-  // Ghosts and shrines are in every scene.
-  const shown = new Set<LegendMarker>(['team', 'shrine']);
+  // Ghosts and shrines are in every scene; coins in nearly every one.
+  const shown = new Set<LegendMarker>(
+    state.coins.length > 0 ? ['team', 'shrine', 'coin'] : ['team', 'shrine'],
+  );
   for (const g of state.ghosts) {
     const [x, y] = [sx(view, g.x), sy(view, g.y)];
     if (x < area.left || x > area.right || y < area.top || y > area.bottom) continue;

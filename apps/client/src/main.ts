@@ -25,6 +25,7 @@ import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { OwnPrediction, type ServerOwn } from './prediction.js';
+import { PriceBoard } from './prices.js';
 import { ResultScreen } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
 import { DeadlineTone } from './sound.js';
@@ -59,6 +60,7 @@ const trails = new Trails();
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
 const result = new ResultScreen();
+const prices = new PriceBoard();
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
 let recap: ServerRecap | null = null; // of the match just ended, during the result pause
@@ -183,6 +185,7 @@ function draw(f: Frame): Drawn {
   viewButton.hidden = !f.playing;
   const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
   hud.showControls(f.playing && !f.over, offer);
+  prices.update(f.latest?.season ?? null);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;
 }

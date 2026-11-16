@@ -1,20 +1,19 @@
-// Seasonal Spirits — the halving (CONCEPT.md §2b, §13): every season turn inside a match.
-// The old season's coins on the field disappear and from now on only the new season's coins
-// fall, at the same rate. Carried coins are not touched: outside its season a coin is worth
-// half (seasons.ts, valueNow), so every halving is a deadline to secure.
+// Seasonal Spirits — the halving (CONCEPT.md V5, sentence 3): every season turn inside a
+// match the next season comes into season and the prices move on (prices.ts). Nothing on the
+// field or in a ghost's hands changes — field coins stay, carried coins keep their count —
+// only what each is worth; the event marks the turn for the clients and the measurements.
+// Every coin a ghost carries now has crossed a halving (the recap's "Best nose", recap.ts) —
+// unless it is securing: that secure's prices were fixed before the halving.
 
 import { totalCount } from './seasons.js';
 import type { MatchState } from './types.js';
 
 export function applyHalving(s: MatchState): void {
-  const cleared = s.coins.length;
-  s.coins = [];
-  s.stats.cleared += cleared;
+  for (const g of s.ghosts) if (g.securingUntilMs === null) g.crossed = { ...g.carried };
   s.events.push({
     type: 'halving',
     atMs: s.elapsedMs,
     season: s.clock.current,
-    fieldCoinsCleared: cleared,
     carried: s.ghosts.reduce((n, g) => n + totalCount(g.carried), 0),
   });
 }

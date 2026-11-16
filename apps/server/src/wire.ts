@@ -1,7 +1,8 @@
 // Seasonal Spirits — the game core's match state as the wire state every client receives.
-// One place turns the core's numbers into what clients show: per ghost the carried and
-// off-season counts and the secured value, and for players in their own shrine the Secure
-// offer, computed by the core (a client never calculates it).
+// One place turns the core's numbers into what clients show: per ghost the carried count and
+// the secured value, per field coin its season, and for players in their own shrine the
+// Secure offer, computed by the core (a client never calculates it). The price board is not
+// sent: it follows from the season and the config (game-core priceOf).
 
 import {
   SEASONS,
@@ -65,7 +66,7 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
     nextMatchMs: ctx.nextMatchMs,
     teamSecured: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
     ghosts,
-    coins: s.coins.map((c) => ({ x: c.x, y: c.y })),
+    coins: s.coins.map((c) => ({ x: c.x, y: c.y, season: SEASONS.indexOf(c.season) })),
     offers,
   };
 }
@@ -78,7 +79,6 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
     y: g.y,
     team: g.team,
     carried,
-    offSeason: carried - g.carried[s.clock.current],
     secured: g.securedValue,
     flags:
       (carried > 0 ? GHOST_CARRIER : 0) |

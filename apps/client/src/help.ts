@@ -1,14 +1,18 @@
 // Seasonal Spirits — the help overlay (owner's observation 2026-11-15: the rules were not
-// understood): the rules of CONCEPT.md §2a in plain words, each with a small drawing made in
-// code; "What you see": every marker on the field, as the game draws it (LEGEND); and the
-// controls. Shown once on the first visit, any time with "?" or the band's "?" button; one
-// tap or any key closes it.
+// understood): the five rules of V5 (CONCEPT.md §2a) in plain words, each with a small drawing
+// made in code, the price board among them; "What you see": every marker on the field, as the
+// game draws it (LEGEND); and the controls. Shown once on the first visit, any time with "?"
+// or the band's "?" button; one tap or any key closes it. Prices and the season length come
+// from the game config.
 
-import { LEGEND, MUTED, SEASON_COLOURS, TEXT, type LegendMarker } from '@seasonal-spirits/render';
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { LEGEND, SEASON_COLOURS, TEXT, value, type LegendMarker } from '@seasonal-spirits/render';
 import { readSetting, writeSetting } from './storage.js';
 
 const SEEN_KEY = 'seasonal-spirits.help-seen';
 const [SPRING, SUMMER, AUTUMN, WINTER] = SEASON_COLOURS;
+const { prices, seasonDurationMs } = DEFAULT_CONFIG;
+const [IN_SEASON, NEXT, OTHER] = [value(prices.inSeason), value(prices.next), value(prices.other)];
 
 const diamond = (x: number, y: number, fill: string): string =>
   `<path d="M${x} ${y - 9}L${x + 9} ${y}L${x} ${y + 9}L${x - 9} ${y}Z" fill="${fill}" stroke="#fff" stroke-width="1"/>`;
@@ -21,34 +25,50 @@ const ring = (x: number, y: number, r: number, width: number): string =>
 const svg = (body: string): string =>
   `<svg viewBox="0 0 120 60" width="120" height="60" aria-hidden="true">${body}</svg>`;
 
-// Static text and drawings only; nothing from the server or the player goes in here.
+// Static text and drawings only; nothing from the server or the player goes in here. The five
+// rules of V5 (owner decision 2026-11-16), drawn with Summer in season.
 const RULES: { text: string; drawing: string }[] = [
   {
-    text: 'Only the coins of the current season fall on the field. Walk over them to pick them up.',
-    drawing: svg(diamond(30, 20, SPRING) + diamond(60, 38, SPRING) + diamond(90, 22, SPRING)),
-  },
-  {
-    text: 'A coin is worth 1 in its own season and ½ in any other season.',
+    text: 'Coins of all four seasons fall on the field. Walk over any coin to pick it up.',
     drawing: svg(
-      diamond(35, 25, SPRING) + label(35, 54, '1') + diamond(85, 25, MUTED) + label(85, 54, '½'),
+      diamond(18, 22, SPRING) +
+        diamond(46, 38, SUMMER) +
+        diamond(74, 22, AUTUMN) +
+        diamond(102, 38, WINTER),
     ),
   },
   {
-    text: 'At your shrine: Secure banks what you carry now.',
+    text: `The price board at the top shows what one coin of each season is worth right now: the season in season ${IN_SEASON}, the next season ${NEXT}, the other two ${OTHER} each.`,
+    drawing: svg(
+      diamond(20, 22, SUMMER) +
+        label(20, 52, IN_SEASON) +
+        diamond(60, 22, AUTUMN) +
+        label(60, 52, NEXT) +
+        diamond(100, 22, WINTER) +
+        label(100, 52, OTHER),
+    ),
+  },
+  {
+    text: `Every ${seasonDurationMs / 1000} seconds comes the halving: the next season comes into season and the prices move on. A coin of the next season rises from ${NEXT} to ${IN_SEASON}.`,
+    drawing: svg(
+      diamond(30, 24, AUTUMN) +
+        label(30, 54, NEXT) +
+        label(60, 30, '→') +
+        diamond(90, 24, AUTUMN) +
+        label(90, 54, IN_SEASON),
+    ),
+  },
+  {
+    text: 'At your own shrine, Secure banks everything you carry at the prices of that moment; secured points are safe. Carrying makes you bigger and slower. Coins still carried at the end count nothing.',
     drawing: svg(
       `<circle cx="30" cy="30" r="24" fill="none" stroke="${SPRING}" stroke-width="3"/>` +
-        label(30, 35, 'Bank'),
+        label(30, 35, 'Bank') +
+        ghost(80, 30, 14, SPRING),
     ),
   },
   {
-    text: 'Every season change is a halving: coins of the old season are then worth half. Secure before it.',
-    drawing: svg(
-      diamond(30, 28, SPRING) + label(60, 33, '→') + diamond(90, 28, MUTED) + label(90, 56, '½'),
-    ),
-  },
-  {
-    text: 'Carrying makes you bigger and slower and leaves a trail.',
-    drawing: svg(ghost(40, 30, 9, SPRING) + ghost(72, 30, 14, SUMMER)),
+    text: 'The team with the most secured points wins.',
+    drawing: svg(label(60, 26, '1. Summer') + label(60, 46, '2. Winter')),
   },
 ];
 
@@ -76,11 +96,8 @@ const MARKER_DRAWINGS: Record<LegendMarker, string> = {
     `<circle cx="60" cy="38" r="18" fill="${SPRING}" fill-opacity="0.15" stroke="${SPRING}" stroke-width="2" stroke-dasharray="5 4"/>` +
       `<text x="60" y="14" fill="${SPRING}" font-size="13" font-weight="bold" text-anchor="middle">Spring shrine</text>`,
   ),
+  coin: svg(diamond(30, 30, SPRING) + diamond(60, 30, SUMMER) + diamond(90, 30, WINTER)),
   carrier: svg(ghost(25, 40, 6, SPRING) + ghost(80, 40, 12, SPRING) + label(80, 20, 'Bot 3 · 9')),
-  half: svg(
-    ghost(60, 42, 12, SUMMER) +
-      `<text x="60" y="20" fill="${TEXT}" font-size="12" text-anchor="middle">Bot 3 · 9 <tspan fill="${MUTED}">(4 half)</tspan></text>`,
-  ),
   trail: svg(TRAIL + ghost(80, 30, 10, AUTUMN)),
   own: svg(ghost(60, 38, 10, WINTER) + ring(60, 38, 14, 3) + label(60, 17, 'You')),
   securing: svg(ghost(60, 32, 10, SPRING) + ring(60, 32, 19, 2)),

@@ -1,14 +1,13 @@
 // Seasonal Spirits — the ghosts in the look the owner chose on 2026-11-16 (look B, "calm"):
 // the body in its team's colour, players and bots alike; a carrier visible from afar (CONCEPT.md
 // §2a, sentence 5) by its larger body, a short trail in its team's colour and its name with the
-// coin count, the half-value coins as a grey "(N half)" after it; a thin ring while securing, a
-// thick one for "You". The shield went with stealing (V5, owner decision 2026-11-16).
+// coin count; a thin ring while securing, a thick one for "You". The shield and the grey
+// "(N half)" went with V5 (owner decision 2026-11-16: stealing out, the price board).
 
 import { GHOST_CARRIER, GHOST_SECURING } from '@seasonal-spirits/protocol';
 import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import {
-  HALF_GAP,
   LABEL_HEIGHT,
   bodyBox,
   labelText,
@@ -172,25 +171,8 @@ function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): 
   ctx.fillStyle = TEXT;
   for (const p of placed) {
     ctx.font = labelFont(p.own);
-    drawLabelText(ctx, p);
+    ctx.fillText(p.text, p.x, p.y);
   }
   ctx.textAlign = 'start';
   return placed;
-}
-
-// The label's text centred on its spot; the half-value count after HALF_GAP in MUTED.
-function drawLabelText(ctx: CanvasRenderingContext2D, p: PlacedLabel): void {
-  const cut = p.text.indexOf(HALF_GAP);
-  if (cut < 0) {
-    ctx.fillText(p.text, p.x, p.y);
-    return;
-  }
-  const main = p.text.slice(0, cut);
-  const left = p.x - p.width / 2;
-  ctx.textAlign = 'start';
-  ctx.fillText(main, left, p.y);
-  ctx.fillStyle = MUTED;
-  ctx.fillText(p.text.slice(cut), left + ctx.measureText(main).width, p.y);
-  ctx.fillStyle = TEXT;
-  ctx.textAlign = 'center';
 }

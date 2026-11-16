@@ -1,6 +1,6 @@
 // Seasonal Spirits — the instruments of the human round (session 2026-11-16-HUMAN): the
 // stand-in goes for the nearest coin it can see and secures before a deadline; the coin
-// observer times pickups and counts coins a halving cleared; the shrine observer finds groups
+// observer times pickups; the shrine observer finds groups
 // of more than four and how long they last; every pickup is an event.
 
 import { describe, expect, it } from 'vitest';
@@ -35,7 +35,7 @@ describe('human stand-in', () => {
 });
 
 describe('human round observers', () => {
-  it('times each pickup from the spawn and counts the coins a halving cleared', () => {
+  it('times each pickup from the spawn and keeps a coin across a halving', () => {
     const lives = new CoinLives();
     const state = (ms: number, coins: number[], events: MatchEvent[]): MatchState =>
       ({
@@ -50,12 +50,11 @@ describe('human round observers', () => {
       type: 'halving',
       atMs: 2000,
       season: 'summer',
-      fieldCoinsCleared: 1,
       carried: 0,
     };
-    lives.observe(state(2000, [9], [halving]));
-    expect(lives.pickedAfterMs).toEqual([1500]);
-    expect(lives.cleared).toBe(1);
+    lives.observe(state(2000, [2, 9], [halving]));
+    lives.observe(state(2500, [9], [{ type: 'pickup', ghost: 3, coin: 2 }]));
+    expect(lives.pickedAfterMs).toEqual([1500, 2400]);
     expect(lives.spawned).toBe(3);
     expect(lives.nearestAtSpawn[0]).toBe(500);
   });

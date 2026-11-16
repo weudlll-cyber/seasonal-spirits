@@ -38,11 +38,10 @@ function sample(ghosts: number, coins: number, offers = 0): ServerState {
       y: 1000 - i,
       team: i % 4,
       carried: i * 3,
-      offSeason: i,
       secured: i / 2,
       flags: i % 2 ? GHOST_CARRIER | GHOST_AT_SHRINE : 0,
     })),
-    coins: Array.from({ length: coins }, (_, i) => ({ x: 10 * i, y: 1999 - i })),
+    coins: Array.from({ length: coins }, (_, i) => ({ x: 10 * i, y: 1999 - i, season: i % 4 })),
     offers: Array.from({ length: offers }, (_, i) => ({ ghost: i + 1, secureValue: 12.5 })),
   };
 }
@@ -65,7 +64,7 @@ describe('state encoding', () => {
   });
 
   it('stays under 1 KB at the worst case: 32 ghosts, a full field of 60 coins, 32 offers', () => {
-    expect(encodedSize(32, 60, 32)).toBe(786);
+    expect(encodedSize(32, 60, 32)).toBe(782);
     expect(encodedSize(32, 60, 32)).toBeLessThan(1024);
   });
 

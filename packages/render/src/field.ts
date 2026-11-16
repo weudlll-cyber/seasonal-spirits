@@ -120,8 +120,8 @@ function drawShrineLabel(
   return { box, onGhost: p.onGhost };
 }
 
-// Every field coin is of the current season (CONCEPT.md §2a, sentence 1): a diamond (a
-// square on its corner) in that season's colour.
+// Coins of all four seasons lie on the field (V5): each a diamond (a square on its corner) in
+// its own season's colour.
 // A coin's drawn radius: the game core's size (the server picks a coin up when the drawn
 // shapes touch); at least 3 px, so it stays visible in a phone's Overview.
 export function coinRadiusPx(v: View): number {
@@ -131,10 +131,10 @@ export function coinRadiusPx(v: View): number {
 function drawCoins(v: View, s: ServerState): void {
   const { ctx } = v;
   const r = coinRadiusPx(v);
-  ctx.fillStyle = seasonColour(s.season);
   ctx.strokeStyle = 'rgba(255,255,255,0.7)';
   ctx.lineWidth = 1;
   for (const c of s.coins) {
+    ctx.fillStyle = seasonColour(c.season);
     const x = sx(v, c.x);
     const y = sy(v, c.y);
     ctx.beginPath();

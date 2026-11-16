@@ -167,20 +167,48 @@
           opacity: 0;
         }
       }
-      /* Under the canvas season clock (64 px): the band, 40 px (scene.ts BAND_HEIGHT), with the
-         team line and the corner buttons. No control sits on the field (owner's play test
-         2026-11-15); the team line shrinks or ends in "…" before it reaches the buttons. */
+      /* Under the canvas season clock (64 px): the band, 68 px (scene.ts BAND_HEIGHT), with the
+         team line and the corner buttons, and below them the price board (V5). No control sits
+         on the field (owner's play test 2026-11-15); the team line shrinks or ends in "…"
+         before it reaches the buttons. */
       #band {
         position: fixed;
         top: 64px;
         left: 0;
         right: 0;
-        height: 40px;
+        height: 68px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        padding: 0 12px;
+        background: rgba(5, 8, 11, 0.92);
+      }
+      #band-top {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 0 12px;
-        background: rgba(5, 8, 11, 0.92);
+        min-width: 0;
+      }
+      /* The price board: one chip per season, what one coin is worth now; the season in season
+         framed (prices.ts). Four chips fit a 390 px phone. */
+      #prices {
+        display: flex;
+        gap: 6px;
+        font-size: 13px;
+      }
+      #prices .price {
+        flex: 1;
+        text-align: center;
+        padding: 2px 4px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+      #prices .price.now {
+        font-weight: 800;
+        border-color: currentColor;
+        background: rgba(230, 237, 243, 0.08);
       }
       #team {
         flex: 1;
@@ -194,7 +222,7 @@
       }
       #notice {
         position: fixed;
-        top: 114px;
+        top: 142px;
         left: 50%;
         transform: translateX(-50%);
         background: var(--panel);
@@ -288,12 +316,15 @@
     <div id="announce" role="status" hidden></div>
     <div id="notice" role="status" hidden></div>
     <div id="band">
-      <div id="team" hidden></div>
-      <div id="corner">
-        <button id="help-open" type="button" aria-label="How to play">?</button>
-        <button id="view" type="button">View: Near</button>
-        <button id="mute" type="button" aria-pressed="false">Sound on</button>
+      <div id="band-top">
+        <div id="team" hidden></div>
+        <div id="corner">
+          <button id="help-open" type="button" aria-label="How to play">?</button>
+          <button id="view" type="button">View: Near</button>
+          <button id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
       </div>
+      <div id="prices" aria-label="Price of one coin now" hidden></div>
     </div>
     <div id="help" role="dialog" aria-label="How to play" hidden></div>
     <div id="result" hidden>

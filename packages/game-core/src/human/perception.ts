@@ -20,7 +20,7 @@ function snapshot(s: Readonly<MatchState>): MatchState {
   return {
     ...s,
     clock: { ...s.clock },
-    ghosts: s.ghosts.map((g) => ({ ...g, carried: { ...g.carried } })),
+    ghosts: s.ghosts.map((g) => ({ ...g, carried: { ...g.carried }, crossed: { ...g.crossed } })),
     coins: s.coins.map((c) => ({ ...c })),
     events: [],
   };

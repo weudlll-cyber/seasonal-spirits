@@ -48,7 +48,7 @@ export class Match {
       coins: [],
       shrines,
       events: [],
-      stats: { spawned: 0, pickedUp: 0, cleared: 0 },
+      stats: { spawned: 0, pickedUp: 0 },
     };
   }
 
@@ -113,6 +113,7 @@ function newGhost(r: Roster, home: Vec, spread: number, rng: () => number): Ghos
     x: home.x + (rng() - 0.5) * spread,
     y: home.y + (rng() - 0.5) * spread,
     carried: emptyCounts(),
+    crossed: emptyCounts(),
     securedValue: 0,
     securingUntilMs: null,
     securingSeason: null,

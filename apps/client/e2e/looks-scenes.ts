@@ -1,6 +1,6 @@
 // Seasonal Spirits — the three scenes of `pnpm looks` (session 2026-11-16-LOOK), found in seeded
-// bot matches: (1) the biggest crowd at a shrine, (2) a carrier of full- and half-value coins
-// just after a halving among empty ghosts, (3) a carrier, a securing ghost and a third ghost
+// bot matches: (1) the biggest crowd at a shrine, (2) a carrier of coins of the new and older
+// seasons just after a halving among empty ghosts, (3) a carrier, a securing ghost and a third ghost
 // (the "own" one) close together (a shielded carrier until the shield went with V5). Each scene is the match state as a client receives it
 // (the server's toWire), with the last positions for the trails.
 

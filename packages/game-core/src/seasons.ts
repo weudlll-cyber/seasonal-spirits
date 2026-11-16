@@ -1,5 +1,6 @@
 // Seasonal Spirits — the four seasons, their order and the season clock of a match.
-// Spring → Summer → Autumn → Winter → Spring, as the real tokens (CONCEPT.md §2).
+// Spring → Summer → Autumn → Winter → Spring, as the real tokens (CONCEPT.md §2). What a coin
+// is worth lives in prices.ts.
 
 import type { GameConfig } from './config.js';
 
@@ -42,11 +43,4 @@ export function seasonClock(cfg: GameConfig, elapsedMs: number): SeasonClock {
   for (let i = 0; i < index; i++) current = nextSeason(current);
   const seasonEnd = Math.min(cfg.matchDurationMs, (index + 1) * cfg.seasonDurationMs);
   return { current, next: nextSeason(current), index, timeLeftMs: seasonEnd - elapsedMs };
-}
-
-// The value of carried coins if banked now: full in their own season, reduced outside.
-export function valueNow(cfg: GameConfig, carried: SeasonCounts, current: Season): number {
-  let v = 0;
-  for (const s of SEASONS) v += carried[s] * (s === current ? 1 : cfg.offSeasonValueFactor);
-  return v;
 }

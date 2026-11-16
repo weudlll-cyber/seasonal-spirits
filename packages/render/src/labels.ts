@@ -2,8 +2,7 @@
 // screen carries a label or at least its short tag, never two on top of each other, never on
 // another ghost or a shrine label, never under the top bar or past the screen edge; a shrine
 // label never under a HUD control, off a ghost where it can be, and never out of view (owner's
-// play tests 2026-11-15 and 2026-11-16). Also the label's words: name, coin count, the
-// half-value count. Pure: positions and widths in, placements out, tested without a canvas.
+// play tests 2026-11-15 and 2026-11-16). Also the label's words: name and coin count. Pure: positions and widths in, placements out, tested without a canvas.
 
 import { GHOST_BOT, ghostName, ghostTag, type GhostState } from '@seasonal-spirits/protocol';
 import { overlaps, type Rect } from './view.js';
@@ -49,23 +48,18 @@ interface Spot {
   leader: boolean;
 }
 
-// What follows this gap in a label is the half-value count, drawn dimmer (drawGhosts).
-export const HALF_GAP = '  ';
-
-// A ghost's label: the own one "You", a carrier its name, coin count and — after HALF_GAP —
-// how many of them are worth half now ("Bot 3 · 9  (4 half)", owner's choice 2026-11-16:
-// look B), the others their name when `labelAll` (spectators, the viewer), else their tag.
-// The tag is the fallback in a crowd.
+// A ghost's label: the own one "You", a carrier its name and coin count ("Bot 3 · 9"), the
+// others their name when `labelAll` (spectators, the viewer), else their tag. The tag is the
+// fallback in a crowd. The grey half-value count of look B went with V5's price board.
 export function labelText(
-  g: Pick<GhostState, 'id' | 'flags' | 'carried' | 'offSeason'>,
+  g: Pick<GhostState, 'id' | 'flags' | 'carried'>,
   own: boolean,
   labelAll: boolean,
 ): { full: string; tag: string } {
   const bot = (g.flags & GHOST_BOT) !== 0;
   const tag = own ? 'You' : ghostTag(g.id, bot);
   const name = own ? 'You' : ghostName(g.id, bot);
-  const half = g.offSeason > 0 ? `${HALF_GAP}(${g.offSeason} half)` : '';
-  if (g.carried > 0) return { full: `${name} · ${g.carried}${half}`, tag };
+  if (g.carried > 0) return { full: `${name} · ${g.carried}`, tag };
   return { full: own || labelAll ? name : tag, tag };
 }
 
@@ -182,10 +176,11 @@ export interface ShrineKeepClear {
 // first of above, left and right that lies inside `area` (the visible field) and that neither
 // a HUD control nor a ghost covers; then the first such spot only a ghost covers (a control is
 // worse: it hides the label for good). When none is clear of the controls, the first spot
-// inside the area; when none is inside but the shrine's centre is (a shrine at the very edge
-// of the view), the spot below moved inside; a shrine out of view keeps its label out of
-// view. A shrine at the bottom edge of the view used to put its label below the screen
-// (session 2026-11-15-CD). Returns the label's centre x and baseline, and whether it had to
+// inside the area; when none is inside but the shrine's centre is, or the spot below would
+// show at least partly (a shrine at the very edge of the view), the spot below moved inside;
+// a shrine out of view keeps its label out of view. A shrine at the bottom edge of the view
+// used to put its label below the screen (session 2026-11-15-CD), and a shrine just past the
+// edge a label half on screen (session 2026-11-16-V5: x 396–474 on a 412 px phone). Returns the label's centre x and baseline, and whether it had to
 // sit on a ghost (no spot was free of them).
 export function shrineLabelAt(
   at: { x: number; y: number; r: number },
@@ -214,7 +209,8 @@ export function shrineLabelAt(
   const clear = noControl.find((p) => free(p, keep.bodies)) ?? noControl[0];
   const below = spots[0] ?? at;
   const centreInView = within(area, { left: at.x, right: at.x, top: at.y, bottom: at.y });
-  const p = clear ?? inside[0] ?? (centreInView ? moveInside(area, below, text) : below);
+  const shows = centreInView || overlaps(area, box(below));
+  const p = clear ?? inside[0] ?? (shows ? moveInside(area, below, text) : below);
   return { x: p.x, y: p.y, onGhost: !free(p, keep.bodies) };
 }
 

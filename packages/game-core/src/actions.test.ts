@@ -16,7 +16,8 @@ describe('secure at the own shrine', () => {
     expect(g.securedValue).toBe(0);
     expect(g.x).toBe(x);
     act(m, 1, { dx: 1, dy: 0 }, 100);
-    expect(g.securedValue).toBe(10 + 7.5); // 15 summer coins worth half in spring
+    // V5 prices in spring: spring in season 4, summer next 2.
+    expect(g.securedValue).toBe(10 * 4 + 15 * 2);
     expect(g.carried).toEqual({ spring: 0, summer: 0, autumn: 0, winter: 0 });
   });
 
@@ -46,6 +47,6 @@ describe('secure at the own shrine', () => {
     g.carried.spring = 10;
     act(m, 1, { dx: 0, dy: 0, action: 'secure' });
     runTo(m, 300_000);
-    expect(m.result().players[0]?.secured).toBe(10);
+    expect(m.result().players[0]?.secured).toBe(40); // banked at spring's price, kept
   });
 });

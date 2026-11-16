@@ -52,7 +52,7 @@ function print(name: string, r: BalanceReport): void {
   const perMatch = (label: string, x: Spread): string =>
     `${label}, per match (N = ${n}): mean ${num(x.mean)}, median ${num(x.median)}, ` +
     `p10 ${num(x.p10)}, p90 ${num(x.p90)}`;
-  console.log(`\n${perMatch('Field coins gone at the halvings', r.clearedPerMatch)}`);
+  console.log(`\n${perMatch('Coins carried across the halvings', r.carriedAcrossPerMatch)}`);
 }
 
 const argv = process.argv.slice(2);

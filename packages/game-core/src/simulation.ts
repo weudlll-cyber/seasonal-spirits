@@ -37,7 +37,7 @@ export function botRoster(ghosts: number): (Roster & { strategy: Strategy })[] {
   return Array.from({ length: ghosts }, (_, i) => ({
     id: i + 1,
     team: (i % 4) as Team,
-    strategy: STRATEGIES[Math.floor(i / 4) % STRATEGIES.length] ?? 'patient',
+    strategy: STRATEGIES[Math.floor(i / 4) % STRATEGIES.length] ?? 'banker',
   }));
 }
 
@@ -91,7 +91,7 @@ function sanityList(
 ): SanityCheck[] {
   const expected = seasonsInMatch(cfg) - 1;
   const broken = halvings.filter((h) => h.event.carried !== h.carriedBefore);
-  const { spawned, pickedUp, cleared } = s.stats;
+  const { spawned, pickedUp } = s.stats;
   return [
     { name: 'no negative counts', ok: !negativeSeen, detail: 'checked after every tick' },
     {
@@ -106,8 +106,8 @@ function sanityList(
     },
     {
       name: 'field coins accounted',
-      ok: spawned === pickedUp + cleared + s.coins.length,
-      detail: `${spawned} spawned = ${pickedUp} picked up + ${cleared} gone at halvings + ${s.coins.length} left`,
+      ok: spawned === pickedUp + s.coins.length,
+      detail: `${spawned} spawned = ${pickedUp} picked up + ${s.coins.length} left`,
     },
   ];
 }

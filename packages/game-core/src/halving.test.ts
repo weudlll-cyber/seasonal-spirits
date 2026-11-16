@@ -1,10 +1,10 @@
-// Seasonal Spirits — the halving at every season turn: field coins go, carried coins stay,
-// countdown and one-tick event each time; the match end is no halving but has its own
+// Seasonal Spirits — the halving at every season turn: the prices move on, field and carried
+// coins stay, countdown and one-tick event each time; the match end is no halving but has its own
 // countdown and one-tick event (owner decision 2026-11-16).
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from './config.js';
-import { valueNow } from './seasons.js';
+import { valueNow } from './prices.js';
 import { ghost, matchOf, quietConfig, runTo } from './test-helpers.js';
 import type { MatchEvent } from './types.js';
 
@@ -23,19 +23,21 @@ describe('halving', () => {
     ]);
   });
 
-  it('leaves carried coins untouched; the old season’s coins drop to half value', () => {
+  it('leaves carried coins untouched; their prices move on (4 / 2 / 1 → summer in season)', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
     const g = ghost(m, 1);
-    g.carried.spring = 33;
+    g.carried.spring = 3;
     g.carried.summer = 4;
     g.securedValue = 12;
+    const before = valueNow(DEFAULT_CONFIG, g.carried, m.state.clock.current);
     runTo(m, 75_000);
-    expect(g.carried).toEqual({ spring: 33, summer: 4, autumn: 0, winter: 0 });
+    expect(g.carried).toEqual({ spring: 3, summer: 4, autumn: 0, winter: 0 });
     expect(g.securedValue).toBe(12);
-    expect(valueNow(DEFAULT_CONFIG, g.carried, m.state.clock.current)).toBe(33 / 2 + 4);
+    expect(before).toBe(3 * 4 + 4 * 2); // spring in season, summer next
+    expect(valueNow(DEFAULT_CONFIG, g.carried, m.state.clock.current)).toBe(3 * 1 + 4 * 4);
   });
 
-  it('clears the old season’s field coins, counts them, and spawns the new season at the same rate', () => {
+  it('keeps every field coin through the halving and spawns at the same rate', () => {
     const cfg = quietConfig({ coinSpawnPerSecond: 2, maxFieldCoins: 10_000 });
     const m = matchOf(cfg, [{ id: 1, team: 0 }]);
     ghost(m, 1).x = 0; // in a corner, out of reach of almost every coin
@@ -44,11 +46,11 @@ describe('halving', () => {
     runTo(m, 65_000);
     const tenSecondsBefore = m.state.stats.spawned - at55;
     runTo(m, 75_000 - 50);
-    const onField = m.state.coins.length;
+    const onField = m.state.coins.map((c) => c.id);
     runTo(m, 75_000);
-    expect(onField).toBeGreaterThan(0);
-    expect(m.state.stats.cleared).toBe(onField);
-    expect(m.state.coins.every((c) => c.season === 'summer')).toBe(true);
+    expect(onField.length).toBeGreaterThan(0);
+    const kept = new Set(m.state.coins.map((c) => c.id));
+    expect(onField.every((id) => kept.has(id))).toBe(true);
     runTo(m, 85_000);
     const at85 = m.state.stats.spawned;
     runTo(m, 95_000);

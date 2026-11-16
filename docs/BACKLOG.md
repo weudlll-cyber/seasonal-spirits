@@ -94,9 +94,11 @@ spawn values, and merged it or said what to change.
 
 u. **Readability spec, one intermittent frame** (seen 2026-11-16 in session LOOK-B): once on
 desktop both upper shrine labels at y 89–108, above the bar, and the own shrine label under
-a control; the next run green, CI green before. Likely one frame sampled around the view
-switch or the reload. Done when: the frame is found and either the drawing or the sampling
-fixed, with the spec green ten runs in a row.
+a control; the next run green, CI green before. Seen again in CHAIN V5 on the phone: a
+shrine label at x 396–474 on a 412 px screen — a shrine whose centre was just past the edge
+kept its label half on screen. Fixed on `feat/v5-rules` (`shrineLabelAt` moves such a label
+wholly inside, pure-function test); the desktop case is likely the same at the top edge.
+Done when: the spec is green ten runs in a row.
 
 ## CLOSED
 
@@ -465,6 +467,21 @@ fixed, with the spec green ten runs in a row.
   marked "removed with V5"; the bridge text moved to V5's. Team signals (OPEN n) and the
   hunter question (OPEN q) closed with it — commit "feat: V5 piece 2, what V5 drops".
 
+- 2026-11-16 — **V5 piece 3: the V5 rules** (CHAIN 2026-11-16-V5, on `feat/v5-rules`): the
+  price board (`src/prices.ts`: `priceOf` by the coin season's relation to the season in
+  season, 4 / 2 / 1 placeholders; `valueNow`; the one function securing, the wire's offer and
+  the client's board use), coins of all four seasons by relation weights (`spawnSeason`,
+  equal placeholders), field coins staying at a halving, the half-value rule and its "(N
+  half)" label gone; wire: per coin its season (5 bytes), per ghost no half-value count (11
+  bytes), worst case 782 bytes; client: the price board in the band (68 px), coins in their
+  own colours, "Secure: <n>", "HALVING — <Season> is in season · prices move on", the help's
+  five V5 rules; tests for prices, rotation, securing sums, spawn weights, field coins kept.
+  In the same commit the core of piece 4 (the files overlap): the two bot styles banker and
+  planner (`collect` weighs a coin's worth against its distance), "Best nose" in the core
+  (`Ghost.crossed`, the `secured` event's `crossedValue`), with tests; and a shrine label half
+  on screen when its shrine is just past the edge now moves wholly inside (`shrineLabelAt`,
+  test; OPEN u) — commit "feat: V5 piece 3, the price board, and the piece 4 core".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -670,3 +687,5 @@ fixed, with the spec green ten runs in a row.
 | 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `4213ec6` on `feat/ghost-look`                                                                                                            | success (CI 43942775911, CodeQL 43942775895)                                                                                                                                                                                        | `gh run list --branch feat/ghost-look`                                                         |
 | 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | merge `3907af8` on `master` (tree = `3e39b3a`)                                                                                            | success (CI 43961477081, CodeQL 43961477105)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; tests related to 62 files: 28 test files / 148 tests)                                                                                     | working tree of "feat: V5 piece 2, what V5 drops"                                                                                         | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-16 | `pnpm e2e` (all specs, both sizes)                                                                                                                                                        | working tree during piece 3 (the tree changed while it ran)                                                                               | 5 passed, 3 failed: spectate expected the old banner text (fixed); phone play lost its page to a reload from my own edits during the run; phone readability: a shrine label half on screen (fixed, OPEN u)                          | this commit; the next run below                                                                |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; game-core 15 files / 60 tests, the rest related: 30 files / 163 tests before the last fix)                                                | working tree of "feat: V5 piece 3, the price board, and the piece 4 core"                                                                 | green after the fixes (recap: a secure started before a halving no longer counts as carried across)                                                                                                                                 | this commit                                                                                    |

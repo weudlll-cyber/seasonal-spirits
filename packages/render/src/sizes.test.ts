@@ -18,7 +18,7 @@ const NEAR: View = {
 describe('drawn sizes', () => {
   it('draws a ghost with the game core radius, growing with its coins', () => {
     for (const carried of [0, 10, 60]) {
-      const g = { id: 1, x: 0, y: 0, team: 0, carried, offSeason: 0, secured: 0, flags: 0 };
+      const g = { id: 1, x: 0, y: 0, team: 0, carried, secured: 0, flags: 0 };
       expect(ghostRadiusPx(NEAR, g)).toBeCloseTo(ghostRadius(DEFAULT_CONFIG, carried) * 0.63);
     }
   });

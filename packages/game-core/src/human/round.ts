@@ -32,7 +32,7 @@ export interface HumanReport {
   bots: Record<Strategy, Tally>;
   bestBotShare: Record<Strategy, number>; // the best bot of each match, by strategy; ties split
   groups: ShrineGroup[];
-  coins: { spawned: number; cleared: number; pickedAfterMs: Spread; nearestAtSpawn: Spread };
+  coins: { spawned: number; pickedAfterMs: Spread; nearestAtSpawn: Spread };
 }
 
 // Seat 1 is the stand-in (with a sight), the other 31 seats are bots.
@@ -122,7 +122,6 @@ export function runHumanRound(
     groups,
     coins: {
       spawned: lives.spawned,
-      cleared: lives.cleared,
       pickedAfterMs: spread(lives.pickedAfterMs),
       nearestAtSpawn: spread(lives.nearestAtSpawn),
     },

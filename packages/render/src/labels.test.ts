@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import { GHOST_BOT } from '@seasonal-spirits/protocol';
 import {
-  HALF_GAP,
   LABEL_HEIGHT,
   bodyBox,
   labelText,
@@ -116,11 +115,11 @@ describe('name labels at the screen edge', () => {
     // r is what is drawn: body 10 px, the own ring out to 16 px. Neighbours take the spots
     // above, below and to the right; the spot to the left would be cut at the edge.
     const ring = { left: 134, right: 166, top: 284, bottom: 316 };
-    const own = at(9, 150, 300, { r: 16, full: 'You · 6  (5 half)', tag: 'You', own: true });
+    const own = at(9, 150, 300, { r: 16, full: 'You · 16 coins', tag: 'You', own: true });
     const others = [at(1, 150, 262), at(2, 150, 338), at(3, 200, 300)];
     const placed = placeLabels([own, ...others], AREA);
     const label = placed.find((p) => p.id === 9) as PlacedLabel;
-    expect(label.text).toBe('You · 6  (5 half)');
+    expect(label.text).toBe('You · 16 coins');
     expect(box(label).left).toBeGreaterThanOrEqual(AREA.left);
     expect(overlaps(box(label), ring), 'the label on the own ring').toBe(false);
   });
@@ -138,23 +137,18 @@ describe('name labels at the screen edge', () => {
 });
 
 describe('label text', () => {
-  const ghost = { id: 3, flags: GHOST_BOT, carried: 0, offSeason: 0 };
+  const ghost = { id: 3, flags: GHOST_BOT, carried: 0 };
 
-  it('names a carrier with its coin count and nothing more when all are worth full value', () => {
+  it('names a carrier with its coin count', () => {
     expect(labelText({ ...ghost, carried: 9 }, false, false)).toEqual({
       full: 'Bot 3 · 9',
       tag: '3',
     });
   });
 
-  it('adds the half-value count after the gap when some coins are worth half now', () => {
-    const { full } = labelText({ ...ghost, carried: 9, offSeason: 4 }, false, false);
-    expect(full).toBe(`Bot 3 · 9${HALF_GAP}(4 half)`);
-  });
-
   it('calls the own ghost "You", with its coins', () => {
-    expect(labelText({ ...ghost, carried: 6, offSeason: 5 }, true, false)).toEqual({
-      full: `You · 6${HALF_GAP}(5 half)`,
+    expect(labelText({ ...ghost, carried: 6 }, true, false)).toEqual({
+      full: 'You · 6',
       tag: 'You',
     });
   });
@@ -262,6 +256,12 @@ describe('shrine label at the edge of the view', () => {
     });
     expect(p.x + 60).toBeLessThanOrEqual(AREA.right);
     expect(p.y).toBeLessThanOrEqual(AREA.bottom);
+  });
+
+  it('moves a label wholly inside when its shrine is just past the edge and the label would show half', () => {
+    const past = { x: 830, y: 400, r: 50 }; // the centre 30 units right of the view
+    const p = shrineLabelAt(past, text, keep(), AREA);
+    expect(inArea(p)).toBe(true);
   });
 
   it('keeps the label of a shrine out of view out of view', () => {

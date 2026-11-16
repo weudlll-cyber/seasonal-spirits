@@ -56,7 +56,7 @@ function print(r: HumanReport, ms: number): void {
   console.log(`\nBest bot: ${STRATEGIES.map((s) => `${s} ${pct(r.bestBotShare[s])}`).join(', ')}`);
   const c = r.coins;
   console.log(
-    `Coins: ${c.spawned} spawned, ${c.cleared} cleared untouched at halvings; spawn → pickup ms ${cells(c.pickedAfterMs)}; nearest ghost at spawn ${cells(c.nearestAtSpawn)}`,
+    `Coins: ${c.spawned} spawned; spawn → pickup ms ${cells(c.pickedAfterMs)}; nearest ghost at spawn ${cells(c.nearestAtSpawn)}`,
   );
   console.log(`Shrine groups (> 4 ghosts within 2 × shrineRadius): ${r.groups.length}`);
 }

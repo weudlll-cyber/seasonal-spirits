@@ -15,6 +15,7 @@ message (docs/SERVER.md). Development mode only: there is no sign-in yet (CONCEP
 | `src/arrow.ts`             | The "Your shrine" arrow at the screen edge (placement tested)                   |
 | `src/storage.ts`           | Remembered choices (mute, view, help seen) in localStorage, safe when it throws |
 | `src/help.ts`              | The help overlay: five rules with drawings made in code, the controls           |
+| `src/prices.ts`            | The price board in the band (V5): four seasons, what a coin is worth now        |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, sending         |
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated   |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input, corrected to the server         |
@@ -54,13 +55,15 @@ the hello.
 
 Owner's observation 2026-11-15: the rules were not understood.
 
-- **Help** (`src/help.ts`): an overlay with the rules of CONCEPT.md §2a in plain words, each
-  with a small drawing made in code (inline SVG, no image files) — only the current season's
-  coins fall; a coin is worth 1 in its own season, ½ otherwise; at the own shrine Secure
-  banks now; every season change is a halving, secure before it; carrying makes you bigger
-  and slower and leaves a trail. Then "What you see": one line and one drawing per marker on
-  the field — team colour and label, shrine, size and "· 9", the grey "(4 half)", the trail,
-  the own ring, the securing ring — the same lines as the `pnpm looks` legend (render
+- **Help** (`src/help.ts`): an overlay with the five rules of V5 (CONCEPT.md §2a) in plain
+  words, each with a small drawing made in code (inline SVG, no image files) — coins of all
+  four seasons fall and anyone picks up any; the price board shows what one coin of each
+  season is worth now (in season 4, next 2, the other two 1 — read from the game config);
+  every 75 s the halving moves the prices on; Secure at the own shrine banks at the prices of
+  that moment, carrying slows, unsecured coins count nothing at the end; the team with the
+  most secured points wins. Then "What you see": one line and one drawing per marker on the
+  field — team colour and label, shrine, coin, size and "· 9", the trail, the own ring, the
+  securing ring — the same lines as the `pnpm looks` legend (render
   `LEGEND`; a new marker needs its drawing in `help.ts`). Then the controls for keyboard and
   touch. It opens by itself
   on the first visit (remembered in the browser), any time with "?" (the key or the band's
@@ -75,7 +78,8 @@ Owner's observation 2026-11-15: the rules were not understood.
 - Touch (the primary pointer is a finger): a joystick appears where the left thumb touches
   the left half of the screen. The Secure button sits under the right thumb and never
   reaches into the left half.
-- At the own shrine the button "Secure (<value now>)" shows. The number is the server's
+- At the own shrine the button "Secure: <value now>" shows (V5: every carried coin at its
+  season's current price). The number is the server's
   offer for the own ghost (`offers` in the state), never computed by the client; the button
   is greyed out when it would do nothing.
 - The direction goes out at once when it changes, unless the last one went out less than
@@ -103,7 +107,12 @@ hidden under the top bar).
 - **Top bar.** The season clock, and below it a band for every client: on the left "You are
   Team <Season>", large, in the team colour (spectators see no such line; below 480 px width
   it reads "Team <Season>" so the name is never cut off), on the right the corner buttons
-  "View: …" and "Sound on/off". No control sits on the field there. The field, the ghosts
+  "View: …" and "Sound on/off". Under them the **price board** (V5, `src/prices.ts`): the four
+  seasons in their order, each in its colour with what one coin is worth now ("Spring 1 ·
+  Summer 4 · Autumn 2 · Winter 1"), the season in season framed and bold. The prices are not
+  sent: they follow from the season in the state and the game config through the core's
+  `priceOf`. The band is 68 px (`BAND_HEIGHT`; 40 px before V5). No control sits on the
+  field there. The field, the ghosts
   and every label are drawn only below the bar (`belowBar` in `packages/render/src/view.ts`).
 - **View modes** (owner decision 2026-11-15), the corner button "View: Near / Overview" or V,
   remembered in the browser; every player starts in "Near":
@@ -131,11 +140,12 @@ hidden under the top bar).
   trail): ghosts are circles in their team colour, players and bots alike; the own ghost has
   a thick white ring and the label "You", a ghost securing a thin white ring further out.
   Carriers are larger, leave a short trail in their
-  team colour and show name and coin count — "Bot 3 · 9" — with the coins worth half now as
-  a grey "(4 half)" after it (render `labelText`, tested); no ring, no glow. Every label
-  stays wholly inside the view and keeps clear of the rings around every ghost, not only of
-  its body (`ghostReach`, tested): in the pictures of 2026-11-16 "You · 6 (5 half)" was
-  pushed in from the left edge onto the own ring, which hid its last letter. Field coins are small diamonds in their season's colour (the
+  team colour and show name and coin count — "Bot 3 · 9" (render `labelText`, tested; the grey
+  "(4 half)" of look B went with V5's price board); no ring, no glow. Every label stays
+  wholly inside the view and keeps clear of the rings around every ghost, not only of its body
+  (`ghostReach`, tested): in the pictures of 2026-11-16 "You · 6 (5 half)" was pushed in from
+  the left edge onto the own ring, which hid its last letter. Field coins of all four seasons
+  (V5) are small diamonds, each in its own season's colour, on the field and on the minimap (the
   token logos replace them later), so a Summer coin no longer looks like a Team Summer
   ghost. Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. The
   ground takes a cast of the current season's colour.
@@ -168,9 +178,9 @@ hidden under the top bar).
 ## Halving staging (CONCEPT.md §2b, §13)
 
 At every season change: the clock counts down the last 10 s in red; at the halving a large
-"HALVING — <Season> is in season" announcement (3.5 s), a short white flash, the new
-season's coins start to fall and the ground changes colour, carried coins of the old
-season switch to the dashed half-value look, and one tone plays. The tone is generated with
+"HALVING — <Season> is in season · prices move on" announcement (3.5 s), a short white
+flash, the price board frames the new season and shows the new prices, the ground changes
+colour, and one tone plays. The field coins stay (V5). The tone is generated with
 Web Audio (no audio file), sounds only after the first key or touch, and can be muted with
 the "Sound on/off" button (remembered in the browser).
 
@@ -204,12 +214,13 @@ switches the box off; it is on by default. The next match starts after the resul
 Playwright (pinned dev dependency, Chromium) starts its own server on 3932 with 15 s seasons
 and the client on 5932, then plays one short match at desktop size (keyboard) and at phone
 size (Pixel 7, touch through the browser's own input pipeline): join, move, reach the own
-shrine and read both labelled buttons, see a HALVING announcement and the new season's
-coins, and the result screen with the bridge box. Screenshots of each step go to
+shrine and read the Secure button ("Secure: <n>"), see a HALVING announcement with the
+price board framing the new season at 4, and the result screen with the bridge box. Screenshots of each step go to
 `reports/screens/latest/` (git-ignored). CI runs it as its own job (`e2e`).
 
 `e2e/readability.e2e.ts` (both sizes) checks the play tests' points: "You are Team …"
-visible and not cut off, the corner buttons inside the band, in "Near" the minimap, the own
+visible and not cut off, the price board's four chips readable (none cut off, one framed,
+inside the band), the corner buttons inside the band, in "Near" the minimap, the own
 shrine in sight at home with its label drawn, the arrow once the shrine is out of sight and
 gone again at home, V (desktop) or the button (phone) switching to "Overview" and the
 choice surviving a reload. In every frame it samples while walking: every ghost on screen
@@ -241,7 +252,7 @@ docs/BALANCE.md "Response".
 pictures of the ghosts as the game draws them. It drew the three looks the owner chose from
 (look B; BACKLOG CLOSED); now it draws the chosen one.
 `e2e/looks-scenes.ts` finds three scenes in the bot matches of seeds 1–5 (the
-biggest shrine crowd, a carrier of full- and half-value coins just after a halving among
+biggest shrine crowd, a carrier of coins of the old and the new season just after a halving among
 empty ghosts, a carrier, a securing ghost and the "own" ghost close together but
 drawn apart) and turns them into wire states with the server's `toWire`; `e2e/looks.shoot.ts`
 (config `e2e/looks.config.ts`, the viewer's Vite on 5939) draws each on the viewer's

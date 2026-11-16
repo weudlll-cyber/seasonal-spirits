@@ -3,7 +3,7 @@
 
 import type { GameConfig } from '../config.js';
 import { distance, shrineOf } from '../geometry.js';
-import type { Ghost, Intent, MatchState, Vec } from '../types.js';
+import type { FieldCoin, Ghost, Intent, MatchState, Vec } from '../types.js';
 
 export type Bot = (s: Readonly<MatchState>, me: Readonly<Ghost>) => Intent;
 
@@ -62,18 +62,29 @@ export function waypointOf(cfg: GameConfig, id: number, leg: number): Vec {
   return { x: lo + span * frac(n * GOLDEN), y: lo + span * frac(n * GOLDEN * GOLDEN + 0.5) };
 }
 
-// Head for the nearest field coin that no other ghost is closer to; without such a coin,
-// walk to the own waypoint. Before 2026-11-15 every collector took its nearest coin, so
-// neighbours shared one target, travelled as one pack of up to ten mixed ghosts and switched
-// together to the next coin (session sheet 2026-11-15-CD).
-export function collect(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Intent {
+// Field units added to a coin's distance when its worth is weighed against it, so a coin right
+// under a bot does not outweigh everything else by an infinite ratio.
+const WORTH_DISTANCE_BIAS = 100;
+
+// Head for the field coin worth the most per distance (`worth`, by default every coin the
+// same: the nearest) among those no other ghost is closer to; without such a coin, walk to the
+// own waypoint. Before 2026-11-15 every collector took its nearest coin, so neighbours shared
+// one target, travelled as one pack of up to ten mixed ghosts and switched together to the
+// next coin (session sheet 2026-11-15-CD).
+export function collect(
+  cfg: GameConfig,
+  s: Readonly<MatchState>,
+  me: Readonly<Ghost>,
+  worth: (c: FieldCoin) => number = () => 1,
+): Intent {
   const owner = closestGhostByCoin(s);
   let mine: Vec | null = null;
-  let best = Infinity;
+  let best = -Infinity;
   for (const c of s.coins) {
-    const d = distance(me, c);
-    if (owner.get(c.id) === me.id && d < best) {
-      best = d;
+    if (owner.get(c.id) !== me.id) continue;
+    const score = worth(c) / (distance(me, c) + WORTH_DISTANCE_BIAS);
+    if (score > best) {
+      best = score;
       mine = c;
     }
   }

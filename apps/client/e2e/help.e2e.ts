@@ -19,10 +19,12 @@ test('help appears on the first visit, not on the second, and opens again with "
   const help = page.locator('#help');
   await page.goto('/');
   await expect(help).toBeVisible();
-  await expect(help).toContainText('Only the coins of the current season fall');
-  await expect(help).toContainText('from 6 on — into coins of the next: every 2 become 3');
-  await expect(help).toContainText('halving');
-  await expect(help).toContainText('a random part of the coins');
+  // The five rules of V5 (owner decision 2026-11-16), the price board among them.
+  await expect(help).toContainText('Coins of all four seasons fall');
+  await expect(help).toContainText('the season in season 4, the next season 2, the other two 1');
+  await expect(help).toContainText('comes the halving: the next season comes into season');
+  await expect(help).toContainText('Coins still carried at the end count nothing');
+  await expect(help).toContainText('The team with the most secured points wins');
   await expect(help).toContainText('What you see');
   for (const { text } of LEGEND) await expect(help).toContainText(text);
   await expect(help).toContainText('A trail behind a ghost: it carries coins.');

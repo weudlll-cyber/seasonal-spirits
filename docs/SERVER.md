@@ -61,7 +61,9 @@ field checked, at most 64 players, at most 4096 characters; THREATS row 33). Bui
 
 ## The state message (`packages/protocol/src/state.ts`)
 
-One binary encoding, little endian; values (secured, offers) travel in halves:
+One binary encoding, little endian; values (secured, offers) travel in halves. The price
+board is not in it: every client derives it from the season and the game config with the
+core's `priceOf` (V5):
 
 - **Header, 34 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
   3 Winter; the next is +1), season number within the match u8 (the start season is season −
@@ -72,15 +74,15 @@ One binary encoding, little endian; values (secured, offers) travel in halves:
   client shows "LAST CHANCE — secure now" —, the match ended in this tick
   `STATE_MATCH_END_EVENT` — "MATCH OVER"), ms to the next match u16 (during the result),
   secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
-- **Per ghost, 13 bytes:** id u8, x u16, y u16, team u8, carried coins u16, of those not of
-  the current season (worth half now) u16, secured value u16, flags u8 (carrier, securing,
-  bot, in its own shrine; the "can steal" and shield bits went with V5).
-- **Per field coin, 4 bytes:** x u16, y u16 (every field coin is of the current season).
+- **Per ghost, 11 bytes:** id u8, x u16, y u16, team u8, carried coins u16, secured value
+  u16, flags u8 (carrier, securing, bot, in its own shrine; the "can steal" and shield bits
+  and the half-value count went with V5).
+- **Per field coin, 5 bytes:** x u16, y u16, season u8 (V5: coins of all four seasons fall).
 - **Per offer, 3 bytes:** for each player (never a bot) inside its own shrine: ghost u8 and
   the secure value — the number on the Secure button, computed by the game core
   (`shrineOffer`; the swap's three numbers went with V5).
 
-At 32 ghosts: 450 bytes with an empty field, 690 with a full one (60 coins), 786 in the
+At 32 ghosts: 386 bytes with an empty field, 686 with a full one (60 coins), 782 in the
 worst case (a full field and 32 players in their shrines) — under 1 KB. Measured in a full
 32-bot match (seed 1): at most 550 bytes (25 field coins). The probe runs of docs/PHASE0.md
 ("Against the match server") were measured with the older 38-byte header and 9-byte ghosts.

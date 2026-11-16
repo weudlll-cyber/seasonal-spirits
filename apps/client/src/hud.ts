@@ -45,17 +45,17 @@ export class Hud {
   showControls(playing: boolean, offer: OfferState | undefined): void {
     this.shrine.hidden = !playing || offer === undefined;
     if (!offer) return;
-    this.secure.textContent = `Secure (${value(offer.secureValue)})`;
+    this.secure.textContent = `Secure: ${value(offer.secureValue)}`;
     this.secure.disabled = offer.secureValue === 0;
   }
 
   // CONCEPT.md §2b: a large announcement and a short flash at every deadline — "HALVING —
-  // <Season> is in season" at a halving, "MATCH OVER" at the match end (2026-11-16).
+  // <Season> is in season · prices move on" at a halving (V5), "MATCH OVER" at the match end.
   deadline(s: ServerState): void {
     const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;
     this.announce.textContent = end
       ? 'MATCH OVER'
-      : `HALVING — ${seasonName(s.season)} is in season`;
+      : `HALVING — ${seasonName(s.season)} is in season · prices move on`;
     this.announce.hidden = false;
     this.flash.classList.remove('go');
     this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation

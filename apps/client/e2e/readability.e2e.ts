@@ -1,5 +1,5 @@
 // Seasonal Spirits — what the owner's play tests of 2026-11-15 asked for, at desktop and phone
-// size: "You are Team <Season>", the own shrine labelled, in "Near" the minimap and the
+// size: "You are Team <Season>", the price board readable (V5), the own shrine labelled, in "Near" the minimap and the
 // "Your shrine" arrow when the shrine is out of sight, V or the corner button switching to
 // "Overview" and the choice surviving a reload. In every sampled frame: every ghost named, every
 // name label wholly inside the view (not under the top bar, not past a screen edge), none on
@@ -109,6 +109,23 @@ async function hudFaults(page: Page): Promise<string[]> {
   return faults;
 }
 
+// The price board (V5): four chips, one framed as in season, none cut off, inside the band.
+async function priceBoardReadable(page: Page): Promise<void> {
+  const chips = page.locator('#prices .price');
+  await expect(chips).toHaveCount(4);
+  await expect(page.locator('#prices .price.now')).toHaveCount(1);
+  const barBottom = (await view(page)).barBottom;
+  for (const chip of await chips.all()) {
+    await expect(chip).toHaveText(/^(Spring|Summer|Autumn|Winter) \d+(\.5)?$/);
+    const cut = await chip.evaluate((e) => e.scrollWidth > e.clientWidth);
+    expect(cut, `price chip "${(await chip.textContent()) ?? ''}" cut off`).toBe(false);
+    const box = await chip.boundingBox();
+    expect(box && box.y + box.height, 'the price board sits in the band').toBeLessThanOrEqual(
+      barBottom,
+    );
+  }
+}
+
 async function switchView(page: Page, info: TestInfo): Promise<void> {
   if (info.project.name === 'phone') await page.locator('#view').tap();
   else await page.keyboard.press('KeyV');
@@ -134,6 +151,7 @@ test('team line, own shrine, minimap and arrow in Near, Overview remembered, HUD
   await expect(page.locator('#team')).toBeVisible();
   const cut = await page.locator('#team').evaluate((e) => e.scrollWidth > e.clientWidth);
   expect(cut, 'the team line is not cut off').toBe(false);
+  await priceBoardReadable(page);
   const start = await view(page);
   expect(start.view).toBe('near');
   expect(start.minimap).not.toBeNull();

@@ -32,9 +32,12 @@ test('a spectator watches a halving and the result and sends nothing after its h
 
   const announce = page.locator('#announce');
   // Joined in the last season, "MATCH OVER" comes first; the halving follows after the pause.
-  await expect(announce).toHaveText(/^HALVING — (Spring|Summer|Autumn|Winter) is in season$/, {
-    timeout: 45_000,
-  });
+  await expect(announce).toHaveText(
+    /^HALVING — (Spring|Summer|Autumn|Winter) is in season · prices move on$/,
+    {
+      timeout: 45_000,
+    },
+  );
   await expect(announce).toBeVisible();
   await page.screenshot({ path: path.join(SCREENS, 'spectator-halving.png') });
 

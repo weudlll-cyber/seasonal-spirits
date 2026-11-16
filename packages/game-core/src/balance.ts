@@ -22,7 +22,9 @@ export interface BalanceReport {
   bestPlayerShare: Record<Strategy, number>;
   secured: Record<Strategy, Spread>; // per player and match
   teamWinShare: number[]; // index = team; ties split
-  clearedPerMatch: Spread; // field coins that disappeared at the halvings
+  // Coins carried across a halving, summed over the match's halvings: whether anyone holds
+  // coins for the price to move on.
+  carriedAcrossPerMatch: Spread;
 }
 
 const perStrategy = <T>(make: (s: Strategy) => T): Record<Strategy, T> =>
@@ -36,7 +38,7 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
   const best = perStrategy(() => 0);
   const values = perStrategy(() => [] as number[]);
   const teamWins = TEAMS.map(() => 0);
-  const cleared: number[] = [];
+  const carriedAcross: number[] = [];
   for (let k = 0; k < matches; k++) {
     const roster = rotatedRoster(k);
     const strategyOf = new Map(roster.map((x) => [x.id, x.strategy]));
@@ -44,14 +46,14 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
     const top = Math.max(...r.result.players.map((p) => p.secured));
     const winners = r.result.players.filter((p) => p.secured === top);
     for (const p of r.result.players) {
-      const s = strategyOf.get(p.id) ?? 'patient';
+      const s = strategyOf.get(p.id) ?? 'banker';
       values[s].push(p.secured);
       if (p.secured === top) best[s] += 1 / winners.length;
     }
     const topTeam = Math.max(...r.result.teams);
     const winningTeams = TEAMS.filter((t) => r.result.teams[t] === topTeam);
     for (const t of winningTeams) teamWins[t] = (teamWins[t] ?? 0) + 1 / winningTeams.length;
-    cleared.push(r.halvings.reduce((n, h) => n + h.event.fieldCoinsCleared, 0));
+    carriedAcross.push(r.halvings.reduce((n, h) => n + h.event.carried, 0));
   }
   const share = (n: number): number => n / matches;
   return {
@@ -60,7 +62,7 @@ export function runBalance(cfg: GameConfig, matches: number, firstSeed: number):
     bestPlayerShare: perStrategy((s) => share(best[s])),
     secured: perStrategy((s) => spread(values[s])),
     teamWinShare: teamWins.map(share),
-    clearedPerMatch: spread(cleared),
+    carriedAcrossPerMatch: spread(carriedAcross),
   };
 }
 

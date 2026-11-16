@@ -158,7 +158,7 @@ export class MatchHost {
   }
 
   private botFor(ghost: number): Controller {
-    const strategy = this.roster.find((r) => r.id === ghost)?.strategy ?? 'patient';
+    const strategy = this.roster.find((r) => r.id === ghost)?.strategy ?? 'banker';
     return { kind: 'bot', bot: createBot(this.cfg, strategy) };
   }
 

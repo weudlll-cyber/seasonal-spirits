@@ -30,8 +30,7 @@ function print(r: SimulationReport): void {
   console.log(`  0:00  ${DEFAULT_CONFIG.startSeason}`);
   for (const { event: e } of r.halvings) {
     console.log(
-      `  ${clock(e.atMs)}  HALVING → ${e.season} (${e.fieldCoinsCleared} field coins gone, ` +
-        `${e.carried} carried coins kept)`,
+      `  ${clock(e.atMs)}  HALVING → ${e.season} (prices move on; ${e.carried} coins carried across)`,
     );
   }
   console.log(`  ${clock(DEFAULT_CONFIG.matchDurationMs)}  end`);

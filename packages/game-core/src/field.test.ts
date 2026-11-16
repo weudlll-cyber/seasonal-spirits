@@ -5,13 +5,17 @@ import { ghostRadius } from './geometry.js';
 import { act, ghost, matchOf, quietConfig, runTo } from './test-helpers.js';
 
 describe('field coins', () => {
-  it('only coins of the current season appear on the field', () => {
+  it('coins of all four seasons fall (V5), and anyone picks up any of them', () => {
     const m = matchOf(quietConfig({ coinSpawnPerSecond: 4 }), [{ id: 1, team: 0 }]);
-    runTo(m, 74_000);
-    expect(m.state.coins.length).toBeGreaterThan(0);
-    expect(new Set(m.state.coins.map((c) => c.season))).toEqual(new Set(['spring']));
-    runTo(m, 80_000);
-    expect(new Set(m.state.coins.map((c) => c.season))).toEqual(new Set(['summer']));
+    ghost(m, 1).x = 0; // in a corner, out of reach of almost every coin
+    runTo(m, 30_000);
+    expect(new Set(m.state.coins.map((c) => c.season))).toEqual(
+      new Set(['spring', 'summer', 'autumn', 'winter']),
+    );
+    const g = ghost(m, 1);
+    m.state.coins.push({ id: 999, x: g.x + 10, y: g.y, season: 'winter' }); // not in season
+    runTo(m, 30_050);
+    expect(g.carried.winter).toBe(1);
   });
 
   it('a ghost picks up a coin it touches', () => {

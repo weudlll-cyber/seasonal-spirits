@@ -1,7 +1,8 @@
 // Seasonal Spirits — binary state encoding of a match, sent by the server every tick.
 // One encoding only: viewer, client and probe decode it, and everything a client shows comes
 // from it. Seasons travel as their index in the real order (0 Spring … 3 Winter); values in
-// halves, because a coin outside its season is worth ½.
+// halves, so a price placeholder of ½ stays exact. The price board is not sent: every client
+// derives it from the season and the game config (game-core priceOf).
 
 export interface GhostState {
   id: number; // 0..255
@@ -9,7 +10,6 @@ export interface GhostState {
   y: number;
   team: number; // 0..3
   carried: number; // carried coins of all seasons, 0..65535
-  offSeason: number; // of those, coins not of the current season: worth half now
   secured: number; // secured value so far (multiple of ½)
   flags: number; // GHOST_* bits
 }
@@ -20,8 +20,9 @@ export const GHOST_BOT = 4;
 export const GHOST_AT_SHRINE = 8; // inside its own team's shrine
 
 export interface CoinState {
-  x: number; // every field coin is of the current season
+  x: number;
   y: number;
+  season: number; // 0..3: coins of all four seasons fall (V5)
 }
 
 // The shrine button of a player standing in its own shrine (CONCEPT.md §3, §8), as the game
@@ -61,12 +62,11 @@ export const STATE_MATCH_END_EVENT = 8;
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonNumber u8 ·
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
 // teamSecured 4×u16 (halves) · ghost count u8 · coin count u8 · offer count u8.
-// Ghost: id u8 · x u16 · y u16 · team u8 · carried u16 · offSeason u16 · secured u16 (halves)
-// · flags u8.  Coin: x u16 · y u16.  Offer: ghost u8 · secure u16 (halves). All little
-// endian.
+// Ghost: id u8 · x u16 · y u16 · team u8 · carried u16 · secured u16 (halves) · flags u8.
+// Coin: x u16 · y u16 · season u8.  Offer: ghost u8 · secure u16 (halves). All little endian.
 export const HEADER_BYTES = 34;
-export const GHOST_BYTES = 13;
-export const COIN_BYTES = 4;
+export const GHOST_BYTES = 11;
+export const COIN_BYTES = 5;
 export const OFFER_BYTES = 3;
 const NO_COUNTDOWN = 0xffff;
 
@@ -89,6 +89,7 @@ export function encodeState(s: ServerState): Uint8Array {
   for (const c of s.coins) {
     v.setUint16(o, u16(c.x), true);
     v.setUint16(o + 2, u16(c.y), true);
+    v.setUint8(o + 4, c.season & 0x03);
     o += COIN_BYTES;
   }
   for (const f of s.offers) o = writeOffer(v, o, f);
@@ -119,9 +120,8 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setUint16(o + 3, u16(g.y), true);
   v.setUint8(o + 5, g.team & 0x03);
   v.setUint16(o + 6, u16(g.carried), true);
-  v.setUint16(o + 8, u16(g.offSeason), true);
-  v.setUint16(o + 10, halves(g.secured), true);
-  v.setUint8(o + 12, g.flags & 0xff);
+  v.setUint16(o + 8, halves(g.secured), true);
+  v.setUint8(o + 10, g.flags & 0xff);
   return o + GHOST_BYTES;
 }
 
@@ -144,7 +144,7 @@ export function decodeState(buf: Uint8Array): ServerState {
   for (let i = 0; i < counts[0]; i++, o += GHOST_BYTES) ghosts.push(readGhost(v, o));
   const coins: CoinState[] = [];
   for (let i = 0; i < counts[1]; i++, o += COIN_BYTES) {
-    coins.push({ x: v.getUint16(o, true), y: v.getUint16(o + 2, true) });
+    coins.push({ x: v.getUint16(o, true), y: v.getUint16(o + 2, true), season: v.getUint8(o + 4) });
   }
   const offers: OfferState[] = [];
   for (let i = 0; i < counts[2]; i++, o += OFFER_BYTES) offers.push(readOffer(v, o));
@@ -175,9 +175,8 @@ function readGhost(v: DataView, o: number): GhostState {
     y: v.getUint16(o + 3, true),
     team: v.getUint8(o + 5),
     carried: v.getUint16(o + 6, true),
-    offSeason: v.getUint16(o + 8, true),
-    secured: v.getUint16(o + 10, true) / 2,
-    flags: v.getUint8(o + 12),
+    secured: v.getUint16(o + 8, true) / 2,
+    flags: v.getUint8(o + 10),
   };
 }
 

@@ -18,6 +18,9 @@ export interface Ghost {
   x: number;
   y: number;
   carried: SeasonCounts;
+  // Of the carried coins, those carried across the last halving (set at every halving, gone
+  // with a secure): the recap's "Best nose" counts what they bring (recap.ts).
+  crossed: SeasonCounts;
   securedValue: number;
   securingUntilMs: number | null; // a secure in progress ends at this match time
   securingSeason: Season | null; // the season whose values the secure banks at
@@ -42,14 +45,15 @@ export interface Intent {
 }
 
 export type MatchEvent =
-  // Every season turn inside a match (CONCEPT.md §2b, §13); season is the new one.
-  | { type: 'halving'; atMs: number; season: Season; fieldCoinsCleared: number; carried: number }
+  // Every season turn inside a match (CONCEPT.md §2b, §13); season is the new one; carried:
+  // the coins all ghosts carry across it.
+  | { type: 'halving'; atMs: number; season: Season; carried: number }
   // A field coin picked up (2026-11-16: the human round counts pickups per ghost).
   | { type: 'pickup'; ghost: number; coin: number }
   | { type: 'secure-start'; ghost: number }
   // leftMs: time that was left before the deadline of the season the secure banks at, when it
-  // was started.
-  | { type: 'secured'; ghost: number; value: number; leftMs: number }
+  // was started; crossedValue: the part of `value` from coins carried across a halving.
+  | { type: 'secured'; ghost: number; value: number; leftMs: number; crossedValue: number }
   // The match ended in this tick (owner decision 2026-11-16: "MATCH OVER" at the end).
   | { type: 'match-end'; atMs: number };
 
@@ -57,7 +61,6 @@ export type MatchEvent =
 export interface MatchStats {
   spawned: number;
   pickedUp: number;
-  cleared: number; // field coins that disappeared at a halving
 }
 
 export interface MatchState {

@@ -57,8 +57,10 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, at: Rect, m: MinimapI
     ctx.lineWidth = 2;
     ctx.stroke();
   });
-  ctx.fillStyle = seasonColour(m.state?.season ?? 0);
-  for (const c of m.state?.coins ?? []) ctx.fillRect(px(c.x) - 1, py(c.y) - 1, 2, 2);
+  for (const c of m.state?.coins ?? []) {
+    ctx.fillStyle = seasonColour(c.season);
+    ctx.fillRect(px(c.x) - 1, py(c.y) - 1, 2, 2);
+  }
   for (const g of m.ghosts) {
     if (g.id === m.ownId) continue;
     dot(g.x, g.y, 1.6);

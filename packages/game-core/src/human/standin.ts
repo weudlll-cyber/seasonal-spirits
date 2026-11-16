@@ -10,7 +10,7 @@ import { totalCount } from '../seasons.js';
 import { perceive, type Sight, type ViewHalfSize } from './perception.js';
 
 // The client's "Near" view (apps/client: `cameraSpan` 1100 field units along the shorter side
-// of the screen below the 104 px bar; render `follow`): a desktop window of 1280 × 800 (and
+// of the screen below the 132 px bar; render `follow`): a desktop window of 1280 × 800 (and
 // wider) shows the whole field width and 1100 of its height; a phone in portrait (Pixel 7, 412
 // × 915) shows 1100 of the width and the whole height.
 export const DESKTOP_VIEW: ViewHalfSize = { x: 1000, y: 550 };

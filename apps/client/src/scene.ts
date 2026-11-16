@@ -30,9 +30,9 @@ import type { HudOnField } from './hud.js';
 import { drawMinimap, minimapRect } from './minimap.js';
 import type { ViewMode } from './view-mode.js';
 
-// Pixels of the band under the season clock: the team line and the corner buttons
-// (index.html #band). Every client has it, so no control sits on the field.
-export const BAND_HEIGHT = 40;
+// Pixels of the band under the season clock: the team line, the corner buttons and the price
+// board (index.html #band). Every client has it, so no control sits on the field.
+export const BAND_HEIGHT = 68;
 // What "Near" adds: the minimap and the shrine arrow, where they were drawn.
 interface NearExtras {
   map: Rect | null;

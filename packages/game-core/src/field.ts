@@ -1,9 +1,11 @@
 // Seasonal Spirits — coins on the field: spawning and picking up.
-// Only coins of the current season lie on the field (CONCEPT.md §2a, sentence 1); they fall
-// at the same rate all match long (CONCEPT.md §13, point 2).
+// Coins of all four seasons fall (CONCEPT.md V5, sentence 1), each season by its weight
+// relative to the season in season (prices.ts spawnSeason), at the same rate all match long;
+// anyone can pick up any coin.
 
 import type { GameConfig } from './config.js';
 import { touchesCoin } from './geometry.js';
+import { spawnSeason } from './prices.js';
 import { totalCount } from './seasons.js';
 import type { FieldCoin, MatchState } from './types.js';
 
@@ -22,7 +24,7 @@ export function spawnCoins(cfg: GameConfig, s: MatchState, sp: Spawner, dtMs: nu
       id: sp.nextId++,
       x: sp.rng() * cfg.fieldSize,
       y: sp.rng() * cfg.fieldSize,
-      season: s.clock.current,
+      season: spawnSeason(cfg, s.clock.current, sp.rng()),
     });
     s.stats.spawned++;
   }

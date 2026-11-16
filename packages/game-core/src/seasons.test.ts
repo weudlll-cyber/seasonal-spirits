@@ -1,8 +1,8 @@
-// Seasonal Spirits — season order, the season clock and coin values.
+// Seasonal Spirits — season order and the season clock (coin values: prices.test.ts).
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from './config.js';
-import { emptyCounts, nextSeason, seasonClock, valueNow } from './seasons.js';
+import { nextSeason, seasonClock } from './seasons.js';
 
 describe('seasons', () => {
   it('follow the real order Spring → Summer → Autumn → Winter → Spring', () => {
@@ -27,11 +27,5 @@ describe('seasons', () => {
       index: 3,
       timeLeftMs: 1000,
     });
-  });
-
-  it('value coins fully in their own season and at half outside it', () => {
-    const carried = { ...emptyCounts(), spring: 10, summer: 15 };
-    expect(valueNow(DEFAULT_CONFIG, carried, 'spring')).toBe(10 + 7.5);
-    expect(valueNow(DEFAULT_CONFIG, carried, 'summer')).toBe(5 + 15);
   });
 });

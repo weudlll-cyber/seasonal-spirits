@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import type { BalanceReport } from './balance.js';
 import { distanceFromEven, gridConfigs, meetsTarget } from './fairness.js';
 
-const report = (patient: number, cautious: number): BalanceReport =>
-  ({ bestPlayerShare: { patient, cautious } }) as BalanceReport;
+const report = (banker: number, planner: number): BalanceReport =>
+  ({ bestPlayerShare: { banker, planner } }) as BalanceReport;
 
 describe('fairness search', () => {
   it('tries every one of the 24 grid configurations once', () => {

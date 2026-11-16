@@ -2,10 +2,11 @@
 // Values from CONCEPT.md name their section; every other value is a placeholder the owner
 // decides (listed in the session sheet under NEEDS OWNER). Nothing else holds a magic number.
 
+import type { Relation } from './prices.js';
 import type { Season } from './seasons.js';
 
 export interface BotConfig {
-  cautiousSecureAt: number;
+  bankerSecureValue: number;
   arriveRadius: number;
   deadlineMarginMs: number;
   waypointMs: number;
@@ -24,7 +25,8 @@ export interface GameConfig {
   coinRadius: number;
   coinSpawnPerSecond: number;
   maxFieldCoins: number;
-  offSeasonValueFactor: number;
+  prices: Record<Relation, number>;
+  spawnWeights: Record<Relation, number>;
   secureDurationMs: number;
   shrineRadius: number;
   shrineInset: number;
@@ -53,9 +55,14 @@ export const DEFAULT_CONFIG: GameConfig = {
   ghostGrowthPerCoin: 0.5, // placeholder — owner decides (a carrier is larger, CONCEPT.md §2a)
   ghostGrowthMax: 16, // placeholder — owner decides
   coinRadius: 10, // placeholder — owner decides
-  coinSpawnPerSecond: 2, // placeholder — owner decides (CONCEPT.md leaves the rate open)
+  coinSpawnPerSecond: 2, // placeholder — owner decides (CONCEPT.md V5: 2 coins per second)
   maxFieldCoins: 60, // placeholder — owner decides
-  offSeasonValueFactor: 0.5, // CONCEPT.md §2a / §10 decision 2: half outside its season
+  // CONCEPT.md V5 (owner decision 2026-11-16): the price board — a coin of the season in season
+  // is worth most, of the next season less, of the other two least (prices.ts).
+  prices: { inSeason: 4, next: 2, other: 1 }, // placeholder — owner decides
+  // Coins of all four seasons fall; each season's share by its relation to the season in
+  // season (prices.ts spawnSeason). Equal: every season equally often.
+  spawnWeights: { inSeason: 1, next: 1, other: 1 }, // placeholder — owner decides
   secureDurationMs: 2500, // CONCEPT.md §2a: securing takes 2–3 s
   shrineRadius: 80, // placeholder — owner decides
   shrineInset: 150, // placeholder — owner decides (distance of a shrine from its corner)
@@ -71,7 +78,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   reconnectGraceMs: 12_000,
   resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
   bots: {
-    cautiousSecureAt: 5, // placeholder — owner decides (coins a cautious bot banks at)
+    // A banker secures as soon as what it carries is worth this much at today's prices.
+    bankerSecureValue: 12, // placeholder — owner decides
     arriveRadius: 20, // placeholder — owner decides (how close a bot steers to a target)
     // Spare time a bot keeps when it walks home to secure before a halving.
     deadlineMarginMs: 3000, // placeholder — owner decides

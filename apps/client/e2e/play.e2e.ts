@@ -1,7 +1,7 @@
 // Seasonal Spirits — one short match in the player client, at desktop and phone size: join,
-// move, reach the own shrine and read both buttons, live through a HALVING with the new
-// season's coins, the last-chance countdown and "MATCH OVER", and see the result screen with
-// the bridge box. Screenshots of each step go to reports/screens/latest/ (git-ignored).
+// move, reach the own shrine and read the Secure button, live through a HALVING with the
+// price board moving on, the last-chance countdown and "MATCH OVER", and see the result
+// screen with the bridge box. Screenshots of each step go to reports/screens/latest/ (git-ignored).
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -61,12 +61,12 @@ test('join, move, shrine buttons, a halving, the last chance and the result with
     return inShrineFor >= 3;
   });
   expect(atShrine, 'the Secure button appears at the own shrine').toBe(true);
-  await expect(page.locator('#secure')).toHaveText(/^Secure \(\d+(\.5)?\)$/);
+  await expect(page.locator('#secure')).toHaveText(/^Secure: \d+(\.5)?$/);
   await shot(page, info, 'shrine');
 
-  // The next halving: announcement with the new season, and that season's coins fall.
+  // The next halving: announcement with the new season, the price board moves on (V5).
   const announce = page.locator('#announce');
-  const halving = /^HALVING — (Spring|Summer|Autumn|Winter) is in season$/;
+  const halving = /^HALVING — (Spring|Summer|Autumn|Winter) is in season · prices move on$/;
   // Up to one season, or the rest of the last season, the result pause and one season.
   await expect(announce).toHaveText(halving, { timeout: 45_000 });
   const text = (await announce.textContent()) ?? '';
@@ -74,6 +74,7 @@ test('join, move, shrine buttons, a halving, the last chance and the result with
   expect(match, text).not.toBeNull();
   const season = SEASON_NAMES.indexOf(match?.[1] ?? '');
   await expect.poll(async () => (await view(page)).season).toBe(season);
+  await expect(page.locator('#prices .price.now')).toHaveText(`${SEASON_NAMES[season] ?? ''} 4`);
   await expect.poll(async () => (await view(page)).coins, { timeout: 10_000 }).toBeGreaterThan(0);
   await shot(page, info, 'halving');
 

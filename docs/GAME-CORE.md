@@ -11,7 +11,8 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 | File                | What it holds                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------ |
 | `src/config.ts`     | Every number of the game (table below)                                                                 |
-| `src/seasons.ts`    | Season order, the season clock, coin values                                                            |
+| `src/seasons.ts`    | Season order, the season clock                                                                         |
+| `src/prices.ts`     | The price board (V5): a coin's price by its season's relation, coin values, the spawn draw             |
 | `src/types.ts`      | Match state, intents, events, result                                                                   |
 | `src/match.ts`      | `Match`: one tick in a fixed order                                                                     |
 | `src/field.ts`      | Coin spawning and picking up                                                                           |
@@ -37,8 +38,11 @@ spawning, the end, the countdown.
 
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
   The state carries the season clock: current, next, index, time left in the season.
-- **Coins.** Only coins of the current season spawn, at `coinSpawnPerSecond` all match long,
-  up to `maxFieldCoins`. A ghost picks a coin up when their drawn shapes touch: centre
+- **Coins** (V5, owner decision 2026-11-16). Coins of all four seasons spawn, at
+  `coinSpawnPerSecond` all match long, up to `maxFieldCoins`; each new coin's season is drawn
+  from the match's seeded random source, every season weighted by its relation to the season
+  in season (`spawnWeights` — in season, next, the other two; `spawnSeason` in
+  `src/prices.ts`; equal by default). Anyone picks up any coin. A ghost picks a coin up when their drawn shapes touch: centre
   distance at most the ghost's radius plus `coinRadius` (`touchesCoin` in `src/geometry.ts`).
   A ghost's radius is `ghostRadius` plus `ghostGrowthPerCoin` per carried coin, at most
   `ghostGrowthMax` more (`ghostRadius()`); the client draws with the same function. Before
@@ -57,20 +61,26 @@ spawning, the end, the countdown.
   carrying, the direction clamped to length 1, the field's edges — is `stepGhost` in
   `src/geometry.ts`; the client's prediction of its own ghost moves with the same function
   (docs/CLIENT.md).
-- **Value.** A coin is worth 1 in its own season and `offSeasonValueFactor` (½) outside it.
+- **The price board** (V5). One coin is worth `prices.inSeason` (4) when its season is in
+  season, `prices.next` (2) when its season comes next, `prices.other` (1) for the other two
+  (`priceOf` in `src/prices.ts` — the one price function securing, the wire's offer and the
+  client's board use; `valueNow` sums it over carried coins). The half-value rule
+  (`offSeasonValueFactor`) is gone with it.
 - **Secure** (own shrine, something carried), the one action. Takes `secureDurationMs`; the
-  ghost stands still meanwhile. It banks at the values of the season in which it was started
-  (the value the player read on the button).
+  ghost stands still meanwhile. It banks every carried coin at the prices of the season in
+  which it was started (the value the player read on the button).
 - **Shrine offer** (`shrineOffer`): what the Secure button shows, computed here and sent to a
   player in its own shrine (CONCEPT.md §3: the player reads, never calculates).
 - **Removed with V5** (owner decision 2026-11-16): stealing (with its share, cooldown,
   "can steal" check and the steal-proof shield), the swap at the shrine, the team signals
   and the hunter bot. Their measurements stay in BALANCE.md ("Round 1" to "Round 7").
 - **Halving** at every season turn inside the match (CONCEPT.md §2b, §13): 1:15, 2:30 and
-  3:45 of a 5-minute match; the match end is not one. The old season's field coins disappear
-  (counted in `stats.cleared`), the new season's coins fall at the same rate. Carried coins
-  keep their count; the old season's are now worth half, so every halving is a deadline to
-  secure. The state carries `countdownMs` during the last `deadlineCountdownMs`
+  3:45 of a 5-minute match; the match end is not one. The next season comes into season and
+  the prices move on (V5): field coins stay where they are and only change price (before V5
+  they disappeared), carried coins keep their count. A coin of the next season rises from 2
+  to 4, a coin in season falls to 1 — so a halving is a deadline for some coins and a payday
+  for others. The `halving` event counts the coins all ghosts carry across it. The state
+  carries `countdownMs` during the last `deadlineCountdownMs`
   (10 s) before each halving and a `halving` event with the new season in exactly one tick
   each time.
 - **End.** Only secured value counts; coins still carried and unfinished secures are lost.
@@ -78,31 +88,39 @@ spawning, the end, the countdown.
   halving (owner decision 2026-11-16): the same `countdownMs` runs in its last 10 s, and a
   `match-end` event comes in exactly the tick the match ends; after that no countdown.
 - **Recap awards** (owner decision 2026-11-16; `src/recap.ts`, `noteAwards` folds each tick's
-  events into running bests, nothing else kept; "Biggest steal" went with stealing): "Closest
-  save" — the
-  completed secure that was started with the least time left before the deadline of its
-  season (the season whose values it banks at; the `secured` event carries that time as
-  `leftMs`) — since a secure always takes `secureDurationMs`, this ranks the same as "completed
-  closest to the deadline" but is never negative; "Last secure" — the last secure completed
-  before the match end (ghost, value). An award nobody earned stays `null`.
+  events into running bests and one total per ghost, nothing else kept): "Best nose" (V5,
+  replacing "Biggest steal") — the most points a player secured over the match from coins
+  carried across a halving: at every halving each ghost's carried coins become its `crossed`
+  coins (not for a ghost already securing: its prices were fixed before the halving), a
+  completed secure reports what they brought at its prices as `crossedValue` and clears
+  them; "Closest save" — the completed secure that was started with the least time left
+  before the deadline of its season (the season whose values it banks at; the `secured` event
+  carries that time as `leftMs`) — since a secure always takes `secureDurationMs`, this ranks
+  the same as "completed closest to the deadline" but is never negative; "Last secure" — the
+  last secure completed before the match end (ghost, value). An award nobody earned stays
+  `null`.
 
 ## Bots
 
-Two small state machines over the public state (`src/bots/strategies.ts`); each picks a
-mode, then acts on it:
+Two small state machines over the public state (`src/bots/strategies.ts`; V5, owner
+decision 2026-11-16); each picks a mode, then acts on it with the shared helpers:
 
-- **patient**: collects all season; when the next halving or the end comes near, walks home
-  and banks everything. (Until V5 it swapped before every halving and fled from hunters.)
-- **cautious**: collects; at `bots.cautiousSecureAt` coins, and with anything at all when
-  the next halving or the end comes near, walks home and banks.
+- **banker**: collects the coins worth most at today's prices, weighed against their
+  distance; secures as soon as its load is worth `bots.bankerSecureValue` (12) at today's
+  prices, and with anything at all when the next halving or the end comes near.
+- **planner**: collects the coins worth most after the next halving — the next season's,
+  cheap now — and never secures before a halving; right after one it walks home and banks
+  what it carried across, when it is worth most; in the last season it banks before the end.
 
-The hunter went with stealing (V5, owner decision 2026-11-16).
+The roster splits the two evenly (4 of each per team). The patient, cautious and hunter bots
+went with the swap and stealing.
 
 "Near" (`deadlineNear` in `src/bots/common.ts`): the time left in the season is just enough
 to walk home at carrying speed, secure, and keep `bots.deadlineMarginMs` spare.
 
-"Collects" (`collect` in `src/bots/common.ts`): head for the nearest field coin that no other
-ghost is closer to; without such a coin, walk to the own waypoint — a point inside the square
+"Collects" (`collect` in `src/bots/common.ts`): head for the field coin worth most per
+distance (the style's worth over the distance plus 100 units; without a worth, the nearest)
+among those no other ghost is closer to; without such a coin, walk to the own waypoint — a point inside the square
 the shrines span, spread over the field by the ghost's id and moved on every
 `bots.waypointMs`, the next one as soon as it is reached. Before 2026-11-15 every collector
 took its nearest coin: neighbours shared one target, travelled as one pack of up to ten mixed
@@ -121,7 +139,7 @@ state. The bot trial switches of session 2026-11-16-HUMAN (T1–T4, BALANCE.md "
 phone portrait 1100 × 2000, from the client's `cameraSpan` 1100), decides a reaction time late
 (300 ms placeholder) and collects the nearest coin it sees, securing before every deadline.
 It is a measuring instrument, never part of the balance pool. `round.ts` runs seeded matches
-with it; `coins.ts` follows every field coin from spawn to pickup or halving, `groups.ts`
+with it; `coins.ts` follows every field coin from spawn to pickup, `groups.ts`
 every group of more than four ghosts within twice a shrine's radius. Every pickup is a
 `pickup` event (`src/field.ts`). `--reaction <ms>` (may repeat) adds a desktop stand-in with
 that delay (`desktopAt` in `variants.ts`); the delay counts in whole ticks: the stand-in
@@ -130,40 +148,41 @@ decides on the newest state at least that old, so 258 ms act as 300 ms and 363 m
 ## `pnpm simulate --seed <n>`
 
 One full match, 32 bots (8 per team, as many of each strategy), in 50 ms ticks as
-fast as the machine runs. It prints the season timeline with the three halvings (field coins
-gone, carried coins kept), the secured value per team and per player, and the sanity list: no
+fast as the machine runs. It prints the season timeline with the three halvings (prices move
+on, coins carried across), the secured value per team and per player, and the sanity list: no
 negative counts (checked after every tick), one halving per season turn, carried coins
 conserved across each halving (end of the tick before = at the halving), field coins
-accounted (spawned = picked up + gone at halvings + left). It exits 1 if a sanity check
+accounted (spawned = picked up + left). It exits 1 if a sanity check
 fails.
 
 ## Configuration (`src/config.ts`)
 
-| Key                     | Value   | Source                                                                    |
-| ----------------------- | ------- | ------------------------------------------------------------------------- |
-| `matchDurationMs`       | 300 000 | CONCEPT.md §4: 5 minutes                                                  |
-| `seasonDurationMs`      | 75 000  | CONCEPT.md §2: four seasons of 75 s                                       |
-| `startSeason`           | spring  | placeholder (the website's season clock will provide it, CONCEPT.md §2)   |
-| `fieldSize`             | 2000    | placeholder (Phase 0 world)                                               |
-| `ghostSpeed`            | 300     | placeholder (units/s, Phase 0 speed)                                      |
-| `carrySpeedFactor`      | 0.7     | placeholder (CONCEPT.md §8: carrying slows; the factor is open)           |
-| `ghostRadius`           | 14      | placeholder (an empty ghost, as drawn)                                    |
-| `ghostGrowthPerCoin`    | 0.5     | placeholder (a carrier is larger, CONCEPT.md §2a)                         |
-| `ghostGrowthMax`        | 16      | placeholder                                                               |
-| `coinRadius`            | 10      | placeholder (a field coin, as drawn)                                      |
-| `coinSpawnPerSecond`    | 2       | placeholder (CONCEPT.md leaves the rate open)                             |
-| `maxFieldCoins`         | 60      | placeholder                                                               |
-| `offSeasonValueFactor`  | 0.5     | CONCEPT.md §2a, §10 decision 2                                            |
-| `secureDurationMs`      | 2500    | CONCEPT.md §2a: 2–3 s                                                     |
-| `shrineRadius`          | 80      | placeholder                                                               |
-| `shrineInset`           | 150     | placeholder                                                               |
-| `startSpread`           | 60      | placeholder                                                               |
-| `separationRadius`      | 28      | placeholder (two ghost bodies touching)                                   |
-| `separationStrength`    | 0.5     | placeholder (share of the overlap removed per tick)                       |
-| `deadlineCountdownMs`   | 10 000  | CONCEPT.md §2b, §13: before every halving; since 2026-11-16 the match end |
-| `reconnectGraceMs`      | 12 000  | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot           |
-| `resultPauseMs`         | 15 000  | placeholder (result screen before the next match)                         |
-| `bots.cautiousSecureAt` | 5       | placeholder                                                               |
-| `bots.arriveRadius`     | 20      | placeholder                                                               |
-| `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)               |
-| `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                   |
+| Key                      | Value     | Source                                                                    |
+| ------------------------ | --------- | ------------------------------------------------------------------------- |
+| `matchDurationMs`        | 300 000   | CONCEPT.md §4: 5 minutes                                                  |
+| `seasonDurationMs`       | 75 000    | CONCEPT.md §2: four seasons of 75 s                                       |
+| `startSeason`            | spring    | placeholder (the website's season clock will provide it, CONCEPT.md §2)   |
+| `fieldSize`              | 2000      | placeholder (Phase 0 world)                                               |
+| `ghostSpeed`             | 300       | placeholder (units/s, Phase 0 speed)                                      |
+| `carrySpeedFactor`       | 0.7       | placeholder (CONCEPT.md §8: carrying slows; the factor is open)           |
+| `ghostRadius`            | 14        | placeholder (an empty ghost, as drawn)                                    |
+| `ghostGrowthPerCoin`     | 0.5       | placeholder (a carrier is larger, CONCEPT.md §2a)                         |
+| `ghostGrowthMax`         | 16        | placeholder                                                               |
+| `coinRadius`             | 10        | placeholder (a field coin, as drawn)                                      |
+| `coinSpawnPerSecond`     | 2         | placeholder (CONCEPT.md leaves the rate open)                             |
+| `maxFieldCoins`          | 60        | placeholder                                                               |
+| `prices`                 | 4 / 2 / 1 | placeholder (CONCEPT.md V5: in season / next / the other two)             |
+| `spawnWeights`           | 1 / 1 / 1 | placeholder (CONCEPT.md V5: all four seasons fall equally often)          |
+| `secureDurationMs`       | 2500      | CONCEPT.md §2a: 2–3 s                                                     |
+| `shrineRadius`           | 80        | placeholder                                                               |
+| `shrineInset`            | 150       | placeholder                                                               |
+| `startSpread`            | 60        | placeholder                                                               |
+| `separationRadius`       | 28        | placeholder (two ghost bodies touching)                                   |
+| `separationStrength`     | 0.5       | placeholder (share of the overlap removed per tick)                       |
+| `deadlineCountdownMs`    | 10 000    | CONCEPT.md §2b, §13: before every halving; since 2026-11-16 the match end |
+| `reconnectGraceMs`       | 12 000    | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot           |
+| `resultPauseMs`          | 15 000    | placeholder (result screen before the next match)                         |
+| `bots.bankerSecureValue` | 12        | placeholder (a banker secures from this load value on)                    |
+| `bots.arriveRadius`      | 20        | placeholder                                                               |
+| `bots.deadlineMarginMs`  | 3000      | placeholder (spare time when walking home before a halving)               |
+| `bots.waypointMs`        | 4000      | placeholder (how often a collector's waypoint moves on)                   |
