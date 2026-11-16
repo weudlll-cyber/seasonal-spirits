@@ -18,9 +18,10 @@ secret is refused.
 b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
 `packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), among them since
 2026-11-15 `bots.waypointMs`, `bots.threatRange`, `ghostRadius`, `ghostGrowthPerCoin`,
-`ghostGrowthMax` and `coinRadius`, and since 2026-11-16 (the fair rules, CONCEPT.md §14)
-`swapMinIn` (6), `stealShareMin` (0) and `stealShareMax` (0.5). Done when: the owner has
-decided each and config.ts carries the source.
+`ghostGrowthMax` and `coinRadius`, since 2026-11-16 (the fair rules, CONCEPT.md §14)
+`swapMinIn` (6), `stealShareMin` (0) and `stealShareMax` (0.5), and on the night branch
+`signalIntervalMs` (2 s). Done when: the owner has decided each and config.ts carries the
+source.
 
 c. **First playable version — owner part.** Built and checked with Playwright (CLOSED).
 Still open: the owner plays it on the PC (`pnpm dev`, http://localhost:5930) and on a phone
@@ -52,26 +53,34 @@ when the system is stable. The website-session tasks from CONCEPT.md §12: slug
 under `/games/seasonal-spirits` with the website's sign-in.
 
 h. **Readability — owner part.** Built, checked and played; merged into `master` on
-2026-11-15; the overlaps found in the own match are fixed on `fix/ui-overlaps` (CLOSED).
-Done when: the owner has played it on PC and phone and decided the two separation
-placeholders (`separationRadius`, `separationStrength`).
+2026-11-15; the overlaps found in the own match are fixed and merged too (`9c2d85a`), the
+label faults left from session 2026-11-15-CD on the night branch (CLOSED). Done when: the
+owner has played it on PC and phone and decided the two separation placeholders
+(`separationRadius`, `separationStrength`).
 
-l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-11-16; night
-2026-11-16, piece 4). In the result pause every client gets one recap: the result plus
-"Biggest steal", "Closest save" and "Last secure". Done when: it is built on the night
-branch, the owner has played it and merged it.
+l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-11-16).
+Built on `feat/night-2026-11-16` (CLOSED, night piece 4): the result plus "Biggest steal",
+"Closest save" and "Last secure". Done when: the owner has played it and merged the branch.
 
 m. **Final countdown before the match end** (idea from a Copilot review, owner decision
-2026-11-16; night 2026-11-16, piece 3). The halving's staging before the match end: "LAST
-CHANCE — secure now", then "MATCH OVER". Done when: it is built on the night branch, the
-owner has played it and merged it.
+2026-11-16). Built on `feat/night-2026-11-16` (CLOSED, night piece 3): "LAST CHANCE — secure
+now", then "MATCH OVER". Done when: the owner has played it and merged the branch.
 
-n. **Team signals** (idea from a Copilot review, owner decision 2026-11-16; night
-2026-11-16, piece 5). "Attack" and "To shrine", only to the sender's own team. Done when: it
-is built on the night branch, the owner has played it and merged it.
+n. **Team signals** (idea from a Copilot review, owner decision 2026-11-16). Built on
+`feat/night-2026-11-16` (CLOSED, night piece 5) with keys 3 and 4 — the task asked for 1
+and 2, which are Secure and Swap. Done when: the owner has decided the keys, played it and
+merged the branch.
 
 o. **A fixed map with routes** (idea from a Copilot review). Later, owner decides. Done
 when: the owner has decided whether and how.
+
+p. **Bridge box wording.** The result screen's bridge text (CONCEPT.md §8, word for word in
+`apps/client/src/config.ts`) still says "expect less after the halving" — the idea CONCEPT.md
+§1 dropped on 2026-11-16 (every season change is a halving; the old season's coins are
+worth half). Owner's text, left as it is. Done when: the owner has decided the wording.
+
+q. **Why hunters rob each other** — the bot change proposed in the night sheet 2026-11-16
+(piece 7), if it was reached. Done when: the owner has decided on the proposal.
 
 ## CLOSED
 
@@ -348,6 +357,16 @@ when: the owner has decided whether and how.
   (`signals.test.ts`); `signals.e2e.ts` with three browser pages — commit "feat: team
   signals" on `feat/night-2026-11-16` (not merged; n stays open until the owner has played
   and merged it).
+- 2026-11-16 — **Clean-up sweep** (night 2026-11-16, piece 6, no behaviour change): OPEN
+  checked against the tree and rewritten (h named a branch merged long ago, `9c2d85a`; l, m,
+  n now "built, waiting for the owner"; b2 gains `signalIntervalMs`; new p — the bridge
+  wording — and q — piece 7's proposal); living docs searched for the removed switches and
+  the old swap rule (none left outside history); one `knip` 5.88.1 run: no unused files or
+  dependencies, 16 exports nobody imports, all used inside their own file — the two added
+  tonight lost their `export`, the 14 older ones are listed in the night sheet; every
+  tracked source file has its header; the docs carry no line references. Equivalence: `pnpm
+balance` on seeds 1–30 gives exactly the piece 1 row — commit "chore: clean-up sweep" on
+  `feat/night-2026-11-16`.
 
 ## CHECKS DONE
 
@@ -512,3 +531,6 @@ when: the owner has decided whether and how.
 | 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `dc0e7ad` and `ee74c04` on `feat/night-2026-11-16`                                                                                   | success for both                                                                                                                                                                                                                    | `gh run list --branch feat/night-2026-11-16`                                                   |
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 30 related test files / 169 tests)                                                                                                        | working tree of "feat: team signals"                                                                                                 | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-16 | `pnpm e2e signals` (desktop; three pages)                                                                                                                                                 | same tree                                                                                                                            | 1 passed, 1 skipped by design                                                                                                                                                                                                       | `reports/screens/latest/desktop-signal.png` (git-ignored)                                      |
+| 2026-11-16 | `pnpm dlx knip@5` (knip 5.88.1, one-off, not added to the repository or CI)                                                                                                               | night branch at `de48624`                                                                                                            | no unused files or dependencies; 8 unused exports and 8 unused exported types, all used inside their own file                                                                                                                       | night sheet, piece 6                                                                           |
+| 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1`                                                                                                                                    | night branch at `de48624` plus the sweep                                                                                             | identical to the piece 1 row: 26.7 / 43.3 / 30.0 %, 8.7 swaps, 1304.2 steals, 39 125 steals of 2.1 coins; CPU load 100 % before                                                                                                     | BALANCE.md "Adopted" (same numbers)                                                            |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 30 related test files / 169 tests)                                                                                                        | working tree of "chore: clean-up sweep"                                                                                              | green                                                                                                                                                                                                                               | same commit                                                                                    |

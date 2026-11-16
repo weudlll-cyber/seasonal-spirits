@@ -85,7 +85,7 @@ export class ResultScreen {
 }
 
 // The awards the match earned, short enough for a phone; none earned, none shown.
-export function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
+function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
   const { biggestSteal: steal, closestSave: save, lastSecure: last } = r.awards;
   const lines: [string, string][] = [];
   if (steal) {

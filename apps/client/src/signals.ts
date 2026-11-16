@@ -7,7 +7,7 @@ import type { ServerSignal, TeamSignal } from '@seasonal-spirits/protocol';
 import { TEXT, circle, sx, sy, type View } from '@seasonal-spirits/render';
 import { CLIENT_CONFIG } from './config.js';
 
-export const SIGNAL_WORDS: Record<TeamSignal, string> = { attack: 'Attack', home: 'To shrine' };
+const SIGNAL_WORDS: Record<TeamSignal, string> = { attack: 'Attack', home: 'To shrine' };
 const MAX_MARKERS = 32;
 
 export interface Marker {
