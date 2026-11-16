@@ -19,7 +19,7 @@ export interface LabelCandidate {
   x: number; // the ghost's centre, pixels
   y: number;
   // Pixels from the centre to the outside of what is drawn for the ghost: its body and the own
-  // ring, shield or securing ring around it. A label keeps clear of all of it (session
+  // ring or securing ring around it. A label keeps clear of all of it (session
   // 2026-11-16-LOOK-B: "You · 6  (5 half)" pushed in from the screen edge onto the own ring,
   // the ring hid its last letter).
   r: number;

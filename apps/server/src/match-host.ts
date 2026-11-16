@@ -17,15 +17,8 @@ import {
   type Roster,
   type Strategy,
 } from '@seasonal-spirits/game-core';
-import type {
-  GameAction,
-  ServerRecap,
-  ServerSignal,
-  ServerSteal,
-  TeamSignal,
-} from '@seasonal-spirits/protocol';
+import type { GameAction, ServerRecap } from '@seasonal-spirits/protocol';
 import { recapOf } from './recap.js';
-import { stageShield, stageSteal, type Scenario } from './scenario.js';
 import { toWire, type WireState } from './wire.js';
 
 export type { WireState } from './wire.js';
@@ -44,16 +37,13 @@ export class MatchHost {
   private hostMs = 0;
   private resultUntil: number | null = null;
   private lastEvents: readonly MatchEvent[] = []; // of the tick just run
-  private readonly scenario: Scenario;
   private awards: Awards = NO_AWARDS; // of the running match, folded tick by tick
   private recap: ServerRecap | null = null; // of the match just ended, during the result pause
-  private readonly lastSignalMs = new Map<number, number>(); // per ghost: bounded by the slots
 
-  constructor(cfg: GameConfig, slots: number, firstSeed: number, scenario: Scenario = 'none') {
+  constructor(cfg: GameConfig, slots: number, firstSeed: number) {
     this.cfg = cfg;
     this.roster = botRoster(slots);
     this.seed = firstSeed;
-    this.scenario = scenario;
     this.match = new Match(cfg, this.seed, this.roster);
     for (const r of this.roster) this.control.set(r.id, this.botFor(r.id));
   }
@@ -69,12 +59,6 @@ export class MatchHost {
     }
     if (!pick) return null;
     this.control.set(pick.id, { kind: 'player', clientId, dx: 0, dy: 0, action: null });
-    // SCENARIO (browser specs, development only): every joining player is staged.
-    if (this.scenario === 'steal') stageSteal(this.cfg, this.match.state, this.roster, pick.id);
-    if (this.scenario === 'shield') {
-      const still = stageShield(this.cfg, this.match.state, pick.id);
-      if (still !== null) this.control.set(still, { kind: 'standing', since: this.hostMs });
-    }
     return { ghost: pick.id, team: pick.team };
   }
 
@@ -130,57 +114,12 @@ export class MatchHost {
     return this.wire(s.events, s.ended ? this.cfg.resultPauseMs : 0);
   }
 
-  // A team signal from a player: at most one per signalIntervalMs per player — extra ones are
-  // dropped silently —, only while a match runs; delivered to the players of the sender's own
-  // team (the sender included), never to opponents, spectators or bots (THREATS rows 34, 35).
-  signal(clientId: number, signal: TeamSignal): { clientId: number; message: ServerSignal }[] {
-    const ghost = this.ghostOf(clientId);
-    const g = this.match.state.ghosts.find((x) => x.id === ghost);
-    if (!g || this.resultUntil !== null) return [];
-    const last = this.lastSignalMs.get(g.id);
-    if (last !== undefined && this.hostMs - last < this.cfg.signalIntervalMs) return [];
-    this.lastSignalMs.set(g.id, this.hostMs);
-    const message: ServerSignal = {
-      kind: 'signal',
-      ghost: g.id,
-      signal,
-      x: Math.round(g.x),
-      y: Math.round(g.y),
-    };
-    const out: { clientId: number; message: ServerSignal }[] = [];
-    for (const r of this.roster) {
-      const c = this.control.get(r.id);
-      if (r.team === g.team && c?.kind === 'player') out.push({ clientId: c.clientId, message });
-    }
-    return out;
-  }
-
   // The match recap for every client: `fresh` only in the tick the match ended (sent to all);
   // otherwise the one of the result pause, for a client that arrives during it; null while a
   // match runs.
   recapNow(fresh: boolean): ServerRecap | null {
     if (fresh) return this.lastEvents.some((e) => e.type === 'match-end') ? this.recap : null;
     return this.recap;
-  }
-
-  // The steal notices of the tick just run: one for each player involved, thief or victim;
-  // bots, standing ghosts and spectators get none.
-  stealNotices(): { clientId: number; message: ServerSteal }[] {
-    const out: { clientId: number; message: ServerSteal }[] = [];
-    for (const e of this.lastEvents) {
-      if (e.type !== 'steal') continue;
-      const message: ServerSteal = {
-        kind: 'steal',
-        thief: e.thief,
-        victim: e.victim,
-        coins: e.coins,
-      };
-      for (const ghost of [e.thief, e.victim]) {
-        const c = this.control.get(ghost);
-        if (c?.kind === 'player') out.push({ clientId: c.clientId, message });
-      }
-    }
-    return out;
   }
 
   private intents(): Map<number, Intent> {

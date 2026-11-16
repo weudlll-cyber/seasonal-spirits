@@ -6,13 +6,7 @@ export * from './seasons.js';
 export * from './types.js';
 export { Match, type Roster } from './match.js';
 export { mulberry32 } from './rng.js';
-export {
-  atOwnShrine,
-  canSteal,
-  carriesShielded,
-  shrineOffer,
-  type ShrineOffer,
-} from './actions.js';
+export { atOwnShrine, shrineOffer, type ShrineOffer } from './actions.js';
 export {
   clamp,
   ghostRadius,

@@ -1,13 +1,12 @@
 // Seasonal Spirits — the three scenes of `pnpm looks` (session 2026-11-16-LOOK), found in seeded
 // bot matches: (1) the biggest crowd at a shrine, (2) a carrier of full- and half-value coins
-// just after a halving among empty ghosts, (3) a shielded carrier, a securing ghost and a third
-// ghost (the "own" one) close together. Each scene is the match state as a client receives it
+// just after a halving among empty ghosts, (3) a carrier, a securing ghost and a third ghost
+// (the "own" one) close together (a shielded carrier until the shield went with V5). Each scene is the match state as a client receives it
 // (the server's toWire), with the last positions for the trails.
 
 import {
   DEFAULT_CONFIG,
   botRoster,
-  carriesShielded,
   shrinePositions,
   simulate,
   totalCount,
@@ -26,7 +25,7 @@ const TRAIL_TICKS = 12; // render's Trails keeps this many points
 type Point = { id: number; x: number; y: number };
 
 export interface LookScene {
-  key: 'crowd' | 'halved' | 'shield';
+  key: 'crowd' | 'halved' | 'securing';
   seed: number;
   matchMs: number;
   state: ServerState;
@@ -90,12 +89,13 @@ function halved(s: Readonly<MatchState>): Moment | null {
   return best;
 }
 
-// (3) A shielded carrier and a securing ghost within NEAR, and a third ghost near both, no two
-// closer than APART (the camera of "Near" shows touching ghosts as one blot); the closer the
-// three, the better.
-function shielded(s: Readonly<MatchState>): Moment | null {
+// (3) A carrier on the field and a securing ghost within NEAR, and a third ghost near both, no
+// two closer than APART (the camera of "Near" shows touching ghosts as one blot); the closer
+// the three, the better.
+function securing(s: Readonly<MatchState>): Moment | null {
   let best: Moment | null = null;
-  for (const a of s.ghosts.filter(carriesShielded)) {
+  const carriers = s.ghosts.filter((g) => totalCount(g.carried) > 0 && g.securingUntilMs === null);
+  for (const a of carriers) {
     for (const b of s.ghosts) {
       if (b.id === a.id || b.securingUntilMs === null || !apart(a, b)) continue;
       const m = withOwn(s, a, b);
@@ -123,7 +123,7 @@ function apart(a: Ghost, b: Ghost): boolean {
   return d >= APART && d <= NEAR;
 }
 
-const FINDERS = { crowd, halved, shield: shielded } as const;
+const FINDERS = { crowd, halved, securing } as const;
 
 function wireOf(s: Readonly<MatchState>, ownId: number): ServerState {
   const teams = [0, 1, 2, 3].map((t) =>
@@ -164,7 +164,7 @@ export function findScenes(): LookScene[] {
       if (history.length > TRAIL_TICKS) history.shift();
     });
   }
-  return (['crowd', 'halved', 'shield'] as const).map((k) => {
+  return (['crowd', 'halved', 'securing'] as const).map((k) => {
     const found = best.get(k);
     if (!found) throw new Error(`no ${k} scene in seeds ${LOOK_SEEDS.join(', ')}`);
     return found.scene;

@@ -3,17 +3,9 @@
 // arrow keep out of the thumb zones of the HUD controls. Returns what it drew, for the
 // browser specs.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import {
-  GHOST_SHIELDED,
-  type CoinState,
-  type GhostState,
-  type ServerState,
-  type TeamSignal,
-} from '@seasonal-spirits/protocol';
+import type { CoinState, GhostState, ServerState } from '@seasonal-spirits/protocol';
 import {
   CLOCK_HEIGHT,
-  circle,
   SHRINES,
   belowBar,
   drawClock,
@@ -36,7 +28,6 @@ import { drawArrow, edgeArrow, type EdgeArrow } from './arrow.js';
 import { CLIENT_CONFIG } from './config.js';
 import type { HudOnField } from './hud.js';
 import { drawMinimap, minimapRect } from './minimap.js';
-import { drawMarkers, type Marker } from './signals.js';
 import type { ViewMode } from './view-mode.js';
 
 // Pixels of the band under the season clock: the team line and the corner buttons
@@ -58,10 +49,8 @@ export interface Frame {
   own: GhostState | undefined;
   ownTeam: number | null; // a player's team; null for spectators
   playing: boolean;
-  canSteal: boolean; // the server's GHOST_CAN_STEAL for the own ghost: a steal would land now
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
-  markers: readonly Marker[]; // the team's signals showing now (signals.ts)
 }
 
 export interface Drawn {
@@ -77,8 +66,6 @@ export interface Drawn {
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
-  stealRing: boolean; // the own steal range is drawn (a steal would land now)
-  signals: { ghost: number; signal: TeamSignal }[]; // team signal markers drawn now
   ghostsShown: GhostOnScreen[]; // every ghost drawn inside the visible field, in pixels
 }
 
@@ -88,7 +75,6 @@ export interface GhostOnScreen {
   x: number;
   y: number;
   r: number; // the drawn radius
-  shielded: boolean; // drawn with the shield (GHOST_SHIELDED)
 }
 
 // "Near" follows the own ghost; a spectator, "Overview" and a player not yet placed see all.
@@ -114,7 +100,6 @@ export function drawScene(
   trails.record(f.ghosts);
   let labels: PlacedLabel[] = [];
   let shrineLabels: ShrineLabels = { own: null, all: [], onGhost: [] };
-  let stealRing = false;
   belowBar(view, () => {
     const field = {
       ownTeam: f.ownTeam,
@@ -123,14 +108,12 @@ export function drawScene(
       ghosts: f.ghosts,
     };
     shrineLabels = drawField(view, f.latest && { ...f.latest, coins: f.coins }, field);
-    stealRing = drawStealRing(view, f);
     labels = drawGhosts(view, f.ghosts, {
       ownId: f.ownId,
       trails,
       labelAll: !f.playing,
       avoid: shrineLabels.all,
     });
-    drawMarkers(view, f.markers, seasonColour(f.ownTeam ?? 0));
   });
   drawClock(ctx, f.latest);
   const shrine = ownShrine(view, f.ownTeam);
@@ -150,26 +133,7 @@ export function drawScene(
     zones: f.hud.zones,
     labels,
     ghostsShown: onScreen(view, f.ghosts),
-    stealRing,
-    signals: f.markers.map((m) => ({ ghost: m.ghost, signal: m.signal })),
   };
-}
-
-// The own steal range as a faint ring while a steal would land right now — the server's
-// canSteal, the same word that lights the Steal button — so it never shows beside a carrier
-// of only steal-proof coins (owner's observations 2026-11-15 and 2026-11-16). Players only.
-function drawStealRing(view: View, f: Frame): boolean {
-  const own = f.canSteal ? f.own : undefined;
-  if (!own) return false;
-  const range = DEFAULT_CONFIG.stealRange;
-  const { ctx } = view;
-  ctx.strokeStyle = 'rgba(255, 213, 79, 0.45)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([4, 4]);
-  circle(view, own.x, own.y, range * view.scale);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  return true;
 }
 
 interface OwnShrine {
@@ -199,7 +163,6 @@ function drawNear(
     ownId: f.ownId,
     ownTeam: shrine.team,
     camera: view,
-    markers: f.markers,
   });
   const arrow = edgeArrow(shrine.screen, shrine.at, ARROW_INSET, [map, ...f.hud.zones]);
   if (arrow) drawArrow(ctx, arrow, seasonColour(shrine.team));
@@ -215,7 +178,6 @@ function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
       x: sx(view, g.x),
       y: sy(view, g.y),
       r: ghostRadiusPx(view, g),
-      shielded: (g.flags & GHOST_SHIELDED) !== 0,
     }))
     .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);
 }

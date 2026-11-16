@@ -13,7 +13,6 @@ export function recapOf(result: MatchResult, awards: Awards): ServerRecap {
     players: result.players.map((p) => ({ ghost: p.id, team: p.team, secured: p.secured })),
     awards: {},
   };
-  if (awards.biggestSteal) out.awards.biggestSteal = awards.biggestSteal;
   if (awards.closestSave) out.awards.closestSave = awards.closestSave;
   if (awards.lastSecure) out.awards.lastSecure = awards.lastSecure;
   return out;

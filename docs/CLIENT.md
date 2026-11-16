@@ -50,60 +50,38 @@ exact value `1` switches it on. The browser spec `e2e/spectate.e2e.ts` (desktop 
 watches a halving and the result and counts the frames sent to the match server: exactly
 the hello.
 
-## Help and steal feedback
+## Help
 
-Owner's observation 2026-11-15: stealing was not understood.
+Owner's observation 2026-11-15: the rules were not understood.
 
 - **Help** (`src/help.ts`): an overlay with the rules of CONCEPT.md §2a in plain words, each
   with a small drawing made in code (inline SVG, no image files) — only the current season's
   coins fall; a coin is worth 1 in its own season, ½ otherwise; at the own shrine Secure
-  banks now and Swap turns the season's coins, from 6 on, into the next season's (every 2
-  become 3; not in the last season — the numbers come from the game config); swapped coins
-  are safe until the next halving (the shield); every season change is a halving, secure or
-  swap before it; carrying makes you bigger and slower and leaves a trail, and others can
-  steal a random part of your coins, at least one. Then "What you see": one line and one
-  drawing per marker on the field — team colour and label, shrine, size and "· 9", the grey
-  "(4 half)", the trail, the own ring, the securing ring, the shield — the same lines as the
-  `pnpm looks` legend (render `LEGEND`; a new marker needs its drawing in `help.ts`). Then
-  the controls for keyboard and touch. It opens by itself
+  banks now; every season change is a halving, secure before it; carrying makes you bigger
+  and slower and leaves a trail. Then "What you see": one line and one drawing per marker on
+  the field — team colour and label, shrine, size and "· 9", the grey "(4 half)", the trail,
+  the own ring, the securing ring — the same lines as the `pnpm looks` legend (render
+  `LEGEND`; a new marker needs its drawing in `help.ts`). Then the controls for keyboard and
+  touch. It opens by itself
   on the first visit (remembered in the browser), any time with "?" (the key or the band's
   "?" button), and closes with one tap or any key; that key reaches no game control.
-- **Steal button**: lit only while the server says a steal would take something right now
-  (`GHOST_CAN_STEAL` in the state: the core's `canSteal` — an opponent carrier in range, the
-  cooldown over, not securing), dimmed otherwise; it can always be pressed.
-- **Range ring**: while a steal would land right now — the server's `GHOST_CAN_STEAL`, the
-  same word that lights the Steal button — a faint dashed ring around the own ghost shows the
-  steal range; never beside a carrier of only steal-proof coins (since 2026-11-16; before, it
-  showed whenever an opponent carrier was within twice the range).
-- **Shield**: a ghost carrying swapped coins (`GHOST_SHIELDED`) has an ice-white hexagon
-  around it (`packages/render/src/ghosts.ts`), drawn for every ghost in the client and the
-  viewer: those coins cannot be stolen until the next halving.
-- **Messages**: after a steal the two players involved see "You stole 3 from Bot 7" or
-  "Bot 7 stole 2 from you" for 2.5 s. The server sends this notice
-  (`{"kind":"steal",…}`, read by `parseServerMessage`) only to those two players;
-  spectators and everyone else get nothing (THREATS rows 29, 30).
+- **Removed with V5** (owner decision 2026-11-16): the Steal button and its range ring, the
+  shield hexagon, the steal messages, the Swap button and the team signals with their
+  buttons, keys and markers.
 
 ## Controls (CONCEPT.md §8)
 
-- Keyboard: WASD or arrows to move, Space for the action (steal), 1 Secure, 2 Swap, 3 and 4
-  the team signals, V switches the view, ? opens the help.
-- **Team signals** (owner decision 2026-11-16): "Attack" (key 3) and "To shrine" (key 4), or
-  the two small buttons above the action buttons. The server passes a signal only to the
-  players of the sender's team (THREATS rows 34, 35); each of them sees a ring in the team
-  colour with the signal's word at the sender's position for 3 s (`signalShowMs`,
-  `src/signals.ts`), and a ring on the minimap. The task asked for keys 1 and 2, which are
-  Secure and Swap; 3 and 4 until the owner decides.
+- Keyboard: WASD or arrows to move, 1 Secure, V switches the view, ? opens the help.
 - Touch (the primary pointer is a finger): a joystick appears where the left thumb touches
-  the left half of the screen; the action button sits under the right thumb. The buttons
-  never reach into the left half.
-- At the own shrine the same spot shows two buttons instead of the action button:
-  "Secure (<value now>)" and "Swap (<n> <next season>, worth <now> now / <later> later)".
-  The numbers are the server's offer for the own ghost (`offers` in the state), never
-  computed by the client; a button is greyed out when it would do nothing.
+  the left half of the screen. The Secure button sits under the right thumb and never
+  reaches into the left half.
+- At the own shrine the button "Secure (<value now>)" shows. The number is the server's
+  offer for the own ghost (`offers` in the state), never computed by the client; the button
+  is greyed out when it would do nothing.
 - The direction goes out at once when it changes, unless the last one went out less than
   60 ms ago (`SEND_GAP_MS`, `src/input-sender.ts`); then the next frame sends it. A direction
   equal to the last one sent is never sent again. At most 17 directions in any second, so
-  with actions (sent at once) and signals a player stays inside the server's 20 messages per
+  with actions (sent at once) a player stays inside the server's 20 messages per
   second. Before 2026-11-16 the direction waited for the next frame and went out at most
   every 100 ms.
 - **The own ghost answers at once** (session 2026-11-16-RESPONSE): it is drawn where the own
@@ -151,8 +129,8 @@ hidden under the top bar).
   screen, and ghosts could stand on a shrine label.
 - **Ghosts and coins.** The look the owner chose on 2026-11-16 (look B, "calm", with the
   trail): ghosts are circles in their team colour, players and bots alike; the own ghost has
-  a thick white ring and the label "You", a ghost securing a thin white ring further out, a
-  carrier of swapped coins a pale hexagon. Carriers are larger, leave a short trail in their
+  a thick white ring and the label "You", a ghost securing a thin white ring further out.
+  Carriers are larger, leave a short trail in their
   team colour and show name and coin count — "Bot 3 · 9" — with the coins worth half now as
   a grey "(4 half)" after it (render `labelText`, tested); no ring, no glow. Every label
   stays wholly inside the view and keeps clear of the rings around every ghost, not only of
@@ -205,8 +183,8 @@ clock reads "Match over".
 ## After the match
 
 The result screen comes from the server's recap message (since 2026-11-16) and lists the
-match's awards — "Biggest steal: Bot 11 took 3 from Bot 21", "Closest save: Bot 30, 0.1 s
-left", "Last secure: Bot 13, 1"; one nobody earned is left out —, the teams and the top
+match's awards — "Closest save: Bot 30, 0.1 s left", "Last secure: Bot 13, 1"; one nobody
+earned is left out —, the teams and the top
 eight players by secured value, the own place, the time to the next match, and the bridge
 box with the exact text of CONCEPT.md §8, "Start
 here" (the website's newcomer page, `https://stentertainment.net/start`), "Try the simulator"
@@ -242,15 +220,11 @@ label under no control and not under the minimap. Screenshots `<size>-hud.png`, 
 no view button.
 
 `e2e/help.e2e.ts` (both sizes, an empty browser storage): the help shows on the first visit
-with its five drawings, closes with a key or a tap, stays closed after a reload and opens
+with its drawings, closes with a key or a tap, stays closed after a reload and opens
 again with "?" (key on desktop, button on the phone); screenshot `<size>-help.png`. Every
 other spec starts with the help marked as seen (`storageState` in the Playwright config).
-`e2e/feedback.e2e.ts` (desktop) runs against a second stack — server 3934 with
-`SCENARIO=steal`, client 5934 — where every joining player stands beside an opponent hunter
-carrying nothing (`apps/server/src/scenario.ts`, development only): the hunter robs the
-player ("… stole … from you"), the Steal button lights up with the range ring shown, Space
-robs it back ("You stole … from …"), walking away dims the button and hides the ring; screenshot
-`desktop-steal.png`.
+The steal, shield and team-signal specs (`feedback`, `shield`, `signals`) and their staged
+stacks went with V5.
 `e2e/response.e2e.ts` (desktop): eight key presses from standing; the drawn own ghost moves
 within 50 ms of the key in the median (measured 8 ms; 113 ms before the prediction).
 
@@ -265,10 +239,10 @@ docs/BALANCE.md "Response".
 
 **`pnpm looks`** (on demand, never in `pnpm e2e`; sessions 2026-11-16-LOOK and -LOOK-B):
 pictures of the ghosts as the game draws them. It drew the three looks the owner chose from
-(the pictures stay on the branch `shots/ghost-look`); now it draws the chosen one.
+(look B; BACKLOG CLOSED); now it draws the chosen one.
 `e2e/looks-scenes.ts` finds three scenes in the bot matches of seeds 1–5 (the
 biggest shrine crowd, a carrier of full- and half-value coins just after a halving among
-empty ghosts, a shielded carrier, a securing ghost and the "own" ghost close together but
+empty ghosts, a carrier, a securing ghost and the "own" ghost close together but
 drawn apart) and turns them into wire states with the server's `toWire`; `e2e/looks.shoot.ts`
 (config `e2e/looks.config.ts`, the viewer's Vite on 5939) draws each on the viewer's
 `looks.html` (`apps/viewer/src/looks.ts`: the client's drawing, camera of "Near", the help's

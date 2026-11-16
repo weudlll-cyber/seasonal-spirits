@@ -18,13 +18,9 @@ export interface Ghost {
   x: number;
   y: number;
   carried: SeasonCounts;
-  // Of the carried coins, those got from a swap that no steal can take until the next
-  // halving or a secure (actions.ts trySwap).
-  shielded: SeasonCounts;
   securedValue: number;
   securingUntilMs: number | null; // a secure in progress ends at this match time
   securingSeason: Season | null; // the season whose values the secure banks at
-  lastStealMs: number;
 }
 
 export interface FieldCoin {
@@ -34,8 +30,9 @@ export interface FieldCoin {
   season: Season;
 }
 
-// The one field action (steal) and the two shrine actions (CONCEPT.md §8).
-export type Action = 'steal' | 'secure' | 'swap';
+// The one action, at the own shrine (V5, owner decision 2026-11-16: stealing and the swap
+// removed).
+export type Action = 'secure';
 
 // A direction (magnitude clamped to 1 by the core) and at most one action per tick.
 export interface Intent {
@@ -47,15 +44,12 @@ export interface Intent {
 export type MatchEvent =
   // Every season turn inside a match (CONCEPT.md §2b, §13); season is the new one.
   | { type: 'halving'; atMs: number; season: Season; fieldCoinsCleared: number; carried: number }
-  | { type: 'swap'; ghost: number; from: Season; spent: number; got: number }
   // A field coin picked up (2026-11-16: the human round counts pickups per ghost).
   | { type: 'pickup'; ghost: number; coin: number }
   | { type: 'secure-start'; ghost: number }
   // leftMs: time that was left before the deadline of the season the secure banks at, when it
   // was started.
   | { type: 'secured'; ghost: number; value: number; leftMs: number }
-  | { type: 'secure-interrupted'; ghost: number }
-  | { type: 'steal'; thief: number; victim: number; coins: number }
   // The match ended in this tick (owner decision 2026-11-16: "MATCH OVER" at the end).
   | { type: 'match-end'; atMs: number };
 

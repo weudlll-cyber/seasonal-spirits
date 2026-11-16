@@ -53,31 +53,6 @@
         align-items: flex-end;
         gap: 10px;
       }
-      #steal {
-        width: 96px;
-        height: 96px;
-        border-radius: 50%;
-        font-weight: bold;
-        opacity: 0.45;
-      }
-      /* Lit only while the server says a steal would take something (GHOST_CAN_STEAL). */
-      #steal.lit {
-        opacity: 1;
-        border-color: #ffd54f;
-        box-shadow: 0 0 18px rgba(255, 213, 79, 0.6);
-      }
-      #toast {
-        position: fixed;
-        top: 160px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--panel);
-        border: 1px solid #ffd54f;
-        border-radius: 8px;
-        padding: 8px 14px;
-        font-weight: bold;
-        pointer-events: none;
-      }
       #help {
         position: fixed;
         inset: 0;
@@ -101,15 +76,6 @@
       #help li svg {
         flex-shrink: 0;
       }
-      /* The two team signals: small, above the action buttons. */
-      #signals {
-        display: flex;
-        gap: 6px;
-      }
-      #signals button {
-        font-size: 13px;
-        padding: 6px 10px;
-      }
       #shrine {
         display: flex;
         flex-direction: column;
@@ -126,9 +92,6 @@
       }
       #secure {
         border-color: #4caf50;
-      }
-      #swap {
-        border-color: #f9a825;
       }
       .key {
         color: var(--muted);
@@ -316,16 +279,10 @@
     <canvas id="map"></canvas>
     <div id="stick"><div id="knob"></div></div>
     <div id="actions">
-      <div id="signals" hidden>
-        <button id="signal-attack" type="button">Attack <span class="key">(3)</span></button>
-        <button id="signal-home" type="button">To shrine <span class="key">(4)</span></button>
-      </div>
       <div id="shrine" hidden>
         <button id="secure" type="button">Secure</button>
-        <button id="swap" type="button">Swap</button>
-        <span class="small key">1 Secure · 2 Swap</span>
+        <span class="small key">Key 1</span>
       </div>
-      <button id="steal" type="button" hidden>Steal <span class="key">(Space)</span></button>
     </div>
     <div id="flash"></div>
     <div id="announce" role="status" hidden></div>
@@ -338,7 +295,6 @@
         <button id="mute" type="button" aria-pressed="false">Sound on</button>
       </div>
     </div>
-    <div id="toast" role="status" hidden></div>
     <div id="help" role="dialog" aria-label="How to play" hidden></div>
     <div id="result" hidden>
       <div class="card">

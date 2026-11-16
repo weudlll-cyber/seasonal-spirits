@@ -51,8 +51,7 @@ test('join, move, shrine buttons, a halving, the last chance and the result with
   expect(moved, 'the own ghost moves').toBe(true);
   await shot(page, info, 'match');
 
-  // Back into the own shrine: the action button gives way to the two labelled buttons, for
-  // three polls in a row: when the walk home crosses a match end, the new match puts the
+  // Back into the own shrine: the Secure button shows, for three polls in a row: when the walk home crosses a match end, the new match puts the
   // ghost into the shrine for a moment while the held direction still carries it on (seen
   // 2026-11-16 when the spec joined late in a match).
   const shrine = page.locator('#shrine');
@@ -61,12 +60,8 @@ test('join, move, shrine buttons, a halving, the last chance and the result with
     inShrineFor = (await shrine.isVisible()) ? inShrineFor + 1 : 0;
     return inShrineFor >= 3;
   });
-  expect(atShrine, 'the shrine buttons appear at the own shrine').toBe(true);
+  expect(atShrine, 'the Secure button appears at the own shrine').toBe(true);
   await expect(page.locator('#secure')).toHaveText(/^Secure \(\d+(\.5)?\)$/);
-  await expect(page.locator('#swap')).toHaveText(
-    /^Swap \(\d+ (Spring|Summer|Autumn|Winter), worth \d+(\.5)? now \/ \d+(\.5)? later\)$/,
-  );
-  await expect(page.locator('#steal')).toBeHidden();
   await shot(page, info, 'shrine');
 
   // The next halving: announcement with the new season, and that season's coins fall.
@@ -91,16 +86,14 @@ async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
   const result = page.locator('#result');
   await expect(result).toBeVisible({ timeout: 10_000 });
   await expect(page.locator('#result-place')).toHaveText(/^Your place: \d+ of \d+/);
-  // The recap's awards: 32 bots for a minute always steal and secure.
+  // The recap's awards: 32 bots for a minute always secure.
   const awards = page.locator('#result-awards li');
   await expect(awards.first()).toBeVisible();
   for (const text of await awards.allTextContents()) {
-    expect(text).toMatch(
-      /^(Biggest steal.+ took \d+ from .+|Closest save.+, \d+\.\d s left|Last secure.+, \d+(\.5)?)$/,
-    );
+    expect(text).toMatch(/^(Closest save.+, \d+\.\d s left|Last secure.+, \d+(\.5)?)$/);
   }
   await expect(page.locator('#bridge-text')).toHaveText(
-    "This is how Seasonal Tokens work: every season change is a halving, and the old season's coins are worth half after it — swap or secure before it comes.",
+    "This is how Seasonal Tokens work: at every halving the next season's coin becomes the valuable one — hold it before it rises.",
   );
   await expect(page.getByRole('link', { name: 'Start here' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Try the simulator' })).toHaveAttribute(

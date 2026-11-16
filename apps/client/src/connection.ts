@@ -1,5 +1,5 @@
-// Seasonal Spirits — the client's one WebSocket: hello, welcome, states, steal notices, the
-// match recap, team signals, and what it sends.
+// Seasonal Spirits — the client's one WebSocket: hello, welcome, states, the match recap, and
+// what it sends.
 // A player sends only a direction and the one action (the server is the only truth); the
 // direction goes out as soon as it changes, within the gap of input-sender.ts. A spectator
 // sends nothing after its hello.
@@ -12,11 +12,8 @@ import {
   type GameAction,
   type ServerMessage,
   type ServerRecap,
-  type ServerSignal,
   type ServerState,
-  type ServerSteal,
   type ServerWelcome,
-  type TeamSignal,
 } from '@seasonal-spirits/protocol';
 
 import { InputSender, type Direction } from './input-sender.js';
@@ -30,9 +27,7 @@ export type Mode = 'connecting' | 'player' | 'spectator' | 'closed';
 export interface ConnectionEvents {
   onState: (s: ServerState) => void; // every state, in order, before it is buffered
   onMode: (mode: Mode, reason: 'full' | null) => void;
-  onSteal: (steal: ServerSteal) => void; // a steal this player took part in
   onRecap: (recap: ServerRecap) => void; // the match just ended: result and awards
-  onSignal: (signal: ServerSignal) => void; // a teammate's (or the own) team signal
 }
 
 export class Connection {
@@ -75,12 +70,6 @@ export class Connection {
     this.ws.send(JSON.stringify({ kind: 'action', action }));
   }
 
-  // The server limits signals per player; the client sends what the player pressed.
-  signal(signal: TeamSignal): void {
-    if (this.mode !== 'player') return;
-    this.ws.send(JSON.stringify({ kind: 'signal', signal }));
-  }
-
   // Called at every change and once per frame: sends a change the gap held back.
   flush(now: number): void {
     if (this.mode !== 'player') return;
@@ -116,14 +105,8 @@ export class Connection {
       case 'spectating':
         this.setMode('spectator', msg.reason);
         return;
-      case 'steal':
-        if (this.mode === 'player') this.events.onSteal(msg);
-        return;
       case 'recap':
         this.events.onRecap(msg);
-        return;
-      case 'signal':
-        this.events.onSignal(msg);
         return;
     }
   }

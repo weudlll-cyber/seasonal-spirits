@@ -1,11 +1,11 @@
-// Seasonal Spirits — the bots before a halving: patient swaps, cautious secures, both in time.
+// Seasonal Spirits — the bots before a halving: both secure, in time.
 
 import { describe, expect, it } from 'vitest';
 import { createBot } from './strategies.js';
 import { ghost, matchOf, placeAtShrine, quietConfig, runTo } from '../test-helpers.js';
 
 describe('bots before a halving', () => {
-  it('a patient bot holds 10 coins mid-season and swaps them at its shrine before the turn', () => {
+  it('a patient bot holds 10 coins mid-season and secures them at its shrine before the turn', () => {
     const cfg = quietConfig();
     const m = matchOf(cfg, [{ id: 1, team: 0 }]);
     const bot = createBot(cfg, 'patient');
@@ -14,7 +14,7 @@ describe('bots before a halving', () => {
     runTo(m, 30_000);
     expect(bot(m.state, g).action).toBeUndefined();
     runTo(m, 75_000 - cfg.secureDurationMs - cfg.bots.deadlineMarginMs);
-    expect(bot(m.state, g).action).toBe('swap');
+    expect(bot(m.state, g).action).toBe('secure');
   });
 
   it('a cautious bot secures even one coin before the turn instead of letting it lose value', () => {

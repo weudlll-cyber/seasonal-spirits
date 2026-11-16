@@ -19,7 +19,6 @@ import {
 import { rawToText, withinRate, type ClientRecord } from './client-record.js';
 import { handleHttp } from './http-routes.js';
 import { MatchHost } from './match-host.js';
-import type { Scenario } from './scenario.js';
 
 export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
@@ -32,7 +31,6 @@ export interface ServerConfig {
   helloTimeoutMs: number; // a connection that has not said hello by then is closed
   devCors: boolean; // CORS `*` on /metrics-lite, development only
   firstSeed: number;
-  scenario?: Scenario; // a staged situation for the browser specs; none when left out
 }
 
 // WebSocket close code 1008: policy violation.
@@ -73,7 +71,7 @@ export class GameServer {
 
   constructor(cfg: ServerConfig) {
     this.cfg = cfg;
-    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed, cfg.scenario);
+    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed);
   }
 
   async listen(): Promise<void> {
@@ -136,9 +134,6 @@ export class GameServer {
       this.stateBytes = buf.byteLength;
       this.maxStateBytes = Math.max(this.maxStateBytes, buf.byteLength);
       this.sendToAll(buf);
-      // Only the two players involved hear of a steal (THREATS row 29).
-      for (const n of this.host.stealNotices())
-        this.clients.get(n.clientId)?.ws.send(JSON.stringify(n.message));
       // The match recap goes to everyone once, in the tick the match ended (THREATS row 33).
       const recap = this.host.recapNow(true);
       if (recap) this.sendToAll(JSON.stringify(recap));
@@ -225,11 +220,6 @@ export class GameServer {
         return;
       case 'action':
         if (rec.kind === 'player') this.host.act(rec.id, msg.action);
-        return;
-      case 'signal':
-        // Only the sender's team hears it; the host drops what comes too often.
-        for (const d of this.host.signal(rec.id, msg.signal))
-          this.clients.get(d.clientId)?.ws.send(JSON.stringify(d.message));
         return;
     }
   }

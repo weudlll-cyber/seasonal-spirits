@@ -11,8 +11,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runBalance, type BalanceReport } from './balance.js';
 import { numberArg, textArg } from './cli-args.js';
+import { STRATEGIES } from './bots/strategies.js';
 import { DEFAULT_CONFIG } from './config.js';
-import { distanceFromEven, gridConfigs, meetsTarget, type Overrides } from './fairness.js';
+import {
+  FAIR_MAX,
+  FAIR_MIN,
+  distanceFromEven,
+  gridConfigs,
+  meetsTarget,
+  type Overrides,
+} from './fairness.js';
 
 interface Row {
   overrides: Overrides;
@@ -87,22 +95,18 @@ function runSlice(
 const pct = (v: number): string => `${(v * 100).toFixed(1)} %`;
 
 function summary(rows: readonly Row[], top: number): string {
+  const band = `${pct(FAIR_MIN)}–${pct(FAIR_MAX)}`;
   const lines = [
-    `${rows.filter((r) => r.meets).length} of ${rows.length} configurations have every strategy within 25–42 %.`,
+    `${rows.filter((r) => r.meets).length} of ${rows.length} configurations have every style within ${band}.`,
     '',
-    '| steal share | spawn/s | carry | cooldown ms | secure ms | swap from | swapOut | patient | cautious | hunter | distance | swaps/match |',
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    `| spawn/s | carry | secure ms | ${STRATEGIES.join(' | ')} | distance |`,
+    `| --- | --- | --- | ${STRATEGIES.map(() => '---').join(' | ')} | --- |`,
   ];
   for (const r of rows.slice(0, top)) {
     const c = { ...DEFAULT_CONFIG, ...r.overrides };
-    const b = r.report.bestPlayerShare;
-    // A drawn steal share shows as its range, a fixed one (min = max) as one number.
-    const share =
-      c.stealShareMax > c.stealShareMin
-        ? `${c.stealShareMin}–${c.stealShareMax}`
-        : `${c.stealShareMin}`;
+    const shares = STRATEGIES.map((s) => pct(r.report.bestPlayerShare[s])).join(' | ');
     lines.push(
-      `| ${share} | ${c.coinSpawnPerSecond} | ${c.carrySpeedFactor} | ${c.stealCooldownMs} | ${c.secureDurationMs} | ${c.swapMinIn} | ${c.swapOut} | ${pct(b.patient)} | ${pct(b.cautious)} | ${pct(b.hunter)} | ${r.distance.toFixed(1)} | ${r.report.swapsPerMatch.mean.toFixed(1)} |`,
+      `| ${c.coinSpawnPerSecond} | ${c.carrySpeedFactor} | ${c.secureDurationMs} | ${shares} | ${r.distance.toFixed(1)} |`,
     );
   }
   return lines.join('\n');

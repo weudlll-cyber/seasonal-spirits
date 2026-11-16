@@ -1,13 +1,11 @@
 // Seasonal Spirits — the game core's match state as the wire state every client receives.
 // One place turns the core's numbers into what clients show: per ghost the carried and
-// off-season counts and the secured value, and for players in their own shrine the two
-// button offers, computed by the core (a client never calculates them).
+// off-season counts and the secured value, and for players in their own shrine the Secure
+// offer, computed by the core (a client never calculates it).
 
 import {
   SEASONS,
   atOwnShrine,
-  canSteal,
-  carriesShielded,
   isLastSeason,
   shrineOffer,
   totalCount,
@@ -20,10 +18,8 @@ import {
 import {
   GHOST_AT_SHRINE,
   GHOST_BOT,
-  GHOST_CAN_STEAL,
   GHOST_CARRIER,
   GHOST_SECURING,
-  GHOST_SHIELDED,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
@@ -48,7 +44,7 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
   const offers: OfferState[] = [];
   const ghosts = s.ghosts.map((g) => {
     const wire = ghostOnWire(ctx, s, g);
-    // Bots read the core state directly; only players need the button numbers.
+    // Bots read the core state directly; only players need the button's number.
     if (wire.flags & GHOST_AT_SHRINE && !(wire.flags & GHOST_BOT) && !s.ended) {
       offers.push({ ghost: g.id, ...shrineOffer(ctx.cfg, s, g) });
     }
@@ -88,8 +84,6 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (carried > 0 ? GHOST_CARRIER : 0) |
       (g.securingUntilMs !== null ? GHOST_SECURING : 0) |
       (ctx.isBot(g.id) ? GHOST_BOT : 0) |
-      (atOwnShrine(ctx.cfg, s, g) ? GHOST_AT_SHRINE : 0) |
-      (canSteal(ctx.cfg, s, g) ? GHOST_CAN_STEAL : 0) |
-      (carriesShielded(g) ? GHOST_SHIELDED : 0),
+      (atOwnShrine(ctx.cfg, s, g) ? GHOST_AT_SHRINE : 0),
   };
 }

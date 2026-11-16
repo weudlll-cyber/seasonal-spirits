@@ -17,11 +17,9 @@ secret is refused.
 
 b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
 `packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), among them since
-2026-11-15 `bots.waypointMs`, `bots.threatRange`, `ghostRadius`, `ghostGrowthPerCoin`,
-`ghostGrowthMax` and `coinRadius`, since 2026-11-16 (the fair rules, CONCEPT.md §14)
-`swapMinIn` (6), `stealShareMin` (0) and `stealShareMax` (0.5), and on the night branch
-`signalIntervalMs` (2 s). Done when: the owner has decided each and config.ts carries the
-source.
+2026-11-15 `bots.waypointMs`, `ghostRadius`, `ghostGrowthPerCoin`, `ghostGrowthMax` and
+`coinRadius` (the swap, steal and signal placeholders went with V5). Done when: the owner has
+decided each and config.ts carries the source.
 
 c. **First playable version — owner part.** Built and checked with Playwright (CLOSED).
 Still open: the owner plays it on the PC (`pnpm dev`, http://localhost:5930) and on a phone
@@ -61,25 +59,15 @@ owner has played it on PC and phone and decided the two separation placeholders
 l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-11-16).
 Built on `feat/night-2026-11-16` (CLOSED, night piece 4): the result plus "Biggest steal",
 "Closest save" and "Last secure"; merged into `master` with the owner's approval of
-2026-11-16 (CLOSED). Done when: the owner has played it.
+2026-11-16 (CLOSED). On `feat/v5-rules` "Biggest steal" is gone with stealing; "Best nose"
+replaces it in CHAIN 2026-11-16-V5 piece 4. Done when: the owner has played it.
 
 m. **Final countdown before the match end** (idea from a Copilot review, owner decision
 2026-11-16). Built on `feat/night-2026-11-16` (CLOSED, night piece 3): "LAST CHANCE — secure
 now", then "MATCH OVER"; merged into `master` (CLOSED). Done when: the owner has played it.
 
-n. **Team signals** (idea from a Copilot review, owner decision 2026-11-16). Built on
-`feat/night-2026-11-16` (CLOSED, night piece 5) with keys 3 and 4 — the task asked for 1
-and 2, which are Secure and Swap; merged into `master` (CLOSED). Done when: the owner has
-decided the keys and played it.
-
 o. **A fixed map with routes** (idea from a Copilot review). Later, owner decides. Done
 when: the owner has decided whether and how.
-
-q. **Hunters robbing hunters** (measured in the night sheet 2026-11-16, piece 7: 92 % of all
-steals, a pair trading coins once a second for a median 4 s and up to 71 s). Proposal: a
-hunter hunts only a carrier richer by a margin (`bots.hunterPreyMargin`) and leaves the
-ghost it just robbed or was robbed by alone for a while (`bots.hunterGrudgeMs`). Done when:
-the owner has decided; if built, the Round 7 fairness check runs again on both seed sets.
 
 r. **A human against bots** (owner's observation 2026-11-16: almost impossible to collect
 coins; groups at the shrines). Measured (BALANCE.md "Human round 1" and "Response"); the bot
@@ -96,6 +84,13 @@ t. **Season colours** (owner's question 2026-11-16, after the look pictures): Su
 fixed by Seasonal Tokens (website design tokens, CONCEPT.md §8) or may change. No colour
 changed. Done when: the owner has the answer; if they may change, a new pair is chosen and
 drawn.
+
+v. **V5 rules** (owner decision 2026-11-16, CHAIN 2026-11-16-V5): the game rebuilt to the
+owner's concept V5.0 on `feat/v5-rules` — stealing, the swap, the team signals and the
+half-value rule removed (piece 2), the price board and spawning of all four seasons (piece
+3), the two bot styles, help, recap and bridge (piece 4), measured (piece 5). The old game
+stays on `master`. Done when: the owner has played `feat/v5-rules`, decided the prices and
+spawn values, and merged it or said what to change.
 
 u. **Readability spec, one intermittent frame** (seen 2026-11-16 in session LOOK-B): once on
 desktop both upper shrine labels at y 89–108, above the bar, and the own shrine label under
@@ -460,6 +455,16 @@ fixed, with the spec green ten runs in a row.
   picture branch `shots/ghost-look` deleted (the choice of B is recorded above, "Ghost look
   B") — this commit and the merge.
 
+- 2026-11-16 — **V5 piece 2: what V5 drops** (CHAIN 2026-11-16-V5, on `feat/v5-rules`):
+  stealing (action, `canSteal`/`isStealTarget`/`trySteal`, share and cooldown, the steal
+  flags and notices on the wire, Steal button, key and range ring, messages), the shield
+  (hexagon, flag, shielded coins), the hunter bot, the staged `SCENARIO` stacks and their
+  specs, the swap (action, `swapIn`/`swapOut`/`swapMinIn`, offer and button) and the team
+  signals (action kind, routing, rate limit, buttons, markers, specs); the validator accepts
+  only hello, input and Secure, with tests that the removed kinds are refused; THREATS rows
+  marked "removed with V5"; the bridge text moved to V5's. Team signals (OPEN n) and the
+  hunter question (OPEN q) closed with it — commit "feat: V5 piece 2, what V5 drops".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -663,3 +668,5 @@ fixed, with the spec green ten runs in a row.
 | 2026-11-16 | `pnpm looks`                                                                                                                                                                              | same tree                                                                                                                                 | 6 PNGs (three scenes × desktop, phone), scenes as before: crowd seed 5 at 72.1 s, halved seed 3 at 77.35 s, shield seed 5 at 144.9 s                                                                                                | `reports/screens/latest/look-*.png` (git-ignored)                                              |
 | 2026-11-16 | one full match played on `pnpm dev` (1280 × 800, keyboard): "Near" to the Autumn season, then "Overview"; every frame's labels checked                                                    | same tree                                                                                                                                 | 300 s, no label out of view, unnamed or overlapping; the own ghost carried at most 1 coin                                                                                                                                           | 15 screenshots, session report                                                                 |
 | 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `4213ec6` on `feat/ghost-look`                                                                                                            | success (CI 43942775911, CodeQL 43942775895)                                                                                                                                                                                        | `gh run list --branch feat/ghost-look`                                                         |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | merge `3907af8` on `master` (tree = `3e39b3a`)                                                                                            | success (CI 43961477081, CodeQL 43961477105)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; tests related to 62 files: 28 test files / 148 tests)                                                                                     | working tree of "feat: V5 piece 2, what V5 drops"                                                                                         | green                                                                                                                                                                                                                               | this commit                                                                                    |

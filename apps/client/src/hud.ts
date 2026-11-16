@@ -1,21 +1,19 @@
 // Seasonal Spirits — the client's controls and messages on top of the canvas (DOM, so they are
-// real buttons): the one action button, at the own shrine "Secure (…)" and "Swap (…)" with the
-// server's numbers, the two team signals, the HALVING and MATCH OVER announcements with their
-// flash, and notices.
+// real buttons): at the own shrine "Secure (…)" with the server's number, the HALVING and MATCH
+// OVER announcements with their flash, and notices. The Steal and Swap buttons and the team
+// signals went with V5 (owner decision 2026-11-16).
 
 import {
   STATE_MATCH_END_EVENT,
   type GameAction,
   type OfferState,
   type ServerState,
-  type TeamSignal,
 } from '@seasonal-spirits/protocol';
 import { seasonName, value, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
 // "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
 export const MATCH_OVER_MS = 2000;
-const TOAST_MS = 2500; // how long a steal message stays
 
 // An element of index.html, checked to be of the expected kind.
 function el<T extends HTMLElement>(id: string, kind: new () => T): T;
@@ -27,67 +25,28 @@ function el(id: string, kind: new () => HTMLElement = HTMLElement): HTMLElement 
 }
 
 export class Hud {
-  private readonly steal = el('steal', HTMLButtonElement);
   private readonly secure = el('secure', HTMLButtonElement);
-  private readonly swap = el('swap', HTMLButtonElement);
   private readonly shrine = el('shrine');
-  private readonly signals = el('signals');
   private readonly announce = el('announce');
   private readonly flash = el('flash');
   private readonly notice = el('notice');
-  private readonly toastLine = el('toast');
   private announceTimer: number | undefined;
-  private toastTimer: number | undefined;
 
-  constructor(act: (a: GameAction) => void, signal: (s: TeamSignal) => void) {
-    // pointerdown, not click: a thumb on the right button must not wait for its release.
-    const bind = (b: HTMLButtonElement, run: () => void): void => {
-      b.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        if (!b.disabled) run();
-      });
-    };
-    for (const [b, a] of [
-      [this.steal, 'steal'],
-      [this.secure, 'secure'],
-      [this.swap, 'swap'],
-    ] as const) {
-      bind(b, () => {
-        act(a);
-      });
-    }
-    // The two team signals (owner decision 2026-11-16), small, above the action buttons.
-    for (const [id, s] of [
-      ['signal-attack', 'attack'],
-      ['signal-home', 'home'],
-    ] as const) {
-      bind(el(id, HTMLButtonElement), () => {
-        signal(s);
-      });
-    }
+  constructor(act: (a: GameAction) => void) {
+    // pointerdown, not click: a thumb on the button must not wait for its release.
+    this.secure.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (!this.secure.disabled) act('secure');
+    });
   }
 
-  // Players only: the shrine buttons replace the action button while the server sends an
-  // offer for the own ghost; every number on them is the server's.
-  // The Steal button is lit only while the server says a steal would take something now
-  // (GHOST_CAN_STEAL), dimmed otherwise; it can always be pressed.
-  showControls(
-    playing: boolean,
-    offer: OfferState | undefined,
-    season: number,
-    canSteal: boolean,
-  ): void {
-    this.signals.hidden = !playing;
-    this.steal.hidden = !playing || offer !== undefined;
-    this.steal.classList.toggle('lit', canSteal);
+  // Players only: the Secure button shows while the server sends an offer for the own ghost
+  // (it stands in its own shrine); its number is the server's.
+  showControls(playing: boolean, offer: OfferState | undefined): void {
     this.shrine.hidden = !playing || offer === undefined;
     if (!offer) return;
     this.secure.textContent = `Secure (${value(offer.secureValue)})`;
     this.secure.disabled = offer.secureValue === 0;
-    this.swap.textContent =
-      `Swap (${offer.swapCoins} ${seasonName(season + 1)}, worth ` +
-      `${value(offer.swapValueNow)} now / ${value(offer.swapValueLater)} later)`;
-    this.swap.disabled = offer.swapCoins === 0;
   }
 
   // CONCEPT.md §2b: a large announcement and a short flash at every deadline — "HALVING —
@@ -114,16 +73,6 @@ export class Hud {
     this.notice.textContent = text ?? '';
     this.notice.hidden = text === null;
   }
-
-  // A short message for a steal this player took part in ("You stole 3 from Bot 7").
-  toast(text: string): void {
-    this.toastLine.textContent = text;
-    this.toastLine.hidden = false;
-    window.clearTimeout(this.toastTimer);
-    this.toastTimer = window.setTimeout(() => {
-      this.toastLine.hidden = true;
-    }, TOAST_MS);
-  }
 }
 
 export function bindMute(toggle: () => boolean, muted: boolean): void {
@@ -138,8 +87,8 @@ export function bindMute(toggle: () => boolean, muted: boolean): void {
   });
 }
 
-// What of the HUD lies on the field (session 2026-11-15-B). Controls: the visible action or
-// shrine buttons (bottom right); shrine labels move away from them. Thumb zones: the
+// What of the HUD lies on the field (session 2026-11-15-B). Controls: the visible Secure
+// button (bottom right); shrine labels move away from them. Thumb zones: the
 // controls plus, on touch screens, where the left thumb rests on the joystick (bottom
 // left); the shrine arrow keeps out of all of them, and the camera may look past the
 // field's bottom edge by their height so the field rises above them.

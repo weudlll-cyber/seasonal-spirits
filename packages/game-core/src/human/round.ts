@@ -1,7 +1,7 @@
 // Seasonal Spirits — the human round (session 2026-11-16-HUMAN): seeded 32-seat matches with
 // the stand-in (standin.ts) in seat 1, the rest bots, teams rotating as in the balance
-// (balance.ts rotatedRoster). Per match: the stand-in's pickups, secured value, rank and times
-// robbed; the same per bot strategy; the bots' best-player share; the shrine groups.
+// (balance.ts rotatedRoster). Per match: the stand-in's pickups, secured value and rank; the
+// same per bot strategy; the bots' best-player share; the shrine groups.
 
 import { rotatedRoster, spread, type Spread } from '../balance.js';
 import { STRATEGIES, type Strategy } from '../bots/strategies.js';
@@ -22,7 +22,6 @@ export interface HumanVariant {
 interface Tally {
   coins: Spread; // field coins picked up, per player and match
   secured: Spread;
-  robbed: Spread; // times robbed
 }
 
 export interface HumanReport {
@@ -50,7 +49,6 @@ interface Row {
   who: Who;
   coins: number;
   secured: number;
-  robbed: number;
 }
 
 // One match: every seat's row, the stand-in's rank (null without one), the best bots' strategies.
@@ -63,16 +61,11 @@ function playOne(
   const whoOf = new Map<number, Who>(roster.map((r) => [r.id, r.bot ? 'standIn' : r.strategy]));
   const groups = new ShrineGroups(cfg, whoOf);
   const coins = new Map<number, number>();
-  const robbed = new Map<number, number>();
-  const add = (m: Map<number, number>, id: number): void => {
-    m.set(id, (m.get(id) ?? 0) + 1);
-  };
   const r = simulate(cfg, seed, roster, (s) => {
     groups.observe(s);
     watch.lives.observe(s);
     for (const e of s.events) {
-      if (e.type === 'pickup') add(coins, e.ghost);
-      if (e.type === 'steal') add(robbed, e.victim);
+      if (e.type === 'pickup') coins.set(e.ghost, (coins.get(e.ghost) ?? 0) + 1);
     }
   });
   watch.groups.push(...groups.groups);
@@ -81,7 +74,6 @@ function playOne(
     who: whoOf.get(p.id) ?? 'standIn',
     coins: coins.get(p.id) ?? 0,
     secured: p.secured,
-    robbed: robbed.get(p.id) ?? 0,
   }));
   const me = players.find((p) => whoOf.get(p.id) === 'standIn');
   const bots = players.filter((p) => p !== me);
@@ -115,7 +107,6 @@ export function runHumanRound(
     return {
       coins: spread(mine.map((x) => x.coins)),
       secured: spread(mine.map((x) => x.secured)),
-      robbed: spread(mine.map((x) => x.robbed)),
     };
   };
   return {

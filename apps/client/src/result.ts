@@ -86,14 +86,8 @@ export class ResultScreen {
 
 // The awards the match earned, short enough for a phone; none earned, none shown.
 function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
-  const { biggestSteal: steal, closestSave: save, lastSecure: last } = r.awards;
+  const { closestSave: save, lastSecure: last } = r.awards;
   const lines: [string, string][] = [];
-  if (steal) {
-    lines.push([
-      'Biggest steal',
-      `${name(steal.thief)} took ${steal.coins} from ${name(steal.victim)}`,
-    ]);
-  }
   if (save)
     lines.push(['Closest save', `${name(save.ghost)}, ${(save.leftMs / 1000).toFixed(1)} s left`]);
   if (last) lines.push(['Last secure', `${name(last.ghost)}, ${value(last.value)}`]);

@@ -43,19 +43,15 @@ function print(r: HumanReport, ms: number): void {
   console.log(
     `\n### ${r.variant} — N = ${r.matches}, seeds ${r.firstSeed}–${r.firstSeed + r.matches - 1} (${(ms / 1000).toFixed(1)} s)`,
   );
-  console.log(
-    '\n| who | coins picked up | secured | robbed | rank |\n| --- | --- | --- | --- | --- |',
-  );
+  console.log('\n| who | coins picked up | secured | rank |\n| --- | --- | --- | --- |');
   if (r.standIn.coins.n > 0) {
     console.log(
-      `| stand-in | ${cells(r.standIn.coins)} | ${cells(r.standIn.secured)} | ${cells(r.standIn.robbed)} | ${cells(r.standIn.rank)} |`,
+      `| stand-in | ${cells(r.standIn.coins)} | ${cells(r.standIn.secured)} | ${cells(r.standIn.rank)} |`,
     );
   }
   for (const s of STRATEGIES) {
     const b = r.bots[s];
-    console.log(
-      `| ${s} (${b.coins.n}) | ${cells(b.coins)} | ${cells(b.secured)} | ${cells(b.robbed)} | |`,
-    );
+    console.log(`| ${s} (${b.coins.n}) | ${cells(b.coins)} | ${cells(b.secured)} | |`);
   }
   console.log(`\nBest bot: ${STRATEGIES.map((s) => `${s} ${pct(r.bestBotShare[s])}`).join(', ')}`);
   const c = r.coins;

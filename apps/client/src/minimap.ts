@@ -1,7 +1,7 @@
 // Seasonal Spirits — the minimap in "Near" (owner's play test 2026-11-15: only part of the
 // field is visible): the whole field in a corner below the top bar, with every shrine, coins
-// as dots, other ghosts as tiny dots in their team colours, the own ghost, the team's signals
-// as rings, and the part of the field the camera shows.
+// as dots, other ghosts as tiny dots in their team colours, the own ghost, and the part of the
+// field the camera shows.
 
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
 import {
@@ -33,7 +33,6 @@ export interface MinimapInput {
   ownId: number | null;
   ownTeam: number | null;
   camera: View; // the main view, for the outline of what it shows
-  markers: readonly { x: number; y: number }[]; // the team's signals showing now (signals.ts)
 }
 
 export function drawMinimap(ctx: CanvasRenderingContext2D, at: Rect, m: MinimapInput): void {
@@ -65,12 +64,6 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, at: Rect, m: MinimapI
     dot(g.x, g.y, 1.6);
     ctx.fillStyle = seasonColour(g.team);
     ctx.fill();
-  }
-  ctx.strokeStyle = seasonColour(m.ownTeam ?? 0);
-  ctx.lineWidth = 2;
-  for (const s of m.markers) {
-    dot(s.x, s.y, 5);
-    ctx.stroke();
   }
   const own = m.ghosts.find((g) => g.id === m.ownId);
   if (own) {

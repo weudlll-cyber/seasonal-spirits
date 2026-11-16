@@ -6,11 +6,9 @@ import type { Season } from './seasons.js';
 
 export interface BotConfig {
   cautiousSecureAt: number;
-  hunterSecureAt: number;
   arriveRadius: number;
   deadlineMarginMs: number;
   waypointMs: number;
-  threatRange: number;
 }
 
 export interface GameConfig {
@@ -27,23 +25,15 @@ export interface GameConfig {
   coinSpawnPerSecond: number;
   maxFieldCoins: number;
   offSeasonValueFactor: number;
-  swapIn: number;
-  swapOut: number;
-  swapMinIn: number;
   secureDurationMs: number;
   shrineRadius: number;
   shrineInset: number;
   startSpread: number;
-  stealRange: number;
-  stealShareMin: number;
-  stealShareMax: number;
-  stealCooldownMs: number;
   separationRadius: number;
   separationStrength: number;
   deadlineCountdownMs: number;
   reconnectGraceMs: number;
   resultPauseMs: number;
-  signalIntervalMs: number;
   bots: BotConfig;
 }
 
@@ -66,25 +56,12 @@ export const DEFAULT_CONFIG: GameConfig = {
   coinSpawnPerSecond: 2, // placeholder — owner decides (CONCEPT.md leaves the rate open)
   maxFieldCoins: 60, // placeholder — owner decides
   offSeasonValueFactor: 0.5, // CONCEPT.md §2a / §10 decision 2: half outside its season
-  // CONCEPT.md §2a / §10 decision 2: coins of the current season swap at 10 → 15 of the next,
-  // rounded down; owner decision 2026-11-16 (BALANCE.md "Round 5" to "Round 7"): from swapMinIn
-  // coins on (6 → 9, 8 → 12, 10 → 15), never in the last season.
-  swapIn: 10,
-  swapOut: 15,
-  swapMinIn: 6, // placeholder — owner decides
   secureDurationMs: 2500, // CONCEPT.md §2a: securing takes 2–3 s
   shrineRadius: 80, // placeholder — owner decides
   shrineInset: 150, // placeholder — owner decides (distance of a shrine from its corner)
   startSpread: 60, // placeholder — owner decides (start area around the own shrine)
-  stealRange: 60, // placeholder — owner decides (CONCEPT.md leaves the range open)
-  // Owner decision 2026-11-16: each steal draws its share uniformly from [stealShareMin,
-  // stealShareMax] (min = max is a fixed share), at least one coin (BALANCE.md "Round 6", "Round 7").
-  stealShareMin: 0, // placeholder — owner decides
-  stealShareMax: 0.5, // placeholder — owner decides
-  stealCooldownMs: 1000, // placeholder — owner decides
   // Owner decision 2026-11-15: ghosts softly push each other apart. Two ghosts closer than the
-  // radius (two bodies touching) drift apart by the strength share of the overlap per tick;
-  // the radius must stay below stealRange so a thief beside a carrier can still steal.
+  // radius (two bodies touching) drift apart by the strength share of the overlap per tick.
   separationRadius: 28, // placeholder — owner decides
   separationStrength: 0.5, // placeholder — owner decides
   // CONCEPT.md §2b / §13: every season turn inside a match is a halving, counted down from
@@ -93,20 +70,13 @@ export const DEFAULT_CONFIG: GameConfig = {
   // CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot takes over.
   reconnectGraceMs: 12_000,
   resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
-  // Owner decision 2026-11-16: a player sends at most one team signal this often; the server
-  // drops extra ones silently (apps/server match-host.ts).
-  signalIntervalMs: 2000, // placeholder — owner decides
   bots: {
     cautiousSecureAt: 5, // placeholder — owner decides (coins a cautious bot banks at)
-    hunterSecureAt: 8, // placeholder — owner decides (coins a hunter banks at)
     arriveRadius: 20, // placeholder — owner decides (how close a bot steers to a target)
-    // Spare time a bot keeps when it walks home to swap or secure before a halving.
+    // Spare time a bot keeps when it walks home to secure before a halving.
     deadlineMarginMs: 3000, // placeholder — owner decides
     // A collector with no coin of its own walks to a waypoint that moves on this often, so
     // collectors spread over the field instead of sharing one coin (2026-11-15).
     waypointMs: 4000, // placeholder — owner decides
-    // A patient bot with at least swapIn coins goes home when an opponent comes this close
-    // (2026-11-15: it used to carry a full load past hunters without reacting).
-    threatRange: 150, // placeholder — owner decides
   },
 };

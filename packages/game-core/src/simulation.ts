@@ -32,7 +32,7 @@ export interface SimulationReport {
   sanity: SanityCheck[];
 }
 
-// 8 ghosts per team; strategies cycle so each team has 3 patient, 3 cautious, 2 hunters.
+// 8 ghosts per team; strategies cycle so each team has as many of each strategy.
 export function botRoster(ghosts: number): (Roster & { strategy: Strategy })[] {
   return Array.from({ length: ghosts }, (_, i) => ({
     id: i + 1,

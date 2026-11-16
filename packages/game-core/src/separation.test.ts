@@ -2,7 +2,6 @@
 // Owner decision 2026-11-15 ("ghosts softly push each other apart").
 
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG } from './config.js';
 import { distance } from './geometry.js';
 import { act, ghost, matchOf, placeAtShrine, quietConfig, runTo } from './test-helpers.js';
 
@@ -48,19 +47,6 @@ describe('soft separation', () => {
     runTo(m, 1000);
     expect({ x: a.x, y: a.y }).toEqual(at);
     expect(distance(a, b)).toBeGreaterThan(cfg.separationRadius * 0.9);
-  });
-
-  it('keeps a thief beside a carrier in steal range', () => {
-    expect(DEFAULT_CONFIG.stealRange).toBeGreaterThan(DEFAULT_CONFIG.separationRadius);
-    const cfg = quietConfig();
-    const m = matchOf(cfg, pair);
-    const [thief, carrier] = [ghost(m, 1), ghost(m, 2)];
-    Object.assign(thief, { x: 1000, y: 1000 });
-    Object.assign(carrier, { x: 1000, y: 1000 });
-    carrier.carried.spring = 4;
-    runTo(m, 40 * 50); // fully parted
-    act(m, 1, { dx: 0, dy: 0, action: 'steal' });
-    expect(thief.carried.spring).toBe(2);
   });
 
   // Same seed, same match: simulation.test.ts "is identical for the same seed …" plays whole

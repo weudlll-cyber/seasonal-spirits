@@ -26,8 +26,7 @@ is encoded once and sent to every client that has said hello.
 ## Slots and players
 
 - A match has `GHOSTS` slots (32, CONCEPT.md §4); slot `i` is team `i mod 4`. A slot is
-  steered by a bot (patient, cautious or hunter, as in `pnpm simulate`) until a player
-  joins.
+  steered by a bot (one of the strategies of `pnpm simulate`) until a player joins.
 - A player who says `{"kind":"player"}` replaces a bot on the team with the fewest players
   and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>,"name":"Player <id>"}`.
   When every slot has a player, the client becomes a spectator and gets
@@ -35,24 +34,14 @@ is encoded once and sent to every client that has said hello.
   Names are `ghostName` in `packages/protocol`, the same on every client, until the website
   provides them.
 - A player sends `{"kind":"input","dx":…,"dy":…}` (direction) and
-  `{"kind":"action","action":"steal"|"secure"|"swap"}` (the one action; at the own shrine
-  secure or swap). An action is used once, in the next tick. Whether it does anything is the
-  game core's decision (docs/THREATS.md, rows 13–18).
+  `{"kind":"action","action":"secure"}` (the one action, at the own shrine). An action is
+  used once, in the next tick. Whether it does anything is the game core's decision
+  (docs/THREATS.md, rows 15, 18). Steal, swap and the team signals were removed with V5
+  (owner decision 2026-11-16): the validator drops them like any unknown message.
 - A player who disconnects leaves the ghost standing for `reconnectGraceMs` (12 s,
   CONCEPT.md §8: 10–15 s); then a bot takes over. Without the website sign-in a returning
   player cannot be recognised yet, so a reconnect is a new player.
 - A spectator says `{"kind":"spectator"}` and sends nothing after that.
-- After a steal, the two players involved — and nobody else — get one text message
-  `{"kind":"steal","thief":<id>,"victim":<id>,"coins":<n>}` in the tick it happened (none
-  during the result pause; THREATS row 29). The state flag `GHOST_CAN_STEAL` (16) marks
-  every ghost whose steal would take something now (the core's `canSteal`; THREATS row 30);
-  `GHOST_SHIELDED` (32) every ghost carrying swapped, steal-proof coins (the core's
-  `carriesShielded`; THREATS row 31).
-- `SCENARIO` (browser specs only, like the whole server development only; `src/scenario.ts`;
-  `none` is the default): `steal` places every joining player in the middle of the field
-  with 6 coins beside an opponent hunter carrying nothing; `shield` places it in its own
-  shrine with `swapMinIn` coins of the season beside an opponent that carries only swapped
-  coins and stands still (no bot steers it, as for a disconnected player).
 
 ## Match lifecycle
 
@@ -61,16 +50,9 @@ values) for `resultPauseMs` (15 s, placeholder); then the next match starts with
 seed, the same players in the same slots, everyone back at the shrines. A server restart
 loses the running match (CONCEPT.md §7).
 
-**Team signals** (owner decision 2026-11-16): a player sends `{"kind":"signal","signal":
-"attack"|"home"}` (the shared validator accepts nothing else); the match host lets one
-through per `signalIntervalMs` (2 s, placeholder) per player and drops the rest silently, and
-none during the result pause; the server sends `{"kind":"signal","ghost","signal","x","y"}`
-(the sender's position when sent) to the players of the sender's team only, the sender
-included — never to opponents, spectators or bots (THREATS rows 34, 35).
-
 **Match recap** (owner decision 2026-11-16): in the tick a match ends every client — players
 and spectators — gets one text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,
-secured},…],"awards":{biggestSteal?,closestSave?,lastSecure?}}`: the core's result and the
+secured},…],"awards":{closestSave?,lastSecure?}}`: the core's result and the
 awards the match host folded from the match (`noteAwards`, docs/GAME-CORE.md); an award
 nobody earned is left out. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
@@ -92,13 +74,13 @@ One binary encoding, little endian; values (secured, offers) travel in halves:
   secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
 - **Per ghost, 13 bytes:** id u8, x u16, y u16, team u8, carried coins u16, of those not of
   the current season (worth half now) u16, secured value u16, flags u8 (carrier, securing,
-  bot, in its own shrine, can steal, carries steal-proof coins).
+  bot, in its own shrine; the "can steal" and shield bits went with V5).
 - **Per field coin, 4 bytes:** x u16, y u16 (every field coin is of the current season).
-- **Per offer, 9 bytes:** for each player (never a bot) inside its own shrine: ghost u8, the
-  secure value, the swap's coin count of the next season, its value now and later — the
-  numbers on the two shrine buttons, computed by the game core (`shrineOffer`).
+- **Per offer, 3 bytes:** for each player (never a bot) inside its own shrine: ghost u8 and
+  the secure value — the number on the Secure button, computed by the game core
+  (`shrineOffer`; the swap's three numbers went with V5).
 
-At 32 ghosts: 450 bytes with an empty field, 690 with a full one (60 coins), 978 in the
+At 32 ghosts: 450 bytes with an empty field, 690 with a full one (60 coins), 786 in the
 worst case (a full field and 32 players in their shrines) — under 1 KB. Measured in a full
 32-bot match (seed 1): at most 550 bytes (25 field coins). The probe runs of docs/PHASE0.md
 ("Against the match server") were measured with the older 38-byte header and 9-byte ghosts.

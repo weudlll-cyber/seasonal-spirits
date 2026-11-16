@@ -23,7 +23,7 @@ the viewer stays the debug view.
 - `packages/render` — the Canvas drawing both browser apps share.
 - `packages/protocol` — binary state encoding, the client message validator, delay queue,
   interpolation, jump detection.
-- `packages/game-core` — the match: seasons, coins, swap / secure / steal, halving, bots.
+- `packages/game-core` — the match: seasons, coins, secure, halving, bots.
 - `tools/probe` — bot clients + headless spectator + measurement run.
 - `scripts/` — `pnpm dev`, `pnpm verify:changed`.
 

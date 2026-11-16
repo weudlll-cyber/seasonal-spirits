@@ -3,14 +3,15 @@
 // shape, types and ranges are checked, and a fresh object with only the known fields is
 // returned. The server and later clients reuse it, so both sides agree on what is valid.
 
-import { TEAM_SIGNALS, type ClientMessage, type TeamSignal } from './messages.js';
+import type { ClientMessage } from './messages.js';
 
 // The largest valid message is an input with two long floats, well under 100 bytes. The
 // server's WebSocket also refuses frames above this size (maxPayload).
 export const MAX_CLIENT_MESSAGE_BYTES = 256;
 
 // A parsed, valid message, or null for anything else: not JSON, not an object, an unknown
-// kind, a missing or wrong-typed field, or a number outside its range.
+// kind (the steal and swap actions and the team signals are unknown since V5), a missing or
+// wrong-typed field, or a number outside its range.
 export function parseClientMessage(text: string): ClientMessage | null {
   if (text.length > MAX_CLIENT_MESSAGE_BYTES) return null;
   let value: unknown;
@@ -28,28 +29,16 @@ export function parseClientMessage(text: string): ClientMessage | null {
     case 'input':
       return parseInput(fields);
     case 'action':
-      return parseAction(fields);
-    case 'signal':
-      return isTeamSignal(fields.signal) ? { kind: 'signal', signal: fields.signal } : null;
+      return fields.action === 'secure' ? { kind: 'action', action: 'secure' } : null;
     default:
       return null;
   }
-}
-
-export function isTeamSignal(s: unknown): s is TeamSignal {
-  return TEAM_SIGNALS.some((t) => t === s);
 }
 
 function parseInput(fields: Record<string, unknown>): ClientMessage | null {
   const { dx, dy } = fields;
   if (!isUnitComponent(dx) || !isUnitComponent(dy)) return null;
   return { kind: 'input', dx, dy };
-}
-
-function parseAction(fields: Record<string, unknown>): ClientMessage | null {
-  const action = fields.action;
-  if (action !== 'steal' && action !== 'secure' && action !== 'swap') return null;
-  return { kind: 'action', action };
 }
 
 // A direction component: a finite number in [-1, 1]. The server clamps the magnitude.

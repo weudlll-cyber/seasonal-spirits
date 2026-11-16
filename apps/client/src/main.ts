@@ -7,7 +7,6 @@
 // (prediction.ts, display only).
 
 import {
-  GHOST_CAN_STEAL,
   GHOST_SECURING,
   RenderClock,
   STATE_HALVING_EVENT,
@@ -19,7 +18,6 @@ import {
   type GhostState,
   type ServerRecap,
   type ServerState,
-  type ServerSteal,
 } from '@seasonal-spirits/protocol';
 import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
@@ -27,8 +25,7 @@ import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { OwnPrediction, type ServerOwn } from './prediction.js';
-import { ResultScreen, nameIn } from './result.js';
-import { SignalMarkers } from './signals.js';
+import { ResultScreen } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
 import { DeadlineTone } from './sound.js';
 import { ViewToggle } from './view-mode.js';
@@ -65,7 +62,6 @@ const result = new ResultScreen();
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
 let recap: ServerRecap | null = null; // of the match just ended, during the result pause
-const markers = new SignalMarkers();
 
 const NOTICES: Record<Mode, string | null> = {
   connecting: 'Connecting…',
@@ -92,34 +88,14 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
         : NOTICES[mode],
     );
   },
-  onSteal: (steal) => {
-    hud.toast(stealMessage(steal));
-  },
   onRecap: (r) => {
     recap = r;
   },
-  onSignal: (s) => {
-    markers.add(s, performance.now());
-  },
 });
 
-// "You stole 3 from Bot 7" / "Bot 7 stole 2 from you"; the other ghost named as everywhere.
-function stealMessage(steal: ServerSteal): string {
-  const own = conn.welcome?.ghost;
-  const other = steal.thief === own ? steal.victim : steal.thief;
-  const name = nameIn(conn.buffer.at(-1)?.state, other, null);
-  return steal.thief === own
-    ? `You stole ${steal.coins} from ${name}`
-    : `${name} stole ${steal.coins} from you`;
-}
-const hud = new Hud(
-  (a) => {
-    controls.act(a);
-  },
-  (s) => {
-    controls.signal(s);
-  },
-);
+const hud = new Hud((a) => {
+  controls.act(a);
+});
 hud.say(NOTICES.connecting);
 const controls: Controls = {
   steer: (dx, dy) => {
@@ -127,9 +103,6 @@ const controls: Controls = {
   },
   act: (a) => {
     conn.act(a);
-  },
-  signal: (s) => {
-    conn.signal(s);
   },
 };
 bindKeyboard(controls);
@@ -167,14 +140,6 @@ function drawnGhosts(now: number, target: number | null, ownId: number | null): 
   return ghosts.map((g) => (g.id === ownId && predicted ? { ...g, ...predicted } : g));
 }
 
-// The newest state's word, not the drawn (buffered) moment: the Steal button and the range
-// ring answer the server's GHOST_CAN_STEAL now. Players only.
-function canStealNow(latest: ServerState | undefined, ownId: number | null): boolean {
-  if (conn.mode !== 'player') return false;
-  const flags = latest?.ghosts.find((g) => g.id === ownId)?.flags ?? 0;
-  return (flags & GHOST_CAN_STEAL) !== 0;
-}
-
 function snapshot(now: number): { f: Frame; timing: FrameTiming } {
   const target = renderClock.target(now, latestServerMs(conn.buffer));
   const ownId = conn.welcome?.ghost ?? null;
@@ -193,10 +158,8 @@ function snapshot(now: number): { f: Frame; timing: FrameTiming } {
     own: ghosts.find((g) => g.id === ownId),
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,
     playing,
-    canSteal: canStealNow(latest, ownId),
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
-    markers: markers.active(now),
   };
   return { f, timing };
 }
@@ -219,7 +182,7 @@ function draw(f: Frame): Drawn {
   showTeam(f.ownTeam);
   viewButton.hidden = !f.playing;
   const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
-  hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0, f.canSteal);
+  hud.showControls(f.playing && !f.over, offer);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;
 }

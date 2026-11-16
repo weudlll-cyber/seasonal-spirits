@@ -1,65 +1,29 @@
-// Seasonal Spirits — the three actions: swap and secure at the own shrine, steal on the field.
-// Each function checks every condition itself and does nothing when one fails, so a broken
-// or cheating client cannot get more than a valid intent would give it.
+// Seasonal Spirits — the one action: securing at the own shrine. Each function checks every
+// condition itself and does nothing when one fails, so a broken or cheating client cannot get
+// more than a valid intent would give it. Stealing and the swap were removed with V5 (owner
+// decision 2026-11-16).
 
 import type { GameConfig } from './config.js';
 import { distance, shrineOf } from './geometry.js';
-import {
-  SEASONS,
-  isLastSeason,
-  nextSeason,
-  seasonClock,
-  totalCount,
-  valueNow,
-  type Season,
-} from './seasons.js';
+import { SEASONS, seasonClock, totalCount, valueNow } from './seasons.js';
 import type { Ghost, MatchState } from './types.js';
 
 export function atOwnShrine(cfg: GameConfig, s: MatchState, g: Ghost): boolean {
   return distance(g, shrineOf(s.shrines, g.team)) <= cfg.shrineRadius;
 }
 
-// CONCEPT.md §2a: all carried coins of the current season, from swapMinIn on, become coins of
-// the next season at swapIn → swapOut, rounded down (6 → 9, 8 → 12, 10 → 15; 10 → 15 → 22 → 33
-// for a patient player). No swap in the last season, whose next season never comes.
-function swapYield(cfg: GameConfig, s: Readonly<MatchState>, spent: number): number {
-  if (spent < cfg.swapMinIn || isLastSeason(cfg, s.clock)) return 0;
-  return Math.floor((spent * cfg.swapOut) / cfg.swapIn);
-}
-
-// What the two shrine buttons offer right now (CONCEPT.md §3: the player reads, never
-// calculates): the secure value, and the swap's coin count with its value now and later.
+// What the shrine's button offers right now (CONCEPT.md §3: the player reads, never
+// calculates): the value a secure would bank.
 export interface ShrineOffer {
   secureValue: number;
-  swapCoins: number;
-  swapValueNow: number;
-  swapValueLater: number;
 }
 
 export function shrineOffer(cfg: GameConfig, s: MatchState, g: Ghost): ShrineOffer {
-  const swapCoins = swapYield(cfg, s, g.carried[s.clock.current]);
-  return {
-    secureValue: valueNow(cfg, g.carried, s.clock.current),
-    swapCoins,
-    swapValueNow: swapCoins * cfg.offSeasonValueFactor,
-    swapValueLater: swapCoins,
-  };
-}
-
-export function trySwap(cfg: GameConfig, s: MatchState, g: Ghost): void {
-  const from = s.clock.current;
-  const spent = g.carried[from];
-  const got = swapYield(cfg, s, spent);
-  if (!atOwnShrine(cfg, s, g) || got === 0) return;
-  g.carried[from] = 0;
-  g.carried[nextSeason(from)] += got;
-  // What a swap gives no steal can take until the next halving (halving.ts) or a secure.
-  g.shielded[nextSeason(from)] += got;
-  s.events.push({ type: 'swap', ghost: g.id, from, spent, got });
+  return { secureValue: valueNow(cfg, g.carried, s.clock.current) };
 }
 
 // CONCEPT.md §2a, sentence 4: securing takes secureDurationMs and banks at the value of the
-// moment the player chose it; the ghost stands still and can be robbed meanwhile.
+// moment the player chose it; the ghost stands still meanwhile.
 export function trySecureStart(cfg: GameConfig, s: MatchState, g: Ghost): void {
   if (!atOwnShrine(cfg, s, g) || totalCount(g.carried) === 0) return;
   g.securingUntilMs = s.elapsedMs + cfg.secureDurationMs;
@@ -74,103 +38,8 @@ export function completeSecure(cfg: GameConfig, s: MatchState, g: Ghost): void {
   // value): the match recap's "Closest save" (recap.ts).
   const leftMs = seasonClock(cfg, g.securingUntilMs - cfg.secureDurationMs).timeLeftMs;
   g.securedValue += value;
-  for (const season of SEASONS) {
-    g.carried[season] = 0;
-    g.shielded[season] = 0;
-  }
+  for (const season of SEASONS) g.carried[season] = 0;
   g.securingUntilMs = null;
   g.securingSeason = null;
   s.events.push({ type: 'secured', ghost: g.id, value, leftMs });
-}
-
-// Whether a steal by `thief` would take something right now: the match runs, the thief is
-// not securing (a securing ghost does nothing else), its cooldown is over, and an opponent
-// carrier is in range. The server tells each player this (the lit Steal button); trySteal
-// checks exactly the same.
-export function canSteal(
-  cfg: GameConfig,
-  s: Readonly<MatchState>,
-  thief: Readonly<Ghost>,
-): boolean {
-  return (
-    !s.ended &&
-    thief.securingUntilMs === null &&
-    s.elapsedMs - thief.lastStealMs >= cfg.stealCooldownMs &&
-    nearestOpponentCarrier(cfg, s, thief) !== null
-  );
-}
-
-// The share one steal takes, drawn once per steal, uniformly from [stealShareMin,
-// stealShareMax], from the match's seeded random source. With min = max (a fixed share)
-// nothing is drawn, so the random source is not advanced.
-export function stealShareFor(cfg: GameConfig, rng: () => number): number {
-  const { stealShareMin: min, stealShareMax: max } = cfg;
-  if (max <= min) return min;
-  return min + rng() * (max - min);
-}
-
-// CONCEPT.md §2a, sentence 5, and §8: one action, no aiming. The target is the nearest
-// opponent carrier in range — never a teammate, never the thief itself. `rng` is the match's
-// seeded random source (stealShareFor).
-export function trySteal(cfg: GameConfig, s: MatchState, thief: Ghost, rng: () => number): void {
-  if (!canSteal(cfg, s, thief)) return;
-  const victim = nearestOpponentCarrier(cfg, s, thief);
-  if (!victim) return;
-  const share = stealShareFor(cfg, rng);
-  // Shielded coins (got from a swap, until the next halving) stay with the victim.
-  const stealable = (season: Season): number => victim.carried[season] - victim.shielded[season];
-  const take = (season: Season, n: number): void => {
-    victim.carried[season] -= n;
-    thief.carried[season] += n;
-  };
-  let coins = 0;
-  for (const season of SEASONS) {
-    const n = Math.ceil(stealable(season) * share);
-    take(season, n);
-    coins += n;
-  }
-  // A steal that takes something takes at least one coin: a drawn share of 0 takes nothing
-  // from any season (any share above 0 rounds up to at least one).
-  if (coins === 0) {
-    const richest = SEASONS.reduce((a, b) => (stealable(b) > stealable(a) ? b : a));
-    take(richest, 1);
-    coins = 1;
-  }
-  thief.lastStealMs = s.elapsedMs;
-  s.events.push({ type: 'steal', thief: thief.id, victim: victim.id, coins });
-  if (victim.securingUntilMs !== null) {
-    victim.securingUntilMs = null;
-    victim.securingSeason = null;
-    s.events.push({ type: 'secure-interrupted', ghost: victim.id });
-  }
-}
-
-// Whether a steal could take anything from `g`: it carries coins that are not shielded. The
-// one place every steal decision asks: canSteal, trySteal and the hunter bot.
-export function isStealTarget(g: Readonly<Ghost>): boolean {
-  return totalCount(g.carried) - totalCount(g.shielded) > 0;
-}
-
-// Whether `g` carries swapped coins no steal can take; the clients draw a shield ring.
-export function carriesShielded(g: Readonly<Ghost>): boolean {
-  return totalCount(g.shielded) > 0;
-}
-
-// The ghost a steal by `thief` would rob right now; the hunter bot reads it too.
-export function nearestOpponentCarrier(
-  cfg: GameConfig,
-  s: Readonly<MatchState>,
-  thief: Readonly<Ghost>,
-): Ghost | null {
-  let best: Ghost | null = null;
-  let bestD = Infinity;
-  for (const g of s.ghosts) {
-    if (g.team === thief.team || !isStealTarget(g)) continue;
-    const d = distance(g, thief);
-    if (d <= cfg.stealRange && d < bestD) {
-      best = g;
-      bestD = d;
-    }
-  }
-  return best;
 }

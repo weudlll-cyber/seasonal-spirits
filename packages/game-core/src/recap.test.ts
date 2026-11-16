@@ -1,5 +1,5 @@
-// Seasonal Spirits — the match recap's awards: the biggest steal, the closest save and the last
-// secure, from the events tick by tick; none without an event.
+// Seasonal Spirits — the match recap's awards: the closest save and the last secure, from the
+// events tick by tick; none without an event.
 
 import { describe, expect, it } from 'vitest';
 import { NO_AWARDS, noteAwards, type Awards } from './recap.js';
@@ -11,12 +11,6 @@ function fold(ticks: MatchEvent[][]): Awards {
   return ticks.reduce((a, events) => noteAwards(a, { events } as MatchState), NO_AWARDS);
 }
 
-const steal = (thief: number, victim: number, coins: number): MatchEvent => ({
-  type: 'steal',
-  thief,
-  victim,
-  coins,
-});
 const secured = (ghost: number, value: number, leftMs: number): MatchEvent => ({
   type: 'secured',
   ghost,
@@ -27,11 +21,6 @@ const secured = (ghost: number, value: number, leftMs: number): MatchEvent => ({
 describe('match recap awards', () => {
   it('leaves every award out when nothing happened', () => {
     expect(fold([[], [{ type: 'secure-start', ghost: 1 }]])).toEqual(NO_AWARDS);
-  });
-
-  it('gives the biggest steal to the most coins in one steal, the first of equals', () => {
-    const a = fold([[steal(1, 2, 3)], [steal(4, 5, 9), steal(6, 7, 2)], [steal(8, 9, 9)]]);
-    expect(a.biggestSteal).toEqual({ thief: 4, victim: 5, coins: 9 });
   });
 
   it('gives the closest save to the least time left, the last secure to the last one', () => {

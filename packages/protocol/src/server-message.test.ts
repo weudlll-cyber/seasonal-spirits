@@ -22,27 +22,19 @@ describe('parseServerMessage', () => {
     });
   });
 
-  it('reads a steal notice with only its known fields', () => {
-    const text = '{"kind":"steal","thief":7,"victim":3,"coins":2,"x":5}';
-    expect(parseServerMessage(text)).toEqual({ kind: 'steal', thief: 7, victim: 3, coins: 2 });
+  it('drops a welcome longer than 256 characters even with valid fields', () => {
+    const padded = `{"kind":"welcome","ghost":7,"team":3,"name":"a","pad":"${'x'.repeat(260)}"}`;
+    expect(parseServerMessage(padded)).toBeNull();
   });
 
-  it('drops a steal notice with a ghost out of range, no coins, or a thief robbing itself', () => {
+  // V5 (owner decision 2026-11-16): no steal notices and no team signals any more.
+  it('drops the removed steal notice and team signal', () => {
     for (const text of [
-      '{"kind":"steal","thief":256,"victim":3,"coins":2}',
-      '{"kind":"steal","thief":7,"victim":-1,"coins":2}',
-      '{"kind":"steal","thief":7,"victim":3,"coins":0}',
-      '{"kind":"steal","thief":7,"victim":3,"coins":1.5}',
-      '{"kind":"steal","thief":7,"victim":7,"coins":2}',
-      '{"kind":"steal","thief":7,"victim":3}',
+      '{"kind":"steal","thief":7,"victim":3,"coins":2}',
+      '{"kind":"signal","ghost":5,"signal":"home","x":120,"y":1800}',
     ]) {
       expect(parseServerMessage(text), text).toBeNull();
     }
-  });
-
-  it('drops a welcome or steal notice longer than 256 characters even with valid fields', () => {
-    const padded = `{"kind":"steal","thief":7,"victim":3,"coins":2,"pad":"${'x'.repeat(260)}"}`;
-    expect(parseServerMessage(padded)).toBeNull();
   });
 
   it('drops non-JSON, non-objects, other kinds and out-of-range fields', () => {
@@ -64,30 +56,7 @@ describe('parseServerMessage', () => {
   });
 });
 
-// Team signals (owner decision 2026-11-16).
-describe('parseServerMessage: team signal', () => {
-  it('reads a teammate signal with only its known fields, and drops a broken one', () => {
-    const text = '{"kind":"signal","ghost":5,"signal":"home","x":120,"y":1800,"team":2}';
-    expect(parseServerMessage(text)).toEqual({
-      kind: 'signal',
-      ghost: 5,
-      signal: 'home',
-      x: 120,
-      y: 1800,
-    });
-    for (const bad of [
-      '{"kind":"signal","ghost":5,"signal":"retreat","x":1,"y":1}',
-      '{"kind":"signal","ghost":300,"signal":"home","x":1,"y":1}',
-      '{"kind":"signal","ghost":5,"signal":"home","x":-1,"y":1}',
-      '{"kind":"signal","ghost":5,"signal":"home","x":1.5,"y":1}',
-      '{"kind":"signal","ghost":5,"signal":"home"}',
-    ]) {
-      expect(parseServerMessage(bad), bad).toBeNull();
-    }
-  });
-});
-
-// The match recap (owner decision 2026-11-16): the result and up to three awards.
+// The match recap (owner decision 2026-11-16): the result and the awards.
 describe('parseServerMessage: recap', () => {
   const players = Array.from({ length: 32 }, (_, i) => ({
     ghost: i + 1,
@@ -99,13 +68,12 @@ describe('parseServerMessage: recap', () => {
     teams: [120, 99.5, 0, 33],
     players,
     awards: {
-      biggestSteal: { thief: 4, victim: 9, coins: 7 },
       closestSave: { ghost: 2, leftMs: 950 },
       lastSecure: { ghost: 11, value: 12.5 },
     },
   };
 
-  it('reads a full recap of 32 players with its three awards, under the size limit', () => {
+  it('reads a full recap of 32 players with its awards, under the size limit', () => {
     const text = JSON.stringify({ ...recap, extra: 1 });
     expect(parseServerMessage(text)).toEqual(recap);
   });
@@ -126,8 +94,6 @@ describe('parseServerMessage: recap', () => {
       { ...recap, players: [{ ghost: 1, team: 4, secured: 1 }] },
       { ...recap, players: 'all' },
       { ...recap, awards: null },
-      { ...recap, awards: { biggestSteal: { thief: 4, victim: 4, coins: 7 } } },
-      { ...recap, awards: { biggestSteal: { thief: 4, victim: 5, coins: 0 } } },
       { ...recap, awards: { closestSave: { ghost: 2, leftMs: -1 } } },
       { ...recap, awards: { lastSecure: { ghost: 2, value: 'a lot' } } },
       { ...recap, players: [...players, ...players, { ghost: 1, team: 0, secured: 0 }] },

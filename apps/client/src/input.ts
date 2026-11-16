@@ -1,14 +1,12 @@
-// Seasonal Spirits — the player's controls (CONCEPT.md §8): WASD or arrow keys, Space for the
-// one action, 1 Secure and 2 Swap, 3 and 4 the team signals; on touch screens a virtual
-// joystick under the left thumb. The buttons for the right thumb live in hud.ts. Only a
-// direction, actions and signals leave here.
+// Seasonal Spirits — the player's controls (CONCEPT.md §8): WASD or arrow keys, 1 to secure;
+// on touch screens a virtual joystick under the left thumb. The Secure button for the right
+// thumb lives in hud.ts. Only a direction and the action leave here.
 
-import type { GameAction, TeamSignal } from '@seasonal-spirits/protocol';
+import type { GameAction } from '@seasonal-spirits/protocol';
 
 export interface Controls {
   steer: (dx: number, dy: number) => void;
   act: (action: GameAction) => void;
-  signal: (signal: TeamSignal) => void;
 }
 
 const KEYS: Record<string, [number, number]> = {
@@ -21,17 +19,7 @@ const KEYS: Record<string, [number, number]> = {
   KeyD: [1, 0],
   ArrowRight: [1, 0],
 };
-const ACTION_KEYS: Record<string, GameAction> = {
-  Space: 'steal',
-  Digit1: 'secure',
-  Digit2: 'swap',
-};
-// The task asked for 1 and 2; those are Secure and Swap, so the signals take 3 and 4
-// (night 2026-11-16, NEEDS OWNER).
-const SIGNAL_KEYS: Record<string, TeamSignal> = {
-  Digit3: 'attack',
-  Digit4: 'home',
-};
+const ACTION_KEYS: Record<string, GameAction> = { Digit1: 'secure' };
 
 export function bindKeyboard(controls: Controls): void {
   const held = new Set<string>();
@@ -51,9 +39,7 @@ export function bindKeyboard(controls: Controls): void {
   window.addEventListener('keydown', (e) => {
     const action = ACTION_KEYS[e.code];
     if (action && !e.repeat) controls.act(action);
-    const signal = SIGNAL_KEYS[e.code];
-    if (signal && !e.repeat) controls.signal(signal);
-    if (!(e.code in KEYS) && !action && !signal) return;
+    if (!(e.code in KEYS) && !action) return;
     e.preventDefault();
     held.add(e.code);
     update();

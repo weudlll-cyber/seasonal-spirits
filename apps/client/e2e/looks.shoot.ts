@@ -1,6 +1,6 @@
 // Seasonal Spirits — `pnpm looks` (sessions 2026-11-16-LOOK and -LOOK-B): pictures of the
 // ghosts as the game draws them. Finds the three scenes in seeded matches (looks-scenes.ts) —
-// a crowd, a carrier after a halving, shield, securing and own ghost — draws each at
+// a crowd, a carrier after a halving, a carrier, a securing ghost and the own ghost — draws each at
 // 1280 × 800 and 390 × 844 (the viewer's looks.html) and writes look-<n>-<scene>-<size>.png and
 // look-scenes.json to reports/screens/latest/. Pictures, not a test.
 

@@ -6,7 +6,6 @@
 import {
   GHOST_CARRIER,
   GHOST_SECURING,
-  GHOST_SHIELDED,
   type GhostState,
   type ServerState,
 } from '@seasonal-spirits/protocol';
@@ -38,7 +37,6 @@ function markersOf(g: GhostState, ownId: number): LegendMarker[] {
   const m: LegendMarker[] = [];
   if (g.flags & GHOST_CARRIER) m.push('carrier', 'trail');
   if (g.offSeason > 0) m.push('half');
-  if (g.flags & GHOST_SHIELDED) m.push('shield');
   if (g.flags & GHOST_SECURING) m.push('securing');
   if (g.id === ownId) m.push('own');
   return m;

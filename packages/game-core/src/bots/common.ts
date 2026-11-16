@@ -1,4 +1,4 @@
-// Seasonal Spirits — what the three bot strategies share: steering and simple searches.
+// Seasonal Spirits — what the bot strategies share: steering and simple searches.
 // Bots read the public match state only, the same a player's client sees.
 
 import type { GameConfig } from '../config.js';
@@ -15,15 +15,14 @@ export function steerTo(cfg: GameConfig, from: Vec, to: Vec): Intent {
   return { dx: (to.x - from.x) / d, dy: (to.y - from.y) / d };
 }
 
-// Walk home; once inside the own shrine, do the shrine action.
-export function goHomeAnd(
+// Walk home; once inside the own shrine, secure.
+export function goHomeAndSecure(
   cfg: GameConfig,
   s: Readonly<MatchState>,
   me: Readonly<Ghost>,
-  action: 'secure' | 'swap',
 ): Intent {
   const home = shrineOf(s.shrines, me.team);
-  if (distance(me, home) <= cfg.shrineRadius) return { dx: 0, dy: 0, action };
+  if (distance(me, home) <= cfg.shrineRadius) return { dx: 0, dy: 0, action: 'secure' };
   return steerTo(cfg, me, home);
 }
 

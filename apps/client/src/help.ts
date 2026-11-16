@@ -1,28 +1,14 @@
-// Seasonal Spirits — the help overlay (owner's observation 2026-11-15: stealing was not
+// Seasonal Spirits — the help overlay (owner's observation 2026-11-15: the rules were not
 // understood): the rules of CONCEPT.md §2a in plain words, each with a small drawing made in
 // code; "What you see": every marker on the field, as the game draws it (LEGEND); and the
-// controls. Shown once on the first visit, any time with "?" or the band's "?"
-// button; one tap or any key closes it. The swap numbers come from the game config.
+// controls. Shown once on the first visit, any time with "?" or the band's "?" button; one
+// tap or any key closes it.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import {
-  LEGEND,
-  MUTED,
-  SEASON_COLOURS,
-  SHIELD,
-  TEXT,
-  type LegendMarker,
-} from '@seasonal-spirits/render';
+import { LEGEND, MUTED, SEASON_COLOURS, TEXT, type LegendMarker } from '@seasonal-spirits/render';
 import { readSetting, writeSetting } from './storage.js';
 
 const SEEN_KEY = 'seasonal-spirits.help-seen';
 const [SPRING, SUMMER, AUTUMN, WINTER] = SEASON_COLOURS;
-
-// The swap in the smallest words: from 6 coins, every 2 become 3 (swapIn → swapOut reduced).
-const { swapIn, swapOut, swapMinIn } = DEFAULT_CONFIG;
-const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-const [RATE_IN, RATE_OUT] = [swapIn / gcd(swapIn, swapOut), swapOut / gcd(swapIn, swapOut)];
-const SWAP_EXAMPLE = `${swapMinIn} → ${Math.floor((swapMinIn * swapOut) / swapIn)}`;
 
 const diamond = (x: number, y: number, fill: string): string =>
   `<path d="M${x} ${y - 9}L${x + 9} ${y}L${x} ${y + 9}L${x - 9} ${y}Z" fill="${fill}" stroke="#fff" stroke-width="1"/>`;
@@ -34,9 +20,6 @@ const ring = (x: number, y: number, r: number, width: number): string =>
   `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${TEXT}" stroke-width="${width}"/>`;
 const svg = (body: string): string =>
   `<svg viewBox="0 0 120 60" width="120" height="60" aria-hidden="true">${body}</svg>`;
-const SHIELDED =
-  ghost(60, 30, 12, SUMMER) +
-  `<path d="M60 8L79 19L79 41L60 52L41 41L41 19Z" fill="none" stroke="${SHIELD}" stroke-width="2"/>`;
 
 // Static text and drawings only; nothing from the server or the player goes in here.
 const RULES: { text: string; drawing: string }[] = [
@@ -51,30 +34,21 @@ const RULES: { text: string; drawing: string }[] = [
     ),
   },
   {
-    text: `At your shrine: Secure banks what you carry now. Swap turns your coins of this season — from ${swapMinIn} on — into coins of the next: every ${RATE_IN} become ${RATE_OUT}. No swap in the last season.`,
+    text: 'At your shrine: Secure banks what you carry now.',
     drawing: svg(
       `<circle cx="30" cy="30" r="24" fill="none" stroke="${SPRING}" stroke-width="3"/>` +
-        label(30, 35, 'Bank') +
-        label(88, 35, SWAP_EXAMPLE),
+        label(30, 35, 'Bank'),
     ),
   },
   {
-    text: 'Swapped coins are safe: nobody can steal them until the next halving. A shield around a ghost shows it.',
-    drawing: svg(SHIELDED),
-  },
-  {
-    text: 'Every season change is a halving: coins of the old season are then worth half. Secure or swap before it.',
+    text: 'Every season change is a halving: coins of the old season are then worth half. Secure before it.',
     drawing: svg(
       diamond(30, 28, SPRING) + label(60, 33, '→') + diamond(90, 28, MUTED) + label(90, 56, '½'),
     ),
   },
   {
-    text: 'Carrying makes you bigger and slower and leaves a trail — and others can steal from you. Steal takes a random part of the coins of the nearest opponent carrier in your range, at least one; the Steal button lights up when that works.',
-    drawing: svg(
-      `<circle cx="40" cy="30" r="27" fill="none" stroke="${MUTED}" stroke-dasharray="3 3"/>` +
-        ghost(40, 30, 9, SPRING) +
-        ghost(72, 30, 14, SUMMER),
-    ),
+    text: 'Carrying makes you bigger and slower and leaves a trail.',
+    drawing: svg(ghost(40, 30, 9, SPRING) + ghost(72, 30, 14, SUMMER)),
   },
 ];
 
@@ -110,7 +84,6 @@ const MARKER_DRAWINGS: Record<LegendMarker, string> = {
   trail: svg(TRAIL + ghost(80, 30, 10, AUTUMN)),
   own: svg(ghost(60, 38, 10, WINTER) + ring(60, 38, 14, 3) + label(60, 17, 'You')),
   securing: svg(ghost(60, 32, 10, SPRING) + ring(60, 32, 19, 2)),
-  shield: svg(SHIELDED),
 };
 
 const SEEN =
@@ -119,8 +92,8 @@ const SEEN =
   '</ol>';
 
 const CONTROLS =
-  '<p><b>Keyboard:</b> WASD or arrows to move, Space to steal, 1 Secure, 2 Swap, 3 Attack and 4 To shrine (signals to your team), V view, ? help.</p>' +
-  '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Steal, Secure and Swap under the right thumb, the two team signals above them.</p>';
+  '<p><b>Keyboard:</b> WASD or arrows to move, 1 Secure, V view, ? help.</p>' +
+  '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Secure under the right thumb.</p>';
 
 export class Help {
   private readonly overlay: HTMLElement;

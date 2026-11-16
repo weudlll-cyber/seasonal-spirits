@@ -1,6 +1,7 @@
 // Seasonal Spirits — a full 32-bot match: deterministic per seed, sanity list green.
 
 import { describe, expect, it } from 'vitest';
+import { STRATEGIES } from './bots/strategies.js';
 import { DEFAULT_CONFIG } from './config.js';
 import { botRoster, simulate } from './simulation.js';
 
@@ -22,7 +23,7 @@ describe('simulated match', () => {
       [150_000, 'autumn'],
       [225_000, 'winter'],
     ]);
-    for (const strategy of ['patient', 'cautious', 'hunter']) {
+    for (const strategy of STRATEGIES) {
       const ids = new Set(r.roster.filter((x) => x.strategy === strategy).map((x) => x.id));
       const total = r.result.players
         .filter((p) => ids.has(p.id))

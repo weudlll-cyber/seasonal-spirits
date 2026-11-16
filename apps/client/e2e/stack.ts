@@ -10,12 +10,6 @@ import type { Rect } from '@seasonal-spirits/render';
 
 export const SERVER_PORT = 3932;
 export const CLIENT_PORT = 5932;
-// A second stack with the staged steal (SCENARIO=steal, apps/server/src/scenario.ts).
-export const STEAL_SERVER_PORT = 3934;
-export const STEAL_CLIENT_PORT = 5934;
-// A third stack with the staged shield (SCENARIO=shield).
-export const SHIELD_SERVER_PORT = 3936;
-export const SHIELD_CLIENT_PORT = 5936;
 // The latency measurement's own stack (latency.config.ts): default seasons, no scenario.
 export const LATENCY_SERVER_PORT = 3938;
 export const LATENCY_CLIENT_PORT = 5938;
@@ -74,10 +68,7 @@ export interface ClientView {
     x: number;
     y: number;
     r: number;
-    shielded: boolean;
   }[];
-  stealRing: boolean;
-  signals: { ghost: number; signal: string }[]; // team signal markers drawn (signals.ts)
 }
 
 // Waits for the client's first frame: right after a (re)load window.__client does not exist

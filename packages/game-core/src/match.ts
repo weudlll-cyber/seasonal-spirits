@@ -2,7 +2,7 @@
 // No clock and no randomness of its own: time is the sum of the dt values it is given and
 // every random value comes from the seed, so the same seed and intents give the same match.
 
-import { completeSecure, trySecureStart, trySteal, trySwap } from './actions.js';
+import { completeSecure, trySecureStart } from './actions.js';
 import type { GameConfig } from './config.js';
 import { pickUpCoins, spawnCoins, type Spawner } from './field.js';
 import { shrineOf, shrinePositions, stepGhost } from './geometry.js';
@@ -32,8 +32,7 @@ export class Match {
 
   constructor(cfg: GameConfig, seed: number, roster: readonly Roster[]) {
     this.cfg = cfg;
-    // The match's one seeded random source: start positions, coin spawns and the share of
-    // each steal (actions.ts stealShareFor).
+    // The match's one seeded random source: start positions and coin spawns.
     const rng = mulberry32(seed);
     const shrines = shrinePositions(cfg);
     this.spawner = { rng, acc: 0, nextId: 1 };
@@ -102,9 +101,7 @@ export class Match {
     const to = stepGhost(this.cfg, from, intent, dtMs);
     g.x = to.x;
     g.y = to.y;
-    if (intent.action === 'steal') trySteal(this.cfg, this.s, g, this.spawner.rng);
-    else if (intent.action === 'swap') trySwap(this.cfg, this.s, g);
-    else if (intent.action === 'secure') trySecureStart(this.cfg, this.s, g);
+    if (intent.action === 'secure') trySecureStart(this.cfg, this.s, g);
   }
 }
 
@@ -116,10 +113,8 @@ function newGhost(r: Roster, home: Vec, spread: number, rng: () => number): Ghos
     x: home.x + (rng() - 0.5) * spread,
     y: home.y + (rng() - 0.5) * spread,
     carried: emptyCounts(),
-    shielded: emptyCounts(),
     securedValue: 0,
     securingUntilMs: null,
     securingSeason: null,
-    lastStealMs: -Infinity,
   };
 }

@@ -14,36 +14,28 @@ describe('parseClientMessage', () => {
     });
   });
 
-  it('accepts the three actions and nothing else as an action', () => {
-    for (const action of ['steal', 'secure', 'swap']) {
-      expect(parseClientMessage(JSON.stringify({ kind: 'action', action, target: 7 }))).toEqual({
-        kind: 'action',
-        action,
-      });
-    }
-    for (const text of [
+  it('accepts Secure, the one action, and nothing else as an action', () => {
+    const text = JSON.stringify({ kind: 'action', action: 'secure', target: 7 });
+    expect(parseClientMessage(text)).toEqual({ kind: 'action', action: 'secure' });
+    for (const bad of [
       '{"kind":"action"}',
       '{"kind":"action","action":"teleport"}',
-      '{"kind":"action","action":["steal"]}',
+      '{"kind":"action","action":["secure"]}',
     ]) {
-      expect(parseClientMessage(text), text).toBeNull();
+      expect(parseClientMessage(bad), bad).toBeNull();
     }
   });
 
-  it('accepts the two team signals and nothing else as a signal', () => {
-    for (const signal of ['attack', 'home']) {
-      const text = JSON.stringify({ kind: 'signal', signal, team: 3, x: 5, to: 'all' });
-      expect(parseClientMessage(text)).toEqual({ kind: 'signal', signal });
-    }
+  // V5 (owner decision 2026-11-16): stealing, the swap and the team signals are gone; a client
+  // that still sends them is refused like any unknown message.
+  it('refuses the removed steal and swap actions and the removed team signals', () => {
     for (const text of [
-      '{"kind":"signal"}',
-      '{"kind":"signal","signal":"retreat"}',
-      '{"kind":"signal","signal":"Attack"}',
-      '{"kind":"signal","signal":["attack"]}',
-      '{"kind":"signal","signal":"__proto__"}',
-      `{"kind":"signal","signal":"${'x'.repeat(300)}"}`,
+      '{"kind":"action","action":"steal"}',
+      '{"kind":"action","action":"swap"}',
+      '{"kind":"signal","signal":"attack"}',
+      '{"kind":"signal","signal":"home"}',
     ]) {
-      expect(parseClientMessage(text), text.slice(0, 60)).toBeNull();
+      expect(parseClientMessage(text), text).toBeNull();
     }
   });
 });

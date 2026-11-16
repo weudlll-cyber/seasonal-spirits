@@ -3,7 +3,7 @@
 // collector — the nearest coin it sees, home to secure before every deadline. A measuring
 // instrument, never a strategy of the balance pool.
 
-import { deadlineNear, goHomeAnd, IDLE, steerTo, type Bot } from '../bots/common.js';
+import { deadlineNear, goHomeAndSecure, IDLE, steerTo, type Bot } from '../bots/common.js';
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
 import { totalCount } from '../seasons.js';
@@ -24,7 +24,7 @@ export function createStandIn(cfg: GameConfig, sight: Sight): Bot {
     if (!seen || seen.me.securingUntilMs !== null || seen.state.ended) return IDLE;
     const { state, me: self } = seen;
     if (totalCount(self.carried) > 0 && deadlineNear(cfg, state, self)) {
-      return goHomeAnd(cfg, state, self, 'secure');
+      return goHomeAndSecure(cfg, state, self);
     }
     let target: { x: number; y: number } | null = null;
     for (const c of state.coins) {

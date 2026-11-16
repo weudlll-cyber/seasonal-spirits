@@ -6,8 +6,6 @@ import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import {
   GHOST_AT_SHRINE,
   GHOST_BOT,
-  GHOST_CAN_STEAL,
-  GHOST_SHIELDED,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
@@ -75,16 +73,14 @@ describe('match host inputs', () => {
 });
 
 describe('match host shrine offers', () => {
-  it('sends the button numbers for a player in its own shrine, never for a bot', () => {
+  it('sends the button number for a player in its own shrine, never for a bot', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
     const slot = host.join(1);
     if (!slot) throw new Error('no slot');
     // Every ghost starts inside its own shrine.
     const s = host.tick(50);
     expect(s.ghosts.every((g) => g.flags & GHOST_AT_SHRINE)).toBe(true);
-    expect(s.offers).toEqual([
-      { ghost: slot.ghost, secureValue: 0, swapCoins: 0, swapValueNow: 0, swapValueLater: 0 },
-    ]);
+    expect(s.offers).toEqual([{ ghost: slot.ghost, secureValue: 0 }]);
     host.steer(1, 1, 1);
     expect(host.tick(1000).offers).toEqual([]);
   });
@@ -152,79 +148,5 @@ describe('match host lifecycle', () => {
     expect(next?.flags ?? STATE_RESULT).toBe(0);
     expect(next?.matchMs).toBeLessThanOrEqual(150);
     expect(host.players()).toBe(1);
-  });
-});
-
-// Owner's observation 2026-11-15: stealing was not understood. The staged situation puts the
-// player beside an opponent hunter with nothing (scenario.ts).
-describe('match host steal feedback', () => {
-  const canSteal = (s: WireState, ghost: number): boolean =>
-    ((s.ghosts.find((g) => g.id === ghost)?.flags ?? 0) & GHOST_CAN_STEAL) !== 0;
-
-  it('tells a player robbed by a bot, and only that player', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 12, 1, 'steal');
-    const slot = host.join(1);
-    if (!slot) throw new Error('no slot');
-    const notices = [];
-    for (let t = 0; t < 2000; t += 50) {
-      host.tick(50);
-      notices.push(...host.stealNotices());
-    }
-    expect(notices.length).toBeGreaterThan(0);
-    expect(notices.every((n) => n.clientId === 1)).toBe(true);
-    expect(notices[0]?.message).toMatchObject({ kind: 'steal', victim: slot.ghost });
-  });
-
-  it('lights the Steal flag only while a steal would take something, and tells the thief', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 12, 1, 'steal');
-    const slot = host.join(1);
-    if (!slot) throw new Error('no slot');
-    // The hunter robs the player first; then the player has a carrier in range.
-    let s = host.tick(50);
-    for (let t = 0; t < 2000 && !canSteal(s, slot.ghost); t += 50) s = host.tick(50);
-    expect(canSteal(s, slot.ghost)).toBe(true);
-    host.act(1, 'steal');
-    host.tick(50);
-    const notices = host.stealNotices();
-    expect(notices).toHaveLength(1);
-    expect(notices[0]?.clientId).toBe(1);
-    expect(notices[0]?.message.thief).toBe(slot.ghost);
-    // Right after the steal the cooldown runs: the flag is off.
-    expect(canSteal(host.tick(50), slot.ghost)).toBe(false);
-  });
-
-  it('sends no notice to anyone for steals among bots', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
-    for (let t = 0; t < 60_000; t += 50) {
-      host.tick(50);
-      expect(host.stealNotices()).toEqual([]);
-    }
-  });
-});
-
-// Owner decision 2026-11-16: a ghost carrying steal-proof (swapped) coins shows a shield. The
-// staged situation puts the player in its own shrine beside a standing opponent that carries
-// only swapped coins (scenario.ts).
-describe('match host shield flag', () => {
-  const has = (s: WireState | undefined, ghost: number, bit: number): boolean =>
-    ((s?.ghosts.find((g) => g.id === ghost)?.flags ?? 0) & bit) !== 0;
-
-  it('marks a carrier of swapped coins, keeps Steal dimmed against it, until the halving', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 12, 1, 'shield');
-    const slot = host.join(1);
-    if (!slot) throw new Error('no slot');
-    const s = host.tick(50);
-    const me = s.ghosts.find((g) => g.id === slot.ghost);
-    const other = s.ghosts.find((g) => g.team !== slot.team && has(s, g.id, GHOST_SHIELDED));
-    if (!me || !other) throw new Error('not staged');
-    expect(Math.hypot(me.x - other.x, me.y - other.y)).toBeLessThanOrEqual(
-      DEFAULT_CONFIG.stealRange,
-    );
-    expect(has(s, slot.ghost, GHOST_CAN_STEAL)).toBe(false); // its only coins are steal-proof
-    expect(has(s, slot.ghost, GHOST_SHIELDED)).toBe(false);
-    host.act(1, 'swap');
-    expect(has(host.tick(50), slot.ghost, GHOST_SHIELDED)).toBe(true);
-    const later = runFor(host, DEFAULT_CONFIG.seasonDurationMs).at(-1);
-    expect(has(later, slot.ghost, GHOST_SHIELDED)).toBe(false);
   });
 });

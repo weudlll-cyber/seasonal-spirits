@@ -18,25 +18,17 @@ export const GHOST_CARRIER = 1;
 export const GHOST_SECURING = 2;
 export const GHOST_BOT = 4;
 export const GHOST_AT_SHRINE = 8; // inside its own team's shrine
-// A steal by this ghost would take something now (the core's canSteal): the lit Steal button.
-export const GHOST_CAN_STEAL = 16;
-// Carries swapped coins no steal can take until the next halving (the core's
-// carriesShielded): the shield ring.
-export const GHOST_SHIELDED = 32;
 
 export interface CoinState {
   x: number; // every field coin is of the current season
   y: number;
 }
 
-// The two shrine buttons of a player standing in its own shrine (CONCEPT.md §3, §8), as the
-// game core computes them; a client shows these numbers and never calculates its own.
+// The shrine button of a player standing in its own shrine (CONCEPT.md §3, §8), as the game
+// core computes it; a client shows this number and never calculates its own.
 export interface OfferState {
   ghost: number;
   secureValue: number;
-  swapCoins: number; // coins of the next season a swap gives; 0 = no swap possible
-  swapValueNow: number;
-  swapValueLater: number;
 }
 
 export interface ServerState {
@@ -70,12 +62,12 @@ export const STATE_MATCH_END_EVENT = 8;
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
 // teamSecured 4×u16 (halves) · ghost count u8 · coin count u8 · offer count u8.
 // Ghost: id u8 · x u16 · y u16 · team u8 · carried u16 · offSeason u16 · secured u16 (halves)
-// · flags u8.  Coin: x u16 · y u16.  Offer: ghost u8 · secure, swapNow, swapLater u16
-// (halves) and swapCoins u16. All little endian.
+// · flags u8.  Coin: x u16 · y u16.  Offer: ghost u8 · secure u16 (halves). All little
+// endian.
 export const HEADER_BYTES = 34;
 export const GHOST_BYTES = 13;
 export const COIN_BYTES = 4;
-export const OFFER_BYTES = 9;
+export const OFFER_BYTES = 3;
 const NO_COUNTDOWN = 0xffff;
 
 export function encodedSize(ghosts: number, coins: number, offers = 0): number {
@@ -136,9 +128,6 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
 function writeOffer(v: DataView, o: number, f: OfferState): number {
   v.setUint8(o, f.ghost & 0xff);
   v.setUint16(o + 1, halves(f.secureValue), true);
-  v.setUint16(o + 3, u16(f.swapCoins), true);
-  v.setUint16(o + 5, halves(f.swapValueNow), true);
-  v.setUint16(o + 7, halves(f.swapValueLater), true);
   return o + OFFER_BYTES;
 }
 
@@ -193,11 +182,5 @@ function readGhost(v: DataView, o: number): GhostState {
 }
 
 function readOffer(v: DataView, o: number): OfferState {
-  return {
-    ghost: v.getUint8(o),
-    secureValue: v.getUint16(o + 1, true) / 2,
-    swapCoins: v.getUint16(o + 3, true),
-    swapValueNow: v.getUint16(o + 5, true) / 2,
-    swapValueLater: v.getUint16(o + 7, true) / 2,
-  };
+  return { ghost: v.getUint8(o), secureValue: v.getUint16(o + 1, true) / 2 };
 }

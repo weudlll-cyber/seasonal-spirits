@@ -5,7 +5,7 @@
 import { isIntIn, isObject } from './checks.js';
 import type { ServerRecap } from './messages.js';
 
-// 32 players with the result and three awards stay near 1.5 KB; this bounds anything bigger.
+// 32 players with the result and the awards stay near 1.5 KB; this bounds anything bigger.
 export const MAX_RECAP_BYTES = 4096;
 const MAX_PLAYERS = 64;
 const MAX_VALUE = 32_767.5; // a secured value fits the state's u16 in halves
@@ -39,15 +39,10 @@ type Awards = ServerRecap['awards'];
 // Each award is optional; one that is present must be whole, or the recap is dropped.
 function readAwards(a: unknown): Awards | null {
   if (!isObject(a)) return null;
-  const read = [
-    optional(a.biggestSteal, readSteal),
-    optional(a.closestSave, readSave),
-    optional(a.lastSecure, readLast),
-  ] as const;
+  const read = [optional(a.closestSave, readSave), optional(a.lastSecure, readLast)] as const;
   if (read.includes(null)) return null;
-  const [biggestSteal, closestSave, lastSecure] = read;
+  const [closestSave, lastSecure] = read;
   const out: Awards = {};
-  if (biggestSteal) out.biggestSteal = biggestSteal;
   if (closestSave) out.closestSave = closestSave;
   if (lastSecure) out.lastSecure = lastSecure;
   return out;
@@ -60,12 +55,6 @@ function optional<T>(
 ): T | null | undefined {
   if (v === undefined) return undefined;
   return isObject(v) ? read(v) : null;
-}
-
-function readSteal(o: Record<string, unknown>): Awards['biggestSteal'] | null {
-  const { thief, victim, coins } = o;
-  if (!isIntIn(thief, 0, 255) || !isIntIn(victim, 0, 255) || thief === victim) return null;
-  return isIntIn(coins, 1, 65535) ? { thief, victim, coins } : null;
 }
 
 function readSave(o: Record<string, unknown>): Awards['closestSave'] | null {

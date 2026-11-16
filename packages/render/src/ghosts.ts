@@ -1,10 +1,10 @@
 // Seasonal Spirits — the ghosts in the look the owner chose on 2026-11-16 (look B, "calm"):
 // the body in its team's colour, players and bots alike; a carrier visible from afar (CONCEPT.md
 // §2a, sentence 5) by its larger body, a short trail in its team's colour and its name with the
-// coin count, the half-value coins as a grey "(N half)" after it; a hexagonal shield around a
-// carrier of swapped coins no steal can take, a thin ring while securing, a thick one for "You".
+// coin count, the half-value coins as a grey "(N half)" after it; a thin ring while securing, a
+// thick one for "You". The shield went with stealing (V5, owner decision 2026-11-16).
 
-import { GHOST_CARRIER, GHOST_SECURING, GHOST_SHIELDED } from '@seasonal-spirits/protocol';
+import { GHOST_CARRIER, GHOST_SECURING } from '@seasonal-spirits/protocol';
 import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import {
@@ -16,7 +16,7 @@ import {
   type LabelCandidate,
   type PlacedLabel,
 } from './labels.js';
-import { MUTED, SHIELD, TEXT, seasonColour } from './palette.js';
+import { MUTED, TEXT, seasonColour } from './palette.js';
 import { circle, sx, sy, visibleArea, type Rect, type View } from './view.js';
 
 const TRAIL_POINTS = 12;
@@ -90,10 +90,9 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
   ctx.globalAlpha = 1;
 }
 
-// Pixels outside the body: the own ghost's ring, the shield hexagon's corners, the securing
-// ring (each line's centre). ghostReach adds half a line width for the outer edge.
+// Pixels outside the body: the own ghost's ring and the securing ring (each line's centre).
+// ghostReach adds half a line width for the outer edge.
 const OWN_RING = 4;
-const SHIELD_GAP = 7;
 const SECURING_RING = 9;
 
 function drawBody(v: View, g: GhostState, ownId: number | null): void {
@@ -102,7 +101,6 @@ function drawBody(v: View, g: GhostState, ownId: number | null): void {
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);
   ctx.fill();
-  if (g.flags & GHOST_SHIELDED) drawShield(v, g, r);
   if (g.flags & GHOST_SECURING) {
     ctx.strokeStyle = TEXT;
     ctx.lineWidth = 2;
@@ -126,29 +124,9 @@ export function ghostReach(
 ): number {
   const outside = [
     g.id === ownId ? OWN_RING + 1.5 : 0,
-    g.flags & GHOST_SHIELDED ? SHIELD_GAP + 1 : 0,
     g.flags & GHOST_SECURING ? SECURING_RING + 1 : 0,
   ];
   return r + Math.max(...outside);
-}
-
-// A hexagon around the body: a shape no other ring has, so it reads as "protected".
-function drawShield(v: View, g: GhostState, r: number): void {
-  const { ctx } = v;
-  const cx = sx(v, g.x);
-  const cy = sy(v, g.y);
-  const outer = r + SHIELD_GAP;
-  ctx.strokeStyle = SHIELD;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const a = -Math.PI / 2 + (i * Math.PI) / 3;
-    const [x, y] = [cx + outer * Math.cos(a), cy + outer * Math.sin(a)];
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-  ctx.stroke();
 }
 
 const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;

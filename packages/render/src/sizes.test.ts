@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import { coinRadiusPx } from './field.js';
-import { GHOST_SECURING, GHOST_SHIELDED } from '@seasonal-spirits/protocol';
+import { GHOST_SECURING } from '@seasonal-spirits/protocol';
 import { ghostRadiusPx, ghostReach } from './ghosts.js';
 import { fitField, type View } from './view.js';
 
@@ -26,7 +26,6 @@ describe('drawn sizes', () => {
   it('counts the outermost ring drawn around a ghost into the room its label keeps clear of', () => {
     expect(ghostReach(10, { id: 1, flags: 0 }, null)).toBe(10);
     expect(ghostReach(10, { id: 1, flags: 0 }, 1)).toBe(15.5); // own ring at +4, 3 px wide
-    expect(ghostReach(10, { id: 1, flags: GHOST_SHIELDED }, null)).toBe(18); // hexagon at +7
     // Own and securing: the securing ring at +9, 2 px wide, is the outer one.
     expect(ghostReach(10, { id: 1, flags: GHOST_SECURING }, 1)).toBe(20);
   });
