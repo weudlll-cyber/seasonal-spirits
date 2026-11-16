@@ -571,7 +571,8 @@ from 33.3 %, in points (0 = even).
 Grid: `stealShare` {0.15, 0.25, 0.35, 0.5} × `coinSpawnPerSecond` {1, 1.5, 2, 3} ×
 `carrySpeedFactor` {0.5, 0.7, 0.85} × `stealCooldownMs` {1000, 2000, 3000} ×
 `secureDurationMs` {2000, 3000}. Command: `pnpm fairness --grid --matches 30 --seed 1 --jobs
-8 --out reports/fairness/stage1-grid.json` (26 min 20 s, 8 processes on 14 cores; one
+8 --out reports/fairness/stage1-grid.json` (not in the repository since 2026-11-16, see
+"Raw data"; 26 min 20 s, 8 processes on 14 cores; one
 configuration alone 19.8 s with 48 % CPU load from a running `pnpm dev`; the whole grid was
 under 3 hours, so no dimension was dropped).
 
@@ -1002,7 +1003,8 @@ reports/human/round1-n30.json` (all variants of `src/human/variants.ts` up to `b
 CPU load 100 % in the snapshot before the start, VS Code, Docker and a browser open), then
 `--variant bots --out reports/human/round1-groups-n30.json` (the same bot matches, with the
 groups' start times) and `--variant T4 --variant "bots T4" --out
-reports/human/round1-t4-n30.json`. Times per variant 31–184 s.
+reports/human/round1-t4-n30.json` (the three files are not in the repository since
+2026-11-16, see "Raw data"). Times per variant 31–184 s.
 
 **The stand-in** (`src/human/standin.ts`) takes seat 1 (team rotating): it sees only a
 player's "Near" view, decides on the state a reaction time old, walks to the nearest coin it
@@ -1187,3 +1189,17 @@ swaps, 1304.2 steals, 39 125 steals.
   as late as everything else and aims perfectly; a real player with the fix sees the own
   ghost at once, which the model does not capture. What the owner felt as "almost
   impossible" is not explained by the client's delay alone.
+
+## Raw data
+
+Raw per-run outputs above 200 KB are not in the repository since 2026-11-16 (`.gitignore`; new
+ones go to `reports/raw/`). Every summary above names its N, seeds and config; the simulation
+is deterministic, so the same commit, command and seeds give the same file. The history still
+holds the old copies (`git show 3cce2d5:<file>`).
+
+| File                                   | What, N, seeds                                                     | Regenerate                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `reports/fairness/stage1-grid.json`    | Round 3 stage 1, 288 configurations × 30 matches, seeds 1–30       | on `7910509`: `pnpm fairness --grid --matches 30 --seed 1 --jobs 8 --out reports/fairness/stage1-grid.json`              |
+| `reports/human/round1-n30.json`        | Human round 1, the variants up to `bots T1+T2`, N = 30, seeds 1–30 | on `1d9b12e`: `pnpm human --matches 30 --seed 1 --out reports/human/round1-n30.json`                                     |
+| `reports/human/round1-groups-n30.json` | Human round 1, bots only with the groups' start times, same seeds  | on `3cce2d5`: `pnpm human --matches 30 --seed 1 --variant bots --out reports/human/round1-groups-n30.json`               |
+| `reports/human/round1-t4-n30.json`     | Human round 1, trial T4, same seeds                                | on `3cce2d5`: `pnpm human --matches 30 --seed 1 --variant T4 --variant "bots T4" --out reports/human/round1-t4-n30.json` |

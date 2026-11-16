@@ -205,3 +205,11 @@ behind (its own concern, unchanged); Windows timers make the server's 50 ms tick
 "until the state arrived" part reaches 60 ms at p90); the probe's `BUFFER_MS` stays 100; a
 size guard for raw files (a CI check) is not built — the rule lives in `.gitignore` and
 BALANCE.md.
+
+**Step 4, raw data out of the repository** (commit "chore: raw data out of the repository",
+no behaviour change): above 200 KB under `reports/` were `fairness/stage1-grid.json` and the
+three `human/round1-*.json` (2.6 MB the largest), besides the screenshots that were ignored
+already. They are untracked (`git rm --cached`: the owner's local copies stay) and listed in
+`.gitignore`, with `reports/raw/` for new ones; the history is not rewritten. BALANCE.md "Raw
+data" names each file's N, seeds and the commit and command that regenerate it. Files:
+`.gitignore` 10 → 17, BALANCE 1189 → 1205, BACKLOG (this commit), this sheet.
