@@ -11,22 +11,30 @@ export const FAIR_MAX = 0.6;
 const EVEN = 1 / STRATEGIES.length;
 
 // The changes a configuration makes to DEFAULT_CONFIG.
-export type Overrides = Partial<
-  Pick<GameConfig, 'coinSpawnPerSecond' | 'carrySpeedFactor' | 'secureDurationMs'>
->;
+export type Overrides = Partial<Pick<GameConfig, 'prices' | 'spawnWeights' | 'coinSpawnPerSecond'>>;
 
+// The stage-1 grid of V5 round 1 (CHAIN 2026-11-16-V5, piece 5): 4 price boards × 2 spawn
+// weightings × 2 spawn rates = 16 configurations.
 export const GRID = {
-  coinSpawnPerSecond: [1, 1.5, 2, 3],
-  carrySpeedFactor: [0.5, 0.7, 0.85],
-  secureDurationMs: [2000, 3000], // CONCEPT.md §2a: 2–3 s
+  prices: [
+    { inSeason: 4, next: 2, other: 1 },
+    { inSeason: 3, next: 2, other: 1 },
+    { inSeason: 5, next: 2, other: 1 },
+    { inSeason: 4, next: 3, other: 1 },
+  ],
+  spawnWeights: [
+    { inSeason: 1, next: 1, other: 1 }, // every season equally often
+    { inSeason: 0.5, next: 1, other: 1 }, // the season in season at half weight
+  ],
+  coinSpawnPerSecond: [2, 3],
 } as const;
 
 export function gridConfigs(): Overrides[] {
   const out: Overrides[] = [];
-  for (const coinSpawnPerSecond of GRID.coinSpawnPerSecond)
-    for (const carrySpeedFactor of GRID.carrySpeedFactor)
-      for (const secureDurationMs of GRID.secureDurationMs)
-        out.push({ coinSpawnPerSecond, carrySpeedFactor, secureDurationMs });
+  for (const prices of GRID.prices)
+    for (const spawnWeights of GRID.spawnWeights)
+      for (const coinSpawnPerSecond of GRID.coinSpawnPerSecond)
+        out.push({ prices: { ...prices }, spawnWeights: { ...spawnWeights }, coinSpawnPerSecond });
   return out;
 }
 

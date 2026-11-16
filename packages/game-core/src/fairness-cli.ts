@@ -99,14 +99,15 @@ function summary(rows: readonly Row[], top: number): string {
   const lines = [
     `${rows.filter((r) => r.meets).length} of ${rows.length} configurations have every style within ${band}.`,
     '',
-    `| spawn/s | carry | secure ms | ${STRATEGIES.join(' | ')} | distance |`,
+    `| prices | spawn weights | spawn/s | ${STRATEGIES.join(' | ')} | distance |`,
     `| --- | --- | --- | ${STRATEGIES.map(() => '---').join(' | ')} | --- |`,
   ];
   for (const r of rows.slice(0, top)) {
     const c = { ...DEFAULT_CONFIG, ...r.overrides };
     const shares = STRATEGIES.map((s) => pct(r.report.bestPlayerShare[s])).join(' | ');
+    const board = (b: typeof c.prices): string => `${b.inSeason}/${b.next}/${b.other}`;
     lines.push(
-      `| ${c.coinSpawnPerSecond} | ${c.carrySpeedFactor} | ${c.secureDurationMs} | ${shares} | ${r.distance.toFixed(1)} |`,
+      `| ${board(c.prices)} | ${board(c.spawnWeights)} | ${c.coinSpawnPerSecond} | ${shares} | ${r.distance.toFixed(1)} |`,
     );
   }
   return lines.join('\n');

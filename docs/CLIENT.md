@@ -193,8 +193,9 @@ clock reads "Match over".
 ## After the match
 
 The result screen comes from the server's recap message (since 2026-11-16) and lists the
-match's awards — "Closest save: Bot 30, 0.1 s left", "Last secure: Bot 13, 1"; one nobody
-earned is left out —, the teams and the top
+match's awards — "Best nose: Bot 7, 24 from held coins" (V5: the most points from coins
+carried across a halving), "Closest save: Bot 30, 0.1 s left", "Last secure: Bot 13, 4"; one
+nobody earned is left out —, the teams and the top
 eight players by secured value, the own place, the time to the next match, and the bridge
 box with the exact text of CONCEPT.md §8, "Start
 here" (the website's newcomer page, `https://stentertainment.net/start`), "Try the simulator"

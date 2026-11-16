@@ -1,9 +1,11 @@
 # Seasonal Spirits — Concept
 
-**Status:** concept phase closed 2026-11-14. This file is the English reference for the
-repository, derived from the owner's concept document v4.6 (German, kept by the owner). It
-changes only from the results of Phase 0 (network probe) and the fun gate (first evening with
-the community), not from further discussion rounds.
+**Status:** rebuilt to the owner's concept **V5.0** on 2026-11-16 (section 15). This file is
+the English reference for the repository, derived from the owner's concept document (German,
+kept by the owner; v4.6 until 2026-11-16, V5.0 since). It changes only from the owner's
+decisions, the results of Phase 0 (network probe) and the fun gate (first evening with the
+community), not from further discussion rounds. The V5 rules are built on the branch
+`feat/v5-rules`; the earlier game stays on `master` until the owner has played the new one.
 
 Seasonal Spirits is a real-time team game for the Seasonal Entertainment community. Four teams,
 named after the four Seasonal Tokens (Spring, Summer, Autumn, Winter), move their ghosts live
@@ -18,81 +20,59 @@ players steer themselves. Three rules follow from this purpose (decided 2026-11-
 1. **No crypto needed.** No wallet, no token, no price, no jargon in the game. A player signs
    in with the website account and plays.
 2. **The game teaches the Seasonal idea by playing, not by explaining.** After a few evenings
-   a player knows the four names and their order, that each has its moment, that you hold the
-   one that is in season, swap it before the turn, and that every turn of the season is a
-   halving after which the old season's coins are worth half. That is how Seasonal Tokens
-   work; nobody told them.
+   a player knows the four names and their order, that each has its moment, that at every
+   halving the next season's coin becomes the valuable one, and that holding it before it
+   rises pays. That is how Seasonal Tokens work; nobody told them.
 3. **The bridge is voluntary and comes afterwards.** After the match, one box on the result
    screen explains that what was just played is how Seasonal Tokens work, with a "Start here"
    button to the website's path for newcomers and a "Try the simulator" button to
    seasonaltokens.org, and the note "No financial advice" below. Switchable off in the
    configuration; on by default.
 
-## 2. The core: hold, swap, secure
+## 2. The core: hold, then secure at the right moment
 
-The real Seasonal Tokens rule: four tokens, each nine months "in season", produced fastest
-then; order Spring → Summer → Autumn → Winter → Spring. Swap tokens only for more tokens of
-another kind: hold the token in season, swap it into the next one when its value has risen.
-Production of each token halves every nine months. Patience is rewarded.
+The real Seasonal Tokens rule: four tokens, each nine months "in season"; order Spring →
+Summer → Autumn → Winter → Spring. When a season turns, the next token becomes the valuable
+one. Holding the next season's token before it rises is rewarded.
 
 Seasonal Spirits compresses the three-year cycle into five minutes. A match runs through the
 four seasons in the real order, 75 seconds each, starting with the season the tokens are
 really in right now (the website's season clock provides that).
 
-### 2a. The mechanics in five sentences
+### 2a. The mechanics in five sentences (V5.0, owner decision 2026-11-16)
 
-1. **Coins lie on the field, always only those of the current season.** In Spring, Spring
-   coins. (Mirror: the token in season is produced fastest.)
-2. **A coin is worth its full value when secured in its own season; outside it, half.**
-   (Mirror: the price rises in season.)
-3. **At the team's own shrine a player can swap carried coins: from 6 coins of the current
-   season on, every 2 become 3 of the next season (6 → 9, 10 → 15), never in the last
-   season.** Those are worth half now, full when their season comes, and nobody can steal
-   them until the next halving. (Mirror: swap for more tokens of another kind; patience
-   pays.)
-4. **Or secure: bank now, at the current value, and nothing can happen to them any more.**
-   Securing takes 2–3 seconds; the player is vulnerable meanwhile.
-5. **Whoever carries can be robbed and loses a random part, at least one coin.** That is the
-   market risk. A carrier is visible: larger, brighter, with a trail and a name; a carrier of
-   swapped coins shows a shield.
+1. **Coins of all four seasons fall on the field; anyone can pick up any coin.**
+2. **A price board shows what each season's coin is worth right now:** the season in season
+   is worth most, the next season less, the other two least.
+3. **Every 75 seconds the halving:** the next season comes into season and the prices move
+   on.
+4. **At the team's own shrine a player secures carried coins at the current prices;**
+   secured is safe; carrying slows a ghost down; whatever is not secured at the match end
+   counts nothing.
+5. **The team with the most secured points wins.**
 
-A patient player who swaps every season and is never robbed turns 10 coins into 15, then
-22, then 33. A cautious one secures early and has little, but safely. A hunter collects
-little and takes it from the carriers. All three are valid; the clock decides which is wise.
+Starting values (placeholders — the owner decides; the measurement informs): prices in
+season 4, next season 2, the other two 1; all four seasons fall equally often; 2 coins per
+second.
 
-Starting values (decided 2026-11-14, both configurable): swap 10 → 15 of the next season;
-half value outside the coin's own season. Adjusted on 2026-11-16 (section 14): the swap from
-6 coins at the same rate, swapped coins steal-proof until the next halving, a random steal
-share.
+Two ways to play are both valid: a **banker** secures the coins worth most now, early and
+before every halving; a **planner** collects the next season's coins while they are cheap,
+carries them across the halving and secures right after it. The fairness target: each
+style's best player wins 40–60 % of matches (section 15).
 
 ### 2b. The halving
 
-In reality every change of season is a halving, and the game does the same (decided
-2026-11-14, afternoon; section 13):
-
 - **Every season change inside a match is a halving** — in a 5-minute match at 1:15, 2:30
-  and 3:45, generally at every season boundary before the match end. The match end itself
-  is not one.
-- **At a halving the old season's coins stop falling and the new season's coins fall from
-  then on.** Old coins still lying on the field disappear. Each season's coins look
-  different (the season's own colour now, the real token logo later). The spawn rate stays
-  the same.
-- **Carried coins are not halved.** A carried coin of a season that is no longer current is
-  worth half (the value rule of 2a), so every halving is a deadline: secure or swap before
-  it. (Mirror: the token that leaves its season loses its premium; the patient holder has
-  already swapped into the next one.)
+  and 3:45. The match end itself is not one.
+- **At a halving the prices move on:** the next season comes into season. Field coins and
+  carried coins stay; only their prices change. A coin of the next season rises from 2 to 4;
+  the coin that was in season falls to 1.
 
-The halving is staged, not just computed, at every season change: a **countdown** on the
-season clock from 10 seconds before, for players and spectators alike; a large on-screen
-**announcement** ("HALVING — Summer is in season", with the new season's name) at the cut; a
-**short flash**, the new season's coins starting to fall and every carrier's old-season coins
-visibly switching to a "half value" look; and **one recognisable tone** — the only sound
-Phase 1 needs. The countdown is part of the mechanics: it makes the deadline visible to
-newcomers who cannot read the clock yet. Cheap (a server timestamp plus a client effect), so
-it belongs in Phase 1.
-
-Dropped with this decision: halving of carried coins, the centre pool ("Great Halving
-Loot"), the halved spawn rate after the halving, and the single halving moment at 3:45.
+The halving is staged, not just computed: a **countdown** on the season clock from 10 seconds
+before, for players and spectators alike; a large on-screen **announcement** ("HALVING —
+Summer is in season · prices move on") at the cut; a **short flash**; the price board
+framing the new season; and **one recognisable tone**. The match end is staged the same way
+("LAST CHANCE — secure now", then "MATCH OVER").
 
 ### 2c. The four rule changes from earlier drafts
 
@@ -103,14 +83,14 @@ newcomer understands within one match.
 ## 3. Why it works for people without crypto knowledge — and where it can fail
 
 Works because: the rules fit in five sentences; the vocabulary is the real one (Spring,
-Summer, Autumn, Winter, in season, halving, swap) with no game vocabulary to unlearn later;
+Summer, Autumn, Winter, in season, halving) with no game vocabulary to unlearn later;
 zero entry hurdle (website account, Discord optional, a phone is enough); watching is the
 step before playing.
 
 Fails if: the game preaches crypto (hence the bridge only after the match, one sentence, one
-button); the swap mechanics demand too much thinking (hence two labelled buttons at the
-shrine, "Secure (10 now)" and "Swap (15 Summer, worth 7 now / 15 later)" — the player reads,
-never calculates); the phone fails (the largest unverified weakness; Phase 0 and the fun gate).
+button); the prices demand too much thinking (hence the price board always in view, and one
+labelled button at the shrine, "Secure: 14" — the player reads, never calculates); the phone
+fails (the largest unverified weakness; Phase 0 and the fun gate).
 
 ## 4. Fixed decisions
 
@@ -174,14 +154,13 @@ that is the same language as the token community's.
 
 ## 8. Controls, graphics, technology
 
-**Controls:** virtual joystick (phone) or WASD/mouse (PC). On the field **one** action
-button: steals automatically from the nearest opponent in range — no aiming. At the team's
-own shrine the same spot shows **two labelled buttons**: "Secure (value now)" and "Swap
-(count next season, value now / later)". Carrying slows a ghost down. Reconnect: 10–15 s as a
-standing ghost, then a bot.
+**Controls:** virtual joystick (phone) or WASD/mouse (PC). At the team's own shrine **one**
+labelled button, "Secure: <points now>" (key 1). Carrying slows a ghost down. Reconnect:
+10–15 s as a standing ghost, then a bot. (Stealing, the swap and the team signals were
+removed with V5.)
 
-**Graphics:** simple ghosts in the four token colours; carried coins visible as size, glow,
-trail and name; **the coins carry the real token logos** — that is where the logos belong,
+**Graphics:** simple ghosts in the four token colours; carried coins visible as size, trail
+and name ("Bot 3 · 9"); the price board under the season clock; **the coins carry the real token logos** — that is where the logos belong,
 not as decoration at the edge. The map changes colour and light with the season; the season
 clock at the top shows the four symbols in order, the current one highlighted, the next
 announced. Effects in three levels. Priority: readability > recognisability > performance >
@@ -211,9 +190,8 @@ configuration, no code change on the website. Initially everything runs on one V
 Bingo.
 
 **Bridge after the match:** result screen, below it a box: "This is how Seasonal Tokens work:
-every season change is a halving, and the old season's coins are worth half after it — swap
-or secure before it comes." (Owner decision 2026-11-16; it said "expect less after the
-halving", an idea sections 2a and 2b dropped.) Two buttons: "Start
+at every halving the next season's coin becomes the valuable one — hold it before it rises."
+(V5, owner decision 2026-11-16.) Two buttons: "Start
 here" (the website's path for newcomers) and "Try the simulator" (seasonaltokens.org). Below:
 "No financial advice". Switchable off in the configuration.
 
@@ -226,8 +204,8 @@ numbers. Decision: continue, change technology, or change the concept.
 
 **Phase 1 — the game with its core.** One map, four teams, website login with player data from
 the website, **one** embedded website chat room (slug `seasonal-spirits`), season clock, coins of
-the four kinds with value by season, hold / swap / secure, stealing, a halving at every season
-change (with countdown, announcement, effect and one tone), 5-minute match, spectator view
+the four kinds with a price board, hold / secure, a halving at every season change that moves
+the prices on (with countdown, announcement, effect and one tone), 5-minute match, spectator view
 (no prediction), bots, practice match, bridge box, configuration file.
 
 **Fun gate.** One evening with the owner and members in a call. One question: does the game
@@ -241,6 +219,8 @@ score, seasonal ranking, recording, player of the evening, home-page box, weekly
 extra maps, commentator view, admin panel UI, better bot behaviour, special formats.
 
 ## 10. Owner decisions of 2026-11-14 (concept, all seven decided)
+
+Points 1 and 2 are replaced by V5 (section 15); the rest stands.
 
 1. Core: hold / swap / secure by the real token rule; the four rule changes become switchable
    Phase 3 specials.
@@ -308,6 +288,8 @@ website documentation tells games not to assume embedded calls (`docs/GAME-INTEG
 
 ## 13. Owner decision of 2026-11-14 (afternoon): halving = season change
 
+Points 2 and 3 are replaced by V5 (section 15): field coins stay, prices move on.
+
 Replaces the halving mechanics of section 2b and decision 3 of section 10; the staging stays.
 
 1. Every season change inside a match is a halving: at 75 s, 150 s and 225 s of a 5-minute
@@ -328,6 +310,9 @@ balance simulation checks it.
 
 ## 14. Owner decisions of 2026-11-15/16: the fair rules
 
+Replaced by V5 (section 15): the swap, stealing and the escort question are gone. Kept as the
+record of what was measured (`docs/BALANCE.md` rounds 4–7).
+
 Measured in balance rounds 4–7 (`docs/BALANCE.md`): with these rules each of the three styles
 (patient, cautious, hunter) has the best player of a match in 25–42 % of matches, on two
 separate sets of 300 seeded matches.
@@ -342,3 +327,21 @@ separate sets of 300 seeded matches.
 4. **No escort rule.** The trial rule "a carrier with a teammate close by cannot be robbed"
    is removed; it handed the game to the hunters.
 5. Coin spawn stays at 2 per second.
+
+## 15. Owner decisions of 2026-11-16: concept V5.0
+
+The game is rebuilt to the owner's concept V5.0 (sections 2, 2a, 2b above). Decided with it:
+
+1. **The rules** of section 2a; starting values as placeholders (prices 4 / 2 / 1, all four
+   seasons equally often, 2 coins per second); the measurement informs, the owner decides.
+2. **Stealing is out entirely** for now: no steal action, no shield, no hunter.
+3. **The swap is out**; the shrine has one action, Secure.
+4. **Team signals are removed.**
+5. **Fairness target** for the two bot styles (banker, planner): each style's best player
+   wins 40–60 % of matches.
+6. **Recap:** "Biggest steal" is replaced by **"Best nose"** — the most points secured from
+   coins carried across a halving; "Closest save" and "Last secure" stay.
+7. **Bridge text:** "This is how Seasonal Tokens work: at every halving the next season's coin
+   becomes the valuable one — hold it before it rises."
+8. **The old game stays on `master`** until the owner has played the new one; the V5 branch
+   is merged only with the owner's word.

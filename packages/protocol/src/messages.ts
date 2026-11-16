@@ -48,6 +48,7 @@ export interface ServerRecap {
   teams: [number, number, number, number]; // secured value per team
   players: { ghost: number; team: number; secured: number }[];
   awards: {
+    bestNose?: { ghost: number; value: number }; // points from coins carried across a halving
     closestSave?: { ghost: number; leftMs: number }; // started this long before its deadline
     lastSecure?: { ghost: number; value: number };
   };

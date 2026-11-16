@@ -91,7 +91,9 @@ async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
   const awards = page.locator('#result-awards li');
   await expect(awards.first()).toBeVisible();
   for (const text of await awards.allTextContents()) {
-    expect(text).toMatch(/^(Closest save.+, \d+\.\d s left|Last secure.+, \d+(\.5)?)$/);
+    expect(text).toMatch(
+      /^(Best nose.+, \d+(\.5)? from held coins|Closest save.+, \d+\.\d s left|Last secure.+, \d+(\.5)?)$/,
+    );
   }
   await expect(page.locator('#bridge-text')).toHaveText(
     "This is how Seasonal Tokens work: at every halving the next season's coin becomes the valuable one — hold it before it rises.",

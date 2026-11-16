@@ -52,7 +52,7 @@ loses the running match (CONCEPT.md §7).
 
 **Match recap** (owner decision 2026-11-16): in the tick a match ends every client — players
 and spectators — gets one text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,
-secured},…],"awards":{closestSave?,lastSecure?}}`: the core's result and the
+secured},…],"awards":{bestNose?,closestSave?,lastSecure?}}`: the core's result and the
 awards the match host folded from the match (`noteAwards`, docs/GAME-CORE.md); an award
 nobody earned is left out. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every

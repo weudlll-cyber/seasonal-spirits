@@ -86,8 +86,10 @@ export class ResultScreen {
 
 // The awards the match earned, short enough for a phone; none earned, none shown.
 function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
-  const { closestSave: save, lastSecure: last } = r.awards;
+  const { bestNose: nose, closestSave: save, lastSecure: last } = r.awards;
   const lines: [string, string][] = [];
+  // V5: the most points from coins carried across a halving.
+  if (nose) lines.push(['Best nose', `${name(nose.ghost)}, ${value(nose.value)} from held coins`]);
   if (save)
     lines.push(['Closest save', `${name(save.ghost)}, ${(save.leftMs / 1000).toFixed(1)} s left`]);
   if (last) lines.push(['Last secure', `${name(last.ghost)}, ${value(last.value)}`]);

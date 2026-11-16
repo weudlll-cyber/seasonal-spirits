@@ -68,6 +68,7 @@ describe('parseServerMessage: recap', () => {
     teams: [120, 99.5, 0, 33],
     players,
     awards: {
+      bestNose: { ghost: 7, value: 24 },
       closestSave: { ghost: 2, leftMs: 950 },
       lastSecure: { ghost: 11, value: 12.5 },
     },
@@ -95,6 +96,8 @@ describe('parseServerMessage: recap', () => {
       { ...recap, players: 'all' },
       { ...recap, awards: null },
       { ...recap, awards: { closestSave: { ghost: 2, leftMs: -1 } } },
+      { ...recap, awards: { bestNose: { ghost: 300, value: 24 } } },
+      { ...recap, awards: { bestNose: { ghost: 7, value: -4 } } },
       { ...recap, awards: { lastSecure: { ghost: 2, value: 'a lot' } } },
       { ...recap, players: [...players, ...players, { ghost: 1, team: 0, secured: 0 }] },
       { ...recap, pad: 'x'.repeat(4096) },

@@ -60,7 +60,7 @@ l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-
 Built on `feat/night-2026-11-16` (CLOSED, night piece 4): the result plus "Biggest steal",
 "Closest save" and "Last secure"; merged into `master` with the owner's approval of
 2026-11-16 (CLOSED). On `feat/v5-rules` "Biggest steal" is gone with stealing; "Best nose"
-replaces it in CHAIN 2026-11-16-V5 piece 4. Done when: the owner has played it.
+replaced it in CHAIN 2026-11-16-V5 piece 4 (CLOSED). Done when: the owner has played it.
 
 m. **Final countdown before the match end** (idea from a Copilot review, owner decision
 2026-11-16). Built on `feat/night-2026-11-16` (CLOSED, night piece 3): "LAST CHANCE — secure
@@ -482,6 +482,14 @@ Done when: the spec is green ten runs in a row.
   on screen when its shrine is just past the edge now moves wholly inside (`shrineLabelAt`,
   test; OPEN u) — commit "feat: V5 piece 3, the price board, and the piece 4 core".
 
+- 2026-11-16 — **V5 piece 4: bots, help, recap, bridge** (CHAIN 2026-11-16-V5, on
+  `feat/v5-rules`; the core went with piece 3): "Best nose" on the wire (`readRecap`, tests),
+  from the server's recap and on the result screen ("Best nose: <name>, <n> from held
+  coins"); CONCEPT.md rewritten to V5.0 (sections 1–3, 8, 9; 10, 13, 14 marked replaced; a new
+  section 15 with the decisions of 2026-11-16); the help's five rules and the bridge text came
+  with pieces 3 and 2; the V5 stage-1 grid in `fairness.ts` for piece 5 — commit "feat: V5
+  piece 4, recap, concept".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -689,3 +697,5 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; tests related to 62 files: 28 test files / 148 tests)                                                                                     | working tree of "feat: V5 piece 2, what V5 drops"                                                                                         | green                                                                                                                                                                                                                               | this commit                                                                                    |
 | 2026-11-16 | `pnpm e2e` (all specs, both sizes)                                                                                                                                                        | working tree during piece 3 (the tree changed while it ran)                                                                               | 5 passed, 3 failed: spectate expected the old banner text (fixed); phone play lost its page to a reload from my own edits during the run; phone readability: a shrine label half on screen (fixed, OPEN u)                          | this commit; the next run below                                                                |
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; game-core 15 files / 60 tests, the rest related: 30 files / 163 tests before the last fix)                                                | working tree of "feat: V5 piece 3, the price board, and the piece 4 core"                                                                 | green after the fixes (recap: a secure started before a halving no longer counts as carried across)                                                                                                                                 | this commit                                                                                    |
+| 2026-11-16 | `pnpm e2e` (all specs, both sizes)                                                                                                                                                        | `feat/v5-rules` after "feat: V5 piece 3, the price board, and the piece 4 core"                                                           | 8 passed, 2 skipped (desktop-only specs on the phone)                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; tests related to 79 files: 30 files / 164 tests)                                                                                          | working tree of "feat: V5 piece 4, recap, concept"                                                                                        | green                                                                                                                                                                                                                               | this commit                                                                                    |

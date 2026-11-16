@@ -10,10 +10,10 @@ const report = (banker: number, planner: number): BalanceReport =>
   ({ bestPlayerShare: { banker, planner } }) as BalanceReport;
 
 describe('fairness search', () => {
-  it('tries every one of the 24 grid configurations once', () => {
+  it('tries every one of the 16 grid configurations of V5 round 1 once', () => {
     const grid = gridConfigs();
-    expect(grid).toHaveLength(24);
-    expect(new Set(grid.map((c) => JSON.stringify(c))).size).toBe(24);
+    expect(grid).toHaveLength(16);
+    expect(new Set(grid.map((c) => JSON.stringify(c))).size).toBe(16);
   });
 
   it('accepts a configuration only when both styles win 40–60 % of matches', () => {

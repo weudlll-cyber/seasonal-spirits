@@ -39,10 +39,15 @@ type Awards = ServerRecap['awards'];
 // Each award is optional; one that is present must be whole, or the recap is dropped.
 function readAwards(a: unknown): Awards | null {
   if (!isObject(a)) return null;
-  const read = [optional(a.closestSave, readSave), optional(a.lastSecure, readLast)] as const;
+  const read = [
+    optional(a.bestNose, readGhostValue),
+    optional(a.closestSave, readSave),
+    optional(a.lastSecure, readGhostValue),
+  ] as const;
   if (read.includes(null)) return null;
-  const [closestSave, lastSecure] = read;
+  const [bestNose, closestSave, lastSecure] = read;
   const out: Awards = {};
+  if (bestNose) out.bestNose = bestNose;
   if (closestSave) out.closestSave = closestSave;
   if (lastSecure) out.lastSecure = lastSecure;
   return out;
@@ -62,7 +67,8 @@ function readSave(o: Record<string, unknown>): Awards['closestSave'] | null {
   return isIntIn(ghost, 0, 255) && isIntIn(leftMs, 0, MAX_LEFT_MS) ? { ghost, leftMs } : null;
 }
 
-function readLast(o: Record<string, unknown>): Awards['lastSecure'] | null {
+// A ghost and a value: "Best nose" and "Last secure".
+function readGhostValue(o: Record<string, unknown>): { ghost: number; value: number } | null {
   const { ghost, value } = o;
   return isIntIn(ghost, 0, 255) && isValue(value) ? { ghost, value } : null;
 }

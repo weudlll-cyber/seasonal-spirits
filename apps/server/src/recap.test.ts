@@ -43,6 +43,12 @@ describe('match recap', () => {
     });
   });
 
+  it('carries the best nose (V5) when someone earned it', () => {
+    const result = { players: [{ id: 3, team: 1 as const, secured: 30 }], teams: [0, 30, 0, 0] };
+    const awards = { ...NO_AWARDS, bestNose: { ghost: 3, value: 20 } };
+    expect(recapOf(result, awards).awards).toEqual({ bestNose: { ghost: 3, value: 20 } });
+  });
+
   it('is offered once at the end, during the pause for latecomers, never while a match runs', () => {
     const host = new MatchHost({ ...SHORT, resultPauseMs: 500 }, 8, 1);
     const fresh: number[] = [];
