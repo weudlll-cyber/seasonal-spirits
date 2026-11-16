@@ -1,4 +1,5 @@
-// Seasonal Spirits — the client's one WebSocket: hello, welcome, states, and what it sends.
+// Seasonal Spirits — the client's one WebSocket: hello, welcome, states, steal notices, the
+// match recap, and what it sends.
 // A player sends only a direction and the one action (the server is the only truth); the
 // direction goes out when it changes, at most every SEND_INTERVAL_MS, so a player stays well
 // inside the server's 20 messages per second. A spectator sends nothing after its hello.
@@ -9,6 +10,8 @@ import {
   trimBuffer,
   type BufferedState,
   type GameAction,
+  type ServerMessage,
+  type ServerRecap,
   type ServerState,
   type ServerSteal,
   type ServerWelcome,
@@ -25,6 +28,7 @@ export interface ConnectionEvents {
   onState: (s: ServerState) => void; // every state, in order, before it is buffered
   onMode: (mode: Mode, reason: 'full' | null) => void;
   onSteal: (steal: ServerSteal) => void; // a steal this player took part in
+  onRecap: (recap: ServerRecap) => void; // the match just ended: result and awards
 }
 
 export class Connection {
@@ -87,13 +91,25 @@ export class Connection {
       return;
     }
     const msg = typeof data === 'string' ? parseServerMessage(data) : null;
-    if (msg?.kind === 'welcome') {
-      this.welcome = msg;
-      this.setMode('player', null);
-    } else if (msg?.kind === 'spectating') {
-      this.setMode('spectator', msg.reason);
-    } else if (msg?.kind === 'steal' && this.mode === 'player') {
-      this.events.onSteal(msg);
+    if (msg) this.onText(msg);
+  }
+
+  // A text message that passed the shared reader.
+  private onText(msg: ServerMessage): void {
+    switch (msg.kind) {
+      case 'welcome':
+        this.welcome = msg;
+        this.setMode('player', null);
+        return;
+      case 'spectating':
+        this.setMode('spectator', msg.reason);
+        return;
+      case 'steal':
+        if (this.mode === 'player') this.events.onSteal(msg);
+        return;
+      case 'recap':
+        this.events.onRecap(msg);
+        return;
     }
   }
 

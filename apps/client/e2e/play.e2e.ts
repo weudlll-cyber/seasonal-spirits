@@ -51,9 +51,16 @@ test('join, move, shrine buttons, a halving, the last chance and the result with
   expect(moved, 'the own ghost moves').toBe(true);
   await shot(page, info, 'match');
 
-  // Back into the own shrine: the action button gives way to the two labelled buttons.
+  // Back into the own shrine: the action button gives way to the two labelled buttons, for
+  // three polls in a row: when the walk home crosses a match end, the new match puts the
+  // ghost into the shrine for a moment while the held direction still carries it on (seen
+  // 2026-11-16 when the spec joined late in a match).
   const shrine = page.locator('#shrine');
-  const atShrine = await steerTo(page, steer, ownShrine(team), () => shrine.isVisible());
+  let inShrineFor = 0;
+  const atShrine = await steerTo(page, steer, ownShrine(team), async () => {
+    inShrineFor = (await shrine.isVisible()) ? inShrineFor + 1 : 0;
+    return inShrineFor >= 3;
+  });
   expect(atShrine, 'the shrine buttons appear at the own shrine').toBe(true);
   await expect(page.locator('#secure')).toHaveText(/^Secure \(\d+(\.5)?\)$/);
   await expect(page.locator('#swap')).toHaveText(
@@ -84,6 +91,14 @@ async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
   const result = page.locator('#result');
   await expect(result).toBeVisible({ timeout: 10_000 });
   await expect(page.locator('#result-place')).toHaveText(/^Your place: \d+ of \d+/);
+  // The recap's awards: 32 bots for a minute always steal and secure.
+  const awards = page.locator('#result-awards li');
+  await expect(awards.first()).toBeVisible();
+  for (const text of await awards.allTextContents()) {
+    expect(text).toMatch(
+      /^(Biggest steal.+ took \d+ from .+|Closest save.+, \d+\.\d s left|Last secure.+, \d+(\.5)?)$/,
+    );
+  }
   await expect(page.locator('#bridge-text')).toHaveText(
     'This is how Seasonal Tokens work: hold the season, swap before it turns, expect less after the halving.',
   );

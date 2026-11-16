@@ -1,6 +1,7 @@
 // Seasonal Spirits — the text messages between client and server (state travels as binary).
 // Client → server: the hello, a direction, the one action. Server → client: the welcome or
-// the notice that the client watches instead. Shapes only; the readers check them.
+// the notice that the client watches instead, steal notices, the match recap. Shapes only;
+// the readers check them.
 
 // A player sends a direction (each component in [-1, 1]; the server clamps the magnitude)
 // and the one action of CONCEPT.md §8. Spectators send nothing after the hello.
@@ -48,7 +49,22 @@ export interface ServerSteal {
   coins: number;
 }
 
-export type ServerMessage = ServerWelcome | ServerSpectating | ServerSteal;
+// Server → every client, once when a match ends (and to a client that arrives during the
+// result pause): the result and the awards the match earned (owner decision 2026-11-16). An
+// award nobody earned is left out. Values in the game's units (halves allowed); names are the
+// client's (ghostName).
+export interface ServerRecap {
+  kind: 'recap';
+  teams: [number, number, number, number]; // secured value per team
+  players: { ghost: number; team: number; secured: number }[];
+  awards: {
+    biggestSteal?: { thief: number; victim: number; coins: number };
+    closestSave?: { ghost: number; leftMs: number }; // started this long before its deadline
+    lastSecure?: { ghost: number; value: number };
+  };
+}
+
+export type ServerMessage = ServerWelcome | ServerSpectating | ServerSteal | ServerRecap;
 
 // The name shown for a ghost, the same on every client. Development mode has no sign-in, so a
 // player is "Player <ghost>" until the website provides names (CONCEPT.md §12, point 2).

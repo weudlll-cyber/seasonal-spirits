@@ -17,6 +17,7 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 | `src/field.ts`      | Coin spawning and picking up                                                                           |
 | `src/actions.ts`    | Swap, secure, steal — each checks its own conditions; the shrine offer                                 |
 | `src/halving.ts`    | The halving at a season turn                                                                           |
+| `src/recap.ts`      | The match recap's three awards, folded from the events tick by tick                                    |
 | `src/separation.ts` | Soft separation: ghosts closer than `separationRadius` drift apart                                     |
 | `src/geometry.ts`   | Distances, clamping, shrine positions                                                                  |
 | `src/rng.ts`        | `mulberry32`, shared with the probe bots                                                               |
@@ -95,6 +96,14 @@ spawning, the end, the countdown.
   `result()` gives the secured value per player and per team. The match end is staged like a
   halving (owner decision 2026-11-16): the same `countdownMs` runs in its last 10 s, and a
   `match-end` event comes in exactly the tick the match ends; after that no countdown.
+- **Recap awards** (owner decision 2026-11-16; `src/recap.ts`, `noteAwards` folds each tick's
+  events into three running bests, nothing else kept): "Biggest steal" — the most coins in
+  one steal (thief, victim, coins; the first of equal steals keeps it); "Closest save" — the
+  completed secure that was started with the least time left before the deadline of its
+  season (the season whose values it banks at; the `secured` event carries that time as
+  `leftMs`) — since a secure always takes `secureDurationMs`, this ranks the same as "completed
+  closest to the deadline" but is never negative; "Last secure" — the last secure completed
+  before the match end (ghost, value). An award nobody earned stays `null`.
 
 ## Bots
 

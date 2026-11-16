@@ -49,7 +49,9 @@ export type MatchEvent =
   | { type: 'halving'; atMs: number; season: Season; fieldCoinsCleared: number; carried: number }
   | { type: 'swap'; ghost: number; from: Season; spent: number; got: number }
   | { type: 'secure-start'; ghost: number }
-  | { type: 'secured'; ghost: number; value: number }
+  // leftMs: time that was left before the deadline of the season the secure banks at, when it
+  // was started.
+  | { type: 'secured'; ghost: number; value: number; leftMs: number }
   | { type: 'secure-interrupted'; ghost: number }
   | { type: 'steal'; thief: number; victim: number; coins: number }
   // The match ended in this tick (owner decision 2026-11-16: "MATCH OVER" at the end).

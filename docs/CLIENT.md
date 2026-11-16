@@ -169,8 +169,11 @@ clock reads "Match over".
 
 ## After the match
 
-The result screen lists the teams and the top eight players by secured value, the own place,
-the time to the next match, and the bridge box with the exact text of CONCEPT.md §8, "Start
+The result screen comes from the server's recap message (since 2026-11-16) and lists the
+match's awards — "Biggest steal: Bot 11 took 3 from Bot 21", "Closest save: Bot 30, 0.1 s
+left", "Last secure: Bot 13, 1"; one nobody earned is left out —, the teams and the top
+eight players by secured value, the own place, the time to the next match, and the bridge
+box with the exact text of CONCEPT.md §8, "Start
 here" (the website's newcomer page, `https://stentertainment.net/start`), "Try the simulator"
 (`https://seasonaltokens.org`) and "No financial advice". `bridge.enabled` in `src/config.ts`
 switches the box off; it is on by default. The next match starts after the result pause.

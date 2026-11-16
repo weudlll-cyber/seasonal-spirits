@@ -6,17 +6,16 @@
 // from the server's state.
 
 import {
-  GHOST_BOT,
   GHOST_CAN_STEAL,
   RenderClock,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
   STATE_TO_END,
-  ghostName,
   interpolate,
   latestServerMs,
   stateAt,
+  type ServerRecap,
   type ServerState,
   type ServerSteal,
 } from '@seasonal-spirits/protocol';
@@ -25,7 +24,7 @@ import { Connection, type Mode } from './connection.js';
 import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
-import { ResultScreen } from './result.js';
+import { ResultScreen, nameIn } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
 import { DeadlineTone } from './sound.js';
 import { ViewToggle } from './view-mode.js';
@@ -60,6 +59,7 @@ const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 const result = new ResultScreen();
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
+let recap: ServerRecap | null = null; // of the match just ended, during the result pause
 
 const NOTICES: Record<Mode, string | null> = {
   connecting: 'Connecting…',
@@ -70,6 +70,7 @@ const NOTICES: Record<Mode, string | null> = {
 
 const conn = new Connection(spectate ? 'spectator' : 'player', {
   onState: (s: ServerState) => {
+    if (!(s.flags & STATE_RESULT)) recap = null; // a match runs: the last recap is over
     // Each deadline event is in one state only; every state passes here, so none is missed.
     if (!(s.flags & (STATE_HALVING_EVENT | STATE_MATCH_END_EVENT))) return;
     if (s.flags & STATE_HALVING_EVENT) halvings++;
@@ -88,14 +89,16 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
   onSteal: (steal) => {
     hud.toast(stealMessage(steal));
   },
+  onRecap: (r) => {
+    recap = r;
+  },
 });
 
 // "You stole 3 from Bot 7" / "Bot 7 stole 2 from you"; the other ghost named as everywhere.
 function stealMessage(steal: ServerSteal): string {
   const own = conn.welcome?.ghost;
   const other = steal.thief === own ? steal.victim : steal.thief;
-  const flags = conn.buffer.at(-1)?.state.ghosts.find((g) => g.id === other)?.flags ?? 0;
-  const name = ghostName(other, (flags & GHOST_BOT) !== 0);
+  const name = nameIn(conn.buffer.at(-1)?.state, other, null);
   return steal.thief === own
     ? `You stole ${steal.coins} from ${name}`
     : `${name} stole ${steal.coins} from you`;
@@ -159,7 +162,7 @@ function draw(f: Frame): Drawn {
   const ownFlags = f.latest?.ghosts.find((g) => g.id === f.ownId)?.flags ?? 0;
   const canSteal = (ownFlags & GHOST_CAN_STEAL) !== 0;
   hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0, canSteal);
-  result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId);
+  result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;
 }
 

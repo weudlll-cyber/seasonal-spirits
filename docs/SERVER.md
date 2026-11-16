@@ -61,6 +61,15 @@ values) for `resultPauseMs` (15 s, placeholder); then the next match starts with
 seed, the same players in the same slots, everyone back at the shrines. A server restart
 loses the running match (CONCEPT.md §7).
 
+**Match recap** (owner decision 2026-11-16): in the tick a match ends every client — players
+and spectators — gets one text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,
+secured},…],"awards":{biggestSteal?,closestSave?,lastSecure?}}`: the core's result and the
+awards the match host folded from the match (`noteAwards`, docs/GAME-CORE.md); an award
+nobody earned is left out. A client that says hello during the result pause gets the same
+recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
+field checked, at most 64 players, at most 4096 characters; THREATS row 33). Built in
+`src/recap.ts`; `src/client-record.ts` holds one client's record and message budget.
+
 ## The state message (`packages/protocol/src/state.ts`)
 
 One binary encoding, little endian; values (secured, offers) travel in halves:

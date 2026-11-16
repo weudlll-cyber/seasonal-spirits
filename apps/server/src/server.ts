@@ -16,6 +16,7 @@ import {
   type ServerSpectating,
   type ServerWelcome,
 } from '@seasonal-spirits/protocol';
+import { rawToText, withinRate, type ClientRecord } from './client-record.js';
 import { handleHttp } from './http-routes.js';
 import { MatchHost } from './match-host.js';
 import type { Scenario } from './scenario.js';
@@ -48,16 +49,6 @@ export interface ServerMetrics {
   maxStateBytes: number; // the largest since the window started
   startedAtMs: number;
   uptimeMs: number;
-}
-
-interface ClientRecord {
-  id: number;
-  kind: 'player' | 'spectator' | 'pending';
-  ws: WebSocket;
-  address: string;
-  messagesThisSecond: number;
-  messageWindowStart: number;
-  helloTimer: NodeJS.Timeout;
 }
 
 export class GameServer {
@@ -144,15 +135,25 @@ export class GameServer {
       });
       this.stateBytes = buf.byteLength;
       this.maxStateBytes = Math.max(this.maxStateBytes, buf.byteLength);
-      for (const c of this.clients.values()) {
-        if (c.kind !== 'pending' && c.ws.readyState === c.ws.OPEN) c.ws.send(buf, { binary: true });
-      }
+      this.sendToAll(buf);
       // Only the two players involved hear of a steal (THREATS row 29).
       for (const n of this.host.stealNotices())
         this.clients.get(n.clientId)?.ws.send(JSON.stringify(n.message));
+      // The match recap goes to everyone once, in the tick the match ended (THREATS row 33).
+      const recap = this.host.recapNow(true);
+      if (recap) this.sendToAll(JSON.stringify(recap));
       this.maxTickMs = Math.max(this.maxTickMs, Date.now() - tickStart);
       this.ticksInWindow++;
       this.accumulator -= stepMs;
+    }
+  }
+
+  // Every client past its hello: players and spectators.
+  private sendToAll(data: Uint8Array | string): void {
+    for (const c of this.clients.values()) {
+      if (c.kind === 'pending' || c.ws.readyState !== c.ws.OPEN) continue;
+      if (typeof data === 'string') c.ws.send(data);
+      else c.ws.send(data, { binary: true });
     }
   }
 
@@ -199,13 +200,14 @@ export class GameServer {
     else this.perAddress.delete(rec.address);
   }
 
+  // Every message counts against the per-second budget, valid or not; the rest is dropped.
   private handleMessage(rec: ClientRecord, data: RawData, isBinary: boolean): void {
     // A spectator sends nothing after its hello; any further message ends the connection.
     if (rec.kind === 'spectator') {
       rec.ws.close(POLICY_VIOLATION);
       return;
     }
-    if (!this.withinRate(rec) || isBinary) return;
+    if (!withinRate(rec, this.cfg.maxInputsPerSecond, Date.now()) || isBinary) return;
     const msg = parseClientMessage(rawToText(data));
     if (msg !== null) this.apply(rec, msg);
   }
@@ -227,34 +229,27 @@ export class GameServer {
     }
   }
 
-  // Every message counts against the per-second budget, valid or not; the rest is dropped.
-  private withinRate(rec: ClientRecord): boolean {
-    const now = Date.now();
-    if (now - rec.messageWindowStart >= 1000) {
-      rec.messageWindowStart = now;
-      rec.messagesThisSecond = 0;
-    }
-    rec.messagesThisSecond++;
-    return rec.messagesThisSecond <= this.cfg.maxInputsPerSecond;
-  }
-
   private hello(rec: ClientRecord, kind: 'player' | 'spectator'): void {
     if (rec.kind !== 'pending') return; // the first hello decides
     if (kind === 'spectator') {
       rec.kind = 'spectator';
-      return;
+    } else {
+      const slot = this.host.join(rec.id);
+      if (slot) {
+        rec.kind = 'player';
+        const name = ghostName(slot.ghost, false);
+        const welcome: ServerWelcome = { kind: 'welcome', ...slot, name };
+        rec.ws.send(JSON.stringify(welcome));
+      } else {
+        // Every slot already has a player: the client watches instead and sends nothing more.
+        rec.kind = 'spectator';
+        const notice: ServerSpectating = { kind: 'spectating', reason: 'full' };
+        rec.ws.send(JSON.stringify(notice));
+      }
     }
-    const slot = this.host.join(rec.id);
-    if (!slot) {
-      // Every slot already has a player: the client watches instead and must send nothing more.
-      rec.kind = 'spectator';
-      const notice: ServerSpectating = { kind: 'spectating', reason: 'full' };
-      rec.ws.send(JSON.stringify(notice));
-      return;
-    }
-    rec.kind = 'player';
-    const welcome: ServerWelcome = { kind: 'welcome', ...slot, name: ghostName(slot.ghost, false) };
-    rec.ws.send(JSON.stringify(welcome));
+    // Arriving during the result pause: the recap of the match just ended.
+    const recap = this.host.recapNow(false);
+    if (recap) rec.ws.send(JSON.stringify(recap));
   }
 
   metrics(): ServerMetrics {
@@ -291,10 +286,4 @@ export class GameServer {
   clientCount(): number {
     return this.clients.size;
   }
-}
-
-function rawToText(data: RawData): string {
-  if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
-  if (data instanceof ArrayBuffer) return Buffer.from(data).toString('utf8');
-  return data.toString('utf8');
 }
