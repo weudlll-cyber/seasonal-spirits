@@ -3,7 +3,8 @@
 `pnpm balance --matches <n> --seed <s> [--variant <name> ...]` plays n headless 32-bot
 matches of the game core (seeds s … s+n−1) and sums them up
 (`packages/game-core/src/balance.ts`, `balance-cli.ts`). Every match has 8 ghosts per team:
-3 patient, 3 cautious, 2 hunters (docs/GAME-CORE.md, "Bots"). Teams rotate: in match k every
+since V5 (2026-11-16) 4 bankers and 4 planners; rounds 1–7 below ran with 3 patient, 3
+cautious and 2 hunters under the rules before V5 (docs/GAME-CORE.md, "Bots"). Teams rotate: in match k every
 slot's team is shifted by k, so over the matches each slot plays from every corner and a
 team's numbers measure its side of the field.
 
@@ -13,8 +14,9 @@ What the tables show, each with its N:
   used that strategy; ties are split.
 - **Mean, median, p10, p90**: secured value per player and match (nearest-rank percentiles).
 - **Matches won** per team: the share of matches the team had the most secured value.
-- **Field coins gone at the halvings**: coins of the old season still on the field at the
-  three halvings, per match.
+- **Field coins gone at the halvings** (rounds 1–7): coins of the old season still on the
+  field at the three halvings, per match. Since V5 no field coin goes at a halving; instead
+  **coins carried across the halvings**, summed over a match's three halvings.
 
 The bots are simple state machines; the numbers say how these three strategies do against
 each other, not how people will play. No config default was changed: the owner decides.
@@ -1205,3 +1207,91 @@ holds the old copies (`git show 3cce2d5:<file>`).
 | `reports/human/round1-n30.json`        | Human round 1, the variants up to `bots T1+T2`, N = 30, seeds 1–30 | on `1d9b12e`: `pnpm human --matches 30 --seed 1 --out reports/human/round1-n30.json`                                     |
 | `reports/human/round1-groups-n30.json` | Human round 1, bots only with the groups' start times, same seeds  | on `3cce2d5`: `pnpm human --matches 30 --seed 1 --variant bots --out reports/human/round1-groups-n30.json`               |
 | `reports/human/round1-t4-n30.json`     | Human round 1, trial T4, same seeds                                | on `3cce2d5`: `pnpm human --matches 30 --seed 1 --variant T4 --variant "bots T4" --out reports/human/round1-t4-n30.json` |
+
+## V5 round 1 — the price board (2026-11-16, `feat/v5-rules`, CHAIN 2026-11-16-V5)
+
+The rules of concept V5.0 (CONCEPT.md §2a, §15): coins of all four seasons fall, a price board
+prices each coin by its season's relation to the season in season (in season / next / the
+other two), every halving moves the prices on, secure at the own shrine; no stealing, no
+swap. Two bot styles, 4 of each per team: **banker** (today's valuable coins, secures from a
+load worth 12 and before every deadline) and **planner** (the next season's coins, carried
+across the halving, secured right after it and before the end). Target (owner decision
+2026-11-16): each style's best player wins 40–60 % of matches.
+
+Config: the defaults of `packages/game-core/src/config.ts` on `feat/v5-rules` (5:00 match,
+four seasons of 75 s from Spring, field 2000, speed 300, carrying × 0.7, secure 2.5 s, field
+coins at most 60, `bots.bankerSecureValue` 12, `deadlineMarginMs` 3000, `waypointMs` 4000)
+with these three changed per configuration: `prices` {4/2/1, 3/2/1, 5/2/1, 4/3/1} ×
+`spawnWeights` {1/1/1 equal, 0.5/1/1 the season in season at half weight} ×
+`coinSpawnPerSecond` {2, 3} = 16. Command: `pnpm fairness --grid --matches 30 --seed 1
+--jobs 6` (stage 1), `pnpm fairness --configs <the qualifying six> --matches 300 --seed 1
+--jobs 6` (stage 2); raw files `reports/raw/v5-stage1-n30.json`, `v5-stage2-n300.json`
+(git-ignored). Machine: 14 logical cores, 6 jobs. Background load (Windows' processor load):
+8 % before stage 1, 1 % right after; 22 % before stage 2, 97 % during it. Stage 1 took 66 s,
+stage 2 229 s. The load during stage 2 was more than 6 jobs explain (a dev server with 32
+bots was running); the numbers do not depend on it — every match is seeded and
+deterministic.
+
+Columns: best player of the match per style; secured points per player and match, median
+(p10–p90); matches won per team; coins carried across the halvings per match (median).
+
+### Stage 1 — 16 configurations × 30 matches (seeds 1–30)
+
+| prices | spawn weights | spawn/s | banker best | planner best | banker secured median (p10â€“p90) | planner secured median (p10â€“p90) | team wins Sp/Su/Au/Wi     | carried across / match (median) |
+| ------ | ------------- | ------- | ----------- | ------------ | --------------------------------- | ---------------------------------- | ------------------------- | ------------------------------- |
+| 4/3/1  | 1/1/1         | 3       | 52.2 %      | 47.8 %       | 60.0 (39.0â€“87.0)                | 60.0 (41.0â€“86.0)                 | 16.7 / 45.0 / 21.7 / 16.7 | 361                             |
+| 5/2/1  | 1/1/1         | 2       | 46.7 %      | 53.3 %       | 39.0 (23.0â€“59.0)                | 41.0 (24.0â€“60.0)                 | 10.0 / 36.7 / 13.3 / 40.0 | 243                             |
+| 4/2/1  | 1/1/1         | 3       | 43.3 %      | 56.7 %       | 54.0 (34.0â€“75.0)                | 53.0 (36.0â€“78.0)                 | 20.0 / 30.0 / 16.7 / 33.3 | 363                             |
+| 3/2/1  | 1/1/1         | 2       | 43.3 %      | 56.7 %       | 30.0 (19.0â€“45.0)                | 32.0 (20.0â€“45.0)                 | 33.3 / 20.0 / 16.7 / 30.0 | 246                             |
+| 4/3/1  | 1/1/1         | 2       | 41.7 %      | 58.3 %       | 38.0 (23.0â€“57.0)                | 42.0 (26.0â€“58.0)                 | 20.0 / 20.0 / 20.0 / 40.0 | 247                             |
+| 4/2/1  | 1/1/1         | 2       | 40.0 %      | 60.0 %       | 34.0 (20.0â€“52.0)                | 36.5 (22.0â€“53.0)                 | 16.7 / 36.7 / 16.7 / 30.0 | 246                             |
+| 5/2/1  | 1/1/1         | 3       | 61.7 %      | 38.3 %       | 61.0 (40.0â€“87.0)                | 59.0 (40.0â€“83.0)                 | 21.7 / 48.3 / 10.0 / 20.0 | 361                             |
+| 4/3/1  | 0.5/1/1       | 3       | 33.3 %      | 66.7 %       | 54.0 (35.0â€“75.0)                | 63.0 (43.0â€“87.0)                 | 26.7 / 26.7 / 13.3 / 33.3 | 362                             |
+| 3/2/1  | 1/1/1         | 3       | 31.7 %      | 68.3 %       | 47.0 (30.0â€“64.0)                | 47.0 (32.0â€“67.0)                 | 18.3 / 36.7 / 11.7 / 33.3 | 364                             |
+| 3/2/1  | 0.5/1/1       | 2       | 23.3 %      | 76.7 %       | 27.0 (17.0â€“39.0)                | 33.0 (21.0â€“47.0)                 | 26.7 / 21.7 / 16.7 / 35.0 | 246                             |
+| 3/2/1  | 0.5/1/1       | 3       | 23.3 %      | 76.7 %       | 41.0 (27.0â€“58.0)                | 50.0 (33.0â€“68.0)                 | 16.7 / 33.3 / 30.0 / 20.0 | 368                             |
+| 5/2/1  | 0.5/1/1       | 2       | 16.7 %      | 83.3 %       | 31.0 (19.0â€“48.0)                | 43.0 (26.0â€“63.0)                 | 25.0 / 18.3 / 21.7 / 35.0 | 248                             |
+| 4/3/1  | 0.5/1/1       | 2       | 16.7 %      | 83.3 %       | 34.0 (22.0â€“51.0)                | 43.0 (26.0â€“62.0)                 | 20.0 / 21.7 / 21.7 / 36.7 | 247                             |
+| 5/2/1  | 0.5/1/1       | 3       | 15.0 %      | 85.0 %       | 49.0 (31.0â€“73.0)                | 63.0 (40.0â€“88.0)                 | 30.0 / 30.0 / 11.7 / 28.3 | 365                             |
+| 4/2/1  | 0.5/1/1       | 3       | 11.1 %      | 88.9 %       | 45.5 (30.0â€“66.0)                | 56.0 (37.0â€“75.0)                 | 38.3 / 20.0 / 25.0 / 16.7 | 366                             |
+| 4/2/1  | 0.5/1/1       | 2       | 10.0 %      | 90.0 %       | 29.0 (19.0â€“44.0)                | 38.0 (24.0â€“53.0)                 | 20.0 / 20.0 / 23.3 / 36.7 | 245                             |
+
+Six of 16 have both styles within 40–60 %; all six have equal spawn weights. With the season
+in season at half weight the planner wins 67–90 %: fewer coins of the season in season make
+the banker's coins rarer, while the next season's coins the planner wants stay common.
+
+### Stage 2 — the six qualifying configurations × 300 matches (seeds 1–300)
+
+| prices | spawn weights | spawn/s | banker best | planner best | banker secured median (p10â€“p90) | planner secured median (p10â€“p90) | team wins Sp/Su/Au/Wi     | carried across / match (median) |
+| ------ | ------------- | ------- | ----------- | ------------ | --------------------------------- | ---------------------------------- | ------------------------- | ------------------------------- |
+| 4/2/1  | 1/1/1         | 2       | 48.5 %      | 51.5 %       | 35.0 (21.0â€“52.0)                | 36.0 (22.0â€“53.0)                 | 20.5 / 33.0 / 21.8 / 24.7 | 244                             |
+| 4/2/1  | 1/1/1         | 3       | 48.1 %      | 51.9 %       | 53.0 (34.0â€“76.0)                | 54.0 (36.0â€“76.0)                 | 22.2 / 38.0 / 17.5 / 22.3 | 362                             |
+| 5/2/1  | 1/1/1         | 2       | 48.0 %      | 52.0 %       | 39.0 (23.0â€“60.0)                | 41.0 (25.0â€“60.0)                 | 20.3 / 31.8 / 22.0 / 25.8 | 243                             |
+| 4/3/1  | 1/1/1         | 2       | 45.3 %      | 54.7 %       | 39.0 (24.0â€“59.0)                | 41.0 (26.0â€“59.0)                 | 21.3 / 31.7 / 19.2 / 27.8 | 243                             |
+| 4/3/1  | 1/1/1         | 3       | 56.1 %      | 43.9 %       | 60.0 (39.0â€“87.0)                | 60.0 (40.0â€“84.0)                 | 20.5 / 38.8 / 16.8 / 23.8 | 359                             |
+| 3/2/1  | 1/1/1         | 2       | 39.7 %      | 60.3 %       | 30.0 (19.0â€“44.0)                | 32.0 (20.0â€“47.0)                 | 21.8 / 32.5 / 22.7 / 23.0 | 246                             |
+
+### The human stand-in (desktop view, 300 ms; `pnpm human --variant desktop`, N = 30, seeds 1–30)
+
+The best stage-2 configuration is the default itself (4/2/1, equal weights, 2 coins/s), so
+one run covers both. Per match: coins picked up 18.1 mean (median 18, p10 11, p90 25);
+secured 33.8 (34, 16, 52); rank 17.4 of 32 (median 17.5, p10 2, p90 31). The bots in the same
+matches: banker 35.0 secured (35, 21, 50), planner 37.9 (37, 24, 52); best bot banker 40.0 %,
+planner 60.0 %. Raw file `reports/raw/v5-human-default.json`.
+
+### V5 round 1: what the numbers say
+
+- The concept's starting values (4/2/1, equal, 2/s) are the most even of all 16: 48.5 % /
+  51.5 % at N = 300. 4/2/1 at 3 coins/s (48.1 / 51.9) and 5/2/1 at 2/s (48.0 / 52.0) are as
+  close; 4/3/1 at 3/s turns to the banker (56.1 %), 3/2/1 at 2/s just leaves the band towards
+  the planner (60.3 %).
+- Weighting the season in season down breaks the balance in every case: the planner wins
+  67–90 % at N = 30.
+- Both styles secure about the same (medians 35 and 36 points at the defaults): the two ways
+  of playing are worth the same, which the target asks for.
+- A human stand-in that collects the nearest coin it sees and secures before every deadline
+  lands mid-field (median rank 17.5 of 32) with about what a bot secures.
+- Team Summer wins 32–39 % at N = 300 in every configuration instead of 25 %. Teams rotate
+  through the slots, so this is the field side of Summer's shrine, not its players; worth a
+  look before the owner decides (not part of this round).
+- No default was changed: prices and spawn values are the owner's to decide.

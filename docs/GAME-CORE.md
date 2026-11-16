@@ -144,6 +144,8 @@ every group of more than four ghosts within twice a shrine's radius. Every picku
 `pickup` event (`src/field.ts`). `--reaction <ms>` (may repeat) adds a desktop stand-in with
 that delay (`desktopAt` in `variants.ts`); the delay counts in whole ticks: the stand-in
 decides on the newest state at least that old, so 258 ms act as 300 ms and 363 ms as 400 ms.
+`--config <file>` runs the round on one set of config overrides (a JSON object, the shape
+`pnpm fairness --configs` lists; V5 round 1).
 
 ## `pnpm simulate --seed <n>`
 

@@ -92,6 +92,11 @@ half-value rule removed (piece 2), the price board and spawning of all four seas
 stays on `master`. Done when: the owner has played `feat/v5-rules`, decided the prices and
 spawn values, and merged it or said what to change.
 
+w. **Team Summer's side of the field** (V5 round 1, BALANCE.md): Team Summer wins 32–39 % of
+matches at N = 300 in every configuration instead of 25 %; teams rotate through the slots,
+so it is the side of its shrine. Done when: the cause is found (shrine position, start
+spread, bot routes) and the owner has decided whether to even it out.
+
 u. **Readability spec, one intermittent frame** (seen 2026-11-16 in session LOOK-B): once on
 desktop both upper shrine labels at y 89–108, above the bar, and the own shrine label under
 a control; the next run green, CI green before. Seen again in CHAIN V5 on the phone: a
@@ -490,6 +495,12 @@ Done when: the spec is green ten runs in a row.
   with pieces 3 and 2; the V5 stage-1 grid in `fairness.ts` for piece 5 — commit "feat: V5
   piece 4, recap, concept".
 
+- 2026-11-16 — **V5 piece 5: measurement** (CHAIN 2026-11-16-V5): V5 round 1 in BALANCE.md —
+  stage 1, 16 configurations × 30 seeds; stage 2, the six within 40–60 % × 300 seeds; the
+  concept's starting values (4/2/1, equal, 2 coins/s) are the most even, 48.5 % / 51.5 %; the
+  human stand-in on them lands mid-field (median rank 17.5 of 32). `pnpm human --config` for
+  the stand-in on other values. No default changed — commit "docs: V5 piece 5, round 1".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -699,3 +710,6 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; game-core 15 files / 60 tests, the rest related: 30 files / 163 tests before the last fix)                                                | working tree of "feat: V5 piece 3, the price board, and the piece 4 core"                                                                 | green after the fixes (recap: a secure started before a halving no longer counts as carried across)                                                                                                                                 | this commit                                                                                    |
 | 2026-11-16 | `pnpm e2e` (all specs, both sizes)                                                                                                                                                        | `feat/v5-rules` after "feat: V5 piece 3, the price board, and the piece 4 core"                                                           | 8 passed, 2 skipped (desktop-only specs on the phone)                                                                                                                                                                               | this commit                                                                                    |
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck; tests related to 79 files: 30 files / 164 tests)                                                                                          | working tree of "feat: V5 piece 4, recap, concept"                                                                                        | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-16 | `pnpm fairness --grid --matches 30 --seed 1 --jobs 6` (V5 stage 1)                                                                                                                        | `feat/v5-rules` at "feat: V5 piece 4, recap, concept"                                                                                     | 6 of 16 within 40–60 %; 66 s; load 8 % before, 1 % after                                                                                                                                                                            | BALANCE.md "V5 round 1"; `reports/raw/v5-stage1-n30.json`                                      |
+| 2026-11-16 | `pnpm fairness --configs <six> --matches 300 --seed 1 --jobs 6` (V5 stage 2)                                                                                                              | same tree                                                                                                                                 | 5 of 6 within 40–60 %; best 4/2/1 equal 2/s at 48.5 / 51.5 %; 229 s; load 22 % before, 97 % during                                                                                                                                  | BALANCE.md; `reports/raw/v5-stage2-n300.json`                                                  |
+| 2026-11-16 | `pnpm human --matches 30 --seed 1 --variant desktop` (defaults = best stage-2 configuration)                                                                                              | same tree (the `--config` option added after it, not used by this run)                                                                    | 18.1 coins, 33.8 secured, median rank 17.5 of 32 per match                                                                                                                                                                          | BALANCE.md; `reports/raw/v5-human-default.json`                                                |

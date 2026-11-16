@@ -1,14 +1,17 @@
 // Seasonal Spirits — `pnpm human --matches <n> --seed <s> [--variant <name> ...]
-// [--reaction <ms> ...] [--out <file>]`: the human round of session 2026-11-16-HUMAN
-// (human/round.ts) for the named variants (human/variants.ts) and for desktop stand-ins with
-// the given delays; every variant without either. Prints a Markdown summary, every number with its
-// N, and writes every report to --out as JSON.
+// [--reaction <ms> ...] [--config <file>] [--out <file>]`: the human round of session
+// 2026-11-16-HUMAN (human/round.ts) for the named variants (human/variants.ts) and for desktop
+// stand-ins with the given delays; every variant without either. `--config` names a JSON file
+// with one set of overrides of the default config (as `pnpm fairness --configs` lists them).
+// Prints a Markdown summary, every number with its N, and writes every report to --out as
+// JSON.
 
 import fs from 'node:fs';
 import type { Spread } from './balance.js';
 import { STRATEGIES } from './bots/strategies.js';
 import { listArg, numberArg, textArg } from './cli-args.js';
 import { DEFAULT_CONFIG } from './config.js';
+import type { Overrides } from './fairness.js';
 import { runHumanRound, type HumanReport } from './human/round.js';
 import { HUMAN_VARIANTS, desktopAt } from './human/variants.js';
 
@@ -33,6 +36,10 @@ const reactions = listArg(argv, '--reaction').map((raw) => {
 });
 const named = HUMAN_VARIANTS.filter((v) => names.includes(v.name));
 const chosen = names.length + reactions.length > 0 ? [...named, ...reactions] : HUMAN_VARIANTS;
+const configFile = textArg(argv, '--config');
+const cfg = configFile
+  ? { ...DEFAULT_CONFIG, ...(JSON.parse(fs.readFileSync(configFile, 'utf8')) as Overrides) }
+  : DEFAULT_CONFIG;
 
 const n1 = (x: number): string => x.toFixed(1);
 const cells = (s: Spread): string =>
@@ -64,7 +71,7 @@ function print(r: HumanReport, ms: number): void {
 const reports: HumanReport[] = [];
 for (const v of chosen) {
   const started = Date.now();
-  const r = runHumanRound(DEFAULT_CONFIG, v, matches, seed);
+  const r = runHumanRound(cfg, v, matches, seed);
   print(r, Date.now() - started);
   reports.push(r);
 }
