@@ -1,5 +1,7 @@
 # Seasonal Spirits — Concept
 
+> **Paused:** Seasonal Spirits paused 2026-11-16 by the owner; V5 prototype kept as tag v5-prototype; master is the last merged Spirits state (look B, pre-V5 rules).
+
 **Status:** concept phase closed 2026-11-14. This file is the English reference for the
 repository, derived from the owner's concept document v4.6 (German, kept by the owner). It
 changes only from the results of Phase 0 (network probe) and the fun gate (first evening with
