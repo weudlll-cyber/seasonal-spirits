@@ -60,24 +60,20 @@ owner has played it on PC and phone and decided the two separation placeholders
 
 l. **Match recap with awards** (idea from a Copilot review, owner decision 2026-11-16).
 Built on `feat/night-2026-11-16` (CLOSED, night piece 4): the result plus "Biggest steal",
-"Closest save" and "Last secure". Done when: the owner has played it and merged the branch.
+"Closest save" and "Last secure"; merged into `master` with the owner's approval of
+2026-11-16 (CLOSED). Done when: the owner has played it.
 
 m. **Final countdown before the match end** (idea from a Copilot review, owner decision
 2026-11-16). Built on `feat/night-2026-11-16` (CLOSED, night piece 3): "LAST CHANCE — secure
-now", then "MATCH OVER". Done when: the owner has played it and merged the branch.
+now", then "MATCH OVER"; merged into `master` (CLOSED). Done when: the owner has played it.
 
 n. **Team signals** (idea from a Copilot review, owner decision 2026-11-16). Built on
 `feat/night-2026-11-16` (CLOSED, night piece 5) with keys 3 and 4 — the task asked for 1
-and 2, which are Secure and Swap. Done when: the owner has decided the keys, played it and
-merged the branch.
+and 2, which are Secure and Swap; merged into `master` (CLOSED). Done when: the owner has
+decided the keys and played it.
 
 o. **A fixed map with routes** (idea from a Copilot review). Later, owner decides. Done
 when: the owner has decided whether and how.
-
-p. **Bridge box wording.** The result screen's bridge text (CONCEPT.md §8, word for word in
-`apps/client/src/config.ts`) still says "expect less after the halving" — the idea CONCEPT.md
-§1 dropped on 2026-11-16 (every season change is a halving; the old season's coins are
-worth half). Owner's text, left as it is. Done when: the owner has decided the wording.
 
 q. **Hunters robbing hunters** (measured in the night sheet 2026-11-16, piece 7: 92 % of all
 steals, a pair trading coins once a second for a median 4 s and up to 71 s). Proposal: a
@@ -86,16 +82,14 @@ ghost it just robbed or was robbed by alone for a while (`bots.hunterGrudgeMs`).
 the owner has decided; if built, the Round 7 fairness check runs again on both seed sets.
 
 r. **A human against bots** (owner's observation 2026-11-16: almost impossible to collect
-coins; groups at the shrines). Measured on `feat/human-feel` (BALANCE.md "Human round 1"): a
-stand-in with a desktop view and 300 ms reaction out-collects the bots, but falls behind at
-600 ms; no bot trial is both fair and a help, the recommendation is none of them. Then the
-client's own delay (BALANCE.md "Response"): 113 ms from a key to the drawn movement, now 8 ms
-with the own ghost predicted (display only) and the direction sent at once; coins from the
-newest state. For the stand-in that is worth little (rank 13.0 → 13.6 of 32, within the
-spread). New placeholders in the client: `SEND_GAP_MS` (60), `PREDICTION_LAG_MS` (40),
+coins; groups at the shrines). Measured (BALANCE.md "Human round 1" and "Response"); the bot
+trial switches T1–T4 were removed unused (owner decision 2026-11-16, CLOSED); the human
+stand-in (`pnpm human`) and the latency tool (`pnpm latency`) stay as measurement tools. The
+responsive client (own ghost predicted, display only; direction sent at once; coins from the
+newest state: 113 ms → 8 ms from a key to the drawn movement) is merged into `master`
+(CLOSED). New placeholders in the client: `SEND_GAP_MS` (60), `PREDICTION_LAG_MS` (40),
 `CORRECTION_MS` (150), `SNAP_DISTANCE` (100). Done when: the owner has played the responsive
-client, decided the four placeholders and which bot trial (if any) goes into the game, and
-merged or dropped the branch.
+client and decided the four placeholders.
 
 ## CLOSED
 
@@ -414,6 +408,27 @@ merged or dropped the branch.
   `reports/raw/`; BALANCE.md "Raw data" names for each its N, seeds and the commit and command
   that regenerate it; history not rewritten — commit "chore: raw data out of the repository"
   on `feat/human-feel`.
+- 2026-11-16 — **Bot trial switches removed** (MERGE 2026-11-16, step 1, owner decision:
+  unused): `bots.viewRadius` (T1), `bots.reactionMs` (T2), the 16-bot seat count (T3,
+  `botSeats`), `bots.deadlineSpreadMs` (T4), the trial variants, `configOf` and the T4 test;
+  `perception.ts` and its test moved from `bots/` to `human/` (only the stand-in uses them),
+  `ViewHalfSize` with them; `bots/common.ts` and `bots/strategies.ts` are `master`'s again.
+  BALANCE.md "Human round 1" rows stay as history (repeat on `3cce2d5`). `pnpm balance` seeds
+  1–30 unchanged — commit "chore: trial switches out, bridge text, steal ring and shrine
+  labels" on `feat/human-feel`.
+- 2026-11-16 — **Bridge box wording** (was OPEN p; MERGE 2026-11-16, step 2): "This is how
+  Seasonal Tokens work: every season change is a halving, and the old season's coins are
+  worth half after it — swap or secure before it comes." (CONCEPT.md §2a/§2b; §8 and
+  `apps/client/src/config.ts` changed together) — same commit.
+- 2026-11-16 — **Steal range ring on `canSteal`** (MERGE 2026-11-16, step 2): the ring shows
+  only while the server's `GHOST_CAN_STEAL` is set, the flag that lights the Steal button, so
+  never beside a carrier of only steal-proof coins; `shield.e2e.ts` and `feedback.e2e.ts`
+  check it — same commit.
+- 2026-11-16 — **Shrine labels off ghost bodies** (MERGE 2026-11-16, step 2): `shrineLabelAt`
+  (packages/render) prefers a spot free of the HUD controls and the ghosts drawn this frame,
+  then one free of the controls only, and says when it had to sit on a ghost; `bodyBox` shared
+  with the name labels; client and viewer pass their drawn ghosts; a pure-function test and a
+  new fault in `readability.e2e.ts` — same commit.
 
 ## CHECKS DONE
 
@@ -602,3 +617,8 @@ merged or dropped the branch.
 | 2026-11-16 | `pnpm verify:changed` (all: format, lint, typecheck, 42 test files / 217 tests)                                                                                                           | working tree of "feat: own ghost answers at once, latency measurement"                                                                    | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-16 | size scan `find reports -type f -size +200k`                                                                                                                                              | `db47696`                                                                                                                                 | four JSON files (stage1-grid, round1-n30, round1-groups-n30, round1-t4-n30) and the git-ignored screenshots                                                                                                                         | session sheet "Response"                                                                       |
 | 2026-11-16 | `prettier --check` on the changed docs (documentation-only commit: no tests, no typecheck)                                                                                                | working tree of "chore: raw data out of the repository"                                                                                   | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | CI and CodeQL on GitHub                                                                                                                                                                   | `8ee5752`, `cad5994` on `feat/night-2026-11-16` (docs only, CI skips them)                                                                | CodeQL for `8ee5752` cancelled (superseded by the next push), for `cad5994` success (43787397162)                                                                                                                                   | `gh run list --branch feat/night-2026-11-16`                                                   |
+| 2026-11-16 | CI and CodeQL on GitHub                                                                                                                                                                   | `db47696`, `b783a3c` on `feat/human-feel`                                                                                                 | CI for `db47696` cancelled (superseded by the next push), CodeQL success (43858337250); CI and CodeQL for `b783a3c` success (CI 43858523850, CodeQL 43858523746)                                                                    | `gh run list --branch feat/human-feel`                                                         |
+| 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1` with the trial switches removed                                                                                                    | working tree of "chore: trial switches out, bridge text, steal ring and shrine labels"                                                    | identical: 26.7 / 43.3 / 30.0 %, 8.7 swaps, 1304.2 steals, 39 125 steals                                                                                                                                                            | this commit                                                                                    |
+| 2026-11-16 | `pnpm verify:changed` (all: format, lint, typecheck, 42 test files / 217 tests)                                                                                                           | same tree                                                                                                                                 | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-16 | `pnpm e2e feedback shield readability play` (both sizes)                                                                                                                                  | same tree                                                                                                                                 | 6 passed, 2 skipped (desktop-only specs on phone)                                                                                                                                                                                   | this commit                                                                                    |

@@ -211,7 +211,9 @@ configuration, no code change on the website. Initially everything runs on one V
 Bingo.
 
 **Bridge after the match:** result screen, below it a box: "This is how Seasonal Tokens work:
-hold the season, swap before it turns, expect less after the halving." Two buttons: "Start
+every season change is a halving, and the old season's coins are worth half after it — swap
+or secure before it comes." (Owner decision 2026-11-16; it said "expect less after the
+halving", an idea sections 2a and 2b dropped.) Two buttons: "Start
 here" (the website's path for newcomers) and "Try the simulator" (seasonaltokens.org). Below:
 "No financial advice". Switchable off in the configuration.
 

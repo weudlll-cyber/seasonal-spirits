@@ -67,8 +67,10 @@ Owner's observation 2026-11-15: stealing was not understood.
 - **Steal button**: lit only while the server says a steal would take something right now
   (`GHOST_CAN_STEAL` in the state: the core's `canSteal` — an opponent carrier in range, the
   cooldown over, not securing), dimmed otherwise; it can always be pressed.
-- **Range ring**: while an opponent carrier is within twice the steal range, a faint dashed
-  ring around the own ghost shows the steal range.
+- **Range ring**: while a steal would land right now — the server's `GHOST_CAN_STEAL`, the
+  same word that lights the Steal button — a faint dashed ring around the own ghost shows the
+  steal range; never beside a carrier of only steal-proof coins (since 2026-11-16; before, it
+  showed whenever an opponent carrier was within twice the range).
 - **Shield**: a ghost carrying swapped coins (`GHOST_SHIELDED`) has an ice-white hexagon
   around it (`packages/render/src/ghosts.ts`), drawn for every ghost in the client and the
   viewer: those coins cannot be stolen until the next halving.
@@ -138,10 +140,11 @@ hidden under the top bar).
   - A spectator always sees the whole field and has no view button.
 - **Shrines.** The own shrine glows, breathes gently and is labelled "Your shrine"; the
   others keep "<Season> shrine". A shrine label sits below its shrine, or above, left or
-  right of it when that spot is out of view or a visible control (the action or shrine
-  buttons) covers it; a shrine in a corner of the view moves its label inside
-  (`shrineLabelAt`, tested). Before 2026-11-16 a shrine at the bottom edge of the view put
-  its label below the screen.
+  right of it when that spot is out of view, a visible control (the action or shrine
+  buttons) or a ghost drawn this frame covers it — a control counts more than a ghost, which
+  walks on; a shrine in a corner of the view moves its label inside (`shrineLabelAt`,
+  tested). Before 2026-11-16 a shrine at the bottom edge of the view put its label below the
+  screen, and ghosts could stand on a shrine label.
 - **Ghosts and coins.** Ghosts are circles in their team colour; the own ghost has a white
   ring and the label "You". Carriers are larger, glow, leave a short trail and show name and
   coin count; a ring shows their coins: solid in the current season's colour, dashed grey
@@ -224,7 +227,7 @@ shrine in sight at home with its label drawn, the arrow once the shrine is out o
 gone again at home, V (desktop) or the button (phone) switching to "Overview" and the
 choice surviving a reload. In every frame it samples while walking: every ghost on screen
 named, no label under the bar, past the screen edge, on another label or on a shrine label,
-every shrine label in view wholly inside it, the arrow out of the thumb zones, the own shrine
+every shrine label in view wholly inside it and on no ghost while a spot was free, the arrow out of the thumb zones, the own shrine
 label under no control and not under the minimap. Screenshots `<size>-hud.png`, `<size>-near.png` and
 `<size>-overview.png`. The spectator spec also checks that a spectator has no team line and
 no view button.
@@ -237,7 +240,7 @@ other spec starts with the help marked as seen (`storageState` in the Playwright
 `SCENARIO=steal`, client 5934 — where every joining player stands beside an opponent hunter
 carrying nothing (`apps/server/src/scenario.ts`, development only): the hunter robs the
 player ("… stole … from you"), the Steal button lights up with the range ring shown, Space
-robs it back ("You stole … from …"), walking away dims the button; screenshot
+robs it back ("You stole … from …"), walking away dims the button and hides the ring; screenshot
 `desktop-steal.png`.
 `e2e/response.e2e.ts` (desktop): eight key presses from standing; the drawn own ghost moves
 within 50 ms of the key in the median (measured 8 ms; 113 ms before the prediction).

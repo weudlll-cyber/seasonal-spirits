@@ -9,7 +9,6 @@ import { distance } from '../geometry.js';
 import { isLastSeason, nextSeason, totalCount } from '../seasons.js';
 import type { Ghost, Intent, MatchState } from '../types.js';
 import { collect, deadlineNear, goHomeAnd, IDLE, type Bot } from './common.js';
-import { perceive, seesAll, type Sight } from './perception.js';
 
 export type Strategy = 'patient' | 'cautious' | 'hunter';
 export const STRATEGIES: readonly Strategy[] = ['patient', 'cautious', 'hunter'];
@@ -84,19 +83,7 @@ function act(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>, mode
   return mode === 'collect' ? collect(cfg, s, me) : goHomeAnd(cfg, s, me, mode);
 }
 
-// Trials T1 (`bots.viewRadius`) and T2 (`bots.reactionMs`): with either set, a bot decides on
-// what it perceives (perception.ts) instead of the whole current state; off, nothing changes.
 export function createBot(cfg: GameConfig, strategy: Strategy): Bot {
-  const decide = strategyBot(cfg, strategy);
-  const sight: Sight = { view: cfg.bots.viewRadius, reactionMs: cfg.bots.reactionMs };
-  if (seesAll(sight)) return decide;
-  return (s, me) => {
-    const seen = perceive(cfg.fieldSize, s, me.id, sight);
-    return seen ? decide(seen.state, seen.me) : IDLE;
-  };
-}
-
-function strategyBot(cfg: GameConfig, strategy: Strategy): Bot {
   return (s, me) => {
     if (me.securingUntilMs !== null || s.ended) return IDLE;
     switch (strategy) {

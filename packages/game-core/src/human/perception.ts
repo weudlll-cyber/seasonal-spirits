@@ -1,18 +1,18 @@
-// Seasonal Spirits — what a bot (or the human stand-in of session 2026-11-16-HUMAN) perceives:
-// the public match state cut to a view around itself and seen a reaction time late. Trials
-// T1 and T2 (BALANCE.md "Human round 1"); with no view and no delay a bot reads the state
-// itself, exactly as before.
+// Seasonal Spirits — what the human stand-in (standin.ts) perceives: the public match state cut
+// to a view around itself and seen a reaction time late, as a player at a screen sees it.
 
-import type { ViewHalfSize } from '../config.js';
 import type { Ghost, MatchState } from '../types.js';
+
+// Half the width and half the height of a view in field units: the rectangle around a ghost,
+// kept inside the field like the client's camera.
+export interface ViewHalfSize {
+  x: number;
+  y: number;
+}
 
 export interface Sight {
   view: ViewHalfSize | null; // null: the whole field
   reactionMs: number; // 0: now
-}
-
-export function seesAll(sight: Sight): boolean {
-  return sight.view === null && sight.reactionMs <= 0;
 }
 
 // A copy of the state as it was in one tick: what a late look shows.

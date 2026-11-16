@@ -1,8 +1,8 @@
 // Seasonal Spirits — steal feedback against the staged steal (SCENARIO=steal, port 5934): the
 // joining player stands beside an opponent hunter carrying nothing. The hunter robs the player
 // ("Bot n stole 3 from you"); the Steal button lights up and the range ring shows while the
-// hunter carries; Space robs it back ("You stole 2 from Bot n"); walking away dims the button.
-// Desktop size; screenshot desktop-steal.png.
+// hunter carries; Space robs it back ("You stole 2 from Bot n"); walking away dims the button
+// and hides the ring. Desktop size; screenshot desktop-steal.png.
 
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -30,8 +30,9 @@ test('the Steal button is lit only with a target, and both sides of a steal get 
   await expect(toast).toHaveText(robbed);
   await page.screenshot({ path: path.join(SCREENS, 'desktop-steal.png') });
 
-  // Away from every carrier: nothing to take, the button dims.
+  // Away from every carrier: nothing to take, the button dims and the ring goes with it.
   await page.keyboard.down('KeyW');
   await expect(steal).not.toHaveClass(/\blit\b/, { timeout: 5_000 });
+  expect((await view(page)).stealRing).toBe(false);
   await page.keyboard.up('KeyW');
 });

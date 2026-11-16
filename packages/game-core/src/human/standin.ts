@@ -4,10 +4,10 @@
 // instrument, never a strategy of the balance pool.
 
 import { deadlineNear, goHomeAnd, IDLE, steerTo, type Bot } from '../bots/common.js';
-import { perceive, type Sight } from '../bots/perception.js';
-import type { GameConfig, ViewHalfSize } from '../config.js';
+import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
 import { totalCount } from '../seasons.js';
+import { perceive, type Sight, type ViewHalfSize } from './perception.js';
 
 // The client's "Near" view (apps/client: `cameraSpan` 1100 field units along the shorter side
 // of the screen below the 104 px bar; render `follow`): a desktop window of 1280 × 800 (and
@@ -19,13 +19,11 @@ export const HUMAN_REACTION_MS = 300; // placeholder — owner decides
 
 export function createStandIn(cfg: GameConfig, sight: Sight): Bot {
   const middle = { x: cfg.fieldSize / 2, y: cfg.fieldSize / 2 };
-  // A bot trial never changes the stand-in: its deadline keeps today's spare time.
-  const own: GameConfig = { ...cfg, bots: { ...cfg.bots, deadlineSpreadMs: 0 } };
   return (s, me) => {
     const seen = perceive(cfg.fieldSize, s, me.id, sight);
     if (!seen || seen.me.securingUntilMs !== null || seen.state.ended) return IDLE;
     const { state, me: self } = seen;
-    if (totalCount(self.carried) > 0 && deadlineNear(own, state, self)) {
+    if (totalCount(self.carried) > 0 && deadlineNear(cfg, state, self)) {
       return goHomeAnd(cfg, state, self, 'secure');
     }
     let target: { x: number; y: number } | null = null;

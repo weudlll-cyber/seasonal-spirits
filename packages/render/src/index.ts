@@ -4,6 +4,12 @@
 export * from './palette.js';
 export * from './view.js';
 export { SHRINES, coinRadiusPx, drawField, type FieldStyle, type ShrineLabels } from './field.js';
-export { placeLabels, shrineLabelAt, type LabelCandidate, type PlacedLabel } from './labels.js';
+export {
+  bodyBox,
+  placeLabels,
+  shrineLabelAt,
+  type LabelCandidate,
+  type PlacedLabel,
+} from './labels.js';
 export { Trails, drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
 export { CLOCK_HEIGHT, drawClock, mmss, value } from './clock.js';

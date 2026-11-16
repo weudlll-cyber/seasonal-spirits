@@ -21,6 +21,7 @@ import {
   drawGhosts,
   fitField,
   follow,
+  ghostRadiusPx,
   seasonColour,
   sx,
   sy,
@@ -57,6 +58,7 @@ export interface Frame {
   own: GhostState | undefined;
   ownTeam: number | null; // a player's team; null for spectators
   playing: boolean;
+  canSteal: boolean; // the server's GHOST_CAN_STEAL for the own ghost: a steal would land now
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
   markers: readonly Marker[]; // the team's signals showing now (signals.ts)
@@ -71,10 +73,11 @@ export interface Drawn {
   shrineOnScreen: boolean; // the own shrine with its "Your shrine" label is in sight
   shrineLabel: Rect | null; // where "Your shrine" was drawn on the field
   shrineLabels: Rect[]; // every shrine label at least partly in view
+  shrineLabelsOnGhost: Rect[]; // of those, the ones on a ghost: no spot was free
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
-  stealRing: boolean; // the own steal range is drawn (an opponent carrier is near)
+  stealRing: boolean; // the own steal range is drawn (a steal would land now)
   signals: { ghost: number; signal: TeamSignal }[]; // team signal markers drawn now
   ghostsShown: GhostOnScreen[]; // every ghost drawn inside the visible field, in pixels
 }
@@ -84,6 +87,7 @@ export interface GhostOnScreen {
   carried: number;
   x: number;
   y: number;
+  r: number; // the drawn radius
   shielded: boolean; // drawn with the shield (GHOST_SHIELDED)
 }
 
@@ -109,10 +113,15 @@ export function drawScene(
   ctx.fillRect(0, 0, ctx.canvas.width, view.top);
   trails.record(f.ghosts);
   let labels: PlacedLabel[] = [];
-  let shrineLabels: ShrineLabels = { own: null, all: [] };
+  let shrineLabels: ShrineLabels = { own: null, all: [], onGhost: [] };
   let stealRing = false;
   belowBar(view, () => {
-    const field = { ownTeam: f.ownTeam, nowMs: performance.now(), blocked: f.hud.controls };
+    const field = {
+      ownTeam: f.ownTeam,
+      nowMs: performance.now(),
+      blocked: f.hud.controls,
+      ghosts: f.ghosts,
+    };
     shrineLabels = drawField(view, f.latest && { ...f.latest, coins: f.coins }, field);
     stealRing = drawStealRing(view, f);
     labels = drawGhosts(view, f.ghosts, {
@@ -137,6 +146,7 @@ export function drawScene(
     shrineOnScreen,
     shrineLabel: shrineOnScreen ? shrineLabels.own : null,
     shrineLabels: shrineLabels.all,
+    shrineLabelsOnGhost: shrineLabels.onGhost,
     controls: f.hud.controls,
     zones: f.hud.zones,
     labels,
@@ -146,17 +156,13 @@ export function drawScene(
   };
 }
 
-// The own steal range as a faint ring while an opponent carrier is near (within twice the
-// range): what a press of Steal can reach (owner's observation 2026-11-15). Players only.
+// The own steal range as a faint ring while a steal would land right now — the server's
+// canSteal, the same word that lights the Steal button — so it never shows beside a carrier
+// of only steal-proof coins (owner's observations 2026-11-15 and 2026-11-16). Players only.
 function drawStealRing(view: View, f: Frame): boolean {
-  const own = f.playing ? f.own : undefined;
+  const own = f.canSteal ? f.own : undefined;
   if (!own) return false;
   const range = DEFAULT_CONFIG.stealRange;
-  const near = f.ghosts.some(
-    (g) =>
-      g.team !== own.team && g.carried > 0 && Math.hypot(g.x - own.x, g.y - own.y) <= 2 * range,
-  );
-  if (!near) return false;
   const { ctx } = view;
   ctx.strokeStyle = 'rgba(255, 213, 79, 0.45)';
   ctx.lineWidth = 2;
@@ -209,6 +215,7 @@ function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
       carried: g.carried,
       x: sx(view, g.x),
       y: sy(view, g.y),
+      r: ghostRadiusPx(view, g),
       shielded: (g.flags & GHOST_SHIELDED) !== 0,
     }))
     .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);

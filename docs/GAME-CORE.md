@@ -148,17 +148,11 @@ on every tick (50 ms), with no delay: `collect` and its coin-owner pass read all
 ghosts (`src/bots/common.ts`), `nearestCarrier` and `threatened` all ghosts
 (`src/bots/strategies.ts`); `simulate` (`src/simulation.ts`) and the server's match host
 (`intents` in `apps/server/src/match-host.ts`) ask every bot every tick with the current
-state. Three trial switches of session 2026-11-16-HUMAN (BALANCE.md "Human round 1"), all off
-by default; T1 and T2 change that through `src/bots/perception.ts`: **T1** `bots.viewRadius` — a bot
-sees only the coins and ghosts inside a view rectangle around itself, kept inside the field
-like the client's camera (trial value a desktop "Near" view, half-sizes 1000 × 550 field
-units); **T2** `bots.reactionMs` — a bot acts on the state as it was that long ago (trial
-value 300 ms). With both off `createBot` returns the bot unchanged. **T4** `bots.deadlineSpreadMs` adds to
-`deadlineNear` a share of that spread fixed by the ghost id (trial value 10 s), so a team does
-not set off home in the same tick; 0 = off.
+state. The bot trial switches of session 2026-11-16-HUMAN (T1–T4, BALANCE.md "Human round
+1") were removed on 2026-11-16 unused (owner decision); the bots read as described here.
 
 **Measuring a human** (`src/human/`, `pnpm human`): a stand-in for a human player
-(`standin.ts`) takes seat 1 — it sees a player's "Near" view (desktop 2000 × 1100 field units,
+(`standin.ts`) takes seat 1 — it sees, through `perception.ts`, a player's "Near" view (desktop 2000 × 1100 field units,
 phone portrait 1100 × 2000, from the client's `cameraSpan` 1100), decides a reaction time late
 (300 ms placeholder) and collects the nearest coin it sees, securing before every deadline.
 It is a measuring instrument, never part of the balance pool. `round.ts` runs seeded matches
@@ -217,6 +211,3 @@ fails.
 | `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)                                                   |
 | `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                                                       |
 | `bots.threatRange`      | 150     | placeholder (a loaded patient bot goes home when an opponent is closer)                                       |
-| `bots.viewRadius`       | null    | trial T1 (2026-11-16): a bot sees only this view around itself; null = the whole field                        |
-| `bots.reactionMs`       | 0       | trial T2 (2026-11-16): a bot acts on what it saw this long ago; 0 = now                                       |
-| `bots.deadlineSpreadMs` | 0       | trial T4 (2026-11-16): extra spare time before a deadline, a share by id; 0 = off                             |

@@ -100,7 +100,7 @@ async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
     );
   }
   await expect(page.locator('#bridge-text')).toHaveText(
-    'This is how Seasonal Tokens work: hold the season, swap before it turns, expect less after the halving.',
+    "This is how Seasonal Tokens work: every season change is a halving, and the old season's coins are worth half after it — swap or secure before it comes.",
   );
   await expect(page.getByRole('link', { name: 'Start here' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Try the simulator' })).toHaveAttribute(

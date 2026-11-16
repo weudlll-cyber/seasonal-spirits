@@ -62,10 +62,18 @@ export interface ClientView {
   arrowAt: { x: number; y: number } | null;
   shrineLabel: Rect | null;
   shrineLabels: Rect[];
+  shrineLabelsOnGhost: Rect[];
   controls: Rect[];
   zones: Rect[];
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];
-  ghostsShown: { id: number; carried: number; x: number; y: number; shielded: boolean }[];
+  ghostsShown: {
+    id: number;
+    carried: number;
+    x: number;
+    y: number;
+    r: number;
+    shielded: boolean;
+  }[];
   stealRing: boolean;
   signals: { ghost: number; signal: string }[]; // team signal markers drawn (signals.ts)
 }

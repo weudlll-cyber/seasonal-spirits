@@ -1004,7 +1004,9 @@ CPU load 100 % in the snapshot before the start, VS Code, Docker and a browser o
 `--variant bots --out reports/human/round1-groups-n30.json` (the same bot matches, with the
 groups' start times) and `--variant T4 --variant "bots T4" --out
 reports/human/round1-t4-n30.json` (the three files are not in the repository since
-2026-11-16, see "Raw data"). Times per variant 31–184 s.
+2026-11-16, see "Raw data"). Times per variant 31–184 s. The bot trial variants (T1–T4)
+and their switches were removed on 2026-11-16 unused; to repeat a trial row, check out
+`3cce2d5`.
 
 **The stand-in** (`src/human/standin.ts`) takes seat 1 (team rotating): it sees only a
 player's "Near" view, decides on the state a reaction time old, walks to the nearest coin it

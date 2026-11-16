@@ -3,14 +3,14 @@
 // "Your shrine" arrow when the shrine is out of sight, V or the corner button switching to
 // "Overview" and the choice surviving a reload. In every sampled frame: every ghost named, no
 // name label under the top bar, past the screen edge, on another label or on a shrine label,
-// every shrine label wholly in view, the arrow out of the thumb zones, the own shrine label
+// every shrine label wholly in view and off the ghost bodies where a spot is free, the arrow out of the thumb zones, the own shrine label
 // under no control; the corner buttons sit in the band, not on the field.
 // Screenshots: <size>-near.png, <size>-hud.png and <size>-overview.png in
 // reports/screens/latest/.
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { overlaps, type Rect } from '@seasonal-spirits/render';
+import { bodyBox, overlaps, type Rect } from '@seasonal-spirits/render';
 import {
   SCREENS,
   joystick,
@@ -40,6 +40,9 @@ function rectsWhole(v: ClientView): boolean {
   );
 }
 
+const sameRect = (a: Rect, b: Rect): boolean =>
+  a.left === b.left && a.top === b.top && a.right === b.right && a.bottom === b.bottom;
+
 const labelBox = (l: ClientView['labels'][number]): Rect => ({
   left: l.x - l.width / 2,
   right: l.x + l.width / 2,
@@ -49,8 +52,9 @@ const labelBox = (l: ClientView['labels'][number]): Rect => ({
 
 // Every ghost on screen named (owner's observation 2026-11-15: unnamed dots); no label under
 // the bar or past the screen edge, none on another label or a shrine label; every shrine
-// label in view lies wholly inside it (session 2026-11-15-CD: names on the ghost next door,
-// shrine and ghost labels on each other, a foreign shrine's label below the screen).
+// label in view lies wholly inside it and off the ghosts unless every spot was taken (session
+// 2026-11-15-CD: names on the ghost next door, shrine and ghost labels on each other, a
+// foreign shrine's label below the screen).
 function labelFaults(v: ClientView, screen: { width: number; height: number }): string[] {
   const faults: string[] = [];
   const named = new Set(v.labels.map((l) => l.id));
@@ -67,10 +71,16 @@ function labelFaults(v: ClientView, screen: { width: number; height: number }): 
     if (v.shrineLabels.some((s) => overlaps(b, s)))
       faults.push(`label "${l.text}" on a shrine label`);
   });
+  const bodies = v.ghostsShown.map((g) => bodyBox(g));
+  const crowded = (s: Rect): boolean => v.shrineLabelsOnGhost.some((c) => sameRect(c, s));
   for (const s of v.shrineLabels) {
     const inside =
       s.left >= 0 && s.right <= screen.width && s.top >= v.barBottom && s.bottom <= screen.height;
     if (!inside) faults.push(`shrine label at ${JSON.stringify(s)} not wholly in view`);
+    // A drawn ghost on a shrine label the layout thought free: it laid out other ghosts than
+    // it drew (owner's observation 2026-11-16: shrine labels under ghost bodies).
+    if (!crowded(s) && bodies.some((b) => overlaps(b, s)))
+      faults.push(`shrine label at ${JSON.stringify(s)} on a ghost, though a spot was free`);
   }
   return faults;
 }

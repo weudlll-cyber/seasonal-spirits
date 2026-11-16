@@ -1,7 +1,8 @@
 // Seasonal Spirits — where the ghosts' name labels and the shrine labels go. Every ghost on
 // screen carries a label or at least its short tag, never two on top of each other, never on
 // another ghost or a shrine label, never under the top bar or past the screen edge; a shrine
-// label never under a HUD control and never out of view (owner's play tests 2026-11-15).
+// label never under a HUD control, off a ghost where it can be, and never out of view (owner's
+// play tests 2026-11-15 and 2026-11-16).
 // Pure: positions and widths in, placements out, tested without a canvas.
 
 import { overlaps, type Rect } from './view.js';
@@ -104,6 +105,12 @@ function toPlaced(c: LabelCandidate, s: Spot, box: Rect): PlacedLabel {
   };
 }
 
+// The square around a ghost's drawn body (centre and radius in pixels): what a label keeps
+// clear of.
+export function bodyBox(g: { x: number; y: number; r: number }): Rect {
+  return { left: g.x - g.r, right: g.x + g.r, top: g.y - g.r, bottom: g.y + g.r };
+}
+
 // `area` is the visible field: below the bar, inside the screen; `avoid` are boxes already
 // drawn there (the shrine labels). Every ghost's body counts as taken too, so no name sits on
 // a neighbouring ghost (session 2026-11-15-CD: names landed on the ghost next door). The own
@@ -117,13 +124,7 @@ export function placeLabels(
   const order = [...candidates].sort(
     (a, b) => Number(b.own) - Number(a.own) || b.carried - a.carried || a.id - b.id,
   );
-  const bodies = candidates.map((c) => ({
-    left: c.x - c.r,
-    right: c.x + c.r,
-    top: c.y - c.r,
-    bottom: c.y + c.r,
-  }));
-  const taken: Rect[] = [...avoid, ...bodies];
+  const taken: Rect[] = [...avoid, ...candidates.map(bodyBox)];
   const placed = order.map((c) => {
     const p = choose(c, area, taken);
     taken.push({
@@ -137,19 +138,28 @@ export function placeLabels(
   return [...placed.filter((p) => !p.own), ...placed.filter((p) => p.own)];
 }
 
+// What a shrine label keeps clear of: the HUD controls on the field, and the ghost bodies drawn
+// this frame (bodyBox; a ghost drawn over the label hid it, owner's observation 2026-11-16).
+export interface ShrineKeepClear {
+  controls: readonly Rect[];
+  bodies: readonly Rect[];
+}
+
 // A shrine's label (shrine centre `x`, `y`, radius `r` in pixels): below the shrine, or the
-// first of above, left and right that lies inside `area` (the visible field) and that no HUD
-// control covers. When none is both, the first spot inside the area; when none is inside but
-// the shrine's centre is (a shrine at the very edge of the view), the spot below moved
-// inside; a shrine out of view keeps its label out of view. A shrine at the bottom edge of
-// the view used to put its label below the screen (session 2026-11-15-CD). Returns the
-// label's centre x and baseline.
+// first of above, left and right that lies inside `area` (the visible field) and that neither
+// a HUD control nor a ghost covers; then the first such spot only a ghost covers (a control is
+// worse: it hides the label for good). When none is clear of the controls, the first spot
+// inside the area; when none is inside but the shrine's centre is (a shrine at the very edge
+// of the view), the spot below moved inside; a shrine out of view keeps its label out of
+// view. A shrine at the bottom edge of the view used to put its label below the screen
+// (session 2026-11-15-CD). Returns the label's centre x and baseline, and whether it had to
+// sit on a ghost (no spot was free of them).
 export function shrineLabelAt(
   at: { x: number; y: number; r: number },
   text: { width: number; height: number },
-  blocked: readonly Rect[],
+  keep: ShrineKeepClear,
   area: Rect,
-): { x: number; y: number } {
+): { x: number; y: number; onGhost: boolean } {
   const side = at.r + 8 + text.width / 2;
   const middle = at.y + text.height / 2;
   const spots = [
@@ -164,11 +174,15 @@ export function shrineLabelAt(
     top: p.y - text.height,
     bottom: p.y,
   });
+  const free = (p: { x: number; y: number }, rects: readonly Rect[]): boolean =>
+    !rects.some((b) => overlaps(b, box(p)));
   const inside = spots.filter((p) => within(area, box(p)));
-  const clear = inside.find((p) => !blocked.some((b) => overlaps(b, box(p))));
+  const noControl = inside.filter((p) => free(p, keep.controls));
+  const clear = noControl.find((p) => free(p, keep.bodies)) ?? noControl[0];
   const below = spots[0] ?? at;
   const centreInView = within(area, { left: at.x, right: at.x, top: at.y, bottom: at.y });
-  return clear ?? inside[0] ?? (centreInView ? moveInside(area, below, text) : below);
+  const p = clear ?? inside[0] ?? (centreInView ? moveInside(area, below, text) : below);
+  return { x: p.x, y: p.y, onGhost: !free(p, keep.bodies) };
 }
 
 function within(area: Rect, r: Rect): boolean {

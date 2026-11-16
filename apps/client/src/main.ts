@@ -167,6 +167,14 @@ function drawnGhosts(now: number, target: number | null, ownId: number | null): 
   return ghosts.map((g) => (g.id === ownId && predicted ? { ...g, ...predicted } : g));
 }
 
+// The newest state's word, not the drawn (buffered) moment: the Steal button and the range
+// ring answer the server's GHOST_CAN_STEAL now. Players only.
+function canStealNow(latest: ServerState | undefined, ownId: number | null): boolean {
+  if (conn.mode !== 'player') return false;
+  const flags = latest?.ghosts.find((g) => g.id === ownId)?.flags ?? 0;
+  return (flags & GHOST_CAN_STEAL) !== 0;
+}
+
 function snapshot(now: number): { f: Frame; timing: FrameTiming } {
   const target = renderClock.target(now, latestServerMs(conn.buffer));
   const ownId = conn.welcome?.ghost ?? null;
@@ -185,6 +193,7 @@ function snapshot(now: number): { f: Frame; timing: FrameTiming } {
     own: ghosts.find((g) => g.id === ownId),
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,
     playing,
+    canSteal: canStealNow(latest, ownId),
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
     markers: markers.active(now),
@@ -210,10 +219,7 @@ function draw(f: Frame): Drawn {
   showTeam(f.ownTeam);
   viewButton.hidden = !f.playing;
   const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
-  // The newest state's word, not the drawn (buffered) moment: the button answers the press now.
-  const ownFlags = f.latest?.ghosts.find((g) => g.id === f.ownId)?.flags ?? 0;
-  const canSteal = (ownFlags & GHOST_CAN_STEAL) !== 0;
-  hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0, canSteal);
+  hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0, f.canSteal);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;
 }

@@ -10,7 +10,7 @@ import { STRATEGIES } from './bots/strategies.js';
 import { listArg, numberArg, textArg } from './cli-args.js';
 import { DEFAULT_CONFIG } from './config.js';
 import { runHumanRound, type HumanReport } from './human/round.js';
-import { HUMAN_VARIANTS, configOf, desktopAt } from './human/variants.js';
+import { HUMAN_VARIANTS, desktopAt } from './human/variants.js';
 
 const argv = process.argv.slice(2);
 const matches = numberArg(argv, '--matches', 30, 10_000);
@@ -68,7 +68,7 @@ function print(r: HumanReport, ms: number): void {
 const reports: HumanReport[] = [];
 for (const v of chosen) {
   const started = Date.now();
-  const r = runHumanRound(configOf(DEFAULT_CONFIG, v), v, matches, seed);
+  const r = runHumanRound(DEFAULT_CONFIG, v, matches, seed);
   print(r, Date.now() - started);
   reports.push(r);
 }

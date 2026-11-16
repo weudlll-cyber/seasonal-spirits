@@ -4,12 +4,12 @@
 // robbed; the same per bot strategy; the bots' best-player share; the shrine groups.
 
 import { rotatedRoster, spread, type Spread } from '../balance.js';
-import type { Sight } from '../bots/perception.js';
 import { STRATEGIES, type Strategy } from '../bots/strategies.js';
 import type { GameConfig } from '../config.js';
 import { simulate, type Seat } from '../simulation.js';
 import { CoinLives } from './coins.js';
 import { ShrineGroups, type ShrineGroup } from './groups.js';
+import type { Sight } from './perception.js';
 import { createStandIn } from './standin.js';
 
 export const STAND_IN_SEAT = 1;
@@ -17,7 +17,6 @@ export const STAND_IN_SEAT = 1;
 export interface HumanVariant {
   name: string;
   sight: Sight | null; // the stand-in's view and reaction time; null = no stand-in, all bots
-  botSeats: number | null; // trial T3: this many bots beside the stand-in; null = all 31
 }
 
 interface Tally {
@@ -37,13 +36,12 @@ export interface HumanReport {
   coins: { spawned: number; cleared: number; pickedAfterMs: Spread; nearestAtSpawn: Spread };
 }
 
-// Seat 1 is the stand-in (with a sight); with `botSeats` only that many bots after it take part.
+// Seat 1 is the stand-in (with a sight), the other 31 seats are bots.
 function seats(cfg: GameConfig, v: HumanVariant, k: number): Seat[] {
   const all = rotatedRoster(k);
-  const kept = v.botSeats === null ? all : all.slice(0, v.botSeats + 1);
   const sight = v.sight;
-  if (!sight) return kept;
-  return kept.map((r) => (r.id === STAND_IN_SEAT ? { ...r, bot: createStandIn(cfg, sight) } : r));
+  if (!sight) return all;
+  return all.map((r) => (r.id === STAND_IN_SEAT ? { ...r, bot: createStandIn(cfg, sight) } : r));
 }
 
 type Who = Strategy | 'standIn';

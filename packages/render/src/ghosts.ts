@@ -13,7 +13,13 @@ import {
 } from '@seasonal-spirits/protocol';
 import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
-import { LABEL_HEIGHT, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
+import {
+  LABEL_HEIGHT,
+  bodyBox,
+  placeLabels,
+  type LabelCandidate,
+  type PlacedLabel,
+} from './labels.js';
 import { MUTED, SHIELD, TEXT, seasonColour } from './palette.js';
 import { circle, sx, sy, visibleArea, type Rect, type View } from './view.js';
 
@@ -52,6 +58,11 @@ export function ghostRadiusPx(v: View, g: GhostState): number {
   // The game core's size (the server picks a coin up when the drawn shapes touch); at least
   // 4 px, so a ghost stays visible in a phone's Overview, the only view that small.
   return Math.max(4, ghostRadius(DEFAULT_CONFIG, g.carried) * v.scale);
+}
+
+// Every ghost's body box in pixels, as drawGhosts draws it: what the shrine labels keep off.
+export function ghostBodies(v: View, ghosts: readonly GhostState[]): Rect[] {
+  return ghosts.map((g) => bodyBox({ x: sx(v, g.x), y: sy(v, g.y), r: ghostRadiusPx(v, g) }));
 }
 
 // Returns the labels as drawn (the client's browser specs read them).
