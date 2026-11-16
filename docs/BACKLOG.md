@@ -91,10 +91,6 @@ newest state: 113 ms → 8 ms from a key to the drawn movement) is merged into `
 `CORRECTION_MS` (150), `SNAP_DISTANCE` (100). Done when: the owner has played the responsive
 client and decided the four placeholders.
 
-s. **Look B in play** (owner's choice 2026-11-16, CLOSED "Ghost look B"). `feat/ghost-look`
-draws look B with the trail; `pnpm dev` runs from it. Done when: the owner has played it and
-merged the branch or said what to change; `shots/ghost-look` stays until then.
-
 t. **Season colours** (owner's question 2026-11-16, after the look pictures): Summer
 (#E06E22) and Autumn (#F9A825) are hard to tell apart. Open whether the four colours are
 fixed by Seasonal Tokens (website design tokens, CONCEPT.md §8) or may change. No colour
@@ -459,6 +455,11 @@ fixed, with the spec green ten runs in a row.
   resort. Help "What you see" with the shared legend lines (`LEGEND`) and a drawing each —
   commit "feat: ghost look B" on `feat/ghost-look`.
 
+- 2026-11-16 — **Look B to master** (owner's approval in CHAIN 2026-11-16-V5, piece 1; OPEN s):
+  `feat/ghost-look` merged with "merge: ghost look B with trail"; `feat/ghost-look` and the
+  picture branch `shots/ghost-look` deleted (the choice of B is recorded above, "Ghost look
+  B") — this commit and the merge.
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -661,3 +662,4 @@ fixed, with the spec green ten runs in a row.
 | 2026-11-16 | `pnpm e2e readability help` (both sizes)                                                                                                                                                  | same tree                                                                                                                                 | first run 3 passed, desktop readability failed once on shrine labels (OPEN u); desktop readability again: passed                                                                                                                    | this commit                                                                                    |
 | 2026-11-16 | `pnpm looks`                                                                                                                                                                              | same tree                                                                                                                                 | 6 PNGs (three scenes × desktop, phone), scenes as before: crowd seed 5 at 72.1 s, halved seed 3 at 77.35 s, shield seed 5 at 144.9 s                                                                                                | `reports/screens/latest/look-*.png` (git-ignored)                                              |
 | 2026-11-16 | one full match played on `pnpm dev` (1280 × 800, keyboard): "Near" to the Autumn season, then "Overview"; every frame's labels checked                                                    | same tree                                                                                                                                 | 300 s, no label out of view, unnamed or overlapping; the own ghost carried at most 1 coin                                                                                                                                           | 15 screenshots, session report                                                                 |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `4213ec6` on `feat/ghost-look`                                                                                                            | success (CI 43942775911, CodeQL 43942775895)                                                                                                                                                                                        | `gh run list --branch feat/ghost-look`                                                         |
