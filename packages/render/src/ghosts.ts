@@ -1,7 +1,8 @@
 // Seasonal Spirits — the ghosts: team colour, and a carrier visible from afar (CONCEPT.md §2a,
 // sentence 5): larger, glowing, a short trail and its name. A ring around a carrier shows its
 // coins: solid for coins of the current season, dashed and grey for coins worth half now; a
-// hexagonal shield around a carrier of swapped coins no steal can take.
+// hexagonal shield around a carrier of swapped coins no steal can take. Two other looks exist
+// for the owner's pictures only (GhostLook).
 
 import {
   GHOST_BOT,
@@ -46,12 +47,20 @@ export class Trails {
   }
 }
 
+// The three looks of session 2026-11-16-LOOK, for the owner's pictures only (`pnpm looks`):
+// A today's; B "calm" — no coin ring, glow or trail, the half-value coins as a dimmer
+// "(n half)" in the label, bots opaque; C "neutral ring" — the coin ring white and grey, never
+// in a season's colour, bots opaque. The game draws A. The option goes again before a merge
+// unless the owner picks B or C.
+export type GhostLook = 'A' | 'B' | 'C';
+
 export interface GhostStyle {
   ownId: number | null; // the ghost this client steers, marked clearly
   season: number; // the current season, the colour of full-value coins
   trails: Trails;
   labelAll: boolean; // every ghost named (spectators, the viewer), not just carriers
   avoid: readonly Rect[]; // boxes the names keep clear of: the shrine labels (drawField)
+  look?: GhostLook; // A when not given
 }
 
 export function ghostRadiusPx(v: View, g: GhostState): number {
@@ -71,7 +80,8 @@ export function drawGhosts(
   ghosts: readonly GhostState[],
   style: GhostStyle,
 ): PlacedLabel[] {
-  for (const g of ghosts) if (g.flags & GHOST_CARRIER) drawTrail(v, g, style.trails);
+  const calm = style.look === 'B';
+  for (const g of ghosts) if (g.flags & GHOST_CARRIER && !calm) drawTrail(v, g, style.trails);
   for (const g of ghosts) drawBody(v, g, style);
   return drawLabels(v, ghosts, style);
 }
@@ -98,15 +108,18 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
 function drawBody(v: View, g: GhostState, style: GhostStyle): void {
   const { ctx } = v;
   const r = ghostRadiusPx(v, g);
-  ctx.globalAlpha = g.flags & GHOST_BOT ? 0.8 : 1;
+  const look = style.look ?? 'A';
+  ctx.globalAlpha = g.flags & GHOST_BOT && look === 'A' ? 0.8 : 1;
   ctx.shadowColor = seasonColour(g.team);
-  ctx.shadowBlur = g.flags & GHOST_CARRIER ? Math.min(30, 6 + g.carried) : 0;
+  ctx.shadowBlur = g.flags & GHOST_CARRIER && look !== 'B' ? Math.min(30, 6 + g.carried) : 0;
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
-  if (g.carried > 0) drawCoinRing(v, g, r, style.season);
+  if (g.carried > 0 && look !== 'B') {
+    drawCoinRing(v, g, r, look === 'C' ? TEXT : seasonColour(style.season));
+  }
   if (g.flags & GHOST_SHIELDED) drawShield(v, g, r);
   if (g.flags & GHOST_SECURING) {
     ctx.strokeStyle = TEXT;
@@ -122,8 +135,9 @@ function drawBody(v: View, g: GhostState, style: GhostStyle): void {
   }
 }
 
-// Solid arc for the coins of the current season, dashed grey arc for the half-value ones.
-function drawCoinRing(v: View, g: GhostState, r: number, season: number): void {
+// Solid arc in `colour` for the coins of the current season, dashed grey arc for the
+// half-value ones.
+function drawCoinRing(v: View, g: GhostState, r: number, colour: string): void {
   const { ctx } = v;
   const full = (g.carried - g.offSeason) / g.carried;
   const start = -Math.PI / 2;
@@ -131,7 +145,7 @@ function drawCoinRing(v: View, g: GhostState, r: number, season: number): void {
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.arc(sx(v, g.x), sy(v, g.y), r + 2, start, split);
-  ctx.strokeStyle = seasonColour(season);
+  ctx.strokeStyle = colour;
   ctx.stroke();
   if (g.offSeason === 0) return;
   ctx.setLineDash([3, 3]);
@@ -162,6 +176,8 @@ function drawShield(v: View, g: GhostState, r: number): void {
 }
 
 const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;
+// Look B: what follows this gap in a label is the half-value count, drawn dimmer.
+const HALF_GAP = '  ';
 
 // Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots): the own one
 // "You", a carrier its name and coin count, others — for players — just their tag, every name
@@ -172,7 +188,8 @@ function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate 
   const bot = (g.flags & GHOST_BOT) !== 0;
   const tag = own ? 'You' : ghostTag(g.id, bot);
   const name = own ? 'You' : ghostName(g.id, bot);
-  const full = g.carried > 0 ? `${name} · ${g.carried}` : own || style.labelAll ? name : tag;
+  const half = style.look === 'B' && g.offSeason > 0 ? `${HALF_GAP}(${g.offSeason} half)` : '';
+  const full = g.carried > 0 ? `${name} · ${g.carried}${half}` : own || style.labelAll ? name : tag;
   ctx.font = labelFont(own);
   return {
     id: g.id,
@@ -208,8 +225,25 @@ function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): 
   ctx.fillStyle = TEXT;
   for (const p of placed) {
     ctx.font = labelFont(p.own);
-    ctx.fillText(p.text, p.x, p.y);
+    drawLabelText(ctx, p);
   }
   ctx.textAlign = 'start';
   return placed;
+}
+
+// The label's text centred on its spot; a look-B half-value count after HALF_GAP in MUTED.
+function drawLabelText(ctx: CanvasRenderingContext2D, p: PlacedLabel): void {
+  const cut = p.text.indexOf(HALF_GAP);
+  if (cut < 0) {
+    ctx.fillText(p.text, p.x, p.y);
+    return;
+  }
+  const main = p.text.slice(0, cut);
+  const left = p.x - p.width / 2;
+  ctx.textAlign = 'start';
+  ctx.fillText(main, left, p.y);
+  ctx.fillStyle = MUTED;
+  ctx.fillText(p.text.slice(cut), left + ctx.measureText(main).width, p.y);
+  ctx.fillStyle = TEXT;
+  ctx.textAlign = 'center';
 }

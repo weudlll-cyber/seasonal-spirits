@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Seasonal Spirits — the picture page of `pnpm looks` (session 2026-11-16-LOOK): one scene in
+     one ghost look, with its legend. Served by the viewer's Vite in development only; the
+     viewer's build takes index.html alone. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seasonal Spirits — ghost looks</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #05080b;
+        overflow: hidden;
+        font-family: system-ui, sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #legend {
+        position: fixed;
+        max-width: min(360px, calc(100vw - 32px));
+        padding: 6px 10px;
+        background: rgba(5, 8, 11, 0.82);
+        border: 1px solid #22303c;
+        border-radius: 6px;
+        color: #e6edf3;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      #legend b {
+        display: block;
+        margin-bottom: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="map"></canvas>
+    <div id="legend"></div>
+    <script type="module" src="/src/looks.ts"></script>
+  </body>
+</html>

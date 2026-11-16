@@ -254,6 +254,20 @@ until the server's state shows it, until drawn), coin spawned → drawn, and the
 for both coin sources. Writes `reports/response/latency-latest.json`; results in
 docs/BALANCE.md "Response".
 
+**`pnpm looks`** (on demand, never in `pnpm e2e`; session 2026-11-16-LOOK): pictures of three
+ghost looks for the owner to choose from — A today's, B "calm" (no coin ring, glow or trail;
+load by size and the count in the label; half-value coins as a dimmer "(4 half)" after it;
+bots opaque), C "neutral ring" (the coin ring white and grey dashed, never a season's colour;
+bots opaque). `e2e/looks-scenes.ts` finds three scenes in the bot matches of seeds 1–5 (the
+biggest shrine crowd, a carrier of full- and half-value coins just after a halving among
+empty ghosts, a shielded carrier, a securing ghost and the "own" ghost close together but
+drawn apart) and turns them into wire states with the server's `toWire`; `e2e/looks.shoot.ts`
+(config `e2e/looks.config.ts`, the viewer's Vite on 5939) draws each in each look on the
+viewer's `looks.html` (`apps/viewer/src/looks.ts`: the client's drawing, camera of "Near",
+a legend of every marker shown, in the corner that covers the fewest ghosts) at 1280 × 800,
+and the crowd at 390 × 844, into `reports/screens/latest/looks/`. The look is
+`GhostStyle.look` in packages/render, for these pictures only; the game draws A.
+
 `window.__client` is written every frame for these tests: the frame's time and the server
 moments it shows (render target, newest state, coins), mode, own ghost and team, own
 position and carried coins, season, field coin count, halvings seen, result shown, and what

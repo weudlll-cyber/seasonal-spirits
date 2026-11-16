@@ -17,6 +17,7 @@
     "test": "vitest run",
     "e2e": "playwright test -c apps/client/e2e/playwright.config.ts",
     "latency": "playwright test -c apps/client/e2e/latency.config.ts",
+    "looks": "playwright test -c apps/client/e2e/looks.config.ts",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "verify:changed": "node scripts/verify-changed.mjs",
     "server": "pnpm --filter @seasonal-spirits/server start",

@@ -91,6 +91,14 @@ newest state: 113 ms → 8 ms from a key to the drawn movement) is merged into `
 `CORRECTION_MS` (150), `SNAP_DISTANCE` (100). Done when: the owner has played the responsive
 client and decided the four placeholders.
 
+s. **Ghost look** (owner's observation 2026-11-16: the ghosts look strange and very different
+from each other, and nothing explains the markers). Pictures of three looks — A today's, B
+"calm", C "neutral ring" — in three scenes on the orphan branch `shots/ghost-look` (`pnpm
+looks`, docs/CLIENT.md). The look option (`GhostStyle.look`, packages/render) exists only for
+the pictures. Done when: the owner has picked A, B or C or said what to change; the picked
+look is the game's, the option and the other looks are removed before `feat/ghost-look` is
+merged (or the branch is dropped if A stays).
+
 ## CLOSED
 
 - 2026-11-14 — repository skeleton, toolchain, CI, docs, Phase 0 network probe (server,
@@ -429,6 +437,11 @@ client and decided the four placeholders.
   then one free of the controls only, and says when it had to sit on a ghost; `bodyBox` shared
   with the name labels; client and viewer pass their drawn ghosts; a pure-function test and a
   new fault in `readability.e2e.ts` — same commit.
+- 2026-11-16 — **Ghost look pictures** (session 2026-11-16-LOOK): `pnpm looks` draws three
+  scenes from seeded bot matches (crowd seed 5, halved seed 3, shield seed 5) in looks A, B
+  and C with the client's drawing and a legend; 12 PNGs on the orphan branch
+  `shots/ghost-look` (`1537199`); the game still draws A — commit "feat: ghost look pictures"
+  on `feat/ghost-look`.
 
 ## CHECKS DONE
 
@@ -622,3 +635,8 @@ client and decided the four placeholders.
 | 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1` with the trial switches removed                                                                                                    | working tree of "chore: trial switches out, bridge text, steal ring and shrine labels"                                                    | identical: 26.7 / 43.3 / 30.0 %, 8.7 swaps, 1304.2 steals, 39 125 steals                                                                                                                                                            | this commit                                                                                    |
 | 2026-11-16 | `pnpm verify:changed` (all: format, lint, typecheck, 42 test files / 217 tests)                                                                                                           | same tree                                                                                                                                 | green                                                                                                                                                                                                                               | this commit                                                                                    |
 | 2026-11-16 | `pnpm e2e feedback shield readability play` (both sizes)                                                                                                                                  | same tree                                                                                                                                 | 6 passed, 2 skipped (desktop-only specs on phone)                                                                                                                                                                                   | this commit                                                                                    |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `5cb9240` on `feat/human-feel`                                                                                                            | success (CI 43891122180, CodeQL 43891122105)                                                                                                                                                                                        | `gh run list --commit 5cb9240`                                                                 |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | merge `b03572e` on `master` (tree = `5cb9240`)                                                                                            | success (CI 43891986931, CodeQL 43891986738)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
+| 2026-11-16 | `pnpm dev` from `master` after the merge: client 5930, viewer 5931, server `/metrics-lite`                                                                                                | `b03572e`                                                                                                                                 | all answer (200; 32 ghosts, 19.9 Hz)                                                                                                                                                                                                | MERGE handover                                                                                 |
+| 2026-11-16 | `pnpm verify:changed` (all: format, lint, typecheck, 42 test files / 217 tests)                                                                                                           | working tree of "feat: ghost look pictures"                                                                                               | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-16 | `pnpm looks`                                                                                                                                                                              | same tree                                                                                                                                 | 12 PNGs; scenes crowd seed 5 at 72.1 s, halved seed 3 at 77.35 s, shield seed 5 at 144.9 s                                                                                                                                          | `shots/ghost-look` (`1537199`)                                                                 |
