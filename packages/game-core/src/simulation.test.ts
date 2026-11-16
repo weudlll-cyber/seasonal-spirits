@@ -1,7 +1,6 @@
-// Seasonal Spirits — a full 32-bot match: deterministic per seed, sanity list green.
+// Seasonal Sumo — a full 32-bot match: deterministic per seed, sanity list green, lively.
 
 import { describe, expect, it } from 'vitest';
-import { STRATEGIES } from './bots/strategies.js';
 import { DEFAULT_CONFIG } from './config.js';
 import { botRoster, simulate } from './simulation.js';
 
@@ -15,20 +14,14 @@ describe('simulated match', () => {
     expect(a.result).not.toEqual(c.result);
   });
 
-  it('passes every sanity check and banks value for every strategy', () => {
+  it('passes every sanity check, and every team scores knockouts', () => {
     const r = simulate(DEFAULT_CONFIG, 1);
     expect(r.sanity.filter((c) => !c.ok)).toEqual([]);
-    expect(r.halvings.map((h) => [h.event.atMs, h.event.season])).toEqual([
+    expect(r.halvings.map((h) => [h.atMs, h.season])).toEqual([
       [75_000, 'summer'],
       [150_000, 'autumn'],
       [225_000, 'winter'],
     ]);
-    for (const strategy of STRATEGIES) {
-      const ids = new Set(r.roster.filter((x) => x.strategy === strategy).map((x) => x.id));
-      const total = r.result.players
-        .filter((p) => ids.has(p.id))
-        .reduce((n, p) => n + p.secured, 0);
-      expect(total, strategy).toBeGreaterThan(0);
-    }
+    for (const k of r.result.teams) expect(k).toBeGreaterThan(0);
   });
 });

@@ -1,11 +1,11 @@
-// Seasonal Spirits — one short match in the player client, at desktop and phone size: join,
-// move, reach the own shrine and read the Secure button, live through a HALVING with the
-// price board moving on, the last-chance countdown and "MATCH OVER", and see the result
-// screen with the bridge box. Screenshots of each step go to reports/screens/latest/ (git-ignored).
+// Seasonal Sumo — one short match in the player client, at desktop and phone size: join, move,
+// dash (the button's cooldown ring runs), live through a HALVING with the arena halving, the
+// last-chance countdown and "MATCH OVER", and see the result screen with the awards and the
+// bridge box. Screenshots of each step go to reports/screens/latest/ (git-ignored).
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { SCREENS, joystick, keyboard, ownShrine, steerTo, view, type Steering } from './stack.js';
+import { CENTRE, SCREENS, joystick, keyboard, steerTo, view, type Steering } from './stack.js';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
 
@@ -13,8 +13,8 @@ async function shot(page: Page, info: TestInfo, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-${name}.png`) });
 }
 
-// The last 10 s of the match: the countdown runs to the end (the clock says "LAST CHANCE —
-// secure now"), then "MATCH OVER" with the flash, before the result.
+// The last 10 s of the match: the countdown runs to the end ("LAST CHANCE"), then "MATCH OVER"
+// with the flash, before the result.
 async function lastChance(page: Page, info: TestInfo): Promise<void> {
   await expect
     .poll(async () => (await view(page)).countdown, { timeout: 70_000, intervals: [250] })
@@ -30,52 +30,48 @@ async function steering(page: Page, info: TestInfo): Promise<Steering> {
   return info.project.name === 'phone' ? joystick(page) : keyboard(page);
 }
 
-test('join, move, shrine buttons, a halving, the last chance and the result with the bridge box', async ({
+async function dash(page: Page, info: TestInfo): Promise<void> {
+  if (info.project.name === 'phone') await page.locator('#dash').tap();
+  else await page.keyboard.press('Space');
+}
+
+test('join, move, dash, a halving, the last chance and the result with the bridge box', async ({
   page,
 }, info) => {
   await page.goto('/');
   await expect.poll(async () => (await view(page)).own !== null, { timeout: 15_000 }).toBe(true);
   const joined = await view(page);
   expect(joined.mode).toBe('player');
-  const team = joined.team ?? 0;
   // Joining during a result pause: the result screen covers the field (and the joystick).
   await expect(page.locator('#result')).toBeHidden({ timeout: 20_000 });
   const steer = await steering(page, info);
 
-  // Move: away from the own shrine, towards the middle.
-  const start = joined.own ?? { x: 0, y: 0 };
-  const moved = await steerTo(page, steer, { x: 1000, y: 1000 }, async () => {
+  // Move towards the middle of the arena, then dash: the server's cooldown starts.
+  const start = (await view(page)).own ?? { x: 0, y: 0 };
+  const moved = await steerTo(page, steer, CENTRE, async () => {
     const now = (await view(page)).own;
-    return now !== null && Math.hypot(now.x - start.x, now.y - start.y) > 150;
+    return now !== null && Math.hypot(now.x - start.x, now.y - start.y) > 100;
   });
   expect(moved, 'the own ghost moves').toBe(true);
+  await steer.hold(1, 0);
+  await expect(page.locator('#dash')).toBeVisible();
+  await dash(page, info);
+  await expect.poll(async () => (await view(page)).own?.dashLeftMs ?? 0).toBeGreaterThan(0);
+  await steer.hold(0, 0);
   await shot(page, info, 'match');
 
-  // Back into the own shrine: the Secure button shows, for three polls in a row: when the walk home crosses a match end, the new match puts the
-  // ghost into the shrine for a moment while the held direction still carries it on (seen
-  // 2026-11-16 when the spec joined late in a match).
-  const shrine = page.locator('#shrine');
-  let inShrineFor = 0;
-  const atShrine = await steerTo(page, steer, ownShrine(team), async () => {
-    inShrineFor = (await shrine.isVisible()) ? inShrineFor + 1 : 0;
-    return inShrineFor >= 3;
-  });
-  expect(atShrine, 'the Secure button appears at the own shrine').toBe(true);
-  await expect(page.locator('#secure')).toHaveText(/^Secure: \d+(\.5)?$/);
-  await shot(page, info, 'shrine');
-
-  // The next halving: announcement with the new season, the price board moves on (V5).
+  // The next halving: the announcement with the new season, and the arena halves.
   const announce = page.locator('#announce');
-  const halving = /^HALVING — (Spring|Summer|Autumn|Winter) is in season · prices move on$/;
+  const halving = /^HALVING — the arena halves · (Spring|Summer|Autumn|Winter) is in season$/;
+  const before = (await view(page)).arena?.radius ?? 0;
   // Up to one season, or the rest of the last season, the result pause and one season.
   await expect(announce).toHaveText(halving, { timeout: 45_000 });
-  const text = (await announce.textContent()) ?? '';
-  const match = halving.exec(text);
-  expect(match, text).not.toBeNull();
+  const match = halving.exec((await announce.textContent()) ?? '');
   const season = SEASON_NAMES.indexOf(match?.[1] ?? '');
   await expect.poll(async () => (await view(page)).season).toBe(season);
-  await expect(page.locator('#prices .price.now')).toHaveText(`${SEASON_NAMES[season] ?? ''} 4`);
-  await expect.poll(async () => (await view(page)).coins, { timeout: 10_000 }).toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await view(page)).arena?.radius ?? 0, { timeout: 5000 })
+    .toBeLessThan(before * 0.75);
   await shot(page, info, 'halving');
 
   await lastChance(page, info);
@@ -86,17 +82,16 @@ test('join, move, shrine buttons, a halving, the last chance and the result with
 async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
   const result = page.locator('#result');
   await expect(result).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator('#result-place')).toHaveText(/^Your place: \d+ of \d+/);
-  // The recap's awards: 32 bots for a minute always secure.
+  await expect(page.locator('#result-place')).toHaveText(
+    /^Your place: \d+ of \d+ — \d+ knockouts$/,
+  );
   const awards = page.locator('#result-awards li');
   await expect(awards.first()).toBeVisible();
   for (const text of await awards.allTextContents()) {
-    expect(text).toMatch(
-      /^(Best nose.+, \d+(\.5)? from held coins|Closest save.+, \d+\.\d s left|Last secure.+, \d+(\.5)?)$/,
-    );
+    expect(text).toMatch(/^(Best pusher.+, \d+ knockouts|Survivor.+, \d+:\d\d without a fall)$/);
   }
   await expect(page.locator('#bridge-text')).toHaveText(
-    "This is how Seasonal Tokens work: at every halving the next season's coin becomes the valuable one — hold it before it rises.",
+    'This is how Seasonal Tokens work: every halving cuts in half — here it cuts the arena.',
   );
   await expect(page.getByRole('link', { name: 'Start here' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Try the simulator' })).toHaveAttribute(

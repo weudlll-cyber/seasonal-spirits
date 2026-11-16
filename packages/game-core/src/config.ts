@@ -1,15 +1,25 @@
-// Seasonal Spirits — every number of the game in one place.
-// Values from CONCEPT.md name their section; every other value is a placeholder the owner
-// decides (listed in the session sheet under NEEDS OWNER). Nothing else holds a magic number.
+// Seasonal Sumo — every number of the prototype in one place. Every value is a placeholder the
+// owner decides after playing (NIGHT 2026-11-17); nothing else holds a magic number.
 
-import type { Relation } from './prices.js';
 import type { Season } from './seasons.js';
 
 export interface BotConfig {
-  bankerSecureValue: number;
-  arriveRadius: number;
-  deadlineMarginMs: number;
-  waypointMs: number;
+  edgeMargin: number; // field units from the edge where a bot turns back inward
+  dashRange: number; // a bot dashes at an opponent closer than this…
+  dashAimCos: number; // …when its heading points at it at least this well (cosine)
+  wanderMs: number; // how often a bot's own offset around its target moves on
+  // The human-like layer (bots/human.ts, owner requirement 2026-11-17):
+  reactionMs: [number, number]; // each bot's reaction time is drawn from this range
+  reactionJitterMs: number; // ± per decision
+  aimNoiseDeg: number; // direction noise at average form, ± degrees
+  dashChance: number; // share of good dash chances taken at average form (else too late)
+  earlyDashChance: number; // per decision: a dash at nothing in particular (too early)
+  hesitateChance: number; // per decision: a short pause
+  hesitateMs: number;
+  edgeSlack: number; // a bot's own edge margin is drawn from [edgeSlack, 1] × edgeMargin
+  form: [number, number]; // the band a bot's form drifts in (1 = average)
+  formStep: number; // the largest step of the drift
+  formEveryMs: number; // how often the form drifts
 }
 
 export interface GameConfig {
@@ -17,22 +27,23 @@ export interface GameConfig {
   seasonDurationMs: number;
   startSeason: Season;
   fieldSize: number;
-  ghostSpeed: number;
-  carrySpeedFactor: number;
+  arenaRadius: number; // at the start; every halving divides the area by 2
+  arenaShrinkMs: number; // how long the edge takes to ease in after a halving
   ghostRadius: number;
-  ghostGrowthPerCoin: number;
-  ghostGrowthMax: number;
-  coinRadius: number;
-  coinSpawnPerSecond: number;
-  maxFieldCoins: number;
-  prices: Record<Relation, number>;
-  spawnWeights: Record<Relation, number>;
-  secureDurationMs: number;
-  shrineRadius: number;
-  shrineInset: number;
-  startSpread: number;
-  separationRadius: number;
-  separationStrength: number;
+  acceleration: number; // units/s² towards the held direction
+  friction: number; // share of the speed lost per second (exponential decay)
+  maxSpeed: number; // units/s by running; a dash and a knock may go faster
+  dashSpeed: number; // units/s at the start of a dash
+  dashMs: number; // how long a dash counts as one (it knocks what it hits)
+  dashCooldownMs: number; // between two dashes, enforced by the core
+  knockSpeed: number; // units/s a dashing ghost adds to the one it hits
+  restitution: number; // 0..1: how much two ghosts bounce off each other
+  inSeasonPush: number; // ghosts of the team in season push this much harder
+  fallMs: number; // the fall animation: falling, then out
+  outMs: number; // from the fall until the respawn
+  protectMs: number; // after the respawn: nothing pushes it, it pushes nothing
+  creditMs: number; // a fall counts for the last opponent that touched within this time
+  startSpread: number; // share of the radius the start ring sits at
   deadlineCountdownMs: number;
   reconnectGraceMs: number;
   resultPauseMs: number;
@@ -40,51 +51,47 @@ export interface GameConfig {
 }
 
 export const DEFAULT_CONFIG: GameConfig = {
-  matchDurationMs: 300_000, // CONCEPT.md §4: 5 minutes
-  seasonDurationMs: 75_000, // CONCEPT.md §2: four seasons of 75 s
-  // The website's season clock will provide this (CONCEPT.md §2).
-  startSeason: 'spring', // placeholder — owner decides
-  fieldSize: 2000, // placeholder — owner decides (Phase 0 world)
-  ghostSpeed: 300, // placeholder — owner decides (units/s, Phase 0 speed)
-  // CONCEPT.md §8: "carrying slows a ghost down"; the factor is open.
-  carrySpeedFactor: 0.7, // placeholder — owner decides
-  // The sizes the client draws and the server picks up with (geometry.ts ghostRadius): a coin
-  // is picked up when the drawn ghost and the drawn coin touch (2026-11-15; before, a fixed
-  // pickup radius of 30 against differently drawn sizes).
-  ghostRadius: 14, // placeholder — owner decides (an empty ghost)
-  ghostGrowthPerCoin: 0.5, // placeholder — owner decides (a carrier is larger, CONCEPT.md §2a)
-  ghostGrowthMax: 16, // placeholder — owner decides
-  coinRadius: 10, // placeholder — owner decides
-  coinSpawnPerSecond: 2, // placeholder — owner decides (CONCEPT.md V5: 2 coins per second)
-  maxFieldCoins: 60, // placeholder — owner decides
-  // CONCEPT.md V5 (owner decision 2026-11-16): the price board — a coin of the season in season
-  // is worth most, of the next season less, of the other two least (prices.ts).
-  prices: { inSeason: 4, next: 2, other: 1 }, // placeholder — owner decides
-  // Coins of all four seasons fall; each season's share by its relation to the season in
-  // season (prices.ts spawnSeason). Equal: every season equally often.
-  spawnWeights: { inSeason: 1, next: 1, other: 1 }, // placeholder — owner decides
-  secureDurationMs: 2500, // CONCEPT.md §2a: securing takes 2–3 s
-  shrineRadius: 80, // placeholder — owner decides
-  shrineInset: 150, // placeholder — owner decides (distance of a shrine from its corner)
-  startSpread: 60, // placeholder — owner decides (start area around the own shrine)
-  // Owner decision 2026-11-15: ghosts softly push each other apart. Two ghosts closer than the
-  // radius (two bodies touching) drift apart by the strength share of the overlap per tick.
-  separationRadius: 28, // placeholder — owner decides
-  separationStrength: 0.5, // placeholder — owner decides
-  // CONCEPT.md §2b / §13: every season turn inside a match is a halving, counted down from
-  // 10 s before; the match end the same way (owner decision 2026-11-16, "last chance").
-  deadlineCountdownMs: 10_000,
-  // CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot takes over.
-  reconnectGraceMs: 12_000,
+  matchDurationMs: 300_000, // 5 minutes, as Seasonal Spirits
+  seasonDurationMs: 75_000, // four seasons of 75 s
+  startSeason: 'spring', // placeholder — the website's season clock later
+  fieldSize: 2000,
+  // 32 ghosts of radius 16 fill about 1 % of a disc of 900: room at the start, and after three
+  // halvings (900 → 318) still a disc a few ghosts can fight on.
+  arenaRadius: 900, // placeholder — owner decides
+  arenaShrinkMs: 2000, // placeholder — owner decides
+  ghostRadius: 16, // placeholder — owner decides
+  acceleration: 1200, // placeholder — owner decides
+  friction: 2.5, // placeholder — owner decides
+  maxSpeed: 320, // placeholder — owner decides
+  dashSpeed: 900, // placeholder — owner decides
+  dashMs: 250, // placeholder — owner decides
+  dashCooldownMs: 1500, // placeholder — owner decides (owner's sketch: about 1.5 s)
+  knockSpeed: 700, // placeholder — owner decides
+  restitution: 0.6, // placeholder — owner decides
+  inSeasonPush: 1.25, // placeholder — owner decides (owner's sketch: about 1.25)
+  fallMs: 600, // placeholder — owner decides
+  outMs: 3000, // placeholder — owner decides (owner's sketch: about 3 s)
+  protectMs: 1000, // placeholder — owner decides (owner's sketch: about 1 s)
+  creditMs: 3000, // placeholder — owner decides (owner's sketch: 3 s)
+  startSpread: 0.6, // placeholder — owner decides
+  deadlineCountdownMs: 10_000, // the countdown before every halving and the end, as before
+  reconnectGraceMs: 12_000, // a disconnected player stands 12 s, then a bot takes over
   resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
   bots: {
-    // A banker secures as soon as what it carries is worth this much at today's prices.
-    bankerSecureValue: 12, // placeholder — owner decides
-    arriveRadius: 20, // placeholder — owner decides (how close a bot steers to a target)
-    // Spare time a bot keeps when it walks home to secure before a halving.
-    deadlineMarginMs: 3000, // placeholder — owner decides
-    // A collector with no coin of its own walks to a waypoint that moves on this often, so
-    // collectors spread over the field instead of sharing one coin (2026-11-15).
-    waypointMs: 4000, // placeholder — owner decides
+    edgeMargin: 140, // placeholder — owner decides
+    dashRange: 220, // placeholder — owner decides
+    dashAimCos: 0.9, // placeholder — owner decides
+    wanderMs: 3000, // placeholder — owner decides
+    reactionMs: [250, 450], // placeholder — owner decides (owner's sketch: 250–450 ms)
+    reactionJitterMs: 50, // placeholder — owner decides
+    aimNoiseDeg: 6, // placeholder — owner decides (owner's sketch: a few degrees)
+    dashChance: 0.6, // placeholder — owner decides
+    earlyDashChance: 0.004, // placeholder — owner decides
+    hesitateChance: 0.002, // placeholder — owner decides
+    hesitateMs: 400, // placeholder — owner decides
+    edgeSlack: 0.6, // placeholder — owner decides
+    form: [0.85, 1.15], // placeholder — owner decides
+    formStep: 0.06, // placeholder — owner decides
+    formEveryMs: 5000, // placeholder — owner decides
   },
 };

@@ -32,21 +32,31 @@ function nextRecap(ws: WebSocket): Promise<ServerRecap> {
 }
 
 describe('match recap', () => {
-  it('carries the result and leaves out the awards nobody earned', () => {
-    const result = { players: [{ id: 3, team: 1 as const, secured: 7.5 }], teams: [0, 7.5, 0, 0] };
-    const awards = { ...NO_AWARDS, lastSecure: { ghost: 3, value: 7.5 } };
+  const row = (id: number, knockouts: number, longestAliveMs: number) => ({
+    id,
+    team: 1 as const,
+    knockouts,
+    falls: 1,
+    longestAliveMs,
+  });
+
+  it('carries the knockouts, the best pusher and the survivor', () => {
+    const result = { players: [row(3, 2, 40_000), row(4, 0, 90_400.5)], teams: [0, 2, 0, 0] };
+    const awards = { ...NO_AWARDS, bestPusher: { ghost: 3, knockouts: 2 } };
     expect(recapOf(result, awards)).toEqual({
       kind: 'recap',
-      teams: [0, 7.5, 0, 0],
-      players: [{ ghost: 3, team: 1, secured: 7.5 }],
-      awards: { lastSecure: { ghost: 3, value: 7.5 } },
+      teams: [0, 2, 0, 0],
+      players: [
+        { ghost: 3, team: 1, knockouts: 2 },
+        { ghost: 4, team: 1, knockouts: 0 },
+      ],
+      awards: { bestPusher: { ghost: 3, knockouts: 2 }, survivor: { ghost: 4, ms: 90_401 } },
     });
   });
 
-  it('carries the best nose (V5) when someone earned it', () => {
-    const result = { players: [{ id: 3, team: 1 as const, secured: 30 }], teams: [0, 30, 0, 0] };
-    const awards = { ...NO_AWARDS, bestNose: { ghost: 3, value: 20 } };
-    expect(recapOf(result, awards).awards).toEqual({ bestNose: { ghost: 3, value: 20 } });
+  it('leaves the best pusher out when nobody knocked anyone off', () => {
+    const result = { players: [row(3, 0, 300_000)], teams: [0, 0, 0, 0] };
+    expect(recapOf(result, NO_AWARDS).awards).toEqual({ survivor: { ghost: 3, ms: 300_000 } });
   });
 
   it('is offered once at the end, during the pause for latecomers, never while a match runs', () => {
@@ -68,7 +78,7 @@ describe('match recap', () => {
     const recap = await nextRecap(ws);
     expect(recap.players.length).toBe(4);
     expect(recap.teams.reduce((a, b) => a + b, 0)).toBe(
-      recap.players.reduce((a, p) => a + p.secured, 0),
+      recap.players.reduce((a, p) => a + p.knockouts, 0),
     );
     const late = await connect(server);
     const latesRecap = nextRecap(late);

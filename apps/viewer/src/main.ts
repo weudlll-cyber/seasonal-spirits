@@ -51,7 +51,10 @@ const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const trails = new Trails();
-const jumpDetector = new JumpDetector({ speedUnitsPerSecond: DEFAULT_CONFIG.ghostSpeed });
+// The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump).
+const jumpDetector = new JumpDetector({
+  speedUnitsPerSecond: DEFAULT_CONFIG.dashSpeed + DEFAULT_CONFIG.knockSpeed,
+});
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
@@ -101,20 +104,15 @@ function frame(): void {
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);
 
-  // Ghosts are interpolated; coins and clock come from the newest state.
+  // Ghosts are interpolated; the arena and the clock come from the newest state.
   const latest = buffer.at(-1)?.state;
-  trails.record(ghosts);
-  const shrineLabels = drawField(fitField(ctx, CLOCK_HEIGHT), latest, {
-    ownTeam: null,
-    nowMs: 0,
-    blocked: [],
-    ghosts,
-  });
+  trails.record(ghosts, now);
+  drawField(fitField(ctx, CLOCK_HEIGHT), latest);
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
     ownId: null,
     trails,
+    nowMs: now,
     labelAll: true,
-    avoid: shrineLabels.all,
   });
   drawClock(ctx, latest);
 

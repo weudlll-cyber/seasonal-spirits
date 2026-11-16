@@ -1,4 +1,4 @@
-// Seasonal Spirits — the player client: joins the match, steers one ghost, shows the match.
+// Seasonal Sumo — the player client: joins the match, steers one ghost, shows the match.
 // Development mode, no sign-in: the server gives a free slot (a bot leaves) or, when every
 // slot has a player, lets the client watch. With ?spectate=1 it only watches (CONCEPT.md §5):
 // the whole field, every name, the clock and the halving staging, no controls. Draws with
@@ -7,7 +7,8 @@
 // (prediction.ts, display only).
 
 import {
-  GHOST_SECURING,
+  GHOST_FALLING,
+  GHOST_OUT,
   RenderClock,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
@@ -25,9 +26,9 @@ import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { OwnPrediction, type ServerOwn } from './prediction.js';
-import { PriceBoard } from './prices.js';
 import { ResultScreen } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
+import { ScoreBoard } from './scores.js';
 import { DeadlineTone } from './sound.js';
 import { ViewToggle } from './view-mode.js';
 
@@ -60,7 +61,8 @@ const trails = new Trails();
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
 const result = new ResultScreen();
-const prices = new PriceBoard();
+const scores = new ScoreBoard();
+let dashPressed = false; // since the last frame: the own prediction dashes too
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
 let recap: ServerRecap | null = null; // of the match just ended, during the result pause
@@ -104,6 +106,7 @@ const controls: Controls = {
     conn.steer(dx, dy);
   },
   act: (a) => {
+    dashPressed = true; // Dash is the one action
     conn.act(a);
   },
 };
@@ -111,25 +114,19 @@ bindKeyboard(controls);
 bindJoystick(el('stick'), el('knob'), controls);
 new Help(el('help'), el('help-open', HTMLButtonElement));
 
-// The moments one frame shows, in server time, for the latency measurement
-// (e2e/latency.measure.ts): the drawn ghosts (render target), the newest state, the coins.
-interface FrameTiming {
-  frameMs: number;
-  targetMs: number | null;
-  latestMs: number | null;
-  coinsMs: number | null;
-}
-
 // The own ghost in the newest state, as the prediction needs it; null while watching.
 function ownServer(ownId: number | null): ServerOwn | null {
   const newest = conn.buffer.at(-1);
   const g = newest?.state.ghosts.find((x) => x.id === ownId);
   if (conn.mode !== 'player' || !newest || !g) return null;
+  const away = (g.flags & (GHOST_FALLING | GHOST_OUT)) !== 0;
   return {
     x: g.x,
     y: g.y,
-    carrying: g.carried > 0,
-    frozen: (g.flags & GHOST_SECURING) !== 0 || (newest.state.flags & STATE_RESULT) !== 0,
+    vx: g.vx,
+    vy: g.vy,
+    dashLeftMs: g.dashLeftMs,
+    frozen: away || (newest.state.flags & STATE_RESULT) !== 0,
     receivedAt: newest.receivedAt,
   };
 }
@@ -137,25 +134,21 @@ function ownServer(ownId: number | null): ServerOwn | null {
 // Other ghosts a render buffer behind, smoothly; the own one where the own input has already
 // taken it (prediction.ts).
 function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
-  const predicted = prediction.update(now, conn.direction, ownServer(ownId));
+  const predicted = prediction.update(now, conn.direction, ownServer(ownId), dashPressed);
+  dashPressed = false;
   const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
   return ghosts.map((g) => (g.id === ownId && predicted ? { ...g, ...predicted } : g));
 }
 
-function snapshot(now: number): { f: Frame; timing: FrameTiming } {
+function snapshot(now: number): Frame {
   const target = renderClock.target(now, latestServerMs(conn.buffer));
   const ownId = conn.welcome?.ghost ?? null;
   const ghosts = drawnGhosts(now, target, ownId);
   const latest = conn.buffer.at(-1)?.state;
   const playing = conn.mode === 'player';
-  const newestMs = latest?.serverMs ?? null;
-  const timing = { frameMs: now, targetMs: target, latestMs: newestMs, coinsMs: newestMs };
-  const f: Frame = {
+  return {
     ghosts,
     latest,
-    // The newest state's coins: the own ghost is drawn at the newest moment or ahead of it, so
-    // its pickups show when it touches a coin (reports/session-2026-11-16-human.md "Response").
-    coins: latest?.coins ?? [],
     ownId,
     own: ghosts.find((g) => g.id === ownId),
     ownTeam: playing ? (conn.welcome?.team ?? null) : null,
@@ -163,7 +156,6 @@ function snapshot(now: number): { f: Frame; timing: FrameTiming } {
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
   };
-  return { f, timing };
 }
 
 // "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
@@ -183,9 +175,9 @@ function draw(f: Frame): Drawn {
   const drawn = drawScene(ctx, f, viewToggle?.mode ?? 'overview', trails);
   showTeam(f.ownTeam);
   viewButton.hidden = !f.playing;
-  const offer = f.latest?.offers.find((o) => o.ghost === f.ownId);
-  hud.showControls(f.playing && !f.over, offer);
-  prices.update(f.latest?.season ?? null);
+  const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
+  hud.showControls(f.playing && !f.over, own?.dashLeftMs ?? 0);
+  scores.update(f.latest);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;
 }
@@ -196,15 +188,18 @@ function countdownOf(s: ServerState | undefined): { ms: number; toEnd: boolean }
 }
 
 // Read by the Playwright specs: what this client knows and drew, never more than it shows.
-function expose(f: Frame, drawn: Drawn, timing: FrameTiming): void {
+function expose(f: Frame, drawn: Drawn): void {
+  const s = f.latest;
   (window as unknown as { __client: unknown }).__client = {
-    timing,
     mode: conn.mode,
     ghost: f.ownId,
     team: conn.welcome?.team ?? null,
-    own: f.own ? { x: f.own.x, y: f.own.y, carried: f.own.carried } : null,
-    season: f.latest?.season ?? null,
-    coins: f.latest?.coins.length ?? 0,
+    own: f.own
+      ? { x: f.own.x, y: f.own.y, flags: f.own.flags, dashLeftMs: f.own.dashLeftMs }
+      : null,
+    season: s?.season ?? null,
+    arena: s ? { radius: s.arenaRadius, next: s.arenaNext } : null,
+    teamScore: s ? [...s.teamScore] : null,
     halvings,
     // The clock's countdown as the server sent it, and whether it runs to the match end.
     countdown: countdownOf(f.latest),
@@ -216,8 +211,8 @@ function expose(f: Frame, drawn: Drawn, timing: FrameTiming): void {
 function frame(): void {
   const now = performance.now();
   conn.flush(now);
-  const { f, timing } = snapshot(now);
-  expose(f, draw(f), timing);
+  const f = snapshot(now);
+  expose(f, draw(f));
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

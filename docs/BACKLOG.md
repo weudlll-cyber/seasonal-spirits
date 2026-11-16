@@ -6,6 +6,25 @@ means), `CLOSED` (appended to, each topic with the commit that finished it) and
 
 ## OPEN
 
+**Seasonal Spirits is paused** (owner decision 2026-11-16; NIGHT 2026-11-17): the V5
+prototype is kept as the tag `v5-prototype`, `master` is the last merged Spirits state.
+On `proto/sumo` the rough prototype **Seasonal Sumo** is built; the topics below about
+Spirits wait.
+
+y. **Seasonal Sumo — the owner plays it** (NIGHT 2026-11-17, on `proto/sumo`, not merged).
+Done when: the owner has played it and said whether it is the game he is looking for, and
+decided the placeholders (arena size, dash, push factor, respawn, the bot layer's reaction
+and noise).
+
+z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
+season, a different short action minigame per round, the halving as the transition between
+rounds, team points over all rounds and an overall winner — to be built only if the
+prototypes are fun. Candidate minigames, none chosen yet: Sumo, Snowball fight, Harvest,
+Flower painting, Halving bomb, Light trails (Tron-like), King of the Season, Hailstorm /
+Avalanche, Halving Run (coins halve again and again), Sun Core (the carrier scores but is
+slower), Seasonal Swap (close to the paused Spirits rules — caution). Done when: the owner
+has decided whether to build it, and which minigames.
+
 In the order decided on 2026-11-14.
 
 a. **Safety net — owner part.** CodeQL, osv-scanner and Renovate are in the repository
@@ -507,6 +526,20 @@ Done when: the spec is green ten runs in a row.
   `reports/screens/latest/v5-*.png` (git-ignored); `pnpm dev` left running from the branch —
   commit "docs: V5 piece 6, played".
 
+- 2026-11-17 — **Seasonal Sumo prototype, piece 2** (NIGHT 2026-11-17, on `proto/sumo` from
+  `v5-prototype`): the core as Sumo (arena, momentum, dash with the core's cooldown,
+  collisions with the dash's knock and the in-season push, falls with the 3 s credit, respawn
+  with protection, the arena halving and easing in, "Best pusher" and "Survivor"); the
+  human-like bot layer over a rough brain (owner's addendum 2: Near view, reaction time,
+  aim noise, late and early dashes, hesitation, edge slack, form drift, seeded); seats: a
+  joining player takes a bot's seat at once, teams stay equal; protocol: only input and
+  "dash", the state with speeds, arena radii and scores (452 bytes at 32 ghosts); client:
+  the arena with its glowing and dashed edges, the Dash button with its cooldown ring, team
+  scores in the band, the prediction with momentum and dash, the fall animation, help and
+  result for Sumo, the bridge text; removed: coins, prices, shrines, securing, the price
+  board, the shrine arrow, the team check, the fairness search, the human stand-in, the
+  latency and picture tools — commit "feat: Seasonal Sumo prototype".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -722,3 +755,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-16 | CI and CodeQL on GitHub                                                                                                                                                                   | `8ba6b46`, `cdb7470`, `30428e8` on `feat/v5-rules`                                                                                        | `8ba6b46`: CI failed in e2e only (help texts left from before V5; fixed in `cdb7470`), CodeQL success; `cdb7470` and `30428e8`: CI and CodeQL success (43966294510/43966294496, 43967106389/43967106478)                            | `gh run list --branch feat/v5-rules`                                                           |
 | 2026-11-16 | one full match played on `pnpm dev` (desktop 1280 × 800 and Pixel 7 in parallel, keyboard), "Near" until the third season, then "Overview"; labels checked every step                     | `007e121`                                                                                                                                 | 303 s; halvings at 75 / 150 / 225 s with "HALVING — <Season> is in season · prices move on" and the board framing <Season> 4; no label out of view or unnamed ghost; the own ghosts carried at most 1 coin (random steering)        | `reports/screens/latest/v5-*.png`, the sheet                                                   |
 | 2026-11-16 | `pnpm dev` from `feat/v5-rules`: client 5930, viewer 5931, server `/metrics-lite`                                                                                                         | `007e121`                                                                                                                                 | all answer (200; 32 ghosts, 19.7 Hz, 401 bytes per state)                                                                                                                                                                           | the sheet                                                                                      |
+| 2026-11-17 | CI and CodeQL on GitHub                                                                                                                                                                   | merge `a09f803` on `master`                                                                                                               | success (CI 43976601394, CodeQL 43976601655)                                                                                                                                                                                        | `gh run list --branch master`                                                                  |
+| 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; tests related to the changed files: 32 files / 159 tests)                                                                                 | working tree of "feat: Seasonal Sumo prototype"                                                                                           | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-17 | `pnpm e2e` (help, play, readability both sizes; spectate desktop)                                                                                                                         | same tree                                                                                                                                 | 7 passed, 1 skipped (spectate on the phone)                                                                                                                                                                                         | this commit                                                                                    |
+| 2026-11-17 | `pnpm simulate --seed 1`                                                                                                                                                                  | same tree                                                                                                                                 | sanity green; 519 falls (453 credited), knockouts per team 95–123                                                                                                                                                                   | docs/GAME-CORE.md                                                                              |

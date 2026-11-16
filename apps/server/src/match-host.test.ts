@@ -4,7 +4,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import {
-  GHOST_AT_SHRINE,
   GHOST_BOT,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
@@ -39,6 +38,20 @@ describe('match host slots', () => {
     expect(host.players()).toBe(4);
   });
 
+  // Owner requirement 2026-11-17: bots only fill seats; the four teams stay equal in size.
+  it('keeps the teams equal: 8 seats each, humans spread evenly, a leaver back to a bot', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    const teams = Array.from({ length: 8 }, (_, c) => host.join(c + 1)?.team ?? -1);
+    for (let t = 0; t < 4; t++) expect(teams.filter((x) => x === t)).toHaveLength(2);
+    const s = host.tick(50);
+    for (let t = 0; t < 4; t++) expect(s.ghosts.filter((g) => g.team === t)).toHaveLength(8);
+    host.leave(3);
+    const later = runFor(host, DEFAULT_CONFIG.reconnectGraceMs + 100).at(-1);
+    const humans = later?.ghosts.filter((g) => !(g.flags & GHOST_BOT)).length;
+    expect(humans).toBe(7);
+    expect(host.join(99)?.team).toBe(teams[2]); // the team that lost a human gets the next one
+  });
+
   it('refuses a player when every slot has one', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
     for (let c = 1; c <= 4; c++) expect(host.join(c)).not.toBeNull();
@@ -67,22 +80,28 @@ describe('match host inputs', () => {
     const x0 = host.tick(50).ghosts.find((g) => g.id === slot.ghost)?.x ?? NaN;
     host.steer(2, -1, 0); // not a player
     host.steer(1, 1, 0);
-    const x1 = host.tick(1000).ghosts.find((g) => g.id === slot.ghost)?.x ?? NaN;
-    expect(x1 - x0).toBeCloseTo(DEFAULT_CONFIG.ghostSpeed);
+    const x1 =
+      runFor(host, 1000)
+        .at(-1)
+        ?.ghosts.find((g) => g.id === slot.ghost)?.x ?? NaN;
+    // Accelerating from standing with momentum: well on its way, below the top speed.
+    expect(x1 - x0).toBeGreaterThan(DEFAULT_CONFIG.maxSpeed / 4);
+    expect(x1 - x0).toBeLessThanOrEqual(DEFAULT_CONFIG.maxSpeed);
   });
-});
 
-describe('match host shrine offers', () => {
-  it('sends the button number for a player in its own shrine, never for a bot', () => {
+  it('dashes once per cooldown, however often the player sends it', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
     const slot = host.join(1);
     if (!slot) throw new Error('no slot');
-    // Every ghost starts inside its own shrine.
-    const s = host.tick(50);
-    expect(s.ghosts.every((g) => g.flags & GHOST_AT_SHRINE)).toBe(true);
-    expect(s.offers).toEqual([{ ghost: slot.ghost, secureValue: 0 }]);
-    host.steer(1, 1, 1);
-    expect(host.tick(1000).offers).toEqual([]);
+    host.steer(1, 1, 0);
+    const left: number[] = [];
+    for (let t = 0; t < 1000; t += 50) {
+      host.act(1, 'dash');
+      left.push(host.tick(50).ghosts.find((g) => g.id === slot.ghost)?.dashLeftMs ?? -1);
+    }
+    // The cooldown ran once from the first dash and was never restarted.
+    expect(left[0]).toBeGreaterThan(DEFAULT_CONFIG.dashCooldownMs - 100);
+    expect(left.every((v, i) => i === 0 || v <= (left[i - 1] ?? Infinity))).toBe(true);
   });
 });
 
@@ -104,8 +123,8 @@ describe('match host state size', () => {
       }
       expect(halvings).toBe(3);
       expect(max).toBeLessThan(1024);
-      // Bots never get offers: a full field (maxFieldCoins) is the bound, 34 + 13 · 32 + 4 · 60.
-      expect(max).toBeLessThanOrEqual(encodedSize(32, DEFAULT_CONFIG.maxFieldCoins));
+      // The state has no variable part but the ghosts: 36 + 13 · 32.
+      expect(max).toBe(encodedSize(32));
     },
   );
 });

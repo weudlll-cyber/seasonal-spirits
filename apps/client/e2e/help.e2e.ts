@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';
 import { SCREENS } from './stack.js';
 
-const RULES = 5; // the numbered rules above "What you see", one drawing each
+const RULES = 3; // the numbered rules above "What you see", one drawing each
 
 // A first visit: nothing remembered in the browser.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -19,15 +19,12 @@ test('help appears on the first visit, not on the second, and opens again with "
   const help = page.locator('#help');
   await page.goto('/');
   await expect(help).toBeVisible();
-  // The five rules of V5 (owner decision 2026-11-16), the price board among them.
-  await expect(help).toContainText('Coins of all four seasons fall');
-  await expect(help).toContainText('the season in season 4, the next season 2, the other two 1');
-  await expect(help).toContainText('comes the halving: the next season comes into season');
-  await expect(help).toContainText('Coins still carried at the end count nothing');
-  await expect(help).toContainText('The team with the most secured points wins');
+  // The three rules of Sumo.
+  await expect(help).toContainText('Push the other teams off the arena');
+  await expect(help).toContainText('Dash with Space or the Dash button');
+  await expect(help).toContainText('At every halving the arena halves');
   await expect(help).toContainText('What you see');
   for (const { text } of LEGEND) await expect(help).toContainText(text);
-  await expect(help).toContainText('A trail behind a ghost: it carries coins.');
   await expect(help.locator('svg')).toHaveCount(RULES + LEGEND.length);
   await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-help.png`) });
   const phone = info.project.name === 'phone';

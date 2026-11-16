@@ -1,9 +1,9 @@
-// Seasonal Spirits — plane geometry of the map: distances, clamping, one movement step,
-// shrine positions.
-// The map is a square 0..fieldSize; the four shrines sit inset from the four corners.
+// Seasonal Sumo — plane geometry and one step of movement with momentum: distances, clamping,
+// a direction clamped to length 1, and stepGhost — the one movement rule the server's tick and
+// the client's prediction of the own ghost both use, so they cannot drift apart.
 
 import type { GameConfig } from './config.js';
-import type { Team, Vec } from './types.js';
+import type { Vec } from './types.js';
 
 export function distance(a: Vec, b: Vec): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -20,45 +20,53 @@ export function clampDirection(dx: number, dy: number): Vec {
   return mag > 1 ? { x: dx / mag, y: dy / mag } : { x: dx, y: dy };
 }
 
-// One step of a ghost's movement: speed (slower while carrying), the direction clamped to
-// length 1, the field's edges. The server's tick (match.ts) and the client's prediction of the
-// own ghost (apps/client prediction.ts) both move with it, so they cannot drift apart.
+export interface Motion {
+  x: number;
+  y: number;
+  vx: number; // units/s
+  vy: number;
+}
+
+// One step: accelerate towards the held direction — but only while the speed along it is
+// below maxSpeed, so running never exceeds it while a dash or a knock may, and then slows —,
+// lose `friction` of the speed per second (exponential, so the step size does not matter),
+// move, and stay inside the field.
 export function stepGhost(
   cfg: GameConfig,
-  at: Vec & { carrying: boolean },
+  m: Motion,
   dir: { dx: number; dy: number },
   dtMs: number,
-): Vec {
+): Motion {
+  const dt = dtMs / 1000;
   const d = clampDirection(dir.dx, dir.dy);
-  const step = (cfg.ghostSpeed * (at.carrying ? cfg.carrySpeedFactor : 1) * dtMs) / 1000;
+  let { vx, vy } = m;
+  const along = vx * d.x + vy * d.y;
+  const room = Math.max(0, cfg.maxSpeed * Math.hypot(d.x, d.y) - along);
+  const push = Math.min(cfg.acceleration * dt, room);
+  vx += d.x * push;
+  vy += d.y * push;
+  const keep = Math.exp(-cfg.friction * dt);
+  vx *= keep;
+  vy *= keep;
   return {
-    x: clamp(at.x + d.x * step, 0, cfg.fieldSize),
-    y: clamp(at.y + d.y * step, 0, cfg.fieldSize),
+    x: clamp(m.x + vx * dt, 0, cfg.fieldSize),
+    y: clamp(m.y + vy * dt, 0, cfg.fieldSize),
+    vx,
+    vy,
   };
 }
 
-export function shrinePositions(cfg: GameConfig): Vec[] {
-  const lo = cfg.shrineInset;
-  const hi = cfg.fieldSize - cfg.shrineInset;
-  return [
-    { x: lo, y: lo },
-    { x: hi, y: lo },
-    { x: hi, y: hi },
-    { x: lo, y: hi },
-  ];
-}
-
-export function shrineOf(shrines: readonly Vec[], team: Team): Vec {
-  return shrines[team] ?? { x: 0, y: 0 };
-}
-
-// A ghost's radius: larger with every coin it carries, up to a limit (CONCEPT.md §2a: a
-// carrier is visible from afar). The server's pickup and the client's drawing both use it.
-export function ghostRadius(cfg: GameConfig, carried: number): number {
-  return cfg.ghostRadius + Math.min(cfg.ghostGrowthMax, carried * cfg.ghostGrowthPerCoin);
-}
-
-// True when the drawn ghost and the drawn coin touch: the pickup rule (2026-11-15).
-export function touchesCoin(cfg: GameConfig, ghost: Vec, carried: number, coin: Vec): boolean {
-  return distance(ghost, coin) <= ghostRadius(cfg, carried) + cfg.coinRadius;
+// The velocity a dash starts with: dashSpeed towards the held direction, or along the current
+// motion when no direction is held; standing still and holding nothing, no dash.
+export function dashVelocity(
+  cfg: GameConfig,
+  m: Motion,
+  dir: { dx: number; dy: number },
+): Vec | null {
+  const d = clampDirection(dir.dx, dir.dy);
+  const len = Math.hypot(d.x, d.y);
+  const speed = Math.hypot(m.vx, m.vy);
+  if (len > 0) return { x: (d.x / len) * cfg.dashSpeed, y: (d.y / len) * cfg.dashSpeed };
+  if (speed > 0) return { x: (m.vx / speed) * cfg.dashSpeed, y: (m.vy / speed) * cfg.dashSpeed };
+  return null;
 }

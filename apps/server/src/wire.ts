@@ -1,15 +1,12 @@
-// Seasonal Spirits — the game core's match state as the wire state every client receives.
-// One place turns the core's numbers into what clients show: per ghost the carried count and
-// the secured value, per field coin its season, and for players in their own shrine the
-// Secure offer, computed by the core (a client never calculates it). The price board is not
-// sent: it follows from the season and the config (game-core priceOf).
+// Seasonal Sumo — the game core's match state as the wire state every client receives.
+// One place turns the core's numbers into what clients show: per ghost its position, speed,
+// knockouts, the time to its next dash and its phase, the arena's edge now and after the next
+// halving, and the knockouts per team.
 
 import {
   SEASONS,
-  atOwnShrine,
   isLastSeason,
-  shrineOffer,
-  totalCount,
+  nextRadius,
   type GameConfig,
   type Ghost,
   type MatchEvent,
@@ -17,16 +14,16 @@ import {
   type MatchState,
 } from '@seasonal-spirits/game-core';
 import {
-  GHOST_AT_SHRINE,
   GHOST_BOT,
-  GHOST_CARRIER,
-  GHOST_SECURING,
+  GHOST_DASHING,
+  GHOST_FALLING,
+  GHOST_OUT,
+  GHOST_PROTECTED,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
   STATE_TO_END,
   type GhostState,
-  type OfferState,
   type ServerState,
 } from '@seasonal-spirits/protocol';
 
@@ -42,15 +39,6 @@ export interface WireContext {
 
 export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
   const teams = ctx.result.teams;
-  const offers: OfferState[] = [];
-  const ghosts = s.ghosts.map((g) => {
-    const wire = ghostOnWire(ctx, s, g);
-    // Bots read the core state directly; only players need the button's number.
-    if (wire.flags & GHOST_AT_SHRINE && !(wire.flags & GHOST_BOT) && !s.ended) {
-      offers.push({ ghost: g.id, ...shrineOffer(ctx.cfg, s, g) });
-    }
-    return wire;
-  });
   return {
     matchMs: s.elapsedMs,
     season: SEASONS.indexOf(s.clock.current),
@@ -64,26 +52,29 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
       (!s.ended && isLastSeason(ctx.cfg, s.clock) ? STATE_TO_END : 0) |
       (ctx.events.some((e) => e.type === 'match-end') ? STATE_MATCH_END_EVENT : 0),
     nextMatchMs: ctx.nextMatchMs,
-    teamSecured: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
-    ghosts,
-    coins: s.coins.map((c) => ({ x: c.x, y: c.y, season: SEASONS.indexOf(c.season) })),
-    offers,
+    teamScore: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
+    arenaRadius: s.arena.radius,
+    arenaNext: nextRadius(s.arena),
+    ghosts: s.ghosts.map((g) => ghostOnWire(ctx, s, g)),
   };
 }
 
 function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): GhostState {
-  const carried = totalCount(g.carried);
+  const now = s.elapsedMs;
   return {
     id: g.id,
     x: g.x,
     y: g.y,
+    vx: g.vx,
+    vy: g.vy,
     team: g.team,
-    carried,
-    secured: g.securedValue,
+    knockouts: g.knockouts,
+    dashLeftMs: Math.max(0, g.dashReadyMs - now),
     flags:
-      (carried > 0 ? GHOST_CARRIER : 0) |
-      (g.securingUntilMs !== null ? GHOST_SECURING : 0) |
       (ctx.isBot(g.id) ? GHOST_BOT : 0) |
-      (atOwnShrine(ctx.cfg, s, g) ? GHOST_AT_SHRINE : 0),
+      (now < g.dashUntilMs ? GHOST_DASHING : 0) |
+      (g.phase === 'falling' ? GHOST_FALLING : 0) |
+      (g.phase === 'out' ? GHOST_OUT : 0) |
+      (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0),
   };
 }

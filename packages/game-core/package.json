@@ -10,11 +10,8 @@
   },
   "scripts": {
     "simulate": "tsx src/simulate.ts",
-    "balance": "tsx src/balance-cli.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "fairness": "tsx src/fairness-cli.ts",
-    "human": "tsx src/human-cli.ts"
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "tsx": "4.23.15"

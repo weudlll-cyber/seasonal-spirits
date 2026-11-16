@@ -1,5 +1,6 @@
-// Seasonal Spirits — what the human stand-in (standin.ts) perceives: the public match state cut
-// to a view around itself and seen a reaction time late, as a player at a screen sees it.
+// Seasonal Sumo — what a human-like bot (bots/human.ts) perceives: the public match state cut
+// to a view around itself and seen a reaction time late, as a player at a screen sees it
+// (grown from Seasonal Spirits' human stand-in).
 
 import type { Ghost, MatchState } from '../types.js';
 
@@ -9,6 +10,11 @@ export interface ViewHalfSize {
   x: number;
   y: number;
 }
+
+// The client's "Near" view (apps/client: `cameraSpan` 1100 field units along the shorter side
+// of the screen below the bar; render `follow`): a desktop window shows the whole field width
+// and 1100 of its height.
+export const NEAR_VIEW: ViewHalfSize = { x: 1000, y: 550 };
 
 export interface Sight {
   view: ViewHalfSize | null; // null: the whole field
@@ -20,8 +26,8 @@ function snapshot(s: Readonly<MatchState>): MatchState {
   return {
     ...s,
     clock: { ...s.clock },
-    ghosts: s.ghosts.map((g) => ({ ...g, carried: { ...g.carried }, crossed: { ...g.crossed } })),
-    coins: s.coins.map((c) => ({ ...c })),
+    arena: { ...s.arena, centre: { ...s.arena.centre } },
+    ghosts: s.ghosts.map((g) => ({ ...g, lastTouch: g.lastTouch && { ...g.lastTouch } })),
     events: [],
   };
 }
@@ -73,10 +79,6 @@ export function perceive(
   const r = viewRect(fieldSize, me, sight.view);
   const inside = (p: { x: number; y: number }): boolean =>
     p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
-  const state = {
-    ...seen,
-    ghosts: seen.ghosts.filter((g) => g.id === meId || inside(g)),
-    coins: seen.coins.filter(inside),
-  };
+  const state = { ...seen, ghosts: seen.ghosts.filter((g) => g.id === meId || inside(g)) };
   return { state, me };
 }

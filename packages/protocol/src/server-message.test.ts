@@ -27,7 +27,7 @@ describe('parseServerMessage', () => {
     expect(parseServerMessage(padded)).toBeNull();
   });
 
-  // V5 (owner decision 2026-11-16): no steal notices and no team signals any more.
+  // Seasonal Spirits' steal notices and team signals do not exist any more.
   it('drops the removed steal notice and team signal', () => {
     for (const text of [
       '{"kind":"steal","thief":7,"victim":3,"coins":2}',
@@ -56,21 +56,20 @@ describe('parseServerMessage', () => {
   });
 });
 
-// The match recap (owner decision 2026-11-16): the result and the awards.
+// The match recap: knockouts per team and player, and the awards.
 describe('parseServerMessage: recap', () => {
   const players = Array.from({ length: 32 }, (_, i) => ({
     ghost: i + 1,
     team: i % 4,
-    secured: 20.5,
+    knockouts: 4,
   }));
   const recap = {
     kind: 'recap',
-    teams: [120, 99.5, 0, 33],
+    teams: [120, 99, 0, 33],
     players,
     awards: {
-      bestNose: { ghost: 7, value: 24 },
-      closestSave: { ghost: 2, leftMs: 950 },
-      lastSecure: { ghost: 11, value: 12.5 },
+      bestPusher: { ghost: 2, knockouts: 9 },
+      survivor: { ghost: 11, ms: 182_000 },
     },
   };
 
@@ -80,9 +79,9 @@ describe('parseServerMessage: recap', () => {
   });
 
   it('reads a recap without the awards nobody earned', () => {
-    const text = JSON.stringify({ ...recap, awards: { lastSecure: { ghost: 3, value: 1 } } });
+    const text = JSON.stringify({ ...recap, awards: { survivor: { ghost: 3, ms: 1000 } } });
     expect(parseServerMessage(text)).toMatchObject({
-      awards: { lastSecure: { ghost: 3, value: 1 } },
+      awards: { survivor: { ghost: 3, ms: 1000 } },
     });
   });
 
@@ -91,15 +90,16 @@ describe('parseServerMessage: recap', () => {
       { ...recap, teams: [1, 2, 3] },
       { ...recap, teams: [1, 2, 3, -1] },
       { ...recap, teams: [1, 2, 3, 0.25] },
-      { ...recap, players: [{ ghost: 300, team: 0, secured: 1 }] },
-      { ...recap, players: [{ ghost: 1, team: 4, secured: 1 }] },
+      { ...recap, players: [{ ghost: 300, team: 0, knockouts: 1 }] },
+      { ...recap, players: [{ ghost: 1, team: 4, knockouts: 1 }] },
+      { ...recap, players: [{ ghost: 1, team: 0, knockouts: 1.5 }] },
       { ...recap, players: 'all' },
       { ...recap, awards: null },
-      { ...recap, awards: { closestSave: { ghost: 2, leftMs: -1 } } },
-      { ...recap, awards: { bestNose: { ghost: 300, value: 24 } } },
-      { ...recap, awards: { bestNose: { ghost: 7, value: -4 } } },
-      { ...recap, awards: { lastSecure: { ghost: 2, value: 'a lot' } } },
-      { ...recap, players: [...players, ...players, { ghost: 1, team: 0, secured: 0 }] },
+      { ...recap, awards: { survivor: { ghost: 2, ms: -1 } } },
+      { ...recap, awards: { bestPusher: { ghost: 300, knockouts: 2 } } },
+      { ...recap, awards: { bestPusher: { ghost: 7, knockouts: 0 } } },
+      { ...recap, awards: { survivor: { ghost: 2, ms: 'long' } } },
+      { ...recap, players: [...players, ...players, { ghost: 1, team: 0, knockouts: 0 }] },
       { ...recap, pad: 'x'.repeat(4096) },
     ];
     for (const r of bad)

@@ -2,7 +2,7 @@
 // Pure functions, split from main.ts so the verdict can be tested without a probe run.
 
 import os from 'node:os';
-import { COIN_BYTES, GHOST_BYTES, HEADER_BYTES } from '@seasonal-spirits/protocol';
+import { GHOST_BYTES, HEADER_BYTES } from '@seasonal-spirits/protocol';
 import type { ServerMetrics } from '@seasonal-spirits/server';
 import type { HeadlessSpectator } from './spectator.js';
 
@@ -46,7 +46,7 @@ export function evaluateCriteria(
 ): Criteria {
   return {
     hzUnder30Cpu: metrics.achievedHz >= cfg.tickHz * 0.95 && metrics.cpuPercentOfOneCore <= 30,
-    // The size varies with the coins on the field; the largest message decides.
+    // The size varies with the ghosts in the match; the largest message decides.
     bytesUnder1Kb: metrics.maxStateBytes < 1024,
     jumpsPer60s: summary.jumpsPer60s,
   };
@@ -88,7 +88,7 @@ export function renderReport(r: ReportInput): string {
   );
   lines.push(
     `- bytes per state message: last ${r.metrics.stateBytes}, max **${r.metrics.maxStateBytes}** ` +
-      `(header ${HEADER_BYTES} + ${GHOST_BYTES} per ghost + ${COIN_BYTES} per field coin)`,
+      `(header ${HEADER_BYTES} + ${GHOST_BYTES} per ghost)`,
   );
   lines.push('');
   lines.push('## Spectator numbers');

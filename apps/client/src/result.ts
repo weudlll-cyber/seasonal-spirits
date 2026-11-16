@@ -1,5 +1,5 @@
-// Seasonal Spirits — the result screen after a match: the awards of the match, secured value
-// per team and per player, the own place, the time to the next match, and the bridge box of
+// Seasonal Sumo — the result screen after a match: the awards of the match, knockouts per
+// team and per player, the own place, the time to the next match, and the bridge box of
 // CONCEPT.md §8 (on by default, switched off in config.ts). Result and awards come from the
 // server's recap message, the names and the time to the next match from the state.
 
@@ -9,7 +9,7 @@ import {
   type ServerRecap,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { mmss, seasonColour, seasonName, value } from '@seasonal-spirits/render';
+import { mmss, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { BRIDGE_TEXT, CLIENT_CONFIG } from './config.js';
 import { el } from './hud.js';
 
@@ -66,33 +66,34 @@ export class ResultScreen {
     const order = [0, 1, 2, 3].sort((a, b) => (r.teams[b] ?? 0) - (r.teams[a] ?? 0));
     this.teams.replaceChildren(
       ...order.map((team, i) =>
-        row(`${i + 1}. ${seasonName(team)}`, value(r.teams[team] ?? 0), seasonColour(team)),
+        row(`${i + 1}. ${seasonName(team)}`, String(r.teams[team] ?? 0), seasonColour(team)),
       ),
     );
-    const ranked = [...r.players].sort((a, b) => b.secured - a.secured || a.ghost - b.ghost);
+    const ranked = [...r.players].sort((a, b) => b.knockouts - a.knockouts || a.ghost - b.ghost);
     this.players.replaceChildren(
       ...ranked
         .slice(0, SHOWN_PLAYERS)
-        .map((p, i) => row(`${i + 1}. ${name(p.ghost)}`, value(p.secured), seasonColour(p.team))),
+        .map((p, i) =>
+          row(`${i + 1}. ${name(p.ghost)}`, String(p.knockouts), seasonColour(p.team)),
+        ),
     );
     const own = ranked.findIndex((p) => p.ghost === ownId);
     this.place.hidden = own === -1;
     if (own !== -1) {
       const p = ranked[own];
-      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${value(p?.secured ?? 0)} secured`;
+      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${p?.knockouts ?? 0} knockouts`;
     }
   }
 }
 
 // The awards the match earned, short enough for a phone; none earned, none shown.
 function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
-  const { bestNose: nose, closestSave: save, lastSecure: last } = r.awards;
+  const { bestPusher: pusher, survivor } = r.awards;
   const lines: [string, string][] = [];
-  // V5: the most points from coins carried across a halving.
-  if (nose) lines.push(['Best nose', `${name(nose.ghost)}, ${value(nose.value)} from held coins`]);
-  if (save)
-    lines.push(['Closest save', `${name(save.ghost)}, ${(save.leftMs / 1000).toFixed(1)} s left`]);
-  if (last) lines.push(['Last secure', `${name(last.ghost)}, ${value(last.value)}`]);
+  if (pusher) lines.push(['Best pusher', `${name(pusher.ghost)}, ${pusher.knockouts} knockouts`]);
+  if (survivor) {
+    lines.push(['Survivor', `${name(survivor.ghost)}, ${mmss(survivor.ms)} without a fall`]);
+  }
   return lines;
 }
 

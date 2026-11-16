@@ -1,11 +1,10 @@
-// Seasonal Spirits — one full bot match in accelerated time, with its sanity list.
-// Used by `pnpm simulate` and by the tests; pure apart from the work it does.
+// Seasonal Sumo — one full bot match in accelerated time, with its sanity list.
+// Used by `pnpm simulate`, the measurements and the tests; pure apart from the work it does.
 
-import { createBot, STRATEGIES, type Strategy } from './bots/strategies.js';
-import type { Bot } from './bots/common.js';
+import { createBot, type Bot } from './bots/human.js';
 import type { GameConfig } from './config.js';
 import { Match, type Roster } from './match.js';
-import { SEASONS, seasonsInMatch, totalCount } from './seasons.js';
+import { seasonsInMatch } from './seasons.js';
 import type { Intent, MatchEvent, MatchResult, MatchState, Team } from './types.js';
 
 export const SIM_TICK_MS = 50; // the server's 20 Hz step
@@ -18,96 +17,113 @@ export interface SanityCheck {
 
 type HalvingEvent = Extract<MatchEvent, { type: 'halving' }>;
 
-// One halving with the coins carried at the end of the tick before it.
-export interface HalvingRecord {
-  event: HalvingEvent;
-  carriedBefore: number;
-}
-
 export interface SimulationReport {
   seed: number;
-  roster: (Roster & { strategy: Strategy })[];
-  halvings: HalvingRecord[];
+  roster: Roster[];
+  halvings: HalvingEvent[];
+  falls: { credited: number; uncredited: number };
   result: MatchResult;
   sanity: SanityCheck[];
 }
 
-// 8 ghosts per team; strategies cycle so each team has as many of each strategy.
-export function botRoster(ghosts: number): (Roster & { strategy: Strategy })[] {
-  return Array.from({ length: ghosts }, (_, i) => ({
-    id: i + 1,
-    team: (i % 4) as Team,
-    strategy: STRATEGIES[Math.floor(i / 4) % STRATEGIES.length] ?? 'banker',
-  }));
+// 8 ghosts per team; slot i is team i mod 4.
+export function botRoster(ghosts: number): Roster[] {
+  return Array.from({ length: ghosts }, (_, i) => ({ id: i + 1, team: (i % 4) as Team }));
 }
 
-// A seat may bring its own bot instead of its strategy's: the human stand-in of session
-// 2026-11-16-HUMAN (human/standin.ts), measured, never part of the balance pool.
-export type Seat = Roster & { strategy: Strategy; bot?: Bot };
+// A seat may bring its own bot instead of the default one (the tests do).
+export type Seat = Roster & { bot?: Bot };
+
+// The seed of the bot in seat `id` of the match with `seed`; the server uses the same.
+export function botSeed(seed: number, id: number): number {
+  return seed * 256 + id;
+}
 
 export function simulate(
   cfg: GameConfig,
   seed: number,
   roster: Seat[] = botRoster(32),
-  afterTick?: (s: Readonly<MatchState>) => void, // tests watch every tick through it
+  afterTick?: (s: Readonly<MatchState>) => void, // tests and measurements watch every tick
 ): SimulationReport {
   const match = new Match(cfg, seed, roster);
-  const bots = new Map<number, Bot>(roster.map((r) => [r.id, r.bot ?? createBot(cfg, r.strategy)]));
-  const halvings: HalvingRecord[] = [];
-  let negativeSeen = false;
+  // Each bot's own random source, from the match's seed and its seat: reproducible runs.
+  const bots = new Map<number, Bot>(
+    roster.map((r) => [r.id, r.bot ?? createBot(cfg, botSeed(seed, r.id))]),
+  );
+  const halvings: HalvingEvent[] = [];
+  const falls = { credited: 0, uncredited: 0 };
+  let badNumber = false;
+  let teamCredit = false;
   while (!match.state.ended) {
     const s = match.state;
-    const carriedBefore = carriedTotal(s);
     const intents = new Map<number, Intent>();
     for (const g of s.ghosts) intents.set(g.id, bots.get(g.id)?.(s, g) ?? { dx: 0, dy: 0 });
     const next = match.tick(SIM_TICK_MS, intents);
-    for (const e of next.events)
-      if (e.type === 'halving') halvings.push({ event: e, carriedBefore });
-    negativeSeen ||= hasNegativeCount(next);
+    teamCredit = countEvents(next, halvings, falls) || teamCredit;
+    badNumber ||= next.ghosts.some((g) => ![g.x, g.y, g.vx, g.vy].every(Number.isFinite));
     afterTick?.(next);
   }
+  const result = match.result();
   return {
     seed,
     roster,
     halvings,
-    result: match.result(),
-    sanity: sanityList(cfg, match.state, halvings, negativeSeen),
+    falls,
+    result,
+    sanity: sanityList(cfg, { halvings, falls, result, badNumber, teamCredit }),
   };
 }
 
-function carriedTotal(s: Readonly<MatchState>): number {
-  return s.ghosts.reduce((n, g) => n + totalCount(g.carried), 0);
-}
-
-export function hasNegativeCount(s: Readonly<MatchState>): boolean {
-  return s.ghosts.some((g) => SEASONS.some((season) => g.carried[season] < 0));
+// One tick's halvings and falls into the running lists; true when a fall was credited to a
+// teammate of the faller.
+function countEvents(
+  s: Readonly<MatchState>,
+  halvings: HalvingEvent[],
+  falls: { credited: number; uncredited: number },
+): boolean {
+  let teamCredit = false;
+  const team = (id: number | null): Team | undefined => s.ghosts.find((g) => g.id === id)?.team;
+  for (const e of s.events) {
+    if (e.type === 'halving') halvings.push(e);
+    if (e.type !== 'fall') continue;
+    if (e.by === null) falls.uncredited++;
+    else falls.credited++;
+    teamCredit ||= e.by !== null && team(e.by) === team(e.ghost);
+  }
+  return teamCredit;
 }
 
 function sanityList(
   cfg: GameConfig,
-  s: Readonly<MatchState>,
-  halvings: readonly HalvingRecord[],
-  negativeSeen: boolean,
+  r: {
+    halvings: readonly HalvingEvent[];
+    falls: { credited: number; uncredited: number };
+    result: MatchResult;
+    badNumber: boolean;
+    teamCredit: boolean;
+  },
 ): SanityCheck[] {
   const expected = seasonsInMatch(cfg) - 1;
-  const broken = halvings.filter((h) => h.event.carried !== h.carriedBefore);
-  const { spawned, pickedUp } = s.stats;
+  const knockouts = r.result.teams.reduce((a, b) => a + b, 0);
+  const radii = r.halvings.map((h, k) =>
+    Math.abs(h.radius - cfg.arenaRadius * Math.SQRT1_2 ** (k + 1)),
+  );
   return [
-    { name: 'no negative counts', ok: !negativeSeen, detail: 'checked after every tick' },
+    { name: 'positions and speeds finite', ok: !r.badNumber, detail: 'checked after every tick' },
     {
       name: 'one halving per season turn',
-      ok: halvings.length === expected,
-      detail: `${halvings.length} seen, ${expected} expected`,
+      ok: r.halvings.length === expected,
+      detail: `${r.halvings.length} seen, ${expected} expected`,
     },
     {
-      name: 'carried coins conserved across each halving',
-      ok: broken.length === 0,
-      detail: halvings.map((h) => `${h.carriedBefore} → ${h.event.carried}`).join(', '),
+      name: 'the arena halves its area at each halving',
+      ok: radii.every((d) => d < 1e-6),
+      detail: r.halvings.map((h) => h.radius.toFixed(1)).join(' → '),
     },
     {
-      name: 'field coins accounted',
-      ok: spawned === pickedUp + s.coins.length,
-      detail: `${spawned} spawned = ${pickedUp} picked up + ${s.coins.length} left`,
+      name: 'every knockout is one credited fall, never by a teammate',
+      ok: knockouts === r.falls.credited && !r.teamCredit,
+      detail: `${knockouts} knockouts, ${r.falls.credited} credited falls, ${r.falls.uncredited} uncredited`,
     },
   ];
 }

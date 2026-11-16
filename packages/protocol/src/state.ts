@@ -1,36 +1,25 @@
-// Seasonal Spirits — binary state encoding of a match, sent by the server every tick.
+// Seasonal Sumo — binary state encoding of a match, sent by the server every tick.
 // One encoding only: viewer, client and probe decode it, and everything a client shows comes
-// from it. Seasons travel as their index in the real order (0 Spring … 3 Winter); values in
-// halves, so a price placeholder of ½ stays exact. The price board is not sent: every client
-// derives it from the season and the game config (game-core priceOf).
+// from it. Seasons travel as their index in the real order (0 Spring … 3 Winter); the arena's
+// radii in tenths of a field unit.
 
 export interface GhostState {
   id: number; // 0..255
   x: number; // 0..65535 units
   y: number;
+  vx: number; // units/s, −32768..32767: the own ghost's prediction starts from it
+  vy: number;
   team: number; // 0..3
-  carried: number; // carried coins of all seasons, 0..65535
-  secured: number; // secured value so far (multiple of ½)
+  knockouts: number; // 0..255
+  dashLeftMs: number; // until the next dash is allowed, in steps of 20 ms (the cooldown ring)
   flags: number; // GHOST_* bits
 }
 
-export const GHOST_CARRIER = 1;
-export const GHOST_SECURING = 2;
-export const GHOST_BOT = 4;
-export const GHOST_AT_SHRINE = 8; // inside its own team's shrine
-
-export interface CoinState {
-  x: number;
-  y: number;
-  season: number; // 0..3: coins of all four seasons fall (V5)
-}
-
-// The shrine button of a player standing in its own shrine (CONCEPT.md §3, §8), as the game
-// core computes it; a client shows this number and never calculates its own.
-export interface OfferState {
-  ghost: number;
-  secureValue: number;
-}
+export const GHOST_BOT = 1;
+export const GHOST_DASHING = 2; // a dash in progress: it knocks what it hits
+export const GHOST_FALLING = 4; // falling off the arena (the animation)
+export const GHOST_OUT = 8; // fallen, waiting to respawn: not drawn
+export const GHOST_PROTECTED = 16; // just respawned: nothing pushes it
 
 export interface ServerState {
   tick: number; // u32 since server start
@@ -44,55 +33,47 @@ export interface ServerState {
   countdownMs: number | null;
   flags: number; // STATE_* bits
   nextMatchMs: number; // during the result: ms until the next match starts; else 0
-  teamSecured: [number, number, number, number]; // secured value per team
+  teamScore: [number, number, number, number]; // knockouts per team
+  arenaRadius: number; // the edge now
+  arenaNext: number; // the edge after the next halving: the dashed ring of its countdown
   ghosts: GhostState[]; // up to 255
-  coins: CoinState[]; // up to 255
-  offers: OfferState[]; // players in their own shrine, up to 255
 }
 
 // A halving (every season turn inside a match) happened in this tick; `season` is the new one.
 export const STATE_HALVING_EVENT = 1;
 export const STATE_RESULT = 2; // the match is over; the result pause before the next
 // The next deadline is the match end, not a halving (the last season): seasonLeftMs and
-// countdownMs run to it — "LAST CHANCE — secure now".
+// countdownMs run to it — "LAST CHANCE".
 export const STATE_TO_END = 4;
 // The match ended in this tick: "MATCH OVER" (in exactly one state, like the halving).
 export const STATE_MATCH_END_EVENT = 8;
 
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonNumber u8 ·
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
-// teamSecured 4×u16 (halves) · ghost count u8 · coin count u8 · offer count u8.
-// Ghost: id u8 · x u16 · y u16 · team u8 · carried u16 · secured u16 (halves) · flags u8.
-// Coin: x u16 · y u16 · season u8.  Offer: ghost u8 · secure u16 (halves). All little endian.
-export const HEADER_BYTES = 34;
-export const GHOST_BYTES = 11;
-export const COIN_BYTES = 5;
-export const OFFER_BYTES = 3;
+// teamScore 4×u16 · arenaRadius u16 · arenaNext u16 (tenths) · ghost count u8.
+// Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 · knockouts u8 · dashLeft u8
+// (20 ms steps) · flags u8. All little endian.
+export const HEADER_BYTES = 36;
+export const GHOST_BYTES = 13;
 const NO_COUNTDOWN = 0xffff;
+const DASH_STEP_MS = 20;
 
-export function encodedSize(ghosts: number, coins: number, offers = 0): number {
-  return HEADER_BYTES + GHOST_BYTES * ghosts + COIN_BYTES * coins + OFFER_BYTES * offers;
+export function encodedSize(ghosts: number): number {
+  return HEADER_BYTES + GHOST_BYTES * ghosts;
 }
 
+const u8 = (v: number): number => Math.max(0, Math.min(255, Math.round(v)));
 const u16 = (v: number): number => Math.max(0, Math.min(65535, Math.round(v)));
-const halves = (v: number): number => u16(v * 2);
+const i16 = (v: number): number => Math.max(-32768, Math.min(32767, Math.round(v)));
+const tenths = (v: number): number => u16(v * 10);
 
 export function encodeState(s: ServerState): Uint8Array {
-  if (s.ghosts.length > 255 || s.coins.length > 255 || s.offers.length > 255) {
-    throw new Error('encodeState: more than 255 ghosts, coins or offers');
-  }
-  const buf = new Uint8Array(encodedSize(s.ghosts.length, s.coins.length, s.offers.length));
+  if (s.ghosts.length > 255) throw new Error('encodeState: more than 255 ghosts');
+  const buf = new Uint8Array(encodedSize(s.ghosts.length));
   const v = new DataView(buf.buffer);
   writeHeader(v, s);
   let o = HEADER_BYTES;
   for (const g of s.ghosts) o = writeGhost(v, o, g);
-  for (const c of s.coins) {
-    v.setUint16(o, u16(c.x), true);
-    v.setUint16(o + 2, u16(c.y), true);
-    v.setUint8(o + 4, c.season & 0x03);
-    o += COIN_BYTES;
-  }
-  for (const f of s.offers) o = writeOffer(v, o, f);
   return buf;
 }
 
@@ -108,52 +89,41 @@ function writeHeader(v: DataView, s: ServerState): void {
   v.setUint16(18, countdown, true);
   v.setUint8(20, s.flags & 0xff);
   v.setUint16(21, u16(s.nextMatchMs), true);
-  for (let i = 0; i < 4; i++) v.setUint16(23 + 2 * i, halves(s.teamSecured[i] ?? 0), true);
-  v.setUint8(31, s.ghosts.length);
-  v.setUint8(32, s.coins.length);
-  v.setUint8(33, s.offers.length);
+  for (let i = 0; i < 4; i++) v.setUint16(23 + 2 * i, u16(s.teamScore[i] ?? 0), true);
+  v.setUint16(31, tenths(s.arenaRadius), true);
+  v.setUint16(33, tenths(s.arenaNext), true);
+  v.setUint8(35, s.ghosts.length);
 }
 
 function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setUint8(o, g.id & 0xff);
   v.setUint16(o + 1, u16(g.x), true);
   v.setUint16(o + 3, u16(g.y), true);
-  v.setUint8(o + 5, g.team & 0x03);
-  v.setUint16(o + 6, u16(g.carried), true);
-  v.setUint16(o + 8, halves(g.secured), true);
-  v.setUint8(o + 10, g.flags & 0xff);
+  v.setInt16(o + 5, i16(g.vx), true);
+  v.setInt16(o + 7, i16(g.vy), true);
+  v.setUint8(o + 9, g.team & 0x03);
+  v.setUint8(o + 10, u8(g.knockouts));
+  v.setUint8(o + 11, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
+  v.setUint8(o + 12, g.flags & 0xff);
   return o + GHOST_BYTES;
-}
-
-function writeOffer(v: DataView, o: number, f: OfferState): number {
-  v.setUint8(o, f.ghost & 0xff);
-  v.setUint16(o + 1, halves(f.secureValue), true);
-  return o + OFFER_BYTES;
 }
 
 export function decodeState(buf: Uint8Array): ServerState {
   if (buf.byteLength < HEADER_BYTES) throw new Error('decodeState: buffer too short for header');
   const v = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  const counts = [v.getUint8(31), v.getUint8(32), v.getUint8(33)] as const;
-  const expected = encodedSize(...counts);
+  const count = v.getUint8(35);
+  const expected = encodedSize(count);
   if (buf.byteLength !== expected) {
     throw new Error(`decodeState: expected ${expected} bytes, got ${buf.byteLength}`);
   }
-  let o = HEADER_BYTES;
   const ghosts: GhostState[] = [];
-  for (let i = 0; i < counts[0]; i++, o += GHOST_BYTES) ghosts.push(readGhost(v, o));
-  const coins: CoinState[] = [];
-  for (let i = 0; i < counts[1]; i++, o += COIN_BYTES) {
-    coins.push({ x: v.getUint16(o, true), y: v.getUint16(o + 2, true), season: v.getUint8(o + 4) });
-  }
-  const offers: OfferState[] = [];
-  for (let i = 0; i < counts[2]; i++, o += OFFER_BYTES) offers.push(readOffer(v, o));
-  return { ...readHeader(v), ghosts, coins, offers };
+  for (let i = 0, o = HEADER_BYTES; i < count; i++, o += GHOST_BYTES) ghosts.push(readGhost(v, o));
+  return { ...readHeader(v), ghosts };
 }
 
-function readHeader(v: DataView): Omit<ServerState, 'ghosts' | 'coins' | 'offers'> {
+function readHeader(v: DataView): Omit<ServerState, 'ghosts'> {
   const countdown = v.getUint16(18, true);
-  const team = (i: number): number => v.getUint16(23 + 2 * i, true) / 2;
+  const team = (i: number): number => v.getUint16(23 + 2 * i, true);
   return {
     tick: v.getUint32(0, true),
     serverMs: v.getUint32(4, true),
@@ -164,7 +134,9 @@ function readHeader(v: DataView): Omit<ServerState, 'ghosts' | 'coins' | 'offers
     countdownMs: countdown === NO_COUNTDOWN ? null : countdown,
     flags: v.getUint8(20),
     nextMatchMs: v.getUint16(21, true),
-    teamSecured: [team(0), team(1), team(2), team(3)],
+    teamScore: [team(0), team(1), team(2), team(3)],
+    arenaRadius: v.getUint16(31, true) / 10,
+    arenaNext: v.getUint16(33, true) / 10,
   };
 }
 
@@ -173,13 +145,11 @@ function readGhost(v: DataView, o: number): GhostState {
     id: v.getUint8(o),
     x: v.getUint16(o + 1, true),
     y: v.getUint16(o + 3, true),
-    team: v.getUint8(o + 5),
-    carried: v.getUint16(o + 6, true),
-    secured: v.getUint16(o + 8, true) / 2,
-    flags: v.getUint8(o + 10),
+    vx: v.getInt16(o + 5, true),
+    vy: v.getInt16(o + 7, true),
+    team: v.getUint8(o + 9),
+    knockouts: v.getUint8(o + 10),
+    dashLeftMs: v.getUint8(o + 11) * DASH_STEP_MS,
+    flags: v.getUint8(o + 12),
   };
-}
-
-function readOffer(v: DataView, o: number): OfferState {
-  return { ghost: v.getUint8(o), secureValue: v.getUint16(o + 1, true) / 2 };
 }

@@ -1,21 +1,10 @@
-// Seasonal Spirits — the four seasons, their order and the season clock of a match.
-// Spring → Summer → Autumn → Winter → Spring, as the real tokens (CONCEPT.md §2). What a coin
-// is worth lives in prices.ts.
+// Seasonal Sumo — the four seasons, their order and the season clock of a match.
+// Spring → Summer → Autumn → Winter → Spring, as the real tokens; every turn is a halving.
 
 import type { GameConfig } from './config.js';
 
 export const SEASONS = ['spring', 'summer', 'autumn', 'winter'] as const;
 export type Season = (typeof SEASONS)[number];
-
-export type SeasonCounts = Record<Season, number>;
-
-export function emptyCounts(): SeasonCounts {
-  return { spring: 0, summer: 0, autumn: 0, winter: 0 };
-}
-
-export function totalCount(c: SeasonCounts): number {
-  return c.spring + c.summer + c.autumn + c.winter;
-}
 
 export function nextSeason(s: Season): Season {
   return SEASONS[(SEASONS.indexOf(s) + 1) % SEASONS.length] ?? 'spring';

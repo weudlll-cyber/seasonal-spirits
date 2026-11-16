@@ -1,23 +1,23 @@
-// Seasonal Spirits — one match: the pure, deterministic core driven by tick(dt).
+// Seasonal Sumo — one match: the pure, deterministic core driven by tick(dt).
 // No clock and no randomness of its own: time is the sum of the dt values it is given and
 // every random value comes from the seed, so the same seed and intents give the same match.
 
-import { completeSecure, trySecureStart } from './actions.js';
+import { newArena, startSpot, updateArena } from './arena.js';
+import { collideGhosts } from './collisions.js';
 import type { GameConfig } from './config.js';
-import { pickUpCoins, spawnCoins, type Spawner } from './field.js';
-import { shrineOf, shrinePositions, stepGhost } from './geometry.js';
+import { advancePhases, checkFalls } from './falls.js';
+import { dashVelocity, stepGhost } from './geometry.js';
 import { applyHalving } from './halving.js';
 import { mulberry32 } from './rng.js';
-import { separateGhosts } from './separation.js';
-import { emptyCounts, seasonClock, totalCount } from './seasons.js';
+import { seasonClock } from './seasons.js';
 import {
+  IDLE,
   TEAMS,
   type Ghost,
   type Intent,
   type MatchResult,
   type MatchState,
   type Team,
-  type Vec,
 } from './types.js';
 
 export interface Roster {
@@ -28,27 +28,28 @@ export interface Roster {
 export class Match {
   readonly cfg: GameConfig;
   private readonly s: MatchState;
-  private readonly spawner: Spawner;
+  private readonly rng: () => number;
 
   constructor(cfg: GameConfig, seed: number, roster: readonly Roster[]) {
     this.cfg = cfg;
-    // The match's one seeded random source: start positions and coin spawns.
-    const rng = mulberry32(seed);
-    const shrines = shrinePositions(cfg);
-    this.spawner = { rng, acc: 0, nextId: 1 };
+    // The match's one seeded random source: the respawn spots (arena.ts respawnSpot).
+    this.rng = mulberry32(seed);
+    const arena = newArena(cfg);
+    const sorted = [...roster].sort((a, b) => a.id - b.id);
+    const ghosts = sorted.map((r) => {
+      const mates = sorted.filter((m) => m.team === r.team);
+      const p = startSpot(cfg, arena, r.team, { index: mates.indexOf(r), of: mates.length });
+      return newGhost(r, p.x, p.y);
+    });
     this.s = {
       elapsedMs: 0,
       tick: 0,
       clock: seasonClock(cfg, 0),
       countdownMs: null,
       ended: false,
-      ghosts: [...roster]
-        .sort((a, b) => a.id - b.id)
-        .map((r) => newGhost(r, shrineOf(shrines, r.team), cfg.startSpread, rng)),
-      coins: [],
-      shrines,
+      arena,
+      ghosts,
       events: [],
-      stats: { spawned: 0, pickedUp: 0 },
     };
   }
 
@@ -56,9 +57,9 @@ export class Match {
     return this.s;
   }
 
-  // One step. Order: time and season (a season turn is a halving), each ghost's intent (by
-  // id), soft separation, pick-ups, spawning, the end, the countdown. Intents of unknown ids
-  // are ignored.
+  // One step. Order: time and season (a season turn is a halving), the arena's edge, falls
+  // ending and respawns, each ghost's intent and movement (by id), collisions, new falls, the
+  // end, the countdown. Intents of unknown ids are ignored.
   tick(dtMs: number, intents: ReadonlyMap<number, Intent>): Readonly<MatchState> {
     const s = this.s;
     s.events = [];
@@ -68,54 +69,83 @@ export class Match {
     s.tick++;
     s.clock = seasonClock(this.cfg, s.elapsedMs);
     if (s.clock.index !== prevSeason) applyHalving(s);
-    for (const g of s.ghosts) this.applyIntent(g, intents.get(g.id), dtMs);
-    separateGhosts(this.cfg, s);
-    pickUpCoins(this.cfg, s);
-    spawnCoins(this.cfg, s, this.spawner, dtMs);
-    // At the end, unsecured coins and unfinished secures count for nothing.
+    updateArena(this.cfg, s.arena, s.elapsedMs);
+    advancePhases(this.cfg, s, this.rng);
+    for (const g of s.ghosts) this.move(g, intents.get(g.id) ?? IDLE, dtMs);
+    collideGhosts(this.cfg, s);
+    checkFalls(this.cfg, s);
     s.ended = s.elapsedMs >= this.cfg.matchDurationMs;
     if (s.ended) s.events.push({ type: 'match-end', atMs: s.elapsedMs });
     // One countdown for every deadline: before each halving, and in the last season before
-    // the match end (the server tells the clients which one, wire.ts).
+    // the match end (the server tells the clients which one).
     const left = s.clock.timeLeftMs;
     s.countdownMs = !s.ended && left <= this.cfg.deadlineCountdownMs ? left : null;
     return s;
   }
 
+  // A player takes over a ghost a bot steered: it starts from standing, not with the bot's
+  // momentum (the server calls this on a join).
+  halt(id: number): void {
+    const g = this.s.ghosts.find((x) => x.id === id);
+    if (g) Object.assign(g, { vx: 0, vy: 0, dashUntilMs: 0 });
+  }
+
+  // Knockouts per player and team; a ghost's longest stretch without a fall counts the one
+  // it is in at the end too.
   result(): MatchResult {
     const teams = TEAMS.map(() => 0);
+    const now = this.s.elapsedMs;
     const players = this.s.ghosts.map((g) => {
-      teams[g.team] = (teams[g.team] ?? 0) + g.securedValue;
-      return { id: g.id, team: g.team, secured: g.securedValue };
+      teams[g.team] = (teams[g.team] ?? 0) + g.knockouts;
+      const running = g.phase === 'in' ? now - g.aliveSinceMs : 0;
+      return {
+        id: g.id,
+        team: g.team,
+        knockouts: g.knockouts,
+        falls: g.falls,
+        longestAliveMs: Math.max(g.longestAliveMs, running),
+      };
     });
     return { players, teams };
   }
 
-  private applyIntent(g: Ghost, intent: Intent | undefined, dtMs: number): void {
-    if (g.securingUntilMs !== null) {
-      completeSecure(this.cfg, this.s, g); // a securing ghost stands still and does nothing else
-      return;
+  // A ghost on the arena runs and may dash (the cooldown is the core's: a dash before
+  // dashReadyMs does nothing); a falling ghost drifts without control; an out ghost waits.
+  private move(g: Ghost, intent: Intent, dtMs: number): void {
+    if (g.phase === 'out') return;
+    const now = this.s.elapsedMs;
+    const steer = g.phase === 'in' ? intent : IDLE;
+    if (g.phase === 'in' && intent.action === 'dash' && now >= g.dashReadyMs) {
+      const v = dashVelocity(this.cfg, g, intent);
+      if (v) {
+        g.vx = v.x;
+        g.vy = v.y;
+        g.dashUntilMs = now + this.cfg.dashMs;
+        g.dashReadyMs = now + this.cfg.dashCooldownMs;
+        this.s.events.push({ type: 'dash', ghost: g.id });
+      }
     }
-    if (!intent) return;
-    const from = { x: g.x, y: g.y, carrying: totalCount(g.carried) > 0 };
-    const to = stepGhost(this.cfg, from, intent, dtMs);
-    g.x = to.x;
-    g.y = to.y;
-    if (intent.action === 'secure') trySecureStart(this.cfg, this.s, g);
+    Object.assign(g, stepGhost(this.cfg, g, steer, dtMs));
   }
 }
 
-// Ghosts start around their own shrine, spread a little so they do not stack.
-function newGhost(r: Roster, home: Vec, spread: number, rng: () => number): Ghost {
+function newGhost(r: Roster, x: number, y: number): Ghost {
   return {
     id: r.id,
     team: r.team,
-    x: home.x + (rng() - 0.5) * spread,
-    y: home.y + (rng() - 0.5) * spread,
-    carried: emptyCounts(),
-    crossed: emptyCounts(),
-    securedValue: 0,
-    securingUntilMs: null,
-    securingSeason: null,
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    phase: 'in',
+    phaseUntilMs: 0,
+    protectedUntilMs: 0,
+    dashUntilMs: 0,
+    dashReadyMs: 0,
+    lastTouch: null,
+    knockouts: 0,
+    falls: 0,
+    aliveSinceMs: 0,
+    longestAliveMs: 0,
   };
 }

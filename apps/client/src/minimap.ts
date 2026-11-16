@@ -1,29 +1,18 @@
-// Seasonal Spirits — the minimap in "Near" (owner's play test 2026-11-15: only part of the
-// field is visible): the whole field in a corner below the top bar, with every shrine, coins
-// as dots, other ghosts as tiny dots in their team colours, the own ghost, and the part of the
-// field the camera shows.
+// Seasonal Sumo — the minimap in "Near" (owner's play test 2026-11-15: only part of the field
+// is visible): the whole field in the top right corner below the bar, with the arena's edge,
+// the ghosts as tiny dots in their team colours, the own ghost, and the part of the field the
+// camera shows.
 
-import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
-import {
-  FIELD,
-  LINE,
-  SHRINES,
-  TEXT,
-  seasonColour,
-  type Rect,
-  type View,
-} from '@seasonal-spirits/render';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { GHOST_OUT, type GhostState, type ServerState } from '@seasonal-spirits/protocol';
+import { FIELD, LINE, TEXT, seasonColour, type Rect, type View } from '@seasonal-spirits/render';
 
 const MARGIN = 10;
 
-// Just below the bar, in the top corner away from the own shrine's side of the field, so it
-// never covers the own shrine or its label (session 2026-11-15-B); about a quarter of the
-// shorter screen side.
-export function minimapRect(width: number, height: number, top: number, team: number): Rect {
+// Just below the bar, top right; about a quarter of the shorter screen side.
+export function minimapRect(width: number, height: number, top: number): Rect {
   const size = Math.round(Math.min(180, Math.max(96, Math.min(width, height - top) * 0.28)));
-  const shrineLeft = (SHRINES[team]?.x ?? 0) < FIELD / 2;
-  const left = shrineLeft ? width - MARGIN - size : MARGIN;
+  const left = width - MARGIN - size;
   return { left, top: top + MARGIN, right: left + size, bottom: top + MARGIN + size };
 }
 
@@ -31,7 +20,6 @@ export interface MinimapInput {
   state: ServerState | undefined;
   ghosts: readonly GhostState[];
   ownId: number | null;
-  ownTeam: number | null;
   camera: View; // the main view, for the outline of what it shows
 }
 
@@ -46,23 +34,13 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, at: Rect, m: MinimapI
   };
   ctx.fillStyle = 'rgba(5, 8, 11, 0.82)';
   ctx.fillRect(at.left, at.top, size, size);
-  SHRINES.forEach((p, team) => {
-    dot(p.x, p.y, Math.max(4, DEFAULT_CONFIG.shrineRadius * k));
-    ctx.fillStyle = seasonColour(team);
-    ctx.globalAlpha = team === m.ownTeam ? 0.9 : 0.4;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    if (team !== m.ownTeam) return;
-    ctx.strokeStyle = TEXT;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  });
-  for (const c of m.state?.coins ?? []) {
-    ctx.fillStyle = seasonColour(c.season);
-    ctx.fillRect(px(c.x) - 1, py(c.y) - 1, 2, 2);
-  }
+  const c = DEFAULT_CONFIG.fieldSize / 2;
+  dot(c, c, (m.state?.arenaRadius ?? DEFAULT_CONFIG.arenaRadius) * k);
+  ctx.strokeStyle = seasonColour(m.state?.season ?? 0);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
   for (const g of m.ghosts) {
-    if (g.id === m.ownId) continue;
+    if (g.id === m.ownId || g.flags & GHOST_OUT) continue;
     dot(g.x, g.y, 1.6);
     ctx.fillStyle = seasonColour(g.team);
     ctx.fill();

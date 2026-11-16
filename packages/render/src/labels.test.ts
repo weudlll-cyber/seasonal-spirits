@@ -1,20 +1,17 @@
-// Seasonal Spirits — name labels: every ghost on screen gets its name or at least its tag, no
-// two overlap, the own one always shows its full text on top, the richer carrier keeps its
-// name, nothing reaches under the top bar or past the screen edge; and the shrine labels, off
-// the HUD controls and the ghost bodies. The label's words: name, coin count, half-value count.
+// Seasonal Sumo — name labels: every ghost on screen gets its name or at least its tag, no two
+// overlap, the own one always shows its full text on top, the one with more knockouts keeps its
+// name, nothing reaches under the top bar or past the screen edge; and the label's words.
 
 import { describe, expect, it } from 'vitest';
 import { GHOST_BOT } from '@seasonal-spirits/protocol';
 import {
   LABEL_HEIGHT,
-  bodyBox,
   labelText,
   placeLabels,
-  shrineLabelAt,
   type LabelCandidate,
   type PlacedLabel,
 } from './labels.js';
-import { overlaps, type Rect } from './view.js';
+import { overlaps } from './view.js';
 
 const TOP = 100;
 const AREA = { left: 0, top: TOP, right: 800, bottom: 700 };
@@ -33,7 +30,7 @@ function at(id: number, x: number, y: number, over: Partial<LabelCandidate> = {}
     tag,
     tagWidth: tag.length * 8,
     own: false,
-    carried: 0,
+    knockouts: 0,
     ...over,
   };
 }
@@ -59,7 +56,7 @@ describe('name labels', () => {
     const crowd = Array.from({ length: 10 }, (_, i) =>
       at(i + 1, 400 + (i % 4) * 6, 400 + Math.floor(i / 4) * 6, {
         full: `Bot ${i + 1} · 1`,
-        carried: 1,
+        knockouts: 1,
       }),
     );
     const placed = placeLabels(crowd, AREA);
@@ -70,16 +67,16 @@ describe('name labels', () => {
   });
 
   it('keeps the own full label in a crowd and draws it last', () => {
-    const crowd = [1, 2, 3].map((id) => at(id, 300, 300, { carried: 5 }));
+    const crowd = [1, 2, 3].map((id) => at(id, 300, 300, { knockouts: 5 }));
     const own = at(9, 302, 300, { full: 'You · 4', tag: 'You', own: true });
     const placed = placeLabels([...crowd, own], AREA);
     expect(placed.at(-1)).toMatchObject({ id: 9, text: 'You · 4', own: true, leader: null });
     expect(placed).toHaveLength(4);
   });
 
-  it('gives the richer carrier the best spot, above its ghost, and still names the poorer', () => {
-    const poor = at(1, 300, 300, { full: 'Bot 1 · 2', carried: 2 });
-    const rich = at(2, 300, 300, { full: 'Bot 2 · 9', carried: 9 });
+  it('gives the ghost with more knockouts the best spot, above it, and still names the other', () => {
+    const poor = at(1, 300, 300, { full: 'Bot 1 · 2', knockouts: 2 });
+    const rich = at(2, 300, 300, { full: 'Bot 2 · 9', knockouts: 9 });
     const placed = placeLabels([poor, rich], AREA);
     const richLabel = placed.find((p) => p.id === 2);
     expect(richLabel?.text).toBe('Bot 2 · 9');
@@ -89,7 +86,7 @@ describe('name labels', () => {
   });
 
   it('never puts a label under the top bar; the own one moves below its ghost', () => {
-    const near = at(1, 300, TOP + 10, { carried: 9 });
+    const near = at(1, 300, TOP + 10, { knockouts: 9 });
     const own = at(2, 500, TOP + 10, { full: 'You', tag: 'You', own: true });
     const placed = placeLabels([near, own], AREA);
     expect(placed).toHaveLength(2);
@@ -98,8 +95,8 @@ describe('name labels', () => {
   });
 
   it('moves a name at the screen edge inside instead of cutting it off', () => {
-    const left = at(1, 3, 300, { full: 'Bot 1 · 4', carried: 4 });
-    const right = at(2, 798, 500, { full: 'Bot 2 · 4', carried: 4 });
+    const left = at(1, 3, 300, { full: 'Bot 1 · 4', knockouts: 4 });
+    const right = at(2, 798, 500, { full: 'Bot 2 · 4', knockouts: 4 });
     const own = at(3, 0, 600, { full: 'You · 2', tag: 'You', own: true });
     for (const p of placeLabels([left, right, own], AREA)) {
       expect(p.x - p.width / 2, p.text).toBeGreaterThanOrEqual(AREA.left);
@@ -137,17 +134,17 @@ describe('name labels at the screen edge', () => {
 });
 
 describe('label text', () => {
-  const ghost = { id: 3, flags: GHOST_BOT, carried: 0 };
+  const ghost = { id: 3, flags: GHOST_BOT, knockouts: 0 };
 
-  it('names a carrier with its coin count', () => {
-    expect(labelText({ ...ghost, carried: 9 }, false, false)).toEqual({
+  it('names a ghost with its knockouts once it has some', () => {
+    expect(labelText({ ...ghost, knockouts: 9 }, false, false)).toEqual({
       full: 'Bot 3 · 9',
       tag: '3',
     });
   });
 
-  it('calls the own ghost "You", with its coins', () => {
-    expect(labelText({ ...ghost, carried: 6 }, true, false)).toEqual({
+  it('calls the own ghost "You", with its knockouts', () => {
+    expect(labelText({ ...ghost, knockouts: 6 }, true, false)).toEqual({
       full: 'You · 6',
       tag: 'You',
     });
@@ -159,12 +156,11 @@ describe('label text', () => {
   });
 });
 
-// Session 2026-11-15-CD: some names sat on the ghost next door, and ghost and shrine labels
-// did not avoid each other.
-describe('name labels keep clear of ghosts and shrine labels', () => {
+// Session 2026-11-15-CD: some names sat on the ghost next door.
+describe('name labels keep clear of ghosts', () => {
   it('never puts a name on a neighbouring ghost', () => {
     // B stands right where A's name would go above A.
-    const a = at(1, 300, 300, { full: 'Bot 1 · 5', carried: 5 });
+    const a = at(1, 300, 300, { full: 'Bot 1 · 5', knockouts: 5 });
     const b = at(2, 300, 262);
     const placed = placeLabels([a, b], AREA);
     const bodyOf = (c: LabelCandidate) => ({
@@ -178,94 +174,5 @@ describe('name labels keep clear of ghosts and shrine labels', () => {
       expect(overlaps(box(p), bodyOf(other)), `${p.text} on the other ghost`).toBe(false);
     }
     expect(placed).toHaveLength(2);
-  });
-
-  it('keeps names clear of a shrine label', () => {
-    const shrineLabel = { left: 260, right: 340, top: 260, bottom: 290 }; // above the ghost
-    const placed = placeLabels([at(1, 300, 300, { carried: 3 })], AREA, [shrineLabel]);
-    expect(placed).toHaveLength(1);
-    expect(overlaps(box(placed[0] as PlacedLabel), shrineLabel)).toBe(false);
-  });
-});
-
-const shrine = { x: 700, y: 600, r: 50 };
-const text = { width: 80, height: 16 };
-const keep = (controls: Rect[] = [], bodies: Rect[] = []) => ({ controls, bodies });
-const boxOf = (p: { x: number; y: number }): Rect => ({
-  left: p.x - text.width / 2,
-  right: p.x + text.width / 2,
-  top: p.y - text.height,
-  bottom: p.y,
-});
-const inArea = (p: { x: number; y: number }): boolean => {
-  const b = boxOf(p);
-  return b.left >= AREA.left && b.right <= AREA.right && b.top >= TOP && b.bottom <= AREA.bottom;
-};
-
-describe('shrine label beside the controls and the ghosts', () => {
-  it('sits below the shrine when nothing covers that spot', () => {
-    expect(shrineLabelAt(shrine, text, keep(), AREA)).toEqual({
-      x: 700,
-      y: 600 + 50 + 16 + 4,
-      onGhost: false,
-    });
-  });
-
-  it('moves above the shrine when a HUD control covers the spot below', () => {
-    const steal = { left: 660, top: 660, right: 760, bottom: 760 };
-    const p = shrineLabelAt(shrine, text, keep([steal]), AREA);
-    expect(p.x).toBe(700);
-    expect(p.y).toBeLessThan(shrine.y - shrine.r);
-  });
-
-  it('moves beside the shrine when a control covers it from below to above', () => {
-    // The Steal button over the whole shrine and the spots below and above it.
-    const steal = { left: 650, top: 520, right: 760, bottom: 700 };
-    const p = shrineLabelAt(shrine, text, keep([steal]), AREA);
-    expect(p.x + text.width / 2).toBeLessThanOrEqual(steal.left);
-  });
-
-  it('moves off a ghost standing on the spot below, and stays off a control before a ghost', () => {
-    const ghost = bodyBox({ x: 700, y: 660, r: 12 }); // on the label's spot below the shrine
-    const p = shrineLabelAt(shrine, text, keep([], [ghost]), AREA);
-    expect(overlaps(boxOf(p), ghost)).toBe(false);
-    expect(p.y).toBeLessThan(shrine.y - shrine.r);
-    expect(p.onGhost).toBe(false);
-    // A control covers every spot but the one below, where a ghost stands: the ghost moves on,
-    // the control stays, so the label takes the ghost's spot.
-    const controls = [{ left: 560, top: 470, right: 840, bottom: 640 }];
-    const q = shrineLabelAt(shrine, text, keep(controls, [ghost]), AREA);
-    expect(overlaps(boxOf(q), controls[0] as Rect)).toBe(false);
-    expect(q.onGhost).toBe(true);
-  });
-});
-
-describe('shrine label at the edge of the view', () => {
-  it('stays in view for a shrine at the bottom edge of the view', () => {
-    const low = { x: 400, y: 680, r: 50 }; // the spot below lies under the screen
-    const p = shrineLabelAt(low, text, keep(), AREA);
-    expect(inArea(p)).toBe(true);
-    expect(p.y).toBeLessThan(low.y);
-  });
-
-  it('moves inside when a shrine sits in the corner of the view', () => {
-    const corner = { x: 790, y: 695, r: 50 }; // no spot fits: below, above cut, left, right out
-    const p = shrineLabelAt(corner, { width: 120, height: 16 }, keep(), {
-      ...AREA,
-      top: 640,
-    });
-    expect(p.x + 60).toBeLessThanOrEqual(AREA.right);
-    expect(p.y).toBeLessThanOrEqual(AREA.bottom);
-  });
-
-  it('moves a label wholly inside when its shrine is just past the edge and the label would show half', () => {
-    const past = { x: 830, y: 400, r: 50 }; // the centre 30 units right of the view
-    const p = shrineLabelAt(past, text, keep(), AREA);
-    expect(inArea(p)).toBe(true);
-  });
-
-  it('keeps the label of a shrine out of view out of view', () => {
-    const away = { x: 400, y: 900, r: 50 };
-    expect(inArea(shrineLabelAt(away, text, keep(), AREA))).toBe(false);
   });
 });

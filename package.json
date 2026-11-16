@@ -16,8 +16,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r typecheck",
     "test": "vitest run",
     "e2e": "playwright test -c apps/client/e2e/playwright.config.ts",
-    "latency": "playwright test -c apps/client/e2e/latency.config.ts",
-    "looks": "playwright test -c apps/client/e2e/looks.config.ts",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "verify:changed": "node scripts/verify-changed.mjs",
     "server": "pnpm --filter @seasonal-spirits/server start",
@@ -25,11 +23,8 @@
     "client": "pnpm --filter @seasonal-spirits/client start",
     "probe": "pnpm --filter @seasonal-spirits/probe start",
     "simulate": "pnpm --filter @seasonal-spirits/game-core simulate",
-    "balance": "pnpm --filter @seasonal-spirits/game-core balance",
-    "fairness": "pnpm --filter @seasonal-spirits/game-core fairness",
     "dev": "node scripts/dev.mjs",
-    "dev:stop": "node scripts/dev.mjs stop",
-    "human": "pnpm --filter @seasonal-spirits/game-core human"
+    "dev:stop": "node scripts/dev.mjs stop"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

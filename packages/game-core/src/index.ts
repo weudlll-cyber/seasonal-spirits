@@ -1,29 +1,13 @@
-// Seasonal Spirits — public surface of the game core.
-// The server (Phase 1) and the tests use the match, its config, the bots and the types.
+// Seasonal Sumo — public surface of the game core.
+// The server, the clients and the tests use the match, its config, the bot and the types.
 
 export * from './config.js';
 export * from './seasons.js';
-export * from './prices.js';
 export * from './types.js';
 export { Match, type Roster } from './match.js';
 export { mulberry32 } from './rng.js';
-export { atOwnShrine, shrineOffer, type ShrineOffer } from './actions.js';
-export {
-  clamp,
-  ghostRadius,
-  shrineOf,
-  shrinePositions,
-  stepGhost,
-  touchesCoin,
-} from './geometry.js';
-export { NO_AWARDS, noteAwards, type Awards } from './recap.js';
-export { spread, type Spread } from './balance.js';
-export { createBot, STRATEGIES, type Strategy } from './bots/strategies.js';
-export type { Bot } from './bots/common.js';
-export {
-  simulate,
-  botRoster,
-  SIM_TICK_MS,
-  type HalvingRecord,
-  type SimulationReport,
-} from './simulation.js';
+export { clamp, dashVelocity, stepGhost, type Motion } from './geometry.js';
+export { nextRadius } from './arena.js';
+export { NO_AWARDS, noteAwards, survivorOf, type Awards } from './recap.js';
+export { createBot, type Bot } from './bots/human.js';
+export { simulate, botRoster, botSeed, SIM_TICK_MS, type SimulationReport } from './simulation.js';

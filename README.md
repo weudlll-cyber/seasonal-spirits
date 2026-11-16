@@ -4,7 +4,10 @@ Seasonal Spirits is a real-time team game for the Seasonal Entertainment communi
 teams, named after the four Seasonal Tokens (Spring, Summer, Autumn, Winter), move their
 ghosts on one map and compete for coins in a five-minute match.
 
-Concept: [CONCEPT.md](CONCEPT.md). Phase 1 (the game with its core) is the current work.
+Concept: [CONCEPT.md](CONCEPT.md). **On this branch (`proto/sumo`)**: Seasonal Spirits is
+paused (owner decision 2026-11-16) and the repository plays a rough prototype, **Seasonal
+Sumo** — push the other teams off a round arena that halves at every season change; rules in
+[docs/GAME-CORE.md](docs/GAME-CORE.md). Nothing of it is merged.
 
 ## Status
 
@@ -18,12 +21,12 @@ the viewer stays the debug view.
 
 - `apps/server` — the match server: game core on the 20 Hz loop, WebSocket, server bots.
 - `apps/client` — the player client (Vite + Canvas 2D, plain TypeScript): keyboard and
-  touch controls, the shrine buttons, the halving staging, the result screen.
+  touch controls, the Dash button, the halving staging, the result screen.
 - `apps/viewer` — browser spectator and debug view with network numbers.
 - `packages/render` — the Canvas drawing both browser apps share.
 - `packages/protocol` — binary state encoding, the client message validator, delay queue,
   interpolation, jump detection.
-- `packages/game-core` — the match: seasons, coins, secure, halving, bots.
+- `packages/game-core` — the match: seasons, arena, momentum, dash, collisions, falls, halving, human-like bots.
 - `tools/probe` — bot clients + headless spectator + measurement run.
 - `scripts/` — `pnpm dev`, `pnpm verify:changed`.
 
@@ -47,14 +50,11 @@ pnpm dev          # match server (32 bots), client and viewer in the background;
 pnpm dev --lan    # the same, also open to the local network: prints the address for a phone
 pnpm dev:stop     # stops exactly the processes pnpm dev started
 pnpm simulate --seed 1  # one full 32-bot match of the game core, headless, with a sanity list
-pnpm balance --matches 30 --seed 1 --variant all  # many matches per strategy and team (docs/BALANCE.md)
 pnpm probe        # full probe run: server + 32 bots + headless spectator, writes a report
 pnpm server       # just the server, in the foreground (SEASON_SECONDS=15 for a 1-minute match)
 pnpm client       # just the client on http://localhost:5930, in the foreground
 pnpm viewer       # just the viewer on http://localhost:5931, in the foreground
 pnpm e2e          # Playwright: the client at desktop and phone size on a short match
-pnpm latency      # on demand: the real client's delays on its own stack (docs/CLIENT.md)
-pnpm looks        # on demand: pictures of the ghosts in three seeded scenes (docs/CLIENT.md)
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```

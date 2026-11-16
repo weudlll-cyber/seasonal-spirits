@@ -1,4 +1,4 @@
-// Seasonal Spirits — the match server's game side: 32 slots, who steers each, match after match.
+// Seasonal Sumo — the match server's game side: 32 slots, who steers each, match after match.
 // Every slot holds a ghost; a bot steers it until a player joins, and again when a player has
 // been gone for reconnectGraceMs. The game core decides everything; this file only routes
 // intents in (wire.ts turns the core's state into the wire state).
@@ -7,6 +7,7 @@ import {
   Match,
   NO_AWARDS,
   botRoster,
+  botSeed,
   createBot,
   noteAwards,
   type Awards,
@@ -15,7 +16,6 @@ import {
   type Intent,
   type MatchEvent,
   type Roster,
-  type Strategy,
 } from '@seasonal-spirits/game-core';
 import type { GameAction, ServerRecap } from '@seasonal-spirits/protocol';
 import { recapOf } from './recap.js';
@@ -30,7 +30,7 @@ type Controller =
 
 export class MatchHost {
   private readonly cfg: GameConfig;
-  private readonly roster: (Roster & { strategy: Strategy })[];
+  private readonly roster: Roster[];
   private readonly control = new Map<number, Controller>();
   private match: Match;
   private seed: number;
@@ -59,6 +59,7 @@ export class MatchHost {
     }
     if (!pick) return null;
     this.control.set(pick.id, { kind: 'player', clientId, dx: 0, dy: 0, action: null });
+    this.match.halt(pick.id);
     return { ghost: pick.id, team: pick.team };
   }
 
@@ -157,9 +158,9 @@ export class MatchHost {
     return taken;
   }
 
+  // A human-like bot for a seat (game-core bots/human.ts), seeded from the match and the seat.
   private botFor(ghost: number): Controller {
-    const strategy = this.roster.find((r) => r.id === ghost)?.strategy ?? 'banker';
-    return { kind: 'bot', bot: createBot(this.cfg, strategy) };
+    return { kind: 'bot', bot: createBot(this.cfg, botSeed(this.seed, ghost)) };
   }
 
   private ghostOf(clientId: number): number | null {

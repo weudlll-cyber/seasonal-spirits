@@ -1,17 +1,23 @@
-// Seasonal Spirits — where the client draws its own ghost (session 2026-11-16-RESPONSE): moved
-// at once by the player's own direction with the server's movement rule (game-core stepGhost),
-// pulled smoothly towards what the server says, snapped to it when far off. Display only: the
-// server's position is the truth and nothing of this leaves the client (THREATS).
+// Seasonal Sumo — where the client draws its own ghost (from Seasonal Spirits' session
+// 2026-11-16-RESPONSE): moved at once by the player's own direction and dash with the server's
+// movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity), pulled
+// smoothly towards what the server says, snapped to it when far off. Display only: the
+// server's position is the truth and nothing of this leaves the client (THREATS row 36).
 
-import { DEFAULT_CONFIG, clamp, stepGhost, type GameConfig } from '@seasonal-spirits/game-core';
+import {
+  DEFAULT_CONFIG,
+  clamp,
+  dashVelocity,
+  stepGhost,
+  type GameConfig,
+  type Motion,
+} from '@seasonal-spirits/game-core';
 import type { Direction } from './input-sender.js';
 
 // The newest server state's word on the own ghost.
-export interface ServerOwn {
-  x: number;
-  y: number;
-  carrying: boolean;
-  frozen: boolean; // securing, or the match is over: the server does not move it
+export interface ServerOwn extends Motion {
+  dashLeftMs: number; // the server's cooldown: a dash before 0 does nothing
+  frozen: boolean; // falling, out, or the match is over: the server does not let it move
   receivedAt: number; // client time the state arrived
 }
 
@@ -22,17 +28,13 @@ export const PREDICTION_LAG_MS = 40;
 // The share of the gap closed per frame is frame time / this, so a gap fades within a few
 // frames without the ghost jumping. Placeholder — owner decides.
 export const CORRECTION_MS = 150;
-// A gap above this (a new match back at the shrine, a long stall) is closed at once.
-// Placeholder — owner decides.
+// A gap above this (a respawn, a knock the client could not see coming, a long stall) is
+// closed at once. Placeholder — owner decides.
 export const SNAP_DISTANCE = 100;
 const HISTORY_MS = 1000; // own path kept to compare with the server's older word
 const MAX_FRAME_MS = 100; // a stalled tab does not fling the ghost forward
 
-interface Point {
-  at: number;
-  x: number;
-  y: number;
-}
+type Point = Motion & { at: number };
 
 export class OwnPrediction {
   private readonly cfg: GameConfig;
@@ -44,26 +46,32 @@ export class OwnPrediction {
     this.cfg = cfg;
   }
 
-  // Once per frame; null without a server position (not placed yet, or watching).
-  update(now: number, dir: Direction, server: ServerOwn | null): { x: number; y: number } | null {
+  // Once per frame; null without a server position (not placed yet, or watching). `dash`: the
+  // player pressed Dash since the last frame.
+  update(
+    now: number,
+    dir: Direction,
+    server: ServerOwn | null,
+    dash = false,
+  ): { x: number; y: number } | null {
     if (!server) {
       this.path = [];
       return null;
     }
     const last = this.path.at(-1);
-    if (!last) {
-      this.path = [{ at: now, x: server.x, y: server.y }];
+    if (!last || server.frozen) {
+      this.path = [{ at: now, x: server.x, y: server.y, vx: server.vx, vy: server.vy }];
       this.offset = { x: 0, y: 0 };
     } else {
       const dt = Math.min(MAX_FRAME_MS, Math.max(0, now - last.at));
-      const to = server.frozen
-        ? last
-        : stepGhost(this.cfg, { ...last, carrying: server.carrying }, dir, dt);
-      this.path.push({ at: now, x: to.x, y: to.y });
+      const v = dash && server.dashLeftMs === 0 ? dashVelocity(this.cfg, last, dir) : null;
+      const from = v ? { ...last, vx: v.x, vy: v.y } : last;
+      const to = stepGhost(this.cfg, from, dir, dt);
+      this.path.push({ at: now, ...to });
       while ((this.path[0]?.at ?? now) < now - HISTORY_MS) this.path.shift();
       this.correct(server, dt);
     }
-    const head = this.path.at(-1) ?? { x: server.x, y: server.y };
+    const head = this.path.at(-1) ?? server;
     const size = this.cfg.fieldSize;
     return {
       x: clamp(head.x + this.offset.x, 0, size),
@@ -72,12 +80,19 @@ export class OwnPrediction {
   }
 
   // The server's position is where the own path was PREDICTION_LAG_MS before the state
-  // arrived; the gap between the two moves the correction.
+  // arrived; the gap between the two moves the correction. A gap past SNAP_DISTANCE restarts
+  // the path from the server's motion (a knock or a respawn the client could not foresee).
   private correct(server: ServerOwn, dt: number): void {
     const then = this.pathAt(server.receivedAt - PREDICTION_LAG_MS);
     const gx = server.x - (then.x + this.offset.x);
     const gy = server.y - (then.y + this.offset.y);
-    const k = Math.hypot(gx, gy) > SNAP_DISTANCE ? 1 : Math.min(1, dt / CORRECTION_MS);
+    if (Math.hypot(gx, gy) > SNAP_DISTANCE) {
+      const at = this.path.at(-1)?.at ?? 0;
+      this.path = [{ at, x: server.x, y: server.y, vx: server.vx, vy: server.vy }];
+      this.offset = { x: 0, y: 0 };
+      return;
+    }
+    const k = Math.min(1, dt / CORRECTION_MS);
     this.offset = { x: this.offset.x + gx * k, y: this.offset.y + gy * k };
   }
 

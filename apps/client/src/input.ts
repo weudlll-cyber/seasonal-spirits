@@ -1,6 +1,6 @@
-// Seasonal Spirits — the player's controls (CONCEPT.md §8): WASD or arrow keys, 1 to secure;
-// on touch screens a virtual joystick under the left thumb. The Secure button for the right
-// thumb lives in hud.ts. Only a direction and the action leave here.
+// Seasonal Sumo — the player's controls: WASD or arrow keys, Space to dash; on touch screens a
+// virtual joystick under the left thumb. The Dash button for the right thumb lives in hud.ts.
+// Only a direction and the action leave here.
 
 import type { GameAction } from '@seasonal-spirits/protocol';
 
@@ -19,7 +19,7 @@ const KEYS: Record<string, [number, number]> = {
   KeyD: [1, 0],
   ArrowRight: [1, 0],
 };
-const ACTION_KEYS: Record<string, GameAction> = { Digit1: 'secure' };
+const ACTION_KEYS: Record<string, GameAction> = { Space: 'dash' };
 
 export function bindKeyboard(controls: Controls): void {
   const held = new Set<string>();

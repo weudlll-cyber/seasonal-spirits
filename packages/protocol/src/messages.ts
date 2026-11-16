@@ -1,10 +1,11 @@
-// Seasonal Spirits — the text messages between client and server (state travels as binary).
+// Seasonal Sumo — the text messages between client and server (state travels as binary).
 // Client → server: the hello, a direction, the one action. Server → client: the welcome or the
 // notice that the client watches instead, and the match recap. Shapes only; the readers check
-// them. Steal notices and team signals were removed with V5 (owner decision 2026-11-16).
+// them.
 
 // A player sends a direction (each component in [-1, 1]; the server clamps the magnitude)
-// and the one action, Secure. Spectators send nothing after the hello.
+// and the one action, Dash (the core keeps its cooldown). Spectators send nothing after the
+// hello.
 export interface ClientHello {
   kind: 'player' | 'spectator';
 }
@@ -15,7 +16,7 @@ export interface ClientInput {
   dy: number;
 }
 
-export type GameAction = 'secure';
+export type GameAction = 'dash';
 
 export interface ClientAction {
   kind: 'action';
@@ -39,18 +40,16 @@ export interface ServerSpectating {
   reason: 'full';
 }
 
-// Server → every client, once when a match ends (and to a client that arrives during the
-// result pause): the result and the awards the match earned (owner decision 2026-11-16). An
-// award nobody earned is left out. Values in the game's units (halves allowed); names are the
-// client's (ghostName).
+// Server → every client, once when a match ends (and to a client that arrives during the result
+// pause): knockouts per team and player and the awards the match earned. An award nobody
+// earned is left out. Names are the client's (ghostName).
 export interface ServerRecap {
   kind: 'recap';
-  teams: [number, number, number, number]; // secured value per team
-  players: { ghost: number; team: number; secured: number }[];
+  teams: [number, number, number, number]; // knockouts per team
+  players: { ghost: number; team: number; knockouts: number }[];
   awards: {
-    bestNose?: { ghost: number; value: number }; // points from coins carried across a halving
-    closestSave?: { ghost: number; leftMs: number }; // started this long before its deadline
-    lastSecure?: { ghost: number; value: number };
+    bestPusher?: { ghost: number; knockouts: number }; // the most knockouts
+    survivor?: { ghost: number; ms: number }; // the longest time on the arena without a fall
   };
 }
 

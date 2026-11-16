@@ -1,5 +1,8 @@
 # Seasonal Spirits — Concept
 
+> **On `proto/sumo`:** Seasonal Spirits is paused (owner decision 2026-11-16); this branch
+> plays the Seasonal Sumo prototype, described in [docs/GAME-CORE.md](docs/GAME-CORE.md).
+
 **Status:** rebuilt to the owner's concept **V5.0** on 2026-11-16 (section 15). This file is
 the English reference for the repository, derived from the owner's concept document (German,
 kept by the owner; v4.6 until 2026-11-16, V5.0 since). It changes only from the owner's

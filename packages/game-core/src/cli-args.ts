@@ -1,5 +1,5 @@
-// Seasonal Spirits — the command-line arguments of the measuring commands (`pnpm balance`,
-// `pnpm fairness`, `pnpm human`), checked in one place: a whole number in a range or a text.
+// Seasonal Sumo — the command-line arguments of `pnpm simulate`, checked in one place: a whole
+// number in a range.
 
 // `--name <n>`: a whole number from 0 to `max`, or `fallback` when absent; anything else ends
 // the command with exit code 2.
@@ -17,15 +17,4 @@ export function numberArg(
     process.exit(2);
   }
   return Number(raw);
-}
-
-// `--name <text>`, or null when absent.
-export function textArg(argv: readonly string[], name: string): string | null {
-  const i = argv.indexOf(name);
-  return i === -1 ? null : (argv[i + 1] ?? null);
-}
-
-// Every value after `--name` (the flag may repeat).
-export function listArg(argv: readonly string[], name: string): string[] {
-  return argv.flatMap((a, i) => (argv[i - 1] === name ? [a] : []));
 }

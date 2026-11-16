@@ -1,15 +1,14 @@
-// Seasonal Spirits — state encode/decode round trips and the message size against 1 KB.
+// Seasonal Sumo — state encode/decode round trips and the message size against 1 KB.
 
 import { describe, expect, it } from 'vitest';
 import {
-  COIN_BYTES,
-  GHOST_AT_SHRINE,
   GHOST_BOT,
   GHOST_BYTES,
-  GHOST_CARRIER,
-  GHOST_SECURING,
+  GHOST_DASHING,
+  GHOST_FALLING,
+  GHOST_OUT,
+  GHOST_PROTECTED,
   HEADER_BYTES,
-  OFFER_BYTES,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
@@ -20,7 +19,7 @@ import {
   type ServerState,
 } from './state.js';
 
-function sample(ghosts: number, coins: number, offers = 0): ServerState {
+function sample(ghosts: number): ServerState {
   return {
     tick: 42,
     serverMs: 123_456,
@@ -31,56 +30,57 @@ function sample(ghosts: number, coins: number, offers = 0): ServerState {
     countdownMs: null,
     flags: STATE_HALVING_EVENT,
     nextMatchMs: 0,
-    teamSecured: [12.5, 0, 33, 7.5],
+    teamScore: [12, 0, 33, 7],
+    arenaRadius: 318.2,
+    arenaNext: 225,
     ghosts: Array.from({ length: ghosts }, (_, i) => ({
       id: i + 1,
       x: 100 + i,
       y: 1000 - i,
+      vx: i * 30 - 400,
+      vy: 900 - i * 25,
       team: i % 4,
-      carried: i * 3,
-      secured: i / 2,
-      flags: i % 2 ? GHOST_CARRIER | GHOST_AT_SHRINE : 0,
+      knockouts: i,
+      dashLeftMs: (i % 8) * 200,
+      flags: i % 2 ? GHOST_DASHING : 0,
     })),
-    coins: Array.from({ length: coins }, (_, i) => ({ x: 10 * i, y: 1999 - i, season: i % 4 })),
-    offers: Array.from({ length: offers }, (_, i) => ({ ghost: i + 1, secureValue: 12.5 })),
   };
 }
 
 describe('state encoding', () => {
   it('round-trips an empty state', () => {
-    const s = sample(0, 0);
+    const s = sample(0);
     const buf = encodeState(s);
     expect(buf.byteLength).toBe(HEADER_BYTES);
     expect(decodeState(buf)).toEqual(s);
   });
 
-  it('round-trips 32 ghosts, coins, offers, half values, a countdown and the next-match time', () => {
-    const s = { ...sample(32, 60, 4), countdownMs: 9000, flags: 0, nextMatchMs: 12_000 };
+  it('round-trips 32 ghosts with signed speeds, the arena, a countdown and the next-match time', () => {
+    const s = { ...sample(32), countdownMs: 9000, flags: 0, nextMatchMs: 12_000 };
     const buf = encodeState(s);
-    expect(buf.byteLength).toBe(
-      HEADER_BYTES + 32 * GHOST_BYTES + 60 * COIN_BYTES + 4 * OFFER_BYTES,
-    );
+    expect(buf.byteLength).toBe(HEADER_BYTES + 32 * GHOST_BYTES);
     expect(decodeState(buf)).toEqual(s);
   });
 
-  it('stays under 1 KB at the worst case: 32 ghosts, a full field of 60 coins, 32 offers', () => {
-    expect(encodedSize(32, 60, 32)).toBe(782);
-    expect(encodedSize(32, 60, 32)).toBeLessThan(1024);
+  it('stays well under 1 KB with 32 ghosts', () => {
+    expect(encodedSize(32)).toBe(452);
   });
 
   it('clamps out-of-range numbers instead of wrapping them', () => {
-    const s = sample(1, 0);
+    const s = sample(1);
     const ghost = s.ghosts[0];
     if (ghost) {
       ghost.x = -5;
-      ghost.carried = 1e6;
+      ghost.vx = 1e6;
+      ghost.vy = -1e6;
+      ghost.knockouts = 999;
     }
     const back = decodeState(encodeState(s));
-    expect(back.ghosts[0]).toMatchObject({ x: 0, carried: 65535 });
+    expect(back.ghosts[0]).toMatchObject({ x: 0, vx: 32767, vy: -32768, knockouts: 255 });
   });
 
   it('rejects a corrupted length', () => {
-    const buf = encodeState(sample(3, 2, 1));
+    const buf = encodeState(sample(3));
     expect(() => decodeState(buf.slice(0, buf.byteLength - 1))).toThrow();
     expect(() => decodeState(buf.slice(0, 10))).toThrow();
   });
@@ -88,20 +88,18 @@ describe('state encoding', () => {
 
 describe('state flags', () => {
   it('keeps every ghost flag through a round trip', () => {
-    const all = GHOST_CARRIER | GHOST_SECURING | GHOST_BOT | GHOST_AT_SHRINE;
-    const s = sample(2, 0);
+    const all = GHOST_BOT | GHOST_DASHING | GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED;
+    const s = sample(2);
     const [a, b] = s.ghosts;
     if (a) a.flags = all;
-    if (b) b.flags = GHOST_BOT;
+    if (b) b.flags = GHOST_PROTECTED;
     const back = decodeState(encodeState(s)).ghosts;
-    expect(back.map((g) => g.flags)).toEqual([all, GHOST_BOT]);
+    expect(back.map((g) => g.flags)).toEqual([all, GHOST_PROTECTED]);
   });
 
   it('keeps the deadline flags — halving, result, to the end, match end — with the countdown', () => {
     const flags = STATE_HALVING_EVENT | STATE_RESULT | STATE_TO_END | STATE_MATCH_END_EVENT;
-    const s = { ...sample(1, 0), countdownMs: 7000, flags };
+    const s = { ...sample(1), countdownMs: 7000, flags };
     expect(decodeState(encodeState(s))).toMatchObject({ countdownMs: 7000, flags });
-    const toEnd = { ...sample(1, 0), countdownMs: 0, flags: STATE_TO_END };
-    expect(decodeState(encodeState(toEnd))).toMatchObject({ countdownMs: 0, flags: STATE_TO_END });
   });
 });

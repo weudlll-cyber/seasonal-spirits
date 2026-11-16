@@ -24,9 +24,10 @@ refuseProduction(env, 'The probe');
 const cfg: ProbeConfig = {
   port: envInt(env, 'PORT', 3930, [1, 65535]),
   tickHz: envInt(env, 'TICK_HZ', 20, [1, 60]),
-  // Field size and speed are the game's (packages/game-core/src/config.ts).
+  // Field size and the fastest a ghost moves (a dash plus a knock) are the game's
+  // (packages/game-core/src/config.ts).
   world: DEFAULT_CONFIG.fieldSize,
-  speed: DEFAULT_CONFIG.ghostSpeed,
+  speed: DEFAULT_CONFIG.dashSpeed + DEFAULT_CONFIG.knockSpeed,
   maxGhosts: envInt(env, 'GHOSTS', 32, [4, 252]),
   maxInputsPerSecond: envInt(env, 'MAX_INPUTS_PER_SECOND', 20, [1, 1000]),
   latencyMin: envInt(env, 'LATENCY_MIN', 100, [0, 10_000]),

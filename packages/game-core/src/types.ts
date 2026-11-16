@@ -1,8 +1,7 @@
-// Seasonal Spirits — the match state, the intents a ghost can send, and the match events.
-// Everything here is public: bots and clients see the same state (CONCEPT.md §2a: a carrier
-// is visible to all).
+// Seasonal Sumo — the match state, the intents a ghost can send, and the match events.
+// Everything here is public: bots and clients see the same state.
 
-import type { Season, SeasonClock, SeasonCounts } from './seasons.js';
+import type { Season, SeasonClock } from './seasons.js';
 
 export type Team = 0 | 1 | 2 | 3;
 export const TEAMS: readonly Team[] = [0, 1, 2, 3];
@@ -12,30 +11,31 @@ export interface Vec {
   y: number;
 }
 
+// A ghost's life: on the arena, falling off it (the animation), out until the respawn.
+export type GhostPhase = 'in' | 'falling' | 'out';
+
 export interface Ghost {
   id: number;
   team: Team;
   x: number;
   y: number;
-  carried: SeasonCounts;
-  // Of the carried coins, those carried across the last halving (set at every halving, gone
-  // with a secure): the recap's "Best nose" counts what they bring (recap.ts).
-  crossed: SeasonCounts;
-  securedValue: number;
-  securingUntilMs: number | null; // a secure in progress ends at this match time
-  securingSeason: Season | null; // the season whose values the secure banks at
+  vx: number; // units/s
+  vy: number;
+  phase: GhostPhase;
+  phaseUntilMs: number; // when 'falling' turns 'out', 'out' turns 'in'; 0 while 'in'
+  protectedUntilMs: number; // after a respawn: nothing pushes it before this match time
+  dashUntilMs: number; // a dash in progress knocks what it hits until this match time
+  dashReadyMs: number; // the next dash is allowed from this match time on
+  // The last opponent that touched it and when: a fall within creditMs counts for that one.
+  lastTouch: { by: number; atMs: number } | null;
+  knockouts: number;
+  falls: number;
+  aliveSinceMs: number; // the start or the last respawn
+  longestAliveMs: number; // the longest stretch without a fall so far
 }
 
-export interface FieldCoin {
-  id: number;
-  x: number;
-  y: number;
-  season: Season;
-}
-
-// The one action, at the own shrine (V5, owner decision 2026-11-16: stealing and the swap
-// removed).
-export type Action = 'secure';
+// The one action (NIGHT 2026-11-17: Seasonal Sumo).
+export type Action = 'dash';
 
 // A direction (magnitude clamped to 1 by the core) and at most one action per tick.
 export interface Intent {
@@ -44,23 +44,26 @@ export interface Intent {
   action?: Action;
 }
 
+// Holding nothing: what a ghost without intent, an out ghost and an idle bot send.
+export const IDLE: Intent = { dx: 0, dy: 0 };
+
 export type MatchEvent =
-  // Every season turn inside a match (CONCEPT.md §2b, §13); season is the new one; carried:
-  // the coins all ghosts carry across it.
-  | { type: 'halving'; atMs: number; season: Season; carried: number }
-  // A field coin picked up (2026-11-16: the human round counts pickups per ghost).
-  | { type: 'pickup'; ghost: number; coin: number }
-  | { type: 'secure-start'; ghost: number }
-  // leftMs: time that was left before the deadline of the season the secure banks at, when it
-  // was started; crossedValue: the part of `value` from coins carried across a halving.
-  | { type: 'secured'; ghost: number; value: number; leftMs: number; crossedValue: number }
-  // The match ended in this tick (owner decision 2026-11-16: "MATCH OVER" at the end).
+  // Every season turn inside a match; season is the new one, radius the arena's new target.
+  | { type: 'halving'; atMs: number; season: Season; radius: number }
+  | { type: 'dash'; ghost: number }
+  // by: the opponent credited with the knockout, null when nobody touched it in time.
+  | { type: 'fall'; ghost: number; by: number | null; atMs: number }
+  | { type: 'respawn'; ghost: number }
   | { type: 'match-end'; atMs: number };
 
-// Running totals kept for the sanity list of `pnpm simulate`.
-export interface MatchStats {
-  spawned: number;
-  pickedUp: number;
+// The arena: a disc in the middle of the field. After a halving its edge eases from `from` to
+// `target` between `shrinkFromMs` and shrinkFromMs + arenaShrinkMs (arena.ts).
+export interface Arena {
+  centre: Vec;
+  radius: number; // now
+  from: number;
+  target: number;
+  shrinkFromMs: number;
 }
 
 export interface MatchState {
@@ -71,14 +74,12 @@ export interface MatchState {
   // last season the match end; null otherwise and once the match has ended.
   countdownMs: number | null;
   ended: boolean;
+  arena: Arena;
   ghosts: Ghost[]; // sorted by id
-  coins: FieldCoin[];
-  shrines: readonly Vec[]; // index = team
   events: MatchEvent[]; // events of the last tick only
-  stats: MatchStats;
 }
 
 export interface MatchResult {
-  players: { id: number; team: Team; secured: number }[];
-  teams: number[]; // secured value per team, index = team
+  players: { id: number; team: Team; knockouts: number; falls: number; longestAliveMs: number }[];
+  teams: number[]; // knockouts per team, index = team
 }

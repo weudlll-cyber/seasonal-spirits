@@ -1,5 +1,5 @@
-// Seasonal Spirits — the moving-pack bug of 2026-11-15: collectors sharing one target coin
-// travelled as one blob of up to ten mixed ghosts. Protects that bots spread out.
+// Seasonal Sumo — bots must not bunch in one spot for long or stand still (the pack test of
+// Seasonal Spirits, 2026-11-15: collectors once travelled as one blob of up to ten ghosts).
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../config.js';
@@ -11,29 +11,23 @@ const LINK = 40; // field units: ghosts this close (a little more than touching)
 const MIN_PACK = 5; // "more than 4 ghosts"
 const MAX_PACK_MS = 15_000;
 
-// Groups of at least MIN_PACK ghosts linked within LINK, away from every shrine.
+// Groups of at least MIN_PACK ghosts on the arena linked within LINK.
 function groups(s: Readonly<MatchState>): Set<number>[] {
   const seen = new Set<number>();
   const out: Set<number>[] = [];
-  for (const start of s.ghosts) {
+  for (const start of s.ghosts.filter((g) => g.phase === 'in')) {
     if (seen.has(start.id)) continue;
     seen.add(start.id);
     const members = [start];
     for (let i = 0; i < members.length; i++) {
       const a = members[i];
       for (const b of s.ghosts) {
-        if (!a || seen.has(b.id) || distance(a, b) > LINK) continue;
+        if (!a || b.phase !== 'in' || seen.has(b.id) || distance(a, b) > LINK) continue;
         seen.add(b.id);
         members.push(b);
       }
     }
-    if (members.length < MIN_PACK) continue;
-    const centre = {
-      x: members.reduce((n, g) => n + g.x, 0) / members.length,
-      y: members.reduce((n, g) => n + g.y, 0) / members.length,
-    };
-    const atShrine = s.shrines.some((p) => distance(p, centre) < DEFAULT_CONFIG.shrineRadius + 60);
-    if (!atShrine) out.push(new Set(members.map((g) => g.id)));
+    if (members.length >= MIN_PACK) out.push(new Set(members.map((g) => g.id)));
   }
   return out;
 }
@@ -54,10 +48,24 @@ function longestPackMs(seed: number): number {
   return longest;
 }
 
-describe('bots spread out', () => {
-  // Three whole 32-bot matches take about 5 s; failed on master (seed 1: one pack 36 s).
+// The share of ghost-ticks on the arena spent nearly still (below 5 units/s).
+function stillShare(seed: number): number {
+  let still = 0;
+  let all = 0;
+  simulate(DEFAULT_CONFIG, seed, undefined, (s) => {
+    for (const g of s.ghosts) {
+      if (g.phase !== 'in') continue;
+      all++;
+      if (Math.hypot(g.vx, g.vy) < 5) still++;
+    }
+  });
+  return still / all;
+}
+
+describe('bots spread out and move', () => {
+  // Three whole 32-bot matches take a few seconds.
   it(
-    'no group of more than 4 ghosts stays together longer than 15 s away from the shrines',
+    'no group of more than 4 ghosts stays together longer than 15 s',
     {
       timeout: 20_000,
     },
@@ -66,4 +74,8 @@ describe('bots spread out', () => {
         expect(longestPackMs(seed), `seed ${seed}`).toBeLessThanOrEqual(MAX_PACK_MS);
     },
   );
+
+  it('stands nearly still less than 5 % of the time', { timeout: 20_000 }, () => {
+    expect(stillShare(1)).toBeLessThan(0.05);
+  });
 });

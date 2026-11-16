@@ -1,149 +1,56 @@
-// Seasonal Spirits — the ground, the four shrines and the field coins.
-// The ground takes the current season's cast; coins are small diamonds in their season's
-// colour, so they never look like the round ghosts (the real token logos replace them later,
-// CONCEPT.md §8). The own shrine glows and says so. Shrine geometry is the game core's.
+// Seasonal Sumo — the field and the arena: a dark void around a disc in the middle, the disc
+// in the season's ground colour with a glowing edge in the season's colour; during the
+// countdown before a halving the edge after it shows as a dashed ring (the server sends both
+// radii, protocol state.ts).
 
-import { DEFAULT_CONFIG, shrinePositions } from '@seasonal-spirits/game-core';
-import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
-import { ghostBodies } from './ghosts.js';
-import { LINE, TEXT, ground, seasonColour, seasonName } from './palette.js';
-import { shrineLabelAt, type ShrineKeepClear } from './labels.js';
-import { FIELD, circle, overlaps, sx, sy, visibleArea, type Rect, type View } from './view.js';
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { STATE_TO_END, type ServerState } from '@seasonal-spirits/protocol';
+import { LINE, ground, seasonColour } from './palette.js';
+import { FIELD, circle, type View } from './view.js';
 
-export const SHRINES = shrinePositions(DEFAULT_CONFIG);
-const GRID = 250; // field units between the faint ground lines
-const PULSE_MS = 1600; // one gentle breath of the own shrine's glow
+const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
+const GRID = 250; // field units between the faint ground lines on the arena
+const VOID = '#020305';
 
-export interface FieldStyle {
-  ownTeam: number | null; // the player's team: its shrine glows; null for spectators
-  nowMs: number; // drives the pulse
-  blocked: readonly Rect[]; // HUD controls on the field: shrine labels move away from them
-  ghosts: readonly GhostState[]; // the ghosts as drawn this frame: shrine labels keep off them
-}
-
-// Where the shrine labels were drawn: the own one (null without an own team; the browser
-// specs read it) and every one at least partly in view, for the ghost labels to keep clear of;
-// `onGhost` those of them that had to sit on a ghost, every spot being taken.
-export interface ShrineLabels {
-  own: Rect | null;
-  all: Rect[];
-  onGhost: Rect[];
-}
-
-export function drawField(v: View, s: ServerState | undefined, style: FieldStyle): ShrineLabels {
+export function drawField(v: View, s: ServerState | undefined): void {
   const { ctx } = v;
-  const season = s?.season ?? 0;
-  ctx.fillStyle = '#05080b';
+  ctx.fillStyle = VOID;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const season = s?.season ?? 0;
+  const r = (s?.arenaRadius ?? DEFAULT_CONFIG.arenaRadius) * v.scale;
+  // The disc, with the ground lines clipped to it.
+  ctx.save();
+  circle(v, CENTRE, CENTRE, r);
   ctx.fillStyle = ground(season);
-  ctx.fillRect(sx(v, 0), sy(v, 0), FIELD * v.scale, FIELD * v.scale);
+  ctx.fill();
+  ctx.clip();
   ctx.strokeStyle = LINE;
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let u = GRID; u < FIELD; u += GRID) {
-    ctx.moveTo(sx(v, u), sy(v, 0));
-    ctx.lineTo(sx(v, u), sy(v, FIELD));
-    ctx.moveTo(sx(v, 0), sy(v, u));
-    ctx.lineTo(sx(v, FIELD), sy(v, u));
+    ctx.moveTo(v.ox + u * v.scale, v.oy);
+    ctx.lineTo(v.ox + u * v.scale, v.oy + FIELD * v.scale);
+    ctx.moveTo(v.ox, v.oy + u * v.scale);
+    ctx.lineTo(v.ox + FIELD * v.scale, v.oy + u * v.scale);
   }
   ctx.stroke();
-  ctx.strokeRect(sx(v, 0), sy(v, 0), FIELD * v.scale, FIELD * v.scale);
-  const labels: ShrineLabels = { own: null, all: [], onGhost: [] };
-  const area = visibleArea(v);
-  const keep = { controls: style.blocked, bodies: ghostBodies(v, style.ghosts) };
-  for (const [team, p] of SHRINES.entries()) {
-    const own = team === style.ownTeam;
-    drawShrine(v, p, team, own ? style.nowMs : null);
-    const { box, onGhost } = drawShrineLabel(v, { ...p, team, own }, keep, area);
-    if (overlaps(box, area)) labels.all.push(box);
-    if (overlaps(box, area) && onGhost) labels.onGhost.push(box);
-    if (own) labels.own = box;
-  }
-  if (s) drawCoins(v, s);
-  return labels;
-}
-
-// `pulseAt` is set for the own shrine only: a breathing glow, a solid rim, "Your shrine".
-function drawShrine(
-  v: View,
-  p: { x: number; y: number },
-  team: number,
-  pulseAt: number | null,
-): void {
-  const { ctx } = v;
-  const r = DEFAULT_CONFIG.shrineRadius * v.scale;
-  const colour = seasonColour(team);
-  const breath = pulseAt === null ? 0 : (1 + Math.sin((pulseAt / PULSE_MS) * Math.PI * 2)) / 2;
-  circle(v, p.x, p.y, r);
-  ctx.globalAlpha = pulseAt === null ? 0.12 : 0.2 + 0.15 * breath;
-  ctx.fillStyle = colour;
-  ctx.shadowColor = colour;
-  ctx.shadowBlur = pulseAt === null ? 0 : 18 + 22 * breath;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.globalAlpha = 1;
-  ctx.setLineDash(pulseAt === null ? [6, 4] : []);
+  ctx.restore();
+  // The glowing edge.
+  const colour = seasonColour(season);
+  circle(v, CENTRE, CENTRE, r);
   ctx.strokeStyle = colour;
-  ctx.lineWidth = pulseAt === null ? 2 : 4;
+  ctx.shadowColor = colour;
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 4;
   ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-// "Your shrine" or "<Season> shrine", below the shrine unless that spot is out of view or a
-// HUD control or a ghost covers it (then above, left or right of it, shrineLabelAt in
-// labels.ts). Returns the label's box and whether it sits on a ghost.
-function drawShrineLabel(
-  v: View,
-  shrine: { x: number; y: number; team: number; own: boolean },
-  keep: ShrineKeepClear,
-  area: Rect,
-): { box: Rect; onGhost: boolean } {
-  const { team, own } = shrine;
-  const { ctx } = v;
-  const r = DEFAULT_CONFIG.shrineRadius * v.scale;
-  const size = Math.max(11, Math.round(r / 3));
-  const label = own ? 'Your shrine' : `${seasonName(team)} shrine`;
-  ctx.font = `bold ${size}px system-ui, sans-serif`;
-  const text = { width: ctx.measureText(label).width, height: size + 2 };
-  const at = { x: sx(v, shrine.x), y: sy(v, shrine.y), r };
-  const p = shrineLabelAt(at, text, keep, area);
-  ctx.fillStyle = own ? TEXT : seasonColour(team);
-  ctx.textAlign = 'center';
-  ctx.fillText(label, p.x, p.y);
-  ctx.textAlign = 'start';
-  const box = {
-    left: p.x - text.width / 2,
-    right: p.x + text.width / 2,
-    top: p.y - text.height,
-    bottom: p.y,
-  };
-  return { box, onGhost: p.onGhost };
-}
-
-// Coins of all four seasons lie on the field (V5): each a diamond (a square on its corner) in
-// its own season's colour.
-// A coin's drawn radius: the game core's size (the server picks a coin up when the drawn
-// shapes touch); at least 3 px, so it stays visible in a phone's Overview.
-export function coinRadiusPx(v: View): number {
-  return Math.max(3, DEFAULT_CONFIG.coinRadius * v.scale);
-}
-
-function drawCoins(v: View, s: ServerState): void {
-  const { ctx } = v;
-  const r = coinRadiusPx(v);
-  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-  ctx.lineWidth = 1;
-  for (const c of s.coins) {
-    ctx.fillStyle = seasonColour(c.season);
-    const x = sx(v, c.x);
-    const y = sy(v, c.y);
-    ctx.beginPath();
-    ctx.moveTo(x, y - r);
-    ctx.lineTo(x + r, y);
-    ctx.lineTo(x, y + r);
-    ctx.lineTo(x - r, y);
-    ctx.closePath();
-    ctx.fill();
+  ctx.shadowBlur = 0;
+  // The coming edge, in the countdown before a halving (not before the match end).
+  if (s && s.countdownMs !== null && !(s.flags & STATE_TO_END)) {
+    circle(v, CENTRE, CENTRE, s.arenaNext * v.scale);
+    ctx.setLineDash([10, 8]);
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = 2;
     ctx.stroke();
+    ctx.setLineDash([]);
   }
 }

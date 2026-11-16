@@ -1,30 +1,36 @@
-// Seasonal Spirits — the ghosts in the look the owner chose on 2026-11-16 (look B, "calm"):
-// the body in its team's colour, players and bots alike; a carrier visible from afar (CONCEPT.md
-// §2a, sentence 5) by its larger body, a short trail in its team's colour and its name with the
-// coin count; a thin ring while securing, a thick one for "You". The shield and the grey
-// "(N half)" went with V5 (owner decision 2026-11-16: stealing out, the price board).
+// Seasonal Sumo — the ghosts in Seasonal Spirits' look B: the body in its team's colour,
+// players and bots alike, a thick white ring for "You". A fast ghost — dashing or knocked
+// flying — leaves a short trail in its team's colour; a ghost falling off the arena shrinks and
+// fades (fallMs); one out is not drawn; one just back (protected) wears a pale dashed ring.
 
-import { GHOST_CARRIER, GHOST_SECURING } from '@seasonal-spirits/protocol';
-import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
-import type { GhostState } from '@seasonal-spirits/protocol';
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import {
+  GHOST_FALLING,
+  GHOST_OUT,
+  GHOST_PROTECTED,
+  type GhostState,
+} from '@seasonal-spirits/protocol';
 import {
   LABEL_HEIGHT,
-  bodyBox,
   labelText,
   placeLabels,
   type LabelCandidate,
   type PlacedLabel,
 } from './labels.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
-import { circle, sx, sy, visibleArea, type Rect, type View } from './view.js';
+import { circle, sx, sy, visibleArea, type View } from './view.js';
 
 const TRAIL_POINTS = 12;
+// A ghost faster than running can make it leaves a trail: a dash or a knock.
+const TRAIL_SPEED = DEFAULT_CONFIG.maxSpeed * 1.1;
 
-// The last few positions of each ghost, for the carrier trails. Bounded by the ghost ids.
+// The last few positions of each ghost, for the trails, and when each began to fall, for the
+// fall animation. Bounded by the ghost ids.
 export class Trails {
   private readonly points = new Map<number, { x: number; y: number }[]>();
+  private readonly fellAt = new Map<number, number>();
 
-  record(ghosts: readonly GhostState[]): void {
+  record(ghosts: readonly GhostState[], nowMs: number): void {
     const seen = new Set<number>();
     for (const g of ghosts) {
       seen.add(g.id);
@@ -32,32 +38,37 @@ export class Trails {
       list.push({ x: g.x, y: g.y });
       if (list.length > TRAIL_POINTS) list.shift();
       this.points.set(g.id, list);
+      if (!(g.flags & GHOST_FALLING)) this.fellAt.delete(g.id);
+      else if (!this.fellAt.has(g.id)) this.fellAt.set(g.id, nowMs);
     }
     for (const id of this.points.keys()) if (!seen.has(id)) this.points.delete(id);
+    for (const id of this.fellAt.keys()) if (!seen.has(id)) this.fellAt.delete(id);
   }
 
   of(id: number): readonly { x: number; y: number }[] {
     return this.points.get(id) ?? [];
+  }
+
+  // 0 just fallen … 1 gone.
+  fall(id: number, nowMs: number): number {
+    const at = this.fellAt.get(id);
+    return at === undefined ? 0 : Math.min(1, (nowMs - at) / DEFAULT_CONFIG.fallMs);
   }
 }
 
 export interface GhostStyle {
   ownId: number | null; // the ghost this client steers, marked clearly
   trails: Trails;
-  labelAll: boolean; // every ghost named (spectators, the viewer), not just carriers
-  avoid: readonly Rect[]; // boxes the names keep clear of: the shrine labels (drawField)
+  nowMs: number; // drives the fall animation
+  labelAll: boolean; // every ghost named (spectators, the viewer)
 }
 
-export function ghostRadiusPx(v: View, g: GhostState): number {
-  // The game core's size (the server picks a coin up when the drawn shapes touch); at least
-  // 4 px, so a ghost stays visible in a phone's Overview, the only view that small.
-  return Math.max(4, ghostRadius(DEFAULT_CONFIG, g.carried) * v.scale);
+export function ghostRadiusPx(v: View): number {
+  // The game core's size; at least 4 px, so a ghost stays visible in a phone's Overview.
+  return Math.max(4, DEFAULT_CONFIG.ghostRadius * v.scale);
 }
 
-// Every ghost's body box in pixels, as drawGhosts draws it: what the shrine labels keep off.
-export function ghostBodies(v: View, ghosts: readonly GhostState[]): Rect[] {
-  return ghosts.map((g) => bodyBox({ x: sx(v, g.x), y: sy(v, g.y), r: ghostRadiusPx(v, g) }));
-}
+const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
 
 // Returns the labels as drawn (the client's browser specs read them).
 export function drawGhosts(
@@ -65,9 +76,18 @@ export function drawGhosts(
   ghosts: readonly GhostState[],
   style: GhostStyle,
 ): PlacedLabel[] {
-  for (const g of ghosts) if (g.flags & GHOST_CARRIER) drawTrail(v, g, style.trails);
-  for (const g of ghosts) drawBody(v, g, style.ownId);
-  return drawLabels(v, ghosts, style);
+  const shown = ghosts.filter(visible);
+  for (const g of shown) {
+    if (Math.hypot(g.vx, g.vy) > TRAIL_SPEED && !(g.flags & GHOST_FALLING)) {
+      drawTrail(v, g, style.trails);
+    }
+  }
+  for (const g of shown) drawBody(v, g, style);
+  return drawLabels(
+    v,
+    shown.filter((g) => !(g.flags & GHOST_FALLING)),
+    style,
+  );
 }
 
 function drawTrail(v: View, g: GhostState, trails: Trails): void {
@@ -80,7 +100,7 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
     const b = pts[i];
     if (!a || !b) continue;
     ctx.globalAlpha = (i / pts.length) * 0.5;
-    ctx.lineWidth = Math.max(2, ghostRadiusPx(v, g) * (i / pts.length));
+    ctx.lineWidth = Math.max(2, ghostRadiusPx(v) * (i / pts.length));
     ctx.beginPath();
     ctx.moveTo(sx(v, a.x), sy(v, a.y));
     ctx.lineTo(sx(v, b.x), sy(v, b.y));
@@ -89,24 +109,30 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
   ctx.globalAlpha = 1;
 }
 
-// Pixels outside the body: the own ghost's ring and the securing ring (each line's centre).
+// Pixels outside the body: the own ghost's ring and the protection ring (each line's centre).
 // ghostReach adds half a line width for the outer edge.
 const OWN_RING = 4;
-const SECURING_RING = 9;
+const PROTECT_RING = 9;
 
-function drawBody(v: View, g: GhostState, ownId: number | null): void {
+function drawBody(v: View, g: GhostState, style: GhostStyle): void {
   const { ctx } = v;
-  const r = ghostRadiusPx(v, g);
+  const fall = g.flags & GHOST_FALLING ? style.trails.fall(g.id, style.nowMs) : 0;
+  const r = ghostRadiusPx(v) * (1 - 0.8 * fall);
+  ctx.globalAlpha = 1 - 0.8 * fall;
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);
   ctx.fill();
-  if (g.flags & GHOST_SECURING) {
-    ctx.strokeStyle = TEXT;
+  ctx.globalAlpha = 1;
+  if (fall > 0) return;
+  if (g.flags & GHOST_PROTECTED) {
+    ctx.strokeStyle = MUTED;
     ctx.lineWidth = 2;
-    circle(v, g.x, g.y, r + SECURING_RING);
+    ctx.setLineDash([4, 4]);
+    circle(v, g.x, g.y, r + PROTECT_RING);
     ctx.stroke();
+    ctx.setLineDash([]);
   }
-  if (g.id === ownId) {
+  if (g.id === style.ownId) {
     ctx.strokeStyle = TEXT;
     ctx.lineWidth = 3;
     circle(v, g.x, g.y, r + OWN_RING);
@@ -123,7 +149,7 @@ export function ghostReach(
 ): number {
   const outside = [
     g.id === ownId ? OWN_RING + 1.5 : 0,
-    g.flags & GHOST_SECURING ? SECURING_RING + 1 : 0,
+    g.flags & GHOST_PROTECTED ? PROTECT_RING + 1 : 0,
   ];
   return r + Math.max(...outside);
 }
@@ -141,13 +167,13 @@ function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate 
     id: g.id,
     x: sx(v, g.x),
     y: sy(v, g.y),
-    r: ghostReach(ghostRadiusPx(v, g), g, style.ownId),
+    r: ghostReach(ghostRadiusPx(v), g, style.ownId),
     full,
     fullWidth: ctx.measureText(full).width,
     tag,
     tagWidth: ctx.measureText(tag).width,
     own,
-    carried: g.carried,
+    knockouts: g.knockouts,
   };
 }
 
@@ -157,7 +183,7 @@ function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): 
   const shown = (c: LabelCandidate): boolean =>
     c.x >= area.left && c.x <= area.right && c.y >= area.top && c.y <= area.bottom;
   const candidates = ghosts.map((g) => candidateOf(v, g, style)).filter(shown);
-  const placed = placeLabels(candidates, area, style.avoid);
+  const placed = placeLabels(candidates, area);
   ctx.strokeStyle = MUTED;
   ctx.lineWidth = 1;
   for (const p of placed) {

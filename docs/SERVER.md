@@ -1,4 +1,4 @@
-# The match server (`apps/server`)
+# The match server (`apps/server`) — Seasonal Sumo prototype
 
 The server is the only truth. It runs `packages/game-core` on a fixed 20 Hz loop, takes
 inputs from players, fills empty slots with bots, plays match after match, and sends one
@@ -7,14 +7,14 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 
 ## Files
 
-| File                 | What it holds                                                           |
-| -------------------- | ----------------------------------------------------------------------- |
-| `src/main.ts`        | Reads and validates the environment, starts the server                  |
-| `src/server.ts`      | The tick loop, the WebSocket handler, connection bounds, metrics        |
-| `src/match-host.ts`  | The slots (bot, player, standing ghost), the match lifecycle            |
-| `src/wire.ts`        | Game state → wire state: per-ghost values, the shrine offers of players |
-| `src/http-routes.ts` | `/metrics-lite` (loopback only), everything else 404                    |
-| `src/env.ts`         | `envInt`, `envChoice`, `refuseProduction` — shared with the probe       |
+| File                 | What it holds                                                         |
+| -------------------- | --------------------------------------------------------------------- |
+| `src/main.ts`        | Reads and validates the environment, starts the server                |
+| `src/server.ts`      | The tick loop, the WebSocket handler, connection bounds, metrics      |
+| `src/match-host.ts`  | The seats (bot, player, standing ghost), the match lifecycle          |
+| `src/wire.ts`        | Game state → wire state: per-ghost values, the arena, the team scores |
+| `src/http-routes.ts` | `/metrics-lite` (loopback only), everything else 404                  |
+| `src/env.ts`         | `envInt`, `envChoice`, `refuseProduction` — shared with the probe     |
 
 ## The loop
 
@@ -25,19 +25,20 @@ is encoded once and sent to every client that has said hello.
 
 ## Slots and players
 
-- A match has `GHOSTS` slots (32, CONCEPT.md §4); slot `i` is team `i mod 4`. A slot is
-  steered by a bot (one of the strategies of `pnpm simulate`) until a player joins.
-- A player who says `{"kind":"player"}` replaces a bot on the team with the fewest players
-  and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>,"name":"Player <id>"}`.
+- A match has `GHOSTS` seats (32: 8 per team); seat `i` is team `i mod 4`. Bots only fill
+  seats without a player (owner requirement 2026-11-17), each a human-like bot seeded from
+  the match and its seat (game-core `createBot`, docs/GAME-CORE.md "Bots").
+- A player who says `{"kind":"player"}` takes a bot's seat on the team with the fewest players
+  at once — the ghost stops where the bot left it (`halt`) — and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>,"name":"Player <id>"}`.
   When every slot has a player, the client becomes a spectator and gets
   `{"kind":"spectating","reason":"full"}`; from then on it must send nothing (THREATS 12b).
   Names are `ghostName` in `packages/protocol`, the same on every client, until the website
   provides them.
 - A player sends `{"kind":"input","dx":…,"dy":…}` (direction) and
-  `{"kind":"action","action":"secure"}` (the one action, at the own shrine). An action is
-  used once, in the next tick. Whether it does anything is the game core's decision
-  (docs/THREATS.md, rows 15, 18). Steal, swap and the team signals were removed with V5
-  (owner decision 2026-11-16): the validator drops them like any unknown message.
+  `{"kind":"action","action":"dash"}` (the one action). An action is used once, in the next
+  tick. Whether it does anything is the game core's decision: a dash during its cooldown does
+  nothing (docs/THREATS.md, rows 18, 37). Seasonal Spirits' actions (secure, steal, swap) and
+  team signals are refused by the validator like any unknown message.
 - A player who disconnects leaves the ghost standing for `reconnectGraceMs` (12 s,
   CONCEPT.md §8: 10–15 s); then a bot takes over. Without the website sign-in a returning
   player cannot be recognised yet, so a reconnect is a new player.
@@ -45,15 +46,15 @@ is encoded once and sent to every client that has said hello.
 
 ## Match lifecycle
 
-A match runs 5:00. At the end the state carries the `STATE_RESULT` flag (the final secured
-values) for `resultPauseMs` (15 s, placeholder); then the next match starts with the next
-seed, the same players in the same slots, everyone back at the shrines. A server restart
+A match runs 5:00. At the end the state carries the `STATE_RESULT` flag (the final knockouts)
+for `resultPauseMs` (15 s, placeholder); then the next match starts with the next seed, the
+same players in the same seats, everyone back on the start ring. A server restart
 loses the running match (CONCEPT.md §7).
 
-**Match recap** (owner decision 2026-11-16): in the tick a match ends every client — players
-and spectators — gets one text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,
-secured},…],"awards":{bestNose?,closestSave?,lastSecure?}}`: the core's result and the
-awards the match host folded from the match (`noteAwards`, docs/GAME-CORE.md); an award
+**Match recap**: in the tick a match ends every client — players and spectators — gets one
+text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,knockouts},…],
+"awards":{bestPusher?,survivor?}}`: the core's result and the awards (`noteAwards`,
+`survivorOf`, docs/GAME-CORE.md); an award
 nobody earned is left out. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
 field checked, at most 64 players, at most 4096 characters; THREATS row 33). Built in
@@ -61,31 +62,21 @@ field checked, at most 64 players, at most 4096 characters; THREATS row 33). Bui
 
 ## The state message (`packages/protocol/src/state.ts`)
 
-One binary encoding, little endian; values (secured, offers) travel in halves. The price
-board is not in it: every client derives it from the season and the game config with the
-core's `priceOf` (V5):
+One binary encoding, little endian:
 
-- **Header, 34 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
-  3 Winter; the next is +1), season number within the match u8 (the start season is season −
-  number), ms left in the season u32, countdown to the next deadline u16 (0xffff = none; set
-  in the 10 s before every season turn, CONCEPT.md §13, and since 2026-11-16 before the match
-  end), flags u8 (a halving in this tick — the season field is then the new season —,
-  result, the next deadline is the match end `STATE_TO_END` — the server says it, the
-  client shows "LAST CHANCE — secure now" —, the match ended in this tick
-  `STATE_MATCH_END_EVENT` — "MATCH OVER"), ms to the next match u16 (during the result),
-  secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
-- **Per ghost, 11 bytes:** id u8, x u16, y u16, team u8, carried coins u16, secured value
-  u16, flags u8 (carrier, securing, bot, in its own shrine; the "can steal" and shield bits
-  and the half-value count went with V5).
-- **Per field coin, 5 bytes:** x u16, y u16, season u8 (V5: coins of all four seasons fall).
-- **Per offer, 3 bytes:** for each player (never a bot) inside its own shrine: ghost u8 and
-  the secure value — the number on the Secure button, computed by the game core
-  (`shrineOffer`; the swap's three numbers went with V5).
+- **Header, 36 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
+  3 Winter; the next is +1), season number within the match u8, ms left in the season u32,
+  countdown to the next deadline u16 (0xffff = none; the 10 s before every halving and the
+  match end), flags u8 (a halving in this tick, result, the next deadline is the match end
+  `STATE_TO_END`, the match ended in this tick `STATE_MATCH_END_EVENT`), ms to the next match
+  u16 (during the result), knockouts per team 4×u16, the arena's radius now and after the
+  next halving u16 each (in tenths of a field unit), ghost count u8.
+- **Per ghost, 13 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
+  prediction starts from it), team u8, knockouts u8, ms to its next dash u8 (in 20 ms steps:
+  the Dash button's ring), flags u8 (bot, dashing, falling, out, protected).
 
-At 32 ghosts: 386 bytes with an empty field, 686 with a full one (60 coins), 782 in the
-worst case (a full field and 32 players in their shrines) — under 1 KB. Measured in a full
-32-bot match (seed 1): at most 550 bytes (25 field coins). The probe runs of docs/PHASE0.md
-("Against the match server") were measured with the older 38-byte header and 9-byte ghosts.
+At 32 ghosts: 452 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
+gone; the probe runs of docs/PHASE0.md were measured with older layouts).
 
 ## Bounds and checks
 

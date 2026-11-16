@@ -16,10 +16,10 @@ function s(serverMs: number, x: number, y: number): BufferedState {
       countdownMs: null,
       flags: 0,
       nextMatchMs: 0,
-      teamSecured: [0, 0, 0, 0],
-      ghosts: [{ id: 1, x, y, team: 0, carried: 0, secured: 0, flags: 0 }],
-      coins: [],
-      offers: [],
+      teamScore: [0, 0, 0, 0],
+      arenaRadius: 900,
+      arenaNext: 636.4,
+      ghosts: [{ id: 1, x, y, vx: 0, vy: 0, team: 0, knockouts: 0, dashLeftMs: 0, flags: 0 }],
     },
   };
 }

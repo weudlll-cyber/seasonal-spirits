@@ -1,22 +1,21 @@
-// Seasonal Spirits — what each marker on the field means, in plain words: the one text the help
-// overlay ("What you see") and the `pnpm looks` pictures both show, so they never disagree.
+// Seasonal Sumo — what each mark on the field means, in plain words: the one text the help
+// overlay ("What you see") shows, next to drawings of the same marks.
 
-// Every marker the game draws for a ghost or a shrine (ghosts.ts, field.ts).
-export type LegendMarker = 'team' | 'shrine' | 'coin' | 'carrier' | 'trail' | 'own' | 'securing';
+// Every mark the game draws (ghosts.ts, field.ts).
+export type LegendMarker = 'team' | 'own' | 'fast' | 'protected' | 'edge' | 'nextEdge';
 
-// In reading order; the help shows every line, a picture only those of markers it shows.
+// In reading order.
 export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
   {
     marker: 'team',
-    text: "Body colour: the ghost's team. Label: its name, or only its number in a crowd.",
+    text: 'Body colour: the ghost\'s team. Label: its name, or only its number in a crowd; "· 2": 2 knockouts.',
   },
-  { marker: 'shrine', text: "Large circle with a name: a team's shrine, where coins are secured." },
-  {
-    marker: 'coin',
-    text: "Small diamond: a coin, in its season's colour; the price board at the top says what it is worth now.",
-  },
-  { marker: 'carrier', text: 'Bigger body, "· 9" in the label: carrying 9 coins.' },
-  { marker: 'trail', text: 'A trail behind a ghost: it carries coins.' },
   { marker: 'own', text: 'Thick white ring, label "You": your ghost.' },
-  { marker: 'securing', text: 'Thin white ring further out: securing at its shrine.' },
+  { marker: 'fast', text: 'A trail behind a ghost: it dashed or was knocked flying.' },
+  {
+    marker: 'protected',
+    text: 'Pale dashed ring: just back after a fall; nobody can push it yet.',
+  },
+  { marker: 'edge', text: "Glowing ring: the arena's edge. Past it you fall." },
+  { marker: 'nextEdge', text: 'Dashed ring before a halving: where the edge will be after it.' },
 ];

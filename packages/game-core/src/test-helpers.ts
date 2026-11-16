@@ -1,18 +1,14 @@
-// Seasonal Spirits — helpers for the game-core tests: a quiet config and ghost placement.
+// Seasonal Sumo — helpers for the game-core tests: a match, a ghost by id, placing ghosts.
 // Test-only; not exported from the package index.
 
 import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 import { Match, type Roster } from './match.js';
-import { shrineOf } from './geometry.js';
 import type { Ghost, Intent } from './types.js';
 
-// No spawning unless a test asks for it, so every coin in a test is placed by the test.
-export function quietConfig(over: Partial<GameConfig> = {}): GameConfig {
-  return { ...DEFAULT_CONFIG, coinSpawnPerSecond: 0, ...over };
-}
+export const cfg: GameConfig = DEFAULT_CONFIG;
 
-export function matchOf(cfg: GameConfig, roster: Roster[]): Match {
-  return new Match(cfg, 1, roster);
+export function matchOf(c: GameConfig, roster: Roster[]): Match {
+  return new Match(c, 1, roster);
 }
 
 export function ghost(m: Match, id: number): Ghost {
@@ -21,11 +17,15 @@ export function ghost(m: Match, id: number): Ghost {
   return g;
 }
 
-export function placeAtShrine(m: Match, id: number): Ghost {
+// A ghost at a point relative to the arena's centre, standing still.
+export function place(m: Match, id: number, dx: number, dy: number): Ghost {
   const g = ghost(m, id);
-  const home = shrineOf(m.state.shrines, g.team);
-  g.x = home.x;
-  g.y = home.y;
+  Object.assign(g, {
+    x: m.state.arena.centre.x + dx,
+    y: m.state.arena.centre.y + dy,
+    vx: 0,
+    vy: 0,
+  });
   return g;
 }
 

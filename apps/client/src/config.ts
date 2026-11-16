@@ -1,4 +1,4 @@
-// Seasonal Spirits — the client's configuration: the bridge box and the camera.
+// Seasonal Sumo — the client's configuration: the bridge box and the camera.
 // The bridge box (CONCEPT.md §1 rule 3, §8) is on by default and switched off here.
 
 export interface ClientConfig {
@@ -20,6 +20,6 @@ export const CLIENT_CONFIG: ClientConfig = {
   cameraSpan: 1100, // placeholder — owner decides
 };
 
-// CONCEPT.md §8, word for word (V5, owner decision 2026-11-16).
+// Word for word from the owner's sketch of Seasonal Sumo (NIGHT 2026-11-17).
 export const BRIDGE_TEXT =
-  "This is how Seasonal Tokens work: at every halving the next season's coin becomes the valuable one — hold it before it rises.";
+  'This is how Seasonal Tokens work: every halving cuts in half — here it cuts the arena.';

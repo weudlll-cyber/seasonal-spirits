@@ -14,22 +14,23 @@ describe('parseClientMessage', () => {
     });
   });
 
-  it('accepts Secure, the one action, and nothing else as an action', () => {
-    const text = JSON.stringify({ kind: 'action', action: 'secure', target: 7 });
-    expect(parseClientMessage(text)).toEqual({ kind: 'action', action: 'secure' });
+  it('accepts Dash, the one action, and nothing else as an action', () => {
+    const text = JSON.stringify({ kind: 'action', action: 'dash', target: 7 });
+    expect(parseClientMessage(text)).toEqual({ kind: 'action', action: 'dash' });
     for (const bad of [
       '{"kind":"action"}',
       '{"kind":"action","action":"teleport"}',
-      '{"kind":"action","action":["secure"]}',
+      '{"kind":"action","action":["dash"]}',
     ]) {
       expect(parseClientMessage(bad), bad).toBeNull();
     }
   });
 
-  // V5 (owner decision 2026-11-16): stealing, the swap and the team signals are gone; a client
-  // that still sends them is refused like any unknown message.
-  it('refuses the removed steal and swap actions and the removed team signals', () => {
+  // Seasonal Spirits' actions and signals are gone in Sumo; a client that still sends them is
+  // refused like any unknown message.
+  it('refuses the removed secure, steal and swap actions and the removed team signals', () => {
     for (const text of [
+      '{"kind":"action","action":"secure"}',
       '{"kind":"action","action":"steal"}',
       '{"kind":"action","action":"swap"}',
       '{"kind":"signal","signal":"attack"}',
