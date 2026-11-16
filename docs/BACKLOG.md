@@ -91,13 +91,21 @@ newest state: 113 ms → 8 ms from a key to the drawn movement) is merged into `
 `CORRECTION_MS` (150), `SNAP_DISTANCE` (100). Done when: the owner has played the responsive
 client and decided the four placeholders.
 
-s. **Ghost look** (owner's observation 2026-11-16: the ghosts look strange and very different
-from each other, and nothing explains the markers). Pictures of three looks — A today's, B
-"calm", C "neutral ring" — in three scenes on the orphan branch `shots/ghost-look` (`pnpm
-looks`, docs/CLIENT.md). The look option (`GhostStyle.look`, packages/render) exists only for
-the pictures. Done when: the owner has picked A, B or C or said what to change; the picked
-look is the game's, the option and the other looks are removed before `feat/ghost-look` is
-merged (or the branch is dropped if A stays).
+s. **Look B in play** (owner's choice 2026-11-16, CLOSED "Ghost look B"). `feat/ghost-look`
+draws look B with the trail; `pnpm dev` runs from it. Done when: the owner has played it and
+merged the branch or said what to change; `shots/ghost-look` stays until then.
+
+t. **Season colours** (owner's question 2026-11-16, after the look pictures): Summer
+(#E06E22) and Autumn (#F9A825) are hard to tell apart. Open whether the four colours are
+fixed by Seasonal Tokens (website design tokens, CONCEPT.md §8) or may change. No colour
+changed. Done when: the owner has the answer; if they may change, a new pair is chosen and
+drawn.
+
+u. **Readability spec, one intermittent frame** (seen 2026-11-16 in session LOOK-B): once on
+desktop both upper shrine labels at y 89–108, above the bar, and the own shrine label under
+a control; the next run green, CI green before. Likely one frame sampled around the view
+switch or the reload. Done when: the frame is found and either the drawing or the sampling
+fixed, with the spec green ten runs in a row.
 
 ## CLOSED
 
@@ -442,6 +450,14 @@ merged (or the branch is dropped if A stays).
   and C with the client's drawing and a legend; 12 PNGs on the orphan branch
   `shots/ghost-look` (`1537199`); the game still draws A — commit "feat: ghost look pictures"
   on `feat/ghost-look`.
+- 2026-11-16 — **Ghost look B** (owner's choice 2026-11-16 from the pictures: look B "calm",
+  with the carrier trail kept; OPEN s until then): bodies in team colour, bots like players;
+  no coin ring, no glow; load by size and "· 9", half-value coins as a grey "(4 half)"
+  (`labelText`); trail in team colour; shield, securing and own ring as before. The look
+  switch and the paths for A and C removed; `pnpm looks` draws the one look. Labels keep
+  clear of the rings around a ghost (`ghostReach`) and stay inside the view even as a last
+  resort. Help "What you see" with the shared legend lines (`LEGEND`) and a drawing each —
+  commit "feat: ghost look B" on `feat/ghost-look`.
 
 ## CHECKS DONE
 
@@ -640,3 +656,8 @@ merged (or the branch is dropped if A stays).
 | 2026-11-16 | `pnpm dev` from `master` after the merge: client 5930, viewer 5931, server `/metrics-lite`                                                                                                | `b03572e`                                                                                                                                 | all answer (200; 32 ghosts, 19.9 Hz)                                                                                                                                                                                                | MERGE handover                                                                                 |
 | 2026-11-16 | `pnpm verify:changed` (all: format, lint, typecheck, 42 test files / 217 tests)                                                                                                           | working tree of "feat: ghost look pictures"                                                                                               | green                                                                                                                                                                                                                               | this commit                                                                                    |
 | 2026-11-16 | `pnpm looks`                                                                                                                                                                              | same tree                                                                                                                                 | 12 PNGs; scenes crowd seed 5 at 72.1 s, halved seed 3 at 77.35 s, shield seed 5 at 144.9 s                                                                                                                                          | `shots/ghost-look` (`1537199`)                                                                 |
+| 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `da618f4` on `feat/ghost-look`                                                                                                            | success (CI 43896326829, CodeQL 43896327124)                                                                                                                                                                                        | `gh run list --commit da618f4`                                                                 |
+| 2026-11-16 | `pnpm verify:changed` (all: format, lint, typecheck, 42 test files / 224 tests)                                                                                                           | working tree of "feat: ghost look B"                                                                                                      | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-16 | `pnpm e2e readability help` (both sizes)                                                                                                                                                  | same tree                                                                                                                                 | first run 3 passed, desktop readability failed once on shrine labels (OPEN u); desktop readability again: passed                                                                                                                    | this commit                                                                                    |
+| 2026-11-16 | `pnpm looks`                                                                                                                                                                              | same tree                                                                                                                                 | 6 PNGs (three scenes × desktop, phone), scenes as before: crowd seed 5 at 72.1 s, halved seed 3 at 77.35 s, shield seed 5 at 144.9 s                                                                                                | `reports/screens/latest/look-*.png` (git-ignored)                                              |
+| 2026-11-16 | one full match played on `pnpm dev` (1280 × 800, keyboard): "Near" to the Autumn season, then "Overview"; every frame's labels checked                                                    | same tree                                                                                                                                 | 300 s, no label out of view, unnamed or overlapping; the own ghost carried at most 1 coin                                                                                                                                           | 15 screenshots, session report                                                                 |

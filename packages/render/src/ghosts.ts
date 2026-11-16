@@ -1,22 +1,17 @@
-// Seasonal Spirits — the ghosts: team colour, and a carrier visible from afar (CONCEPT.md §2a,
-// sentence 5): larger, glowing, a short trail and its name. A ring around a carrier shows its
-// coins: solid for coins of the current season, dashed and grey for coins worth half now; a
-// hexagonal shield around a carrier of swapped coins no steal can take. Two other looks exist
-// for the owner's pictures only (GhostLook).
+// Seasonal Spirits — the ghosts in the look the owner chose on 2026-11-16 (look B, "calm"):
+// the body in its team's colour, players and bots alike; a carrier visible from afar (CONCEPT.md
+// §2a, sentence 5) by its larger body, a short trail in its team's colour and its name with the
+// coin count, the half-value coins as a grey "(N half)" after it; a hexagonal shield around a
+// carrier of swapped coins no steal can take, a thin ring while securing, a thick one for "You".
 
-import {
-  GHOST_BOT,
-  GHOST_CARRIER,
-  GHOST_SECURING,
-  GHOST_SHIELDED,
-  ghostName,
-  ghostTag,
-} from '@seasonal-spirits/protocol';
+import { GHOST_CARRIER, GHOST_SECURING, GHOST_SHIELDED } from '@seasonal-spirits/protocol';
 import { DEFAULT_CONFIG, ghostRadius } from '@seasonal-spirits/game-core';
 import type { GhostState } from '@seasonal-spirits/protocol';
 import {
+  HALF_GAP,
   LABEL_HEIGHT,
   bodyBox,
+  labelText,
   placeLabels,
   type LabelCandidate,
   type PlacedLabel,
@@ -47,20 +42,11 @@ export class Trails {
   }
 }
 
-// The three looks of session 2026-11-16-LOOK, for the owner's pictures only (`pnpm looks`):
-// A today's; B "calm" — no coin ring, glow or trail, the half-value coins as a dimmer
-// "(n half)" in the label, bots opaque; C "neutral ring" — the coin ring white and grey, never
-// in a season's colour, bots opaque. The game draws A. The option goes again before a merge
-// unless the owner picks B or C.
-export type GhostLook = 'A' | 'B' | 'C';
-
 export interface GhostStyle {
   ownId: number | null; // the ghost this client steers, marked clearly
-  season: number; // the current season, the colour of full-value coins
   trails: Trails;
   labelAll: boolean; // every ghost named (spectators, the viewer), not just carriers
   avoid: readonly Rect[]; // boxes the names keep clear of: the shrine labels (drawField)
-  look?: GhostLook; // A when not given
 }
 
 export function ghostRadiusPx(v: View, g: GhostState): number {
@@ -80,9 +66,8 @@ export function drawGhosts(
   ghosts: readonly GhostState[],
   style: GhostStyle,
 ): PlacedLabel[] {
-  const calm = style.look === 'B';
-  for (const g of ghosts) if (g.flags & GHOST_CARRIER && !calm) drawTrail(v, g, style.trails);
-  for (const g of ghosts) drawBody(v, g, style);
+  for (const g of ghosts) if (g.flags & GHOST_CARRIER) drawTrail(v, g, style.trails);
+  for (const g of ghosts) drawBody(v, g, style.ownId);
   return drawLabels(v, ghosts, style);
 }
 
@@ -105,63 +90,54 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
   ctx.globalAlpha = 1;
 }
 
-function drawBody(v: View, g: GhostState, style: GhostStyle): void {
+// Pixels outside the body: the own ghost's ring, the shield hexagon's corners, the securing
+// ring (each line's centre). ghostReach adds half a line width for the outer edge.
+const OWN_RING = 4;
+const SHIELD_GAP = 7;
+const SECURING_RING = 9;
+
+function drawBody(v: View, g: GhostState, ownId: number | null): void {
   const { ctx } = v;
   const r = ghostRadiusPx(v, g);
-  const look = style.look ?? 'A';
-  ctx.globalAlpha = g.flags & GHOST_BOT && look === 'A' ? 0.8 : 1;
-  ctx.shadowColor = seasonColour(g.team);
-  ctx.shadowBlur = g.flags & GHOST_CARRIER && look !== 'B' ? Math.min(30, 6 + g.carried) : 0;
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);
   ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.globalAlpha = 1;
-  if (g.carried > 0 && look !== 'B') {
-    drawCoinRing(v, g, r, look === 'C' ? TEXT : seasonColour(style.season));
-  }
   if (g.flags & GHOST_SHIELDED) drawShield(v, g, r);
   if (g.flags & GHOST_SECURING) {
     ctx.strokeStyle = TEXT;
     ctx.lineWidth = 2;
-    circle(v, g.x, g.y, r + 9);
+    circle(v, g.x, g.y, r + SECURING_RING);
     ctx.stroke();
   }
-  if (g.id === style.ownId) {
+  if (g.id === ownId) {
     ctx.strokeStyle = TEXT;
     ctx.lineWidth = 3;
-    circle(v, g.x, g.y, r + 4);
+    circle(v, g.x, g.y, r + OWN_RING);
     ctx.stroke();
   }
 }
 
-// Solid arc in `colour` for the coins of the current season, dashed grey arc for the
-// half-value ones.
-function drawCoinRing(v: View, g: GhostState, r: number, colour: string): void {
-  const { ctx } = v;
-  const full = (g.carried - g.offSeason) / g.carried;
-  const start = -Math.PI / 2;
-  const split = start + full * Math.PI * 2;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(sx(v, g.x), sy(v, g.y), r + 2, start, split);
-  ctx.strokeStyle = colour;
-  ctx.stroke();
-  if (g.offSeason === 0) return;
-  ctx.setLineDash([3, 3]);
-  ctx.beginPath();
-  ctx.arc(sx(v, g.x), sy(v, g.y), r + 2, split, start + Math.PI * 2);
-  ctx.strokeStyle = MUTED;
-  ctx.stroke();
-  ctx.setLineDash([]);
+// How far from the centre drawBody draws for a ghost of body radius `r` pixels: what its label
+// keeps clear of (LabelCandidate.r).
+export function ghostReach(
+  r: number,
+  g: Pick<GhostState, 'id' | 'flags'>,
+  ownId: number | null,
+): number {
+  const outside = [
+    g.id === ownId ? OWN_RING + 1.5 : 0,
+    g.flags & GHOST_SHIELDED ? SHIELD_GAP + 1 : 0,
+    g.flags & GHOST_SECURING ? SECURING_RING + 1 : 0,
+  ];
+  return r + Math.max(...outside);
 }
 
-// A hexagon outside the coin ring: a shape no other ring has, so it reads as "protected".
+// A hexagon around the body: a shape no other ring has, so it reads as "protected".
 function drawShield(v: View, g: GhostState, r: number): void {
   const { ctx } = v;
   const cx = sx(v, g.x);
   const cy = sy(v, g.y);
-  const outer = r + 7;
+  const outer = r + SHIELD_GAP;
   ctx.strokeStyle = SHIELD;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -176,26 +152,19 @@ function drawShield(v: View, g: GhostState, r: number): void {
 }
 
 const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;
-// Look B: what follows this gap in a label is the half-value count, drawn dimmer.
-const HALF_GAP = '  ';
 
-// Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots): the own one
-// "You", a carrier its name and coin count, others — for players — just their tag, every name
-// with the tag as its fallback in a crowd (placeLabels, labels.ts).
+// Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots), with its tag
+// as the fallback in a crowd (labelText, placeLabels: labels.ts).
 function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate {
   const { ctx } = v;
   const own = g.id === style.ownId;
-  const bot = (g.flags & GHOST_BOT) !== 0;
-  const tag = own ? 'You' : ghostTag(g.id, bot);
-  const name = own ? 'You' : ghostName(g.id, bot);
-  const half = style.look === 'B' && g.offSeason > 0 ? `${HALF_GAP}(${g.offSeason} half)` : '';
-  const full = g.carried > 0 ? `${name} · ${g.carried}${half}` : own || style.labelAll ? name : tag;
+  const { full, tag } = labelText(g, own, style.labelAll);
   ctx.font = labelFont(own);
   return {
     id: g.id,
     x: sx(v, g.x),
     y: sy(v, g.y),
-    r: ghostRadiusPx(v, g),
+    r: ghostReach(ghostRadiusPx(v, g), g, style.ownId),
     full,
     fullWidth: ctx.measureText(full).width,
     tag,
@@ -231,7 +200,7 @@ function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): 
   return placed;
 }
 
-// The label's text centred on its spot; a look-B half-value count after HALF_GAP in MUTED.
+// The label's text centred on its spot; the half-value count after HALF_GAP in MUTED.
 function drawLabelText(ctx: CanvasRenderingContext2D, p: PlacedLabel): void {
   const cut = p.text.indexOf(HALF_GAP);
   if (cut < 0) {

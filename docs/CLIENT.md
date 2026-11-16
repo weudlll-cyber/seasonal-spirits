@@ -60,8 +60,12 @@ Owner's observation 2026-11-15: stealing was not understood.
   banks now and Swap turns the season's coins, from 6 on, into the next season's (every 2
   become 3; not in the last season — the numbers come from the game config); swapped coins
   are safe until the next halving (the shield); every season change is a halving, secure or
-  swap before it; carrying makes you bigger, glowing and slower, and others can steal a
-  random part of your coins, at least one — plus the controls for keyboard and touch. It opens by itself
+  swap before it; carrying makes you bigger and slower and leaves a trail, and others can
+  steal a random part of your coins, at least one. Then "What you see": one line and one
+  drawing per marker on the field — team colour and label, shrine, size and "· 9", the grey
+  "(4 half)", the trail, the own ring, the securing ring, the shield — the same lines as the
+  `pnpm looks` legend (render `LEGEND`; a new marker needs its drawing in `help.ts`). Then
+  the controls for keyboard and touch. It opens by itself
   on the first visit (remembered in the browser), any time with "?" (the key or the band's
   "?" button), and closes with one tap or any key; that key reaches no game control.
 - **Steal button**: lit only while the server says a steal would take something right now
@@ -145,10 +149,15 @@ hidden under the top bar).
   walks on; a shrine in a corner of the view moves its label inside (`shrineLabelAt`,
   tested). Before 2026-11-16 a shrine at the bottom edge of the view put its label below the
   screen, and ghosts could stand on a shrine label.
-- **Ghosts and coins.** Ghosts are circles in their team colour; the own ghost has a white
-  ring and the label "You". Carriers are larger, glow, leave a short trail and show name and
-  coin count; a ring shows their coins: solid in the current season's colour, dashed grey
-  for coins worth half now. Field coins are small diamonds in their season's colour (the
+- **Ghosts and coins.** The look the owner chose on 2026-11-16 (look B, "calm", with the
+  trail): ghosts are circles in their team colour, players and bots alike; the own ghost has
+  a thick white ring and the label "You", a ghost securing a thin white ring further out, a
+  carrier of swapped coins a pale hexagon. Carriers are larger, leave a short trail in their
+  team colour and show name and coin count — "Bot 3 · 9" — with the coins worth half now as
+  a grey "(4 half)" after it (render `labelText`, tested); no ring, no glow. Every label
+  stays wholly inside the view and keeps clear of the rings around every ghost, not only of
+  its body (`ghostReach`, tested): in the pictures of 2026-11-16 "You · 6 (5 half)" was
+  pushed in from the left edge onto the own ring, which hid its last letter. Field coins are small diamonds in their season's colour (the
   token logos replace them later), so a Summer coin no longer looks like a Team Summer
   ghost. Team colours: Spring #AFB84E, Summer #E06E22, Autumn #F9A825, Winter #04AAF7. The
   ground takes a cast of the current season's colour.
@@ -254,19 +263,18 @@ until the server's state shows it, until drawn), coin spawned → drawn, and the
 for both coin sources. Writes `reports/response/latency-latest.json`; results in
 docs/BALANCE.md "Response".
 
-**`pnpm looks`** (on demand, never in `pnpm e2e`; session 2026-11-16-LOOK): pictures of three
-ghost looks for the owner to choose from — A today's, B "calm" (no coin ring, glow or trail;
-load by size and the count in the label; half-value coins as a dimmer "(4 half)" after it;
-bots opaque), C "neutral ring" (the coin ring white and grey dashed, never a season's colour;
-bots opaque). `e2e/looks-scenes.ts` finds three scenes in the bot matches of seeds 1–5 (the
+**`pnpm looks`** (on demand, never in `pnpm e2e`; sessions 2026-11-16-LOOK and -LOOK-B):
+pictures of the ghosts as the game draws them. It drew the three looks the owner chose from
+(the pictures stay on the branch `shots/ghost-look`); now it draws the chosen one.
+`e2e/looks-scenes.ts` finds three scenes in the bot matches of seeds 1–5 (the
 biggest shrine crowd, a carrier of full- and half-value coins just after a halving among
 empty ghosts, a shielded carrier, a securing ghost and the "own" ghost close together but
 drawn apart) and turns them into wire states with the server's `toWire`; `e2e/looks.shoot.ts`
-(config `e2e/looks.config.ts`, the viewer's Vite on 5939) draws each in each look on the
-viewer's `looks.html` (`apps/viewer/src/looks.ts`: the client's drawing, camera of "Near",
-a legend of every marker shown, in the corner that covers the fewest ghosts) at 1280 × 800,
-and the crowd at 390 × 844, into `reports/screens/latest/looks/`. The look is
-`GhostStyle.look` in packages/render, for these pictures only; the game draws A.
+(config `e2e/looks.config.ts`, the viewer's Vite on 5939) draws each on the viewer's
+`looks.html` (`apps/viewer/src/looks.ts`: the client's drawing, camera of "Near", the help's
+legend lines of every marker shown, in the corner that covers the fewest ghosts) at
+1280 × 800 and 390 × 844, into `reports/screens/latest/look-<n>-<scene>-<size>.png`, with
+the seeds and moments in `look-scenes.json`.
 
 `window.__client` is written every frame for these tests: the frame's time and the server
 moments it shows (render target, newest state, coins), mode, own ghost and team, own

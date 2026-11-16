@@ -11,5 +11,6 @@ export {
   type LabelCandidate,
   type PlacedLabel,
 } from './labels.js';
-export { Trails, drawGhosts, ghostRadiusPx, type GhostLook, type GhostStyle } from './ghosts.js';
+export { Trails, drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
+export { LEGEND, type LegendMarker } from './legend.js';
 export { CLOCK_HEIGHT, drawClock, mmss, value } from './clock.js';

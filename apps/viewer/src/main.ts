@@ -112,7 +112,6 @@ function frame(): void {
   });
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
     ownId: null,
-    season: latest?.season ?? 0,
     trails,
     labelAll: true,
     avoid: shrineLabels.all,

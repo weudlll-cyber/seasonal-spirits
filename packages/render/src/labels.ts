@@ -2,9 +2,10 @@
 // screen carries a label or at least its short tag, never two on top of each other, never on
 // another ghost or a shrine label, never under the top bar or past the screen edge; a shrine
 // label never under a HUD control, off a ghost where it can be, and never out of view (owner's
-// play tests 2026-11-15 and 2026-11-16).
-// Pure: positions and widths in, placements out, tested without a canvas.
+// play tests 2026-11-15 and 2026-11-16). Also the label's words: name, coin count, the
+// half-value count. Pure: positions and widths in, placements out, tested without a canvas.
 
+import { GHOST_BOT, ghostName, ghostTag, type GhostState } from '@seasonal-spirits/protocol';
 import { overlaps, type Rect } from './view.js';
 
 export const LABEL_HEIGHT = 14; // pixels of one 12 px label line, with a little air
@@ -17,7 +18,11 @@ export interface LabelCandidate {
   id: number;
   x: number; // the ghost's centre, pixels
   y: number;
-  r: number; // the ghost's drawn radius, pixels
+  // Pixels from the centre to the outside of what is drawn for the ghost: its body and the own
+  // ring, shield or securing ring around it. A label keeps clear of all of it (session
+  // 2026-11-16-LOOK-B: "You · 6  (5 half)" pushed in from the screen edge onto the own ring,
+  // the ring hid its last letter).
+  r: number;
   full: string; // the name (with the coin count for a carrier)
   fullWidth: number;
   tag: string; // the short tag: the bot's number, "P<n>" for a player, "You"
@@ -42,6 +47,31 @@ interface Spot {
   x: number;
   y: number; // baseline
   leader: boolean;
+}
+
+// What follows this gap in a label is the half-value count, drawn dimmer (drawGhosts).
+export const HALF_GAP = '  ';
+
+// A ghost's label: the own one "You", a carrier its name, coin count and — after HALF_GAP —
+// how many of them are worth half now ("Bot 3 · 9  (4 half)", owner's choice 2026-11-16:
+// look B), the others their name when `labelAll` (spectators, the viewer), else their tag.
+// The tag is the fallback in a crowd.
+export function labelText(
+  g: Pick<GhostState, 'id' | 'flags' | 'carried' | 'offSeason'>,
+  own: boolean,
+  labelAll: boolean,
+): { full: string; tag: string } {
+  const bot = (g.flags & GHOST_BOT) !== 0;
+  const tag = own ? 'You' : ghostTag(g.id, bot);
+  const name = own ? 'You' : ghostName(g.id, bot);
+  const half = g.offSeason > 0 ? `${HALF_GAP}(${g.offSeason} half)` : '';
+  if (g.carried > 0) return { full: `${name} · ${g.carried}${half}`, tag };
+  return { full: own || labelAll ? name : tag, tag };
+}
+
+// A label's centre x moved so its `half` width lies inside the area's left and right edge.
+function insideX(area: Rect, x: number, half: number): number {
+  return Math.min(Math.max(x, area.left + half + GAP), area.right - half - GAP);
 }
 
 // The places to try, best first: the full text above and below the ghost, then the tag above,
@@ -72,13 +102,14 @@ function spotsFor(c: LabelCandidate): Spot[] {
 // bar or below the screen.
 function boxIn(area: Rect, s: Spot): Rect | null {
   const half = s.width / 2;
-  const cx = Math.min(Math.max(s.x, area.left + half + GAP), area.right - half - GAP);
+  const cx = insideX(area, s.x, half);
   const box = { left: cx - half, right: cx + half, top: s.y - LABEL_HEIGHT, bottom: s.y };
   return box.top < area.top || box.bottom > area.bottom ? null : box;
 }
 
 // The first free spot; when every spot is taken, the first one inside the area (a label may
-// then overlap, but a ghost is never left without one).
+// then overlap, but a ghost is never left without one); when no spot fits between the bar and
+// the bottom, the tag at the ghost's height, still inside the left and right edge.
 function choose(c: LabelCandidate, area: Rect, taken: readonly Rect[]): PlacedLabel {
   let fallback: { s: Spot; box: Rect } | null = null;
   for (const s of spotsFor(c)) {
@@ -89,8 +120,10 @@ function choose(c: LabelCandidate, area: Rect, taken: readonly Rect[]): PlacedLa
   }
   if (fallback) return toPlaced(c, fallback.s, fallback.box);
   const y = Math.max(area.top + LABEL_HEIGHT, Math.min(area.bottom, c.y));
-  const s: Spot = { text: c.tag, width: c.tagWidth, x: c.x, y, leader: false };
-  return toPlaced(c, s, { left: c.x, right: c.x, top: y - LABEL_HEIGHT, bottom: y });
+  const half = c.tagWidth / 2;
+  const x = insideX(area, c.x, half);
+  const s: Spot = { text: c.tag, width: c.tagWidth, x, y, leader: false };
+  return toPlaced(c, s, { left: x - half, right: x + half, top: y - LABEL_HEIGHT, bottom: y });
 }
 
 function toPlaced(c: LabelCandidate, s: Spot, box: Rect): PlacedLabel {

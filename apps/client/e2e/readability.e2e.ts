@@ -1,8 +1,9 @@
 // Seasonal Spirits — what the owner's play tests of 2026-11-15 asked for, at desktop and phone
 // size: "You are Team <Season>", the own shrine labelled, in "Near" the minimap and the
 // "Your shrine" arrow when the shrine is out of sight, V or the corner button switching to
-// "Overview" and the choice surviving a reload. In every sampled frame: every ghost named, no
-// name label under the top bar, past the screen edge, on another label or on a shrine label,
+// "Overview" and the choice surviving a reload. In every sampled frame: every ghost named, every
+// name label wholly inside the view (not under the top bar, not past a screen edge), none on
+// another label or on a shrine label,
 // every shrine label wholly in view and off the ghost bodies where a spot is free, the arrow out of the thumb zones, the own shrine label
 // under no control; the corner buttons sit in the band, not on the field.
 // Screenshots: <size>-near.png, <size>-hud.png and <size>-overview.png in
@@ -64,7 +65,9 @@ function labelFaults(v: ClientView, screen: { width: number; height: number }): 
   v.labels.forEach((l, i) => {
     const b = labelBox(l);
     if (b.top < v.barBottom) faults.push(`label "${l.text}" under the bar`);
-    if (b.left < 0 || b.right > screen.width) faults.push(`label "${l.text}" past the screen edge`);
+    // Session 2026-11-16-LOOK-B: a label cut at the screen's edge.
+    if (b.left < 0 || b.right > screen.width || b.bottom > screen.height)
+      faults.push(`label "${l.text}" past the screen edge`);
     if (v.labels.some((o, j) => j > i && overlaps(b, labelBox(o)))) {
       faults.push(`label "${l.text}" on another label`);
     }

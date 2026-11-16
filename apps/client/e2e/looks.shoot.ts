@@ -1,47 +1,32 @@
-// Seasonal Spirits — `pnpm looks` (session 2026-11-16-LOOK): the pictures the owner chooses a
-// ghost look from. Finds the three scenes in seeded matches (looks-scenes.ts), draws each in
-// looks A, B and C at 1280 × 800 and the crowd also at 390 × 844 (the viewer's looks.html),
-// and writes the PNGs and scenes.json to reports/screens/latest/looks/. Pictures, not a test.
+// Seasonal Spirits — `pnpm looks` (sessions 2026-11-16-LOOK and -LOOK-B): pictures of the
+// ghosts as the game draws them. Finds the three scenes in seeded matches (looks-scenes.ts) —
+// a crowd, a carrier after a halving, shield, securing and own ghost — draws each at
+// 1280 × 800 and 390 × 844 (the viewer's looks.html) and writes look-<n>-<scene>-<size>.png and
+// look-scenes.json to reports/screens/latest/. Pictures, not a test.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from '@playwright/test';
-import type { GhostLook } from '@seasonal-spirits/render';
-import { findScenes, type LookScene } from './looks-scenes.js';
+import { findScenes } from './looks-scenes.js';
 import { SCREENS } from './stack.js';
 
-const OUT = path.join(SCREENS, 'looks');
-const LOOKS: GhostLook[] = ['A', 'B', 'C'];
-const DESKTOP = { width: 1280, height: 800 };
-const PHONE = { width: 390, height: 844 };
+const SIZES = { desktop: { width: 1280, height: 800 }, phone: { width: 390, height: 844 } };
 
-test('ghost looks: three scenes in three looks', async ({ page }) => {
+test('ghost look: three scenes at desktop and phone size', async ({ page }) => {
   test.setTimeout(300_000);
   const scenes = findScenes();
-  fs.mkdirSync(OUT, { recursive: true });
-  const shots: { scene: LookScene; look: GhostLook; size: typeof DESKTOP; name: string }[] = [];
-  scenes.forEach((scene, i) => {
-    for (const look of LOOKS) {
-      shots.push({ scene, look, size: DESKTOP, name: `${i + 1}-${scene.key}-${look}-desktop` });
+  fs.mkdirSync(SCREENS, { recursive: true });
+  for (const [i, scene] of scenes.entries()) {
+    for (const [size, viewport] of Object.entries(SIZES)) {
+      await page.setViewportSize(viewport);
+      await page.goto('/looks.html');
+      await page.waitForFunction(() => 'drawLook' in window);
+      await page.evaluate((s) => {
+        (window as unknown as { drawLook: (s: unknown) => void }).drawLook(s);
+      }, scene);
+      const name = `look-${i + 1}-${scene.key}-${size}.png`;
+      await page.screenshot({ path: path.join(SCREENS, name) });
     }
-  });
-  const [crowd] = scenes;
-  if (crowd) {
-    for (const look of LOOKS) {
-      shots.push({ scene: crowd, look, size: PHONE, name: `1-crowd-${look}-phone` });
-    }
-  }
-  for (const shot of shots) {
-    await page.setViewportSize(shot.size);
-    await page.goto('/looks.html');
-    await page.waitForFunction(() => 'drawLook' in window);
-    await page.evaluate(
-      ([scene, l]) => {
-        (window as unknown as { drawLook: (s: unknown, l: string) => void }).drawLook(scene, l);
-      },
-      [shot.scene, shot.look] as const,
-    );
-    await page.screenshot({ path: path.join(OUT, `${shot.name}.png`) });
   }
   const summary = scenes.map((s) => ({
     key: s.key,
@@ -49,5 +34,9 @@ test('ghost looks: three scenes in three looks', async ({ page }) => {
     matchMs: s.matchMs,
     ownId: s.ownId,
   }));
-  fs.writeFileSync(path.join(OUT, 'scenes.json'), `${JSON.stringify(summary, null, 1)}\n`);
+  fs.writeFileSync(
+    path.join(SCREENS, 'look-scenes.json'),
+    `${JSON.stringify(summary, null, 1)}
+`,
+  );
 });
