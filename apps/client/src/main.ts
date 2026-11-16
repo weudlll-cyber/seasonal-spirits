@@ -25,6 +25,7 @@ import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { ResultScreen, nameIn } from './result.js';
+import { SignalMarkers } from './signals.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
 import { DeadlineTone } from './sound.js';
 import { ViewToggle } from './view-mode.js';
@@ -60,6 +61,7 @@ const result = new ResultScreen();
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
 let recap: ServerRecap | null = null; // of the match just ended, during the result pause
+const markers = new SignalMarkers();
 
 const NOTICES: Record<Mode, string | null> = {
   connecting: 'Connecting…',
@@ -92,6 +94,9 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
   onRecap: (r) => {
     recap = r;
   },
+  onSignal: (s) => {
+    markers.add(s, performance.now());
+  },
 });
 
 // "You stole 3 from Bot 7" / "Bot 7 stole 2 from you"; the other ghost named as everywhere.
@@ -103,9 +108,14 @@ function stealMessage(steal: ServerSteal): string {
     ? `You stole ${steal.coins} from ${name}`
     : `${name} stole ${steal.coins} from you`;
 }
-const hud = new Hud((a) => {
-  controls.act(a);
-});
+const hud = new Hud(
+  (a) => {
+    controls.act(a);
+  },
+  (s) => {
+    controls.signal(s);
+  },
+);
 hud.say(NOTICES.connecting);
 const controls: Controls = {
   steer: (dx, dy) => {
@@ -113,6 +123,9 @@ const controls: Controls = {
   },
   act: (a) => {
     conn.act(a);
+  },
+  signal: (s) => {
+    conn.signal(s);
   },
 };
 bindKeyboard(controls);
@@ -137,6 +150,7 @@ function snapshot(now: number): Frame {
     playing,
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
+    markers: markers.active(now),
   };
 }
 

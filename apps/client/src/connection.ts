@@ -1,5 +1,5 @@
 // Seasonal Spirits — the client's one WebSocket: hello, welcome, states, steal notices, the
-// match recap, and what it sends.
+// match recap, team signals, and what it sends.
 // A player sends only a direction and the one action (the server is the only truth); the
 // direction goes out when it changes, at most every SEND_INTERVAL_MS, so a player stays well
 // inside the server's 20 messages per second. A spectator sends nothing after its hello.
@@ -12,9 +12,11 @@ import {
   type GameAction,
   type ServerMessage,
   type ServerRecap,
+  type ServerSignal,
   type ServerState,
   type ServerSteal,
   type ServerWelcome,
+  type TeamSignal,
 } from '@seasonal-spirits/protocol';
 
 declare const __SERVER_PORT__: number;
@@ -29,6 +31,7 @@ export interface ConnectionEvents {
   onMode: (mode: Mode, reason: 'full' | null) => void;
   onSteal: (steal: ServerSteal) => void; // a steal this player took part in
   onRecap: (recap: ServerRecap) => void; // the match just ended: result and awards
+  onSignal: (signal: ServerSignal) => void; // a teammate's (or the own) team signal
 }
 
 export class Connection {
@@ -65,6 +68,12 @@ export class Connection {
   act(action: GameAction): void {
     if (this.mode !== 'player') return;
     this.ws.send(JSON.stringify({ kind: 'action', action }));
+  }
+
+  // The server limits signals per player; the client sends what the player pressed.
+  signal(signal: TeamSignal): void {
+    if (this.mode !== 'player') return;
+    this.ws.send(JSON.stringify({ kind: 'signal', signal }));
   }
 
   // Called once per frame: sends the direction if it changed and the interval has passed.
@@ -109,6 +118,9 @@ export class Connection {
         return;
       case 'recap':
         this.events.onRecap(msg);
+        return;
+      case 'signal':
+        this.events.onSignal(msg);
         return;
     }
   }

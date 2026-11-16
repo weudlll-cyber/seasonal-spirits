@@ -77,8 +77,14 @@ Owner's observation 2026-11-15: stealing was not understood.
 
 ## Controls (CONCEPT.md §8)
 
-- Keyboard: WASD or arrows to move, Space for the action (steal), 1 Secure, 2 Swap, V
-  switches the view, ? opens the help.
+- Keyboard: WASD or arrows to move, Space for the action (steal), 1 Secure, 2 Swap, 3 and 4
+  the team signals, V switches the view, ? opens the help.
+- **Team signals** (owner decision 2026-11-16): "Attack" (key 3) and "To shrine" (key 4), or
+  the two small buttons above the action buttons. The server passes a signal only to the
+  players of the sender's team (THREATS rows 34, 35); each of them sees a ring in the team
+  colour with the signal's word at the sender's position for 3 s (`signalShowMs`,
+  `src/signals.ts`), and a ring on the minimap. The task asked for keys 1 and 2, which are
+  Secure and Swap; 3 and 4 until the owner decides.
 - Touch (the primary pointer is a finger): a joystick appears where the left thumb touches
   the left half of the screen; the action button sits under the right thumb. The buttons
   never reach into the left half.

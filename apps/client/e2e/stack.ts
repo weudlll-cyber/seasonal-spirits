@@ -56,6 +56,7 @@ export interface ClientView {
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];
   ghostsShown: { id: number; carried: number; x: number; y: number; shielded: boolean }[];
   stealRing: boolean;
+  signals: { ghost: number; signal: string }[]; // team signal markers drawn (signals.ts)
 }
 
 // Waits for the client's first frame: right after a (re)load window.__client does not exist

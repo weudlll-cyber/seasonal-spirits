@@ -150,39 +150,40 @@ fails.
 
 ## Configuration (`src/config.ts`)
 
-| Key                     | Value   | Source                                                                    |
-| ----------------------- | ------- | ------------------------------------------------------------------------- |
-| `matchDurationMs`       | 300 000 | CONCEPT.md §4: 5 minutes                                                  |
-| `seasonDurationMs`      | 75 000  | CONCEPT.md §2: four seasons of 75 s                                       |
-| `startSeason`           | spring  | placeholder (the website's season clock will provide it, CONCEPT.md §2)   |
-| `fieldSize`             | 2000    | placeholder (Phase 0 world)                                               |
-| `ghostSpeed`            | 300     | placeholder (units/s, Phase 0 speed)                                      |
-| `carrySpeedFactor`      | 0.7     | placeholder (CONCEPT.md §8: carrying slows; the factor is open)           |
-| `ghostRadius`           | 14      | placeholder (an empty ghost, as drawn)                                    |
-| `ghostGrowthPerCoin`    | 0.5     | placeholder (a carrier is larger, CONCEPT.md §2a)                         |
-| `ghostGrowthMax`        | 16      | placeholder                                                               |
-| `coinRadius`            | 10      | placeholder (a field coin, as drawn)                                      |
-| `coinSpawnPerSecond`    | 2       | placeholder (CONCEPT.md leaves the rate open)                             |
-| `maxFieldCoins`         | 60      | placeholder                                                               |
-| `offSeasonValueFactor`  | 0.5     | CONCEPT.md §2a, §10 decision 2                                            |
-| `swapIn` / `swapOut`    | 10 / 15 | CONCEPT.md §2a, §10 decision 2                                            |
-| `swapMinIn`             | 6       | placeholder (CONCEPT.md §14: the fewest coins a swap takes)               |
-| `secureDurationMs`      | 2500    | CONCEPT.md §2a: 2–3 s                                                     |
-| `shrineRadius`          | 80      | placeholder                                                               |
-| `shrineInset`           | 150     | placeholder                                                               |
-| `startSpread`           | 60      | placeholder                                                               |
-| `stealRange`            | 60      | placeholder (CONCEPT.md leaves the range open)                            |
-| `stealShareMin`         | 0       | placeholder (CONCEPT.md §14: the steal share's lower bound)               |
-| `stealShareMax`         | 0.5     | placeholder (CONCEPT.md §14: the steal share's upper bound)               |
-| `stealCooldownMs`       | 1000    | placeholder                                                               |
-| `separationRadius`      | 28      | placeholder (two ghost bodies touching; below `stealRange`)               |
-| `separationStrength`    | 0.5     | placeholder (share of the overlap removed per tick)                       |
-| `deadlineCountdownMs`   | 10 000  | CONCEPT.md §2b, §13: before every halving; since 2026-11-16 the match end |
-| `reconnectGraceMs`      | 12 000  | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot           |
-| `resultPauseMs`         | 15 000  | placeholder (result screen before the next match)                         |
-| `bots.cautiousSecureAt` | 5       | placeholder                                                               |
-| `bots.hunterSecureAt`   | 8       | placeholder                                                               |
-| `bots.arriveRadius`     | 20      | placeholder                                                               |
-| `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)               |
-| `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                   |
-| `bots.threatRange`      | 150     | placeholder (a loaded patient bot goes home when an opponent is closer)   |
+| Key                     | Value   | Source                                                                                                        |
+| ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `matchDurationMs`       | 300 000 | CONCEPT.md §4: 5 minutes                                                                                      |
+| `seasonDurationMs`      | 75 000  | CONCEPT.md §2: four seasons of 75 s                                                                           |
+| `startSeason`           | spring  | placeholder (the website's season clock will provide it, CONCEPT.md §2)                                       |
+| `fieldSize`             | 2000    | placeholder (Phase 0 world)                                                                                   |
+| `ghostSpeed`            | 300     | placeholder (units/s, Phase 0 speed)                                                                          |
+| `carrySpeedFactor`      | 0.7     | placeholder (CONCEPT.md §8: carrying slows; the factor is open)                                               |
+| `ghostRadius`           | 14      | placeholder (an empty ghost, as drawn)                                                                        |
+| `ghostGrowthPerCoin`    | 0.5     | placeholder (a carrier is larger, CONCEPT.md §2a)                                                             |
+| `ghostGrowthMax`        | 16      | placeholder                                                                                                   |
+| `coinRadius`            | 10      | placeholder (a field coin, as drawn)                                                                          |
+| `coinSpawnPerSecond`    | 2       | placeholder (CONCEPT.md leaves the rate open)                                                                 |
+| `maxFieldCoins`         | 60      | placeholder                                                                                                   |
+| `offSeasonValueFactor`  | 0.5     | CONCEPT.md §2a, §10 decision 2                                                                                |
+| `swapIn` / `swapOut`    | 10 / 15 | CONCEPT.md §2a, §10 decision 2                                                                                |
+| `swapMinIn`             | 6       | placeholder (CONCEPT.md §14: the fewest coins a swap takes)                                                   |
+| `secureDurationMs`      | 2500    | CONCEPT.md §2a: 2–3 s                                                                                         |
+| `shrineRadius`          | 80      | placeholder                                                                                                   |
+| `shrineInset`           | 150     | placeholder                                                                                                   |
+| `startSpread`           | 60      | placeholder                                                                                                   |
+| `stealRange`            | 60      | placeholder (CONCEPT.md leaves the range open)                                                                |
+| `stealShareMin`         | 0       | placeholder (CONCEPT.md §14: the steal share's lower bound)                                                   |
+| `stealShareMax`         | 0.5     | placeholder (CONCEPT.md §14: the steal share's upper bound)                                                   |
+| `stealCooldownMs`       | 1000    | placeholder                                                                                                   |
+| `separationRadius`      | 28      | placeholder (two ghost bodies touching; below `stealRange`)                                                   |
+| `separationStrength`    | 0.5     | placeholder (share of the overlap removed per tick)                                                           |
+| `deadlineCountdownMs`   | 10 000  | CONCEPT.md §2b, §13: before every halving; since 2026-11-16 the match end                                     |
+| `reconnectGraceMs`      | 12 000  | CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot                                               |
+| `resultPauseMs`         | 15 000  | placeholder (result screen before the next match)                                                             |
+| `signalIntervalMs`      | 2000    | placeholder (2026-11-16: at most one team signal per player this often; the server, not the core, applies it) |
+| `bots.cautiousSecureAt` | 5       | placeholder                                                                                                   |
+| `bots.hunterSecureAt`   | 8       | placeholder                                                                                                   |
+| `bots.arriveRadius`     | 20      | placeholder                                                                                                   |
+| `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)                                                   |
+| `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                                                       |
+| `bots.threatRange`      | 150     | placeholder (a loaded patient bot goes home when an opponent is closer)                                       |

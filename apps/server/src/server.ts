@@ -226,6 +226,11 @@ export class GameServer {
       case 'action':
         if (rec.kind === 'player') this.host.act(rec.id, msg.action);
         return;
+      case 'signal':
+        // Only the sender's team hears it; the host drops what comes too often.
+        for (const d of this.host.signal(rec.id, msg.signal))
+          this.clients.get(d.clientId)?.ws.send(JSON.stringify(d.message));
+        return;
     }
   }
 

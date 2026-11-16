@@ -3,7 +3,7 @@
 // shape, types and ranges are checked, and a fresh object with only the known fields is
 // returned. The server and later clients reuse it, so both sides agree on what is valid.
 
-import type { ClientMessage } from './messages.js';
+import { TEAM_SIGNALS, type ClientMessage, type TeamSignal } from './messages.js';
 
 // The largest valid message is an input with two long floats, well under 100 bytes. The
 // server's WebSocket also refuses frames above this size (maxPayload).
@@ -29,9 +29,15 @@ export function parseClientMessage(text: string): ClientMessage | null {
       return parseInput(fields);
     case 'action':
       return parseAction(fields);
+    case 'signal':
+      return isTeamSignal(fields.signal) ? { kind: 'signal', signal: fields.signal } : null;
     default:
       return null;
   }
+}
+
+export function isTeamSignal(s: unknown): s is TeamSignal {
+  return TEAM_SIGNALS.some((t) => t === s);
 }
 
 function parseInput(fields: Record<string, unknown>): ClientMessage | null {

@@ -43,6 +43,7 @@ export interface GameConfig {
   deadlineCountdownMs: number;
   reconnectGraceMs: number;
   resultPauseMs: number;
+  signalIntervalMs: number;
   bots: BotConfig;
 }
 
@@ -92,6 +93,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   // CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot takes over.
   reconnectGraceMs: 12_000,
   resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
+  // Owner decision 2026-11-16: a player sends at most one team signal this often; the server
+  // drops extra ones silently (apps/server match-host.ts).
+  signalIntervalMs: 2000, // placeholder — owner decides
   bots: {
     cautiousSecureAt: 5, // placeholder — owner decides (coins a cautious bot banks at)
     hunterSecureAt: 8, // placeholder — owner decides (coins a hunter banks at)

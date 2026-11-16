@@ -64,6 +64,29 @@ describe('parseServerMessage', () => {
   });
 });
 
+// Team signals (owner decision 2026-11-16).
+describe('parseServerMessage: team signal', () => {
+  it('reads a teammate signal with only its known fields, and drops a broken one', () => {
+    const text = '{"kind":"signal","ghost":5,"signal":"home","x":120,"y":1800,"team":2}';
+    expect(parseServerMessage(text)).toEqual({
+      kind: 'signal',
+      ghost: 5,
+      signal: 'home',
+      x: 120,
+      y: 1800,
+    });
+    for (const bad of [
+      '{"kind":"signal","ghost":5,"signal":"retreat","x":1,"y":1}',
+      '{"kind":"signal","ghost":300,"signal":"home","x":1,"y":1}',
+      '{"kind":"signal","ghost":5,"signal":"home","x":-1,"y":1}',
+      '{"kind":"signal","ghost":5,"signal":"home","x":1.5,"y":1}',
+      '{"kind":"signal","ghost":5,"signal":"home"}',
+    ]) {
+      expect(parseServerMessage(bad), bad).toBeNull();
+    }
+  });
+});
+
 // The match recap (owner decision 2026-11-16): the result and up to three awards.
 describe('parseServerMessage: recap', () => {
   const players = Array.from({ length: 32 }, (_, i) => ({

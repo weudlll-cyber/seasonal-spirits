@@ -3,7 +3,8 @@
 // match is dropped instead of being read field by field.
 
 import { isIntIn, isObject } from './checks.js';
-import type { ServerMessage, ServerSteal, ServerWelcome } from './messages.js';
+import { isTeamSignal } from './client-message.js';
+import type { ServerMessage, ServerSignal, ServerSteal, ServerWelcome } from './messages.js';
 import { MAX_RECAP_BYTES, readRecap } from './recap-message.js';
 
 // Every message but the recap is a welcome or shorter, well under this.
@@ -26,6 +27,7 @@ export function parseServerMessage(text: string): ServerMessage | null {
     return fields.reason === 'full' ? { kind: 'spectating', reason: 'full' } : null;
   }
   if (fields.kind === 'steal') return readSteal(fields);
+  if (fields.kind === 'signal') return readSignal(fields);
   return fields.kind === 'welcome' ? readWelcome(fields) : null;
 }
 
@@ -34,6 +36,15 @@ function readSteal(fields: Record<string, unknown>): ServerSteal | null {
   const { thief, victim, coins } = fields;
   if (!isIntIn(thief, 0, 255) || !isIntIn(victim, 0, 255) || thief === victim) return null;
   return isIntIn(coins, 1, 65535) ? { kind: 'steal', thief, victim, coins } : null;
+}
+
+// A teammate's signal: a ghost, one of the fixed signals, a field position.
+function readSignal(fields: Record<string, unknown>): ServerSignal | null {
+  const { ghost, signal, x, y } = fields;
+  if (!isIntIn(ghost, 0, 255) || !isTeamSignal(signal)) return null;
+  return isIntIn(x, 0, 65535) && isIntIn(y, 0, 65535)
+    ? { kind: 'signal', ghost, signal, x, y }
+    : null;
 }
 
 function readWelcome(fields: Record<string, unknown>): ServerWelcome | null {

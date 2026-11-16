@@ -1,7 +1,7 @@
 // Seasonal Spirits — the text messages between client and server (state travels as binary).
-// Client → server: the hello, a direction, the one action. Server → client: the welcome or
-// the notice that the client watches instead, steal notices, the match recap. Shapes only;
-// the readers check them.
+// Client → server: the hello, a direction, the one action, a team signal. Server → client:
+// the welcome or the notice that the client watches instead, steal notices, the match recap,
+// team signals. Shapes only; the readers check them.
 
 // A player sends a direction (each component in [-1, 1]; the server clamps the magnitude)
 // and the one action of CONCEPT.md §8. Spectators send nothing after the hello.
@@ -22,7 +22,17 @@ export interface ClientAction {
   action: GameAction;
 }
 
-export type ClientMessage = ClientHello | ClientInput | ClientAction;
+// A team signal (owner decision 2026-11-16): "Attack" or "To shrine", for the sender's own
+// team only. The fixed list is all a client can send; anything else is dropped.
+export const TEAM_SIGNALS = ['attack', 'home'] as const;
+export type TeamSignal = (typeof TEAM_SIGNALS)[number];
+
+export interface ClientSignal {
+  kind: 'signal';
+  signal: TeamSignal;
+}
+
+export type ClientMessage = ClientHello | ClientInput | ClientAction | ClientSignal;
 
 // Server → player, once, as text: which ghost the player steers, its team and its name.
 export interface ServerWelcome {
@@ -64,7 +74,18 @@ export interface ServerRecap {
   };
 }
 
-export type ServerMessage = ServerWelcome | ServerSpectating | ServerSteal | ServerRecap;
+// Server → the players of the sender's team (the sender included), never to opponents or
+// spectators: a teammate's signal at its position when sent (THREATS rows 34, 35).
+export interface ServerSignal {
+  kind: 'signal';
+  ghost: number;
+  signal: TeamSignal;
+  x: number;
+  y: number;
+}
+
+export type ServerMessage =
+  ServerWelcome | ServerSpectating | ServerSteal | ServerRecap | ServerSignal;
 
 // The name shown for a ghost, the same on every client. Development mode has no sign-in, so a
 // player is "Player <ghost>" until the website provides names (CONCEPT.md §12, point 2).

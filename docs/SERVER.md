@@ -61,6 +61,13 @@ values) for `resultPauseMs` (15 s, placeholder); then the next match starts with
 seed, the same players in the same slots, everyone back at the shrines. A server restart
 loses the running match (CONCEPT.md §7).
 
+**Team signals** (owner decision 2026-11-16): a player sends `{"kind":"signal","signal":
+"attack"|"home"}` (the shared validator accepts nothing else); the match host lets one
+through per `signalIntervalMs` (2 s, placeholder) per player and drops the rest silently, and
+none during the result pause; the server sends `{"kind":"signal","ghost","signal","x","y"}`
+(the sender's position when sent) to the players of the sender's team only, the sender
+included — never to opponents, spectators or bots (THREATS rows 34, 35).
+
 **Match recap** (owner decision 2026-11-16): in the tick a match ends every client — players
 and spectators — gets one text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,
 secured},…],"awards":{biggestSteal?,closestSave?,lastSecure?}}`: the core's result and the

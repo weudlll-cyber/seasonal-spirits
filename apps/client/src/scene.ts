@@ -9,6 +9,7 @@ import {
   type CoinState,
   type GhostState,
   type ServerState,
+  type TeamSignal,
 } from '@seasonal-spirits/protocol';
 import {
   CLOCK_HEIGHT,
@@ -34,6 +35,7 @@ import { drawArrow, edgeArrow, type EdgeArrow } from './arrow.js';
 import { CLIENT_CONFIG } from './config.js';
 import type { HudOnField } from './hud.js';
 import { drawMinimap, minimapRect } from './minimap.js';
+import { drawMarkers, type Marker } from './signals.js';
 import type { ViewMode } from './view-mode.js';
 
 // Pixels of the band under the season clock: the team line and the corner buttons
@@ -57,6 +59,7 @@ export interface Frame {
   playing: boolean;
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
+  markers: readonly Marker[]; // the team's signals showing now (signals.ts)
 }
 
 export interface Drawn {
@@ -72,6 +75,7 @@ export interface Drawn {
   zones: Rect[];
   labels: PlacedLabel[];
   stealRing: boolean; // the own steal range is drawn (an opponent carrier is near)
+  signals: { ghost: number; signal: TeamSignal }[]; // team signal markers drawn now
   ghostsShown: GhostOnScreen[]; // every ghost drawn inside the visible field, in pixels
 }
 
@@ -118,6 +122,7 @@ export function drawScene(
       labelAll: !f.playing,
       avoid: shrineLabels.all,
     });
+    drawMarkers(view, f.markers, seasonColour(f.ownTeam ?? 0));
   });
   drawClock(ctx, f.latest);
   const shrine = ownShrine(view, f.ownTeam);
@@ -137,6 +142,7 @@ export function drawScene(
     labels,
     ghostsShown: onScreen(view, f.ghosts),
     stealRing,
+    signals: f.markers.map((m) => ({ ghost: m.ghost, signal: m.signal })),
   };
 }
 
@@ -188,6 +194,7 @@ function drawNear(
     ownId: f.ownId,
     ownTeam: shrine.team,
     camera: view,
+    markers: f.markers,
   });
   const arrow = edgeArrow(shrine.screen, shrine.at, ARROW_INSET, [map, ...f.hud.zones]);
   if (arrow) drawArrow(ctx, arrow, seasonColour(shrine.team));
