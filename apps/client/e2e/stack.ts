@@ -19,6 +19,8 @@ export const SHIELD_CLIENT_PORT = 5936;
 // The latency measurement's own stack (latency.config.ts): default seasons, no scenario.
 export const LATENCY_SERVER_PORT = 3938;
 export const LATENCY_CLIENT_PORT = 5938;
+// The viewer's Vite for the ghost-look pictures (looks.config.ts).
+export const LOOKS_VIEWER_PORT = 5939;
 
 // localStorage of a browser that has seen the help overlay (apps/client/src/help.ts).
 export const HELP_SEEN = (

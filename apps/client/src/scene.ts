@@ -126,7 +126,6 @@ export function drawScene(
     stealRing = drawStealRing(view, f);
     labels = drawGhosts(view, f.ghosts, {
       ownId: f.ownId,
-      season: f.latest?.season ?? 0,
       trails,
       labelAll: !f.playing,
       avoid: shrineLabels.all,

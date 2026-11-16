@@ -1,10 +1,14 @@
 // Seasonal Spirits — the help overlay (owner's observation 2026-11-15): shown on the first
 // visit, not on the second, opened any time with "?" (key or band button), closed with one
-// key or tap. Screenshot <size>-help.png.
+// key or tap; "What you see" names every marker on the field with its drawing (session
+// 2026-11-16-LOOK-B). Screenshot <size>-help.png.
 
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
+import { LEGEND } from '@seasonal-spirits/render';
 import { SCREENS } from './stack.js';
+
+const RULES = 6; // the numbered rules above "What you see", one drawing each
 
 // A first visit: nothing remembered in the browser.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -22,7 +26,10 @@ test('help appears on the first visit, not on the second, and opens again with "
   await expect(help).toContainText('halving');
   await expect(help).toContainText('others can steal from you');
   await expect(help).toContainText('a random part of the coins');
-  await expect(help.locator('svg')).toHaveCount(6);
+  await expect(help).toContainText('What you see');
+  for (const { text } of LEGEND) await expect(help).toContainText(text);
+  await expect(help).toContainText('A trail behind a ghost: it carries coins.');
+  await expect(help.locator('svg')).toHaveCount(RULES + LEGEND.length);
   await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-help.png`) });
   const phone = info.project.name === 'phone';
   if (phone) await help.tap();

@@ -1,12 +1,15 @@
 // Seasonal Spirits — name labels: every ghost on screen gets its name or at least its tag, no
 // two overlap, the own one always shows its full text on top, the richer carrier keeps its
 // name, nothing reaches under the top bar or past the screen edge; and the shrine labels, off
-// the HUD controls and the ghost bodies.
+// the HUD controls and the ghost bodies. The label's words: name, coin count, half-value count.
 
 import { describe, expect, it } from 'vitest';
+import { GHOST_BOT } from '@seasonal-spirits/protocol';
 import {
+  HALF_GAP,
   LABEL_HEIGHT,
   bodyBox,
+  labelText,
   placeLabels,
   shrineLabelAt,
   type LabelCandidate,
@@ -103,6 +106,62 @@ describe('name labels', () => {
       expect(p.x - p.width / 2, p.text).toBeGreaterThanOrEqual(AREA.left);
       expect(p.x + p.width / 2, p.text).toBeLessThanOrEqual(AREA.right);
     }
+  });
+});
+
+// Session 2026-11-16-LOOK-B: "You · 6  (5 half)" at the left screen edge was pushed inside
+// onto the own ghost's ring, which hid its last letter.
+describe('name labels at the screen edge', () => {
+  it('moves a label inside the edge and off the rings around its ghost', () => {
+    // r is what is drawn: body 10 px, the own ring out to 16 px. Neighbours take the spots
+    // above, below and to the right; the spot to the left would be cut at the edge.
+    const ring = { left: 134, right: 166, top: 284, bottom: 316 };
+    const own = at(9, 150, 300, { r: 16, full: 'You · 6  (5 half)', tag: 'You', own: true });
+    const others = [at(1, 150, 262), at(2, 150, 338), at(3, 200, 300)];
+    const placed = placeLabels([own, ...others], AREA);
+    const label = placed.find((p) => p.id === 9) as PlacedLabel;
+    expect(label.text).toBe('You · 6  (5 half)');
+    expect(box(label).left).toBeGreaterThanOrEqual(AREA.left);
+    expect(overlaps(box(label), ring), 'the label on the own ring').toBe(false);
+  });
+
+  it('keeps even the last-resort tag inside the edge when no spot fits in the height', () => {
+    // A view as tall as one label: no spot above or below a ghost fits.
+    const flat = { left: 0, top: 100, right: 800, bottom: 110 };
+    const ghost = at(1, 1, 105, { tag: 'Bot 12' });
+    const p = placeLabels([ghost], flat)[0] as PlacedLabel;
+    expect(p.text).toBe('Bot 12');
+    // The text is drawn centred on p.x, as wide as measured.
+    expect(p.x - ghost.tagWidth / 2).toBeGreaterThanOrEqual(flat.left);
+    expect(p.x + ghost.tagWidth / 2).toBeLessThanOrEqual(flat.right);
+  });
+});
+
+describe('label text', () => {
+  const ghost = { id: 3, flags: GHOST_BOT, carried: 0, offSeason: 0 };
+
+  it('names a carrier with its coin count and nothing more when all are worth full value', () => {
+    expect(labelText({ ...ghost, carried: 9 }, false, false)).toEqual({
+      full: 'Bot 3 · 9',
+      tag: '3',
+    });
+  });
+
+  it('adds the half-value count after the gap when some coins are worth half now', () => {
+    const { full } = labelText({ ...ghost, carried: 9, offSeason: 4 }, false, false);
+    expect(full).toBe(`Bot 3 · 9${HALF_GAP}(4 half)`);
+  });
+
+  it('calls the own ghost "You", with its coins', () => {
+    expect(labelText({ ...ghost, carried: 6, offSeason: 5 }, true, false)).toEqual({
+      full: `You · 6${HALF_GAP}(5 half)`,
+      tag: 'You',
+    });
+  });
+
+  it('shows an empty ghost only by its tag to a player, by its name to a spectator', () => {
+    expect(labelText(ghost, false, false).full).toBe('3');
+    expect(labelText(ghost, false, true).full).toBe('Bot 3');
   });
 });
 

@@ -54,6 +54,7 @@ pnpm client       # just the client on http://localhost:5930, in the foreground
 pnpm viewer       # just the viewer on http://localhost:5931, in the foreground
 pnpm e2e          # Playwright: the client at desktop and phone size on a short match
 pnpm latency      # on demand: the real client's delays on its own stack (docs/CLIENT.md)
+pnpm looks        # on demand: pictures of the ghosts in three seeded scenes (docs/CLIENT.md)
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```
