@@ -1,11 +1,20 @@
 // Seasonal Spirits — the client's controls and messages on top of the canvas (DOM, so they are
 // real buttons): the one action button, at the own shrine "Secure (…)" and "Swap (…)" with the
-// server's numbers, the HALVING announcement with its flash, and notices.
+// server's numbers, the two team signals, the HALVING and MATCH OVER announcements with their
+// flash, and notices.
 
-import type { GameAction, OfferState, ServerState } from '@seasonal-spirits/protocol';
+import {
+  STATE_MATCH_END_EVENT,
+  type GameAction,
+  type OfferState,
+  type ServerState,
+  type TeamSignal,
+} from '@seasonal-spirits/protocol';
 import { seasonName, value, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
+// "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
+export const MATCH_OVER_MS = 2000;
 const TOAST_MS = 2500; // how long a steal message stays
 
 // An element of index.html, checked to be of the expected kind.
@@ -22,6 +31,7 @@ export class Hud {
   private readonly secure = el('secure', HTMLButtonElement);
   private readonly swap = el('swap', HTMLButtonElement);
   private readonly shrine = el('shrine');
+  private readonly signals = el('signals');
   private readonly announce = el('announce');
   private readonly flash = el('flash');
   private readonly notice = el('notice');
@@ -29,17 +39,32 @@ export class Hud {
   private announceTimer: number | undefined;
   private toastTimer: number | undefined;
 
-  constructor(act: (a: GameAction) => void) {
+  constructor(act: (a: GameAction) => void, signal: (s: TeamSignal) => void) {
     // pointerdown, not click: a thumb on the right button must not wait for its release.
-    const bind = (b: HTMLButtonElement, a: GameAction): void => {
+    const bind = (b: HTMLButtonElement, run: () => void): void => {
       b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        if (!b.disabled) act(a);
+        if (!b.disabled) run();
       });
     };
-    bind(this.steal, 'steal');
-    bind(this.secure, 'secure');
-    bind(this.swap, 'swap');
+    for (const [b, a] of [
+      [this.steal, 'steal'],
+      [this.secure, 'secure'],
+      [this.swap, 'swap'],
+    ] as const) {
+      bind(b, () => {
+        act(a);
+      });
+    }
+    // The two team signals (owner decision 2026-11-16), small, above the action buttons.
+    for (const [id, s] of [
+      ['signal-attack', 'attack'],
+      ['signal-home', 'home'],
+    ] as const) {
+      bind(el(id, HTMLButtonElement), () => {
+        signal(s);
+      });
+    }
   }
 
   // Players only: the shrine buttons replace the action button while the server sends an
@@ -52,6 +77,7 @@ export class Hud {
     season: number,
     canSteal: boolean,
   ): void {
+    this.signals.hidden = !playing;
     this.steal.hidden = !playing || offer !== undefined;
     this.steal.classList.toggle('lit', canSteal);
     this.shrine.hidden = !playing || offer === undefined;
@@ -64,17 +90,24 @@ export class Hud {
     this.swap.disabled = offer.swapCoins === 0;
   }
 
-  // CONCEPT.md §2b: "HALVING — <Season> is in season", a short flash, at every halving.
-  halving(s: ServerState): void {
-    this.announce.textContent = `HALVING — ${seasonName(s.season)} is in season`;
+  // CONCEPT.md §2b: a large announcement and a short flash at every deadline — "HALVING —
+  // <Season> is in season" at a halving, "MATCH OVER" at the match end (2026-11-16).
+  deadline(s: ServerState): void {
+    const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;
+    this.announce.textContent = end
+      ? 'MATCH OVER'
+      : `HALVING — ${seasonName(s.season)} is in season`;
     this.announce.hidden = false;
     this.flash.classList.remove('go');
     this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation
     this.flash.classList.add('go');
     window.clearTimeout(this.announceTimer);
-    this.announceTimer = window.setTimeout(() => {
-      this.announce.hidden = true;
-    }, ANNOUNCE_MS);
+    this.announceTimer = window.setTimeout(
+      () => {
+        this.announce.hidden = true;
+      },
+      end ? MATCH_OVER_MS : ANNOUNCE_MS,
+    );
   }
 
   say(text: string | null): void {

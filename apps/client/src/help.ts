@@ -70,8 +70,8 @@ const RULES: { text: string; drawing: string }[] = [
 ];
 
 const CONTROLS =
-  '<p><b>Keyboard:</b> WASD or arrows to move, Space to steal, 1 Secure, 2 Swap, V view, ? help.</p>' +
-  '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Steal, Secure and Swap under the right thumb.</p>';
+  '<p><b>Keyboard:</b> WASD or arrows to move, Space to steal, 1 Secure, 2 Swap, 3 Attack and 4 To shrine (signals to your team), V view, ? help.</p>' +
+  '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Steal, Secure and Swap under the right thumb, the two team signals above them.</p>';
 
 export class Help {
   private readonly overlay: HTMLElement;

@@ -9,7 +9,9 @@ import {
   GHOST_CAN_STEAL,
   GHOST_SHIELDED,
   STATE_HALVING_EVENT,
+  STATE_MATCH_END_EVENT,
   STATE_RESULT,
+  STATE_TO_END,
   encodeState,
   encodedSize,
 } from '@seasonal-spirits/protocol';
@@ -121,6 +123,21 @@ describe('match host lifecycle', () => {
       [75_000, 1],
       [150_000, 2],
       [225_000, 3],
+    ]);
+  });
+
+  it('counts down to the match end in the last season and flags the end in one state', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 8, 1);
+    const states = runFor(host, DEFAULT_CONFIG.matchDurationMs + 1000);
+    const lastSeason = 3 * DEFAULT_CONFIG.seasonDurationMs;
+    const toEnd = states.filter((s) => s.flags & STATE_TO_END);
+    expect(toEnd.every((s) => s.matchMs >= lastSeason && s.matchMs < 300_000)).toBe(true);
+    expect(toEnd).toHaveLength(DEFAULT_CONFIG.seasonDurationMs / 50);
+    const lastTen = toEnd.filter((s) => s.countdownMs !== null).map((s) => s.matchMs);
+    expect([lastTen[0], lastTen.at(-1)]).toEqual([290_000, 299_950]);
+    const ends = states.filter((s) => s.flags & STATE_MATCH_END_EVENT);
+    expect(ends.map((s) => [s.matchMs, s.countdownMs, s.flags & STATE_RESULT])).toEqual([
+      [300_000, null, STATE_RESULT],
     ]);
   });
 

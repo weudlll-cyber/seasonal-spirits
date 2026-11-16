@@ -29,6 +29,23 @@ describe('parseClientMessage', () => {
       expect(parseClientMessage(text), text).toBeNull();
     }
   });
+
+  it('accepts the two team signals and nothing else as a signal', () => {
+    for (const signal of ['attack', 'home']) {
+      const text = JSON.stringify({ kind: 'signal', signal, team: 3, x: 5, to: 'all' });
+      expect(parseClientMessage(text)).toEqual({ kind: 'signal', signal });
+    }
+    for (const text of [
+      '{"kind":"signal"}',
+      '{"kind":"signal","signal":"retreat"}',
+      '{"kind":"signal","signal":"Attack"}',
+      '{"kind":"signal","signal":["attack"]}',
+      '{"kind":"signal","signal":"__proto__"}',
+      `{"kind":"signal","signal":"${'x'.repeat(300)}"}`,
+    ]) {
+      expect(parseClientMessage(text), text.slice(0, 60)).toBeNull();
+    }
+  });
 });
 
 describe('parseClientMessage refuses', () => {

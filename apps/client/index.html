@@ -101,6 +101,15 @@
       #help li svg {
         flex-shrink: 0;
       }
+      /* The two team signals: small, above the action buttons. */
+      #signals {
+        display: flex;
+        gap: 6px;
+      }
+      #signals button {
+        font-size: 13px;
+        padding: 6px 10px;
+      }
       #shrine {
         display: flex;
         flex-direction: column;
@@ -307,6 +316,10 @@
     <canvas id="map"></canvas>
     <div id="stick"><div id="knob"></div></div>
     <div id="actions">
+      <div id="signals" hidden>
+        <button id="signal-attack" type="button">Attack <span class="key">(3)</span></button>
+        <button id="signal-home" type="button">To shrine <span class="key">(4)</span></button>
+      </div>
       <div id="shrine" hidden>
         <button id="secure" type="button">Secure</button>
         <button id="swap" type="button">Swap</button>
@@ -331,6 +344,10 @@
       <div class="card">
         <h2>Result</h2>
         <p id="result-place"></p>
+        <div id="result-awards-box">
+          <h3>Awards</h3>
+          <ol id="result-awards"></ol>
+        </div>
         <h3>Teams</h3>
         <ol id="result-teams"></ol>
         <h3>Players</h3>

@@ -47,16 +47,6 @@ export function interpolate(buffer: BufferedState[], targetServerMs: number): In
   return { ghosts: last?.state.ghosts.map((g) => ({ ...g })) ?? [], underrun: true };
 }
 
-// The newest buffered state at or before `targetServerMs` (the oldest one if none is), so a
-// client draws the field coins of the same moment as the interpolated ghosts: a coin then
-// disappears exactly when the drawn ghost reaches it (2026-11-15; drawn from the newest state,
-// coins vanished up to a render buffer early).
-export function stateAt(buffer: BufferedState[], targetServerMs: number): ServerState | undefined {
-  let found = buffer[0]?.state;
-  for (const b of buffer) if (b.state.serverMs <= targetServerMs) found = b.state;
-  return found;
-}
-
 // Convenience: the latest server time in the buffer, or null if empty.
 export function latestServerMs(buffer: BufferedState[]): number | null {
   return buffer.at(-1)?.state.serverMs ?? null;

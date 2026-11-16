@@ -4,7 +4,15 @@
 
 import type { GameConfig } from './config.js';
 import { distance, shrineOf } from './geometry.js';
-import { SEASONS, isLastSeason, nextSeason, totalCount, valueNow, type Season } from './seasons.js';
+import {
+  SEASONS,
+  isLastSeason,
+  nextSeason,
+  seasonClock,
+  totalCount,
+  valueNow,
+  type Season,
+} from './seasons.js';
 import type { Ghost, MatchState } from './types.js';
 
 export function atOwnShrine(cfg: GameConfig, s: MatchState, g: Ghost): boolean {
@@ -62,6 +70,9 @@ export function trySecureStart(cfg: GameConfig, s: MatchState, g: Ghost): void {
 export function completeSecure(cfg: GameConfig, s: MatchState, g: Ghost): void {
   if (g.securingUntilMs === null || s.elapsedMs < g.securingUntilMs) return;
   const value = valueNow(cfg, g.carried, g.securingSeason ?? s.clock.current);
+  // How close to its season's deadline the secure was started (the moment that fixed its
+  // value): the match recap's "Closest save" (recap.ts).
+  const leftMs = seasonClock(cfg, g.securingUntilMs - cfg.secureDurationMs).timeLeftMs;
   g.securedValue += value;
   for (const season of SEASONS) {
     g.carried[season] = 0;
@@ -69,7 +80,7 @@ export function completeSecure(cfg: GameConfig, s: MatchState, g: Ghost): void {
   }
   g.securingUntilMs = null;
   g.securingSeason = null;
-  s.events.push({ type: 'secured', ghost: g.id, value });
+  s.events.push({ type: 'secured', ghost: g.id, value, leftMs });
 }
 
 // Whether a steal by `thief` would take something right now: the match runs, the thief is

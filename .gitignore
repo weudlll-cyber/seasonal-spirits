@@ -4,6 +4,13 @@ logs/
 tmp/
 night-task.md
 reports/screens/latest/
+# Raw per-run outputs above 200 KB stay out of the repository (docs/BALANCE.md "Raw data"
+# names the command that regenerates each); new ones go to reports/raw/.
+reports/raw/
+reports/fairness/stage1-grid.json
+reports/human/round1-n30.json
+reports/human/round1-groups-n30.json
+reports/human/round1-t4-n30.json
 test-results/
 .claude/settings.local.json
 *.log

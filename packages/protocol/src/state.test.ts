@@ -13,6 +13,9 @@ import {
   HEADER_BYTES,
   OFFER_BYTES,
   STATE_HALVING_EVENT,
+  STATE_MATCH_END_EVENT,
+  STATE_RESULT,
+  STATE_TO_END,
   decodeState,
   encodeState,
   encodedSize,
@@ -74,6 +77,25 @@ describe('state encoding', () => {
     expect(encodedSize(32, 60, 32)).toBeLessThan(1024);
   });
 
+  it('clamps out-of-range numbers instead of wrapping them', () => {
+    const s = sample(1, 0);
+    const ghost = s.ghosts[0];
+    if (ghost) {
+      ghost.x = -5;
+      ghost.carried = 1e6;
+    }
+    const back = decodeState(encodeState(s));
+    expect(back.ghosts[0]).toMatchObject({ x: 0, carried: 65535 });
+  });
+
+  it('rejects a corrupted length', () => {
+    const buf = encodeState(sample(3, 2, 1));
+    expect(() => decodeState(buf.slice(0, buf.byteLength - 1))).toThrow();
+    expect(() => decodeState(buf.slice(0, 10))).toThrow();
+  });
+});
+
+describe('state flags', () => {
   it('keeps every ghost flag, the shield included, through a round trip', () => {
     const all =
       GHOST_CARRIER |
@@ -90,20 +112,11 @@ describe('state encoding', () => {
     expect(back.map((g) => g.flags)).toEqual([all, GHOST_SHIELDED]);
   });
 
-  it('clamps out-of-range numbers instead of wrapping them', () => {
-    const s = sample(1, 0);
-    const ghost = s.ghosts[0];
-    if (ghost) {
-      ghost.x = -5;
-      ghost.carried = 1e6;
-    }
-    const back = decodeState(encodeState(s));
-    expect(back.ghosts[0]).toMatchObject({ x: 0, carried: 65535 });
-  });
-
-  it('rejects a corrupted length', () => {
-    const buf = encodeState(sample(3, 2, 1));
-    expect(() => decodeState(buf.slice(0, buf.byteLength - 1))).toThrow();
-    expect(() => decodeState(buf.slice(0, 10))).toThrow();
+  it('keeps the deadline flags — halving, result, to the end, match end — with the countdown', () => {
+    const flags = STATE_HALVING_EVENT | STATE_RESULT | STATE_TO_END | STATE_MATCH_END_EVENT;
+    const s = { ...sample(1, 0), countdownMs: 7000, flags };
+    expect(decodeState(encodeState(s))).toMatchObject({ countdownMs: 7000, flags });
+    const toEnd = { ...sample(1, 0), countdownMs: 0, flags: STATE_TO_END };
+    expect(decodeState(encodeState(toEnd))).toMatchObject({ countdownMs: 0, flags: STATE_TO_END });
   });
 });

@@ -31,8 +31,11 @@ test('a spectator watches a halving and the result and sends nothing after its h
   for (const key of ['KeyD', 'Space', 'Digit1', 'Digit2']) await page.keyboard.press(key);
 
   const announce = page.locator('#announce');
-  await expect(announce).toBeVisible({ timeout: 45_000 });
-  await expect(announce).toHaveText(/^HALVING — (Spring|Summer|Autumn|Winter) is in season$/);
+  // Joined in the last season, "MATCH OVER" comes first; the halving follows after the pause.
+  await expect(announce).toHaveText(/^HALVING — (Spring|Summer|Autumn|Winter) is in season$/, {
+    timeout: 45_000,
+  });
+  await expect(announce).toBeVisible();
   await page.screenshot({ path: path.join(SCREENS, 'spectator-halving.png') });
 
   await expect(page.locator('#result')).toBeVisible({ timeout: 70_000 });

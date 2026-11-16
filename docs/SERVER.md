@@ -61,19 +61,38 @@ values) for `resultPauseMs` (15 s, placeholder); then the next match starts with
 seed, the same players in the same slots, everyone back at the shrines. A server restart
 loses the running match (CONCEPT.md §7).
 
+**Team signals** (owner decision 2026-11-16): a player sends `{"kind":"signal","signal":
+"attack"|"home"}` (the shared validator accepts nothing else); the match host lets one
+through per `signalIntervalMs` (2 s, placeholder) per player and drops the rest silently, and
+none during the result pause; the server sends `{"kind":"signal","ghost","signal","x","y"}`
+(the sender's position when sent) to the players of the sender's team only, the sender
+included — never to opponents, spectators or bots (THREATS rows 34, 35).
+
+**Match recap** (owner decision 2026-11-16): in the tick a match ends every client — players
+and spectators — gets one text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,
+secured},…],"awards":{biggestSteal?,closestSave?,lastSecure?}}`: the core's result and the
+awards the match host folded from the match (`noteAwards`, docs/GAME-CORE.md); an award
+nobody earned is left out. A client that says hello during the result pause gets the same
+recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
+field checked, at most 64 players, at most 4096 characters; THREATS row 33). Built in
+`src/recap.ts`; `src/client-record.ts` holds one client's record and message budget.
+
 ## The state message (`packages/protocol/src/state.ts`)
 
 One binary encoding, little endian; values (secured, offers) travel in halves:
 
 - **Header, 34 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
   3 Winter; the next is +1), season number within the match u8 (the start season is season −
-  number), ms left in the season u32, countdown to the next halving u16 (0xffff = none; set
-  in the 10 s before every season turn, CONCEPT.md §13), flags u8 (a halving in this tick —
-  the season field is then the new season —, result), ms to the next match u16 (during the
-  result), secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
+  number), ms left in the season u32, countdown to the next deadline u16 (0xffff = none; set
+  in the 10 s before every season turn, CONCEPT.md §13, and since 2026-11-16 before the match
+  end), flags u8 (a halving in this tick — the season field is then the new season —,
+  result, the next deadline is the match end `STATE_TO_END` — the server says it, the
+  client shows "LAST CHANCE — secure now" —, the match ended in this tick
+  `STATE_MATCH_END_EVENT` — "MATCH OVER"), ms to the next match u16 (during the result),
+  secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
 - **Per ghost, 13 bytes:** id u8, x u16, y u16, team u8, carried coins u16, of those not of
   the current season (worth half now) u16, secured value u16, flags u8 (carrier, securing,
-  bot, in its own shrine).
+  bot, in its own shrine, can steal, carries steal-proof coins).
 - **Per field coin, 4 bytes:** x u16, y u16 (every field coin is of the current season).
 - **Per offer, 9 bytes:** for each player (never a bot) inside its own shrine: ghost u8, the
   secure value, the swap's coin count of the next season, its value now and later — the

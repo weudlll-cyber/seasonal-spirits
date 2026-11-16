@@ -4,10 +4,11 @@
 // CONCEPT.md §8). The own shrine glows and says so. Shrine geometry is the game core's.
 
 import { DEFAULT_CONFIG, shrinePositions } from '@seasonal-spirits/game-core';
-import type { ServerState } from '@seasonal-spirits/protocol';
+import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
+import { ghostBodies } from './ghosts.js';
 import { LINE, TEXT, ground, seasonColour, seasonName } from './palette.js';
-import { shrineLabelAt } from './labels.js';
-import { FIELD, circle, sx, sy, type Rect, type View } from './view.js';
+import { shrineLabelAt, type ShrineKeepClear } from './labels.js';
+import { FIELD, circle, overlaps, sx, sy, visibleArea, type Rect, type View } from './view.js';
 
 export const SHRINES = shrinePositions(DEFAULT_CONFIG);
 const GRID = 250; // field units between the faint ground lines
@@ -17,14 +18,19 @@ export interface FieldStyle {
   ownTeam: number | null; // the player's team: its shrine glows; null for spectators
   nowMs: number; // drives the pulse
   blocked: readonly Rect[]; // HUD controls on the field: shrine labels move away from them
+  ghosts: readonly GhostState[]; // the ghosts as drawn this frame: shrine labels keep off them
 }
 
-// Returns the box of the own shrine's label, or null without an own team (browser specs).
-export function drawField(
-  v: View,
-  s: ServerState | undefined,
-  style: FieldStyle = { ownTeam: null, nowMs: 0, blocked: [] },
-): Rect | null {
+// Where the shrine labels were drawn: the own one (null without an own team; the browser
+// specs read it) and every one at least partly in view, for the ghost labels to keep clear of;
+// `onGhost` those of them that had to sit on a ghost, every spot being taken.
+export interface ShrineLabels {
+  own: Rect | null;
+  all: Rect[];
+  onGhost: Rect[];
+}
+
+export function drawField(v: View, s: ServerState | undefined, style: FieldStyle): ShrineLabels {
   const { ctx } = v;
   const season = s?.season ?? 0;
   ctx.fillStyle = '#05080b';
@@ -42,15 +48,19 @@ export function drawField(
   }
   ctx.stroke();
   ctx.strokeRect(sx(v, 0), sy(v, 0), FIELD * v.scale, FIELD * v.scale);
-  let ownLabel: Rect | null = null;
+  const labels: ShrineLabels = { own: null, all: [], onGhost: [] };
+  const area = visibleArea(v);
+  const keep = { controls: style.blocked, bodies: ghostBodies(v, style.ghosts) };
   for (const [team, p] of SHRINES.entries()) {
     const own = team === style.ownTeam;
     drawShrine(v, p, team, own ? style.nowMs : null);
-    const box = drawShrineLabel(v, { ...p, team, own }, style.blocked);
-    if (own) ownLabel = box;
+    const { box, onGhost } = drawShrineLabel(v, { ...p, team, own }, keep, area);
+    if (overlaps(box, area)) labels.all.push(box);
+    if (overlaps(box, area) && onGhost) labels.onGhost.push(box);
+    if (own) labels.own = box;
   }
   if (s) drawCoins(v, s);
-  return ownLabel;
+  return labels;
 }
 
 // `pulseAt` is set for the own shrine only: a breathing glow, a solid rim, "Your shrine".
@@ -79,13 +89,15 @@ function drawShrine(
   ctx.setLineDash([]);
 }
 
-// "Your shrine" or "<Season> shrine", below the shrine unless a HUD control covers that spot
-// (then above, left or right of it, shrineLabelAt in labels.ts). Returns the label's box.
+// "Your shrine" or "<Season> shrine", below the shrine unless that spot is out of view or a
+// HUD control or a ghost covers it (then above, left or right of it, shrineLabelAt in
+// labels.ts). Returns the label's box and whether it sits on a ghost.
 function drawShrineLabel(
   v: View,
   shrine: { x: number; y: number; team: number; own: boolean },
-  blocked: readonly Rect[],
-): Rect {
+  keep: ShrineKeepClear,
+  area: Rect,
+): { box: Rect; onGhost: boolean } {
   const { team, own } = shrine;
   const { ctx } = v;
   const r = DEFAULT_CONFIG.shrineRadius * v.scale;
@@ -94,17 +106,18 @@ function drawShrineLabel(
   ctx.font = `bold ${size}px system-ui, sans-serif`;
   const text = { width: ctx.measureText(label).width, height: size + 2 };
   const at = { x: sx(v, shrine.x), y: sy(v, shrine.y), r };
-  const p = shrineLabelAt(at, text, blocked);
+  const p = shrineLabelAt(at, text, keep, area);
   ctx.fillStyle = own ? TEXT : seasonColour(team);
   ctx.textAlign = 'center';
   ctx.fillText(label, p.x, p.y);
   ctx.textAlign = 'start';
-  return {
+  const box = {
     left: p.x - text.width / 2,
     right: p.x + text.width / 2,
     top: p.y - text.height,
     bottom: p.y,
   };
+  return { box, onGhost: p.onGhost };
 }
 
 // Every field coin is of the current season (CONCEPT.md §2a, sentence 1): a diamond (a

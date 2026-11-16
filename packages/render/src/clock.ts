@@ -1,8 +1,9 @@
 // Seasonal Spirits — the season clock at the top (CONCEPT.md §8): the four seasons of the match
 // in order, the current one highlighted, the next announced, the time left, and in the last
-// 10 s before a halving its countdown. Team values sit on the right.
+// 10 s before a deadline its countdown — a halving, or the match end ("LAST CHANCE"). Which
+// deadline is next the server says (STATE_TO_END). Team values sit on the right.
 
-import type { ServerState } from '@seasonal-spirits/protocol';
+import { STATE_RESULT, STATE_TO_END, type ServerState } from '@seasonal-spirits/protocol';
 import { MUTED, TEXT, seasonColour, seasonName } from './palette.js';
 
 export const CLOCK_HEIGHT = 64;
@@ -44,11 +45,16 @@ export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefi
   ctx.textBaseline = 'alphabetic';
 }
 
-function statusLine(s: ServerState): string {
+export function statusLine(s: ServerState): string {
   const next = seasonName(s.season + 1);
-  if (s.countdownMs !== null)
-    return `HALVING in ${mmss(s.countdownMs)} — then ${next} is in season`;
-  if (s.seasonNumber >= 3) return `${seasonName(s.season)} · ${mmss(s.seasonLeftMs)} to the end`;
+  const toEnd = (s.flags & STATE_TO_END) !== 0;
+  if (s.flags & STATE_RESULT) return 'Match over';
+  if (s.countdownMs !== null) {
+    return toEnd
+      ? `LAST CHANCE — secure now · ${mmss(s.countdownMs)}`
+      : `HALVING in ${mmss(s.countdownMs)} — then ${next} is in season`;
+  }
+  if (toEnd) return `${seasonName(s.season)} · ${mmss(s.seasonLeftMs)} to the end`;
   return `${seasonName(s.season)} · ${mmss(s.seasonLeftMs)} left · next: ${next}`;
 }
 

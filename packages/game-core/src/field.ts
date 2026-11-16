@@ -39,6 +39,7 @@ export function pickUpCoins(cfg: GameConfig, s: MatchState): void {
     if (taker) {
       taker.carried[coin.season]++;
       s.stats.pickedUp++;
+      s.events.push({ type: 'pickup', ghost: taker.id, coin: coin.id });
     } else {
       kept.push(coin);
     }
