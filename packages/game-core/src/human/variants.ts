@@ -14,6 +14,7 @@ const DESKTOP = { view: DESKTOP_VIEW, reactionMs: HUMAN_REACTION_MS };
 const T1 = { viewRadius: DESKTOP_VIEW };
 const T2 = { reactionMs: HUMAN_REACTION_MS };
 const T3_BOTS = 16; // trial T3: bot seats beside a human, placeholder — owner decides
+const T4 = { deadlineSpreadMs: 10_000 }; // trial T4, placeholder — owner decides
 
 const v = (
   name: string,
@@ -39,6 +40,9 @@ export const HUMAN_VARIANTS: readonly NamedVariant[] = [
   v('bots T1', null, T1),
   v('bots T2', null, T2),
   v('bots T1+T2', null, { ...T1, ...T2 }),
+  // Trial T4 (step 3: the deadline rush at the shrines).
+  v('T4', DESKTOP, T4),
+  v('bots T4', null, T4),
 ];
 
 export function configOf(base: GameConfig, variant: NamedVariant): GameConfig {

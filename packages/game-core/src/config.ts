@@ -14,6 +14,7 @@ export interface BotConfig {
   // Trials of session 2026-11-16-HUMAN (BALANCE.md "Human round 1"); defaults = today's bots.
   viewRadius: ViewHalfSize | null; // T1: what a bot sees, as a player's "Near" view; null = all
   reactionMs: number; // T2: a bot acts on what it saw this long ago; 0 = now
+  deadlineSpreadMs: number; // T4: extra spare time before a deadline, 0 to this by id; 0 = off
 }
 
 // Half the width and half the height of a view in field units: the rectangle around a ghost,
@@ -120,5 +121,6 @@ export const DEFAULT_CONFIG: GameConfig = {
     threatRange: 150, // placeholder — owner decides
     viewRadius: null, // trial T1, off (trial value: a desktop "Near" view, { x: 1000, y: 550 })
     reactionMs: 0, // trial T2, off (trial value 300, placeholder)
+    deadlineSpreadMs: 0, // trial T4, off (trial value 10 000, placeholder)
   },
 };

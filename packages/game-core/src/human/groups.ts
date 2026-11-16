@@ -12,6 +12,8 @@ const GROUP_MIN = 5; // "more than 4 ghosts"
 
 export interface ShrineGroup {
   shrineTeam: number;
+  startMs: number; // match time when it formed
+  seasonLeftMs: number; // time left in the season then: how close the next deadline was
   ms: number; // how long it lasted
   peak: number; // most ghosts at once
   // At its peak: who, what they carried, how many were securing.
@@ -40,6 +42,8 @@ export class ShrineGroups {
       }
       const now = {
         shrineTeam: team,
+        startMs: running?.startMs ?? s.elapsedMs,
+        seasonLeftMs: running?.peak.seasonLeftMs ?? s.clock.timeLeftMs,
         ms: 0,
         peak: near.length,
         byStrategy: countBy(near.map((g) => this.strategyOf.get(g.id) ?? 'other')),

@@ -987,3 +987,119 @@ were measured on.
 patient 26.7 %, cautious 43.3 %, hunter 30.0 %; secured median / p10 / p90 13.5 / 8.0 / 22.0,
 17.0 / 11.0 / 25.0, 15.5 / 8.0 / 25.5; teams 36.7 / 20.0 / 20.0 / 23.3 %; 8.7 swaps and 1304.2
 steals per match.
+
+## Human round 1 — can a human collect coins against bots? (2026-11-16, `feat/human-feel`)
+
+Owner's observation 2026-11-16, playing the night branch against bots only: as a human it is
+almost impossible to collect coins; groups of ghosts form at the shrines and dissolve late.
+
+**Config of every row**: `DEFAULT_CONFIG` on `feat/human-feel` — the fair rules (swap from 6,
+swapped coins safe, steal share 0–0.5, 2 coins/s), 32 seats, teams rotating per match as in the
+balance (`rotatedRoster`), 50 ms ticks, N = 30 matches, seeds 1–30 — plus what each row
+names. With every trial off, `pnpm balance --matches 30 --seed 1` gives the Round 6/7 C2 row
+exactly (26.7 / 43.3 / 30.0 %). Command: `pnpm human --matches 30 --seed 1 --out
+reports/human/round1-n30.json` (all variants of `src/human/variants.ts` up to `bots T1+T2`;
+CPU load 100 % in the snapshot before the start, VS Code, Docker and a browser open), then
+`--variant bots --out reports/human/round1-groups-n30.json` (the same bot matches, with the
+groups' start times) and `--variant T4 --variant "bots T4" --out
+reports/human/round1-t4-n30.json`. Times per variant 31–184 s.
+
+**The stand-in** (`src/human/standin.ts`) takes seat 1 (team rotating): it sees only a
+player's "Near" view, decides on the state a reaction time old, walks to the nearest coin it
+sees and secures at its shrine before every deadline (no swaps, no steals). The view from the
+client's constants (`cameraSpan` 1100 field units along the shorter screen side below the
+104 px bar): **desktop** 1280 × 800 (and 1920 × 1080) shows **2000 × 1100** field units, a
+**phone** in portrait (412 × 915) **1100 × 2000**. Reaction 300 ms is a placeholder. It aims
+perfectly and steers in any direction (a keyboard has eight).
+
+### What happens to a coin (bots only, N = 30, seeds 1–30)
+
+17 970 coins spawned; **from spawn to pickup median 1.2 s** (p10 0.25 s, p90 5.2 s, mean 2.4 s);
+the **nearest ghost at spawn median 218 field units away** (p10 71, p90 493) — 0.7 s at full
+speed; **776 coins (4.3 %) cleared untouched** at a halving.
+
+### What a bot sees (from the code)
+
+Everything, every tick, at once: `collect` reads every coin and every ghost and works out
+for each coin the ghost closest to it (`src/bots/common.ts`, `collect` and
+`closestGhostByCoin`); `nearestCarrier` (hunter) and `threatened` (patient) read every ghost
+(`src/bots/strategies.ts`); `simulate` (`src/simulation.ts`) and the server's
+`MatchHost.intents` (`apps/server/src/match-host.ts`) ask every bot on every 50 ms tick with
+the current state. No view limit, no delay.
+
+### The stand-in today and per trial (N = 30, seeds 1–30)
+
+Mean per match (median); rank among all seats (1 = most secured). Bot columns: mean per bot
+player and match over all bots of that strategy.
+
+| variant                        | stand-in coins  | stand-in secured | robbed | rank                | patient coins / secured | cautious coins / secured | hunter coins / secured |
+| ------------------------------ | --------------- | ---------------- | ------ | ------------------- | ----------------------- | ------------------------ | ---------------------- |
+| desktop view, 300 ms           | **33.9** (35.0) | **17.0** (15.8)  | 10.6   | **13.6** of 32 (15) | 23.0 / 14.4             | 22.4 / 17.0              | 2.3 / 16.0             |
+| phone view, 300 ms             | 35.0 (36.5)     | 16.6 (16.0)      | 11.7   | 15.1 of 32 (14)     | 22.7 / 14.7             | 22.4 / 17.2              | 2.5 / 15.5             |
+| full view, no delay            | 49.3 (49.0)     | 23.1 (23.0)      | 15.1   | 6.1 of 32 (5)       | 22.0 / 14.0             | 22.0 / 16.9              | 2.2 / 16.0             |
+| desktop, 600 ms (sensitivity)  | 21.1 (20.0)     | 11.3 (11.0)      | 6.2    | 23.5 of 32 (25)     | 23.0 / 14.4             | 23.0 / 17.1              | 2.5 / 16.2             |
+| desktop, 1000 ms (sensitivity) | 14.8 (14.5)     | **0.0**          | 5.3    | 32 of 32            | 23.5 / 14.8             | 23.0 / 17.5              | 2.8 / 16.0             |
+| T1 bots see a desktop view     | 32.2 (34.5)     | 17.1 (16.0)      | 9.8    | 14.4 of 32 (13)     | 23.0 / 14.3             | 22.2 / 16.9              | 2.9 / 16.5             |
+| T2 bots react 300 ms late      | 51.8 (52.5)     | 26.7 (28.5)      | 11.6   | 5.6 of 32 (1.5)     | 21.0 / 14.4             | 20.3 / 15.1              | 3.1 / 14.4             |
+| T1 + T2                        | 52.3 (52.0)     | 28.5 (28.5)      | 10.1   | **2.5** of 32 (1)   | 20.8 / 14.4             | 20.2 / 14.7              | 3.6 / 14.6             |
+| T3 16 bots beside the human    | 47.7 (48.5)     | 25.9 (25.5)      | 10.3   | 11.5 of 17 (11.5)   | 43.9 / 28.9             | 39.5 / 33.8              | 2.9 / 32.6             |
+| T1 + T2 + T3                   | 56.2 (55.5)     | 34.6 (30.5)      | 7.8    | 7.1 of 17 (7.5)     | 40.6 / 30.1             | 36.9 / 31.2              | 4.9 / 24.1             |
+| T4 deadline spread 10 s        | 38.0 (37.5)     | 18.4 (18.0)      | 11.4   | 13.3 of 32 (13)     | 23.2 / 15.7             | 22.7 / 17.8              | 2.3 / 15.3             |
+
+The stand-in's four sight variants run against today's bots; T1–T4 with the stand-in as a
+desktop player with 300 ms. At 1000 ms it pressed Secure 583 times in 5 matches (seeds 1–5)
+and stood inside its shrine in 1592 ticks, but never at a press: it decides on its own
+position a second old, by which time it has walked through the shrine (radius 80) — a limit
+of the stand-in, which delays its own position too.
+
+### Fairness between the bot strategies (best bot of the match, N = 30, seeds 1–30)
+
+| bots                              | patient | cautious | hunter | all within 25–42 %?                         | hunters robbed per hunter and match |
+| --------------------------------- | ------- | -------- | ------ | ------------------------------------------- | ----------------------------------- |
+| today (bots only)                 | 26.7 %  | 43.3 %   | 30.0 % | no (cautious 43.3; at N = 300 yes, Round 6) | 149.5                               |
+| T1 (bots only)                    | 26.7 %  | 33.3 %   | 40.0 % | **yes**                                     | 144.9                               |
+| T2 (bots only)                    | 63.3 %  | 28.3 %   | 8.3 %  | no                                          | 45.3                                |
+| T1 + T2 (bots only)               | 71.7 %  | 25.0 %   | 3.3 %  | no                                          | 43.3                                |
+| T4 (bots only)                    | 20.0 %  | 43.3 %   | 36.7 % | no                                          | 150.6                               |
+| T3 (16 bots + stand-in)           | 21.7 %  | 20.0 %   | 58.3 % | no                                          | 120.2                               |
+| T1 + T2 + T3 (16 bots + stand-in) | 46.7 %  | 36.7 %   | 16.7 % | no                                          | 27.1                                |
+
+The only trial within the band at N = 30, T1, does not help the stand-in (rank 14.4 against
+13.6 today); the trials that help it most (T2, T1 + T2) break the bots' fairness, so none ran
+at N = 300.
+
+### Groups at the shrines (bots only, N = 30, seeds 1–30)
+
+A group: more than 4 ghosts within twice a shrine's radius (160 field units). **855 groups,
+28.5 per match; duration median 1.9 s, p90 3.3 s, longest 6.2 s; size median 6, largest 14.**
+At the peak 80 % belong to the shrine's team, 19 % are securing, carried coins median 3 (p90
+7). When they form (`round1-groups-n30.json`): 120 are the start positions (first 2 s); of the
+other 735, **464 (63 %) form 5–10 s before a deadline** (91 % own team, duration median 3.2 s),
+85 in its last 5 s, 186 at other times. **Groups of 8 or more** (113, not counting the start):
+formed at a median 5.8 s before a deadline; **54 % hunters**, 62 % own team, 31 % securing.
+With T4 (deadline spread 10 s) the groups 5–10 s before a deadline fall to 258 (duration median
+1.1 s), all groups to 784, those of 8 or more to 93 (76 % hunters).
+
+### Human round 1: what the numbers say
+
+- **A coin lasts about a second.** Median 1.2 s from spawn to pickup; the nearest bot is a
+  median 218 units away when it appears.
+- **A collector with a desktop view and 300 ms reaction beats the bots at collecting** (33.9
+  coins per match against 22–23) and lands mid-table (rank 13.6 of 32). The view costs
+  little: with the whole field and no delay it collects 49.3 (rank 6.1).
+- **The reaction time decides steeply**: at 600 ms 21.1 coins and rank 23.5, at 1000 ms 14.8
+  coins. The owner's experience fits a total delay well above 300 ms between a coin appearing
+  and the own ghost turning to it — reaction, the client's 100 ms render buffer, the ≤ 100 ms
+  input send interval and the tick — together with imperfect aim and eight-way keys, which
+  the stand-in does not model; not what the bots see.
+- **Bot trials**: T2 (late bots) and T1 + T2 help the stand-in most (rank 5.6 and 2.5) but
+  break the bots' fairness — hunters win 8 % and 3 % of matches, because a late hunter loses
+  the steal-back race (hunters robbed 149 → 45 per match). T1 alone is fair and changes
+  nothing for the stand-in: a desktop view already covers the whole field width. T3 lets
+  everyone collect more and leaves the stand-in below every bot strategy's average secured
+  value. T4 shortens the deadline crowds but moves patient to 20 % at N = 30.
+- **Shrine groups are the deadline rush**: a team's patient and cautious bots set off home by
+  the same rule and arrive together; the big ones are hunters waiting beside carriers that
+  stand still to secure. They last seconds, not long (longest 6.2 s).
+
+Nothing here changes a default; the owner decides whether any trial goes into the game.

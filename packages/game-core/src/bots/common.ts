@@ -59,7 +59,6 @@ export function waypointOf(cfg: GameConfig, id: number, leg: number): Vec {
   const n = id + 101 * leg;
   const lo = cfg.shrineInset;
   const span = cfg.fieldSize - 2 * cfg.shrineInset;
-  const frac = (v: number): number => v - Math.floor(v);
   return { x: lo + span * frac(n * GOLDEN), y: lo + span * frac(n * GOLDEN * GOLDEN + 0.5) };
 }
 
@@ -87,7 +86,9 @@ export function collect(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<G
 
 // Every season ends with a deadline — a halving, or the match end in the last season. True
 // once the time left is just enough to walk home at carrying speed, secure, and keep
-// bots.deadlineMarginMs spare.
+// bots.deadlineMarginMs spare — plus, trial T4 (`bots.deadlineSpreadMs`, 0 = off), a share
+// of that spread fixed by the ghost's id, so a team does not set off home in the same tick
+// (session 2026-11-16-HUMAN: 63 % of the groups at the shrines form 5–10 s before a deadline).
 export function deadlineNear(
   cfg: GameConfig,
   s: Readonly<MatchState>,
@@ -95,5 +96,8 @@ export function deadlineNear(
 ): boolean {
   const toShrine = Math.max(0, distance(me, shrineOf(s.shrines, me.team)) - cfg.shrineRadius);
   const walkMs = (toShrine / (cfg.ghostSpeed * cfg.carrySpeedFactor)) * 1000;
-  return s.clock.timeLeftMs <= walkMs + cfg.secureDurationMs + cfg.bots.deadlineMarginMs;
+  const spare = cfg.bots.deadlineMarginMs + cfg.bots.deadlineSpreadMs * frac(me.id * GOLDEN);
+  return s.clock.timeLeftMs <= walkMs + cfg.secureDurationMs + spare;
 }
+
+const frac = (v: number): number => v - Math.floor(v);

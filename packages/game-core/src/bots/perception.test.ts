@@ -1,10 +1,11 @@
 // Seasonal Spirits — what a bot or the human stand-in perceives (trials T1 and T2, session
 // 2026-11-16-HUMAN): the view kept inside the field like the camera, only what is in it (and
-// the own ghost), the state a reaction time ago; and today's bots unchanged with both off.
+// the own ghost), the state a reaction time ago; and trial T4's deadline spread.
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../config.js';
 import { ghost, matchOf, quietConfig } from '../test-helpers.js';
+import { deadlineNear } from './common.js';
 import { perceive, viewRect } from './perception.js';
 
 const FIELD = DEFAULT_CONFIG.fieldSize;
@@ -51,5 +52,21 @@ describe('bot perception', () => {
     }
     expect(perceive(FIELD, m.state, 1, sight)?.state.elapsedMs).toBe(700);
     expect(perceive(FIELD, m.state, 1, { view: null, reactionMs: 0 })?.state).toBe(m.state);
+  });
+});
+
+// Trial T4: a share of bots.deadlineSpreadMs by id, so a team does not set off home together.
+describe('deadline spread (trial T4)', () => {
+  it('changes nothing when off, and sends ghosts home at different times when on', () => {
+    const at = (spread: number, id: number): number => {
+      const cfg = quietConfig({ bots: { ...DEFAULT_CONFIG.bots, deadlineSpreadMs: spread } });
+      const m = matchOf(cfg, [{ id, team: 0 }]);
+      Object.assign(ghost(m, id), { x: 1000, y: 1000 });
+      while (!deadlineNear(cfg, m.state, ghost(m, id))) m.tick(50, new Map());
+      return m.state.elapsedMs;
+    };
+    expect(at(0, 1)).toBe(at(0, 2));
+    expect(at(10_000, 1)).not.toBe(at(10_000, 2));
+    expect(at(10_000, 1)).toBeLessThan(at(0, 1));
   });
 });
