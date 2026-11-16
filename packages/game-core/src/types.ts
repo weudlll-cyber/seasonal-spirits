@@ -48,6 +48,8 @@ export type MatchEvent =
   // Every season turn inside a match (CONCEPT.md §2b, §13); season is the new one.
   | { type: 'halving'; atMs: number; season: Season; fieldCoinsCleared: number; carried: number }
   | { type: 'swap'; ghost: number; from: Season; spent: number; got: number }
+  // A field coin picked up (2026-11-16: the human round counts pickups per ghost).
+  | { type: 'pickup'; ghost: number; coin: number }
   | { type: 'secure-start'; ghost: number }
   // leftMs: time that was left before the deadline of the season the secure banks at, when it
   // was started.

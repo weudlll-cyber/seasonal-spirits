@@ -21,7 +21,9 @@ match. It builds CONCEPT.md §2a, §2b with §13 and the controls part of §8 �
 | `src/separation.ts` | Soft separation: ghosts closer than `separationRadius` drift apart                                     |
 | `src/geometry.ts`   | Distances, clamping, shrine positions                                                                  |
 | `src/rng.ts`        | `mulberry32`, shared with the probe bots                                                               |
-| `src/bots/`         | The three strategies (`strategies.ts`) and what they share (`common.ts`)                               |
+| `src/bots/`         | The three strategies (`strategies.ts`), what they share (`common.ts`), what they see (`perception.ts`) |
+| `src/human/`        | The human round: the stand-in, coin lives, shrine groups; `src/human-cli.ts` is `pnpm human`           |
+| `src/cli-args.ts`   | The measuring commands' argument checks (balance, fairness, human)                                     |
 | `src/simulation.ts` | One full bot match with the sanity list; `src/simulate.ts` is the command                              |
 | `src/balance.ts`    | Many matches summed up per strategy and team; `src/balance-cli.ts` is `pnpm balance` (docs/BALANCE.md) |
 
@@ -138,6 +140,27 @@ took its nearest coin: neighbours shared one target, travelled as one pack of up
 ghosts for half a minute and more, and switched together to the next coin
 (`src/bots/packs.test.ts`).
 
+What a bot reads: the whole public match state — every coin and every ghost on the field —
+on every tick (50 ms), with no delay: `collect` and its coin-owner pass read all coins and
+ghosts (`src/bots/common.ts`), `nearestCarrier` and `threatened` all ghosts
+(`src/bots/strategies.ts`); `simulate` (`src/simulation.ts`) and the server's match host
+(`intents` in `apps/server/src/match-host.ts`) ask every bot every tick with the current
+state. Two trial switches of session 2026-11-16-HUMAN (BALANCE.md "Human round 1"), both off
+by default, change that through `src/bots/perception.ts`: **T1** `bots.viewRadius` — a bot
+sees only the coins and ghosts inside a view rectangle around itself, kept inside the field
+like the client's camera (trial value a desktop "Near" view, half-sizes 1000 × 550 field
+units); **T2** `bots.reactionMs` — a bot acts on the state as it was that long ago (trial
+value 300 ms). With both off `createBot` returns the bot unchanged.
+
+**Measuring a human** (`src/human/`, `pnpm human`): a stand-in for a human player
+(`standin.ts`) takes seat 1 — it sees a player's "Near" view (desktop 2000 × 1100 field units,
+phone portrait 1100 × 2000, from the client's `cameraSpan` 1100), decides a reaction time late
+(300 ms placeholder) and collects the nearest coin it sees, securing before every deadline.
+It is a measuring instrument, never part of the balance pool. `round.ts` runs seeded matches
+with it; `coins.ts` follows every field coin from spawn to pickup or halving, `groups.ts`
+every group of more than four ghosts within twice a shrine's radius. Every pickup is a
+`pickup` event (`src/field.ts`).
+
 ## `pnpm simulate --seed <n>`
 
 One full match, 32 bots (8 per team: 3 patient, 3 cautious, 2 hunters), in 50 ms ticks as
@@ -187,3 +210,5 @@ fails.
 | `bots.deadlineMarginMs` | 3000    | placeholder (spare time when walking home before a halving)                                                   |
 | `bots.waypointMs`       | 4000    | placeholder (how often a collector's waypoint moves on)                                                       |
 | `bots.threatRange`      | 150     | placeholder (a loaded patient bot goes home when an opponent is closer)                                       |
+| `bots.viewRadius`       | null    | trial T1 (2026-11-16): a bot sees only this view around itself; null = the whole field                        |
+| `bots.reactionMs`       | 0       | trial T2 (2026-11-16): a bot acts on what it saw this long ago; 0 = now                                       |

@@ -5,6 +5,7 @@
 
 import { STRATEGIES } from './bots/strategies.js';
 import { runBalance, type BalanceReport, type Spread } from './balance.js';
+import { listArg, numberArg } from './cli-args.js';
 import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 
 export const VARIANTS: Record<string, Partial<GameConfig>> = {
@@ -19,20 +20,8 @@ export const VARIANTS: Record<string, Partial<GameConfig>> = {
 
 const TEAM_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
 
-function arg(argv: readonly string[], name: string, fallback: number, max: number): number {
-  const i = argv.indexOf(name);
-  if (i === -1) return fallback;
-  const raw = argv[i + 1] ?? '';
-  const n = Number(raw);
-  if (!/^\d{1,9}$/.test(raw) || n > max) {
-    console.error(`${name} needs a whole number from 0 to ${max}, got "${raw}"`);
-    process.exit(2);
-  }
-  return n;
-}
-
 function variants(argv: readonly string[]): string[] {
-  const names = argv.flatMap((a, i) => (argv[i - 1] === '--variant' ? [a] : []));
+  const names = listArg(argv, '--variant');
   if (names.includes('all')) return Object.keys(VARIANTS);
   const unknown = names.filter((n) => !(n in VARIANTS));
   if (unknown.length > 0) {
@@ -76,8 +65,8 @@ function print(name: string, r: BalanceReport): void {
 }
 
 const argv = process.argv.slice(2);
-const matches = arg(argv, '--matches', 30, 10_000);
-const seed = arg(argv, '--seed', 1, 999_999_999);
+const matches = numberArg(argv, '--matches', 30, 10_000);
+const seed = numberArg(argv, '--seed', 1, 999_999_999);
 for (const name of variants(argv)) {
   const cfg: GameConfig = { ...DEFAULT_CONFIG, ...VARIANTS[name] };
   print(name, runBalance(cfg, matches, seed));

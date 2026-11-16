@@ -85,6 +85,11 @@ hunter hunts only a carrier richer by a margin (`bots.hunterPreyMargin`) and lea
 ghost it just robbed or was robbed by alone for a while (`bots.hunterGrudgeMs`). Done when:
 the owner has decided; if built, the Round 7 fairness check runs again on both seed sets.
 
+r. **A human against bots** (owner's observation 2026-11-16: almost impossible to collect
+coins; groups at the shrines). Session 2026-11-16-HUMAN on `feat/human-feel`: measured with
+a stand-in, bot trials T1–T3 as switches, default off. Done when: the owner has decided which
+trial (if any) goes into the game.
+
 ## CLOSED
 
 - 2026-11-14 — repository skeleton, toolchain, CI, docs, Phase 0 network probe (server,
@@ -374,6 +379,13 @@ the owner has decided; if built, the Round 7 fairness check runs again on both s
   change): 10 seeded matches; the pattern, the cause and a proposed bot change in the night
   sheet; the decision is OPEN q — commit "docs: why hunters rob each other" on
   `feat/night-2026-11-16`.
+- 2026-11-16 — **Human round instrument** (session 2026-11-16-HUMAN): the human stand-in
+  (`human/standin.ts`), coin lives and shrine groups (`human/coins.ts`, `human/groups.ts`),
+  `pnpm human`; bot trial switches T1 `bots.viewRadius` and T2 `bots.reactionMs`
+  (`bots/perception.ts`), off by default; a `pickup` event per picked coin; the measuring
+  commands share `cli-args.ts` (the copies in `balance-cli.ts` and `fairness-cli.ts` are gone);
+  with everything off `pnpm balance` on seeds 1–30 gives the piece 1 row exactly — commit
+  "feat: human round instrument, bot sight trials off" on `feat/human-feel`.
 
 ## CHECKS DONE
 
@@ -544,3 +556,5 @@ the owner has decided; if built, the Round 7 fairness check runs again on both s
 | 2026-11-16 | hunter-steal measurement: 10 seeded 32-bot matches (seeds 1–10, defaults) through `simulate`'s observer, scratch script outside the repository                                            | night branch at `f2d3166`                                                                                                            | 92.1 % hunter on hunter; distance median 26.2; thief every 1000 ms; robbed back within 10 s 83.7 %, median 0.9 s; 879 episodes of 4+ steals hold 9331 of 12 184                                                                     | night sheet, piece 7                                                                           |
 | 2026-11-16 | format check of the changed Markdown                                                                                                                                                      | working tree of "docs: why hunters rob each other"                                                                                   | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `384cfb0`, `de48624`, `f2d3166` on `feat/night-2026-11-16`; CodeQL for `216d220` (docs only, CI skips it)                            | success for all                                                                                                                                                                                                                     | `gh run list --branch feat/night-2026-11-16`                                                   |
+| 2026-11-16 | `pnpm verify:changed` (all, package.json changed: format, lint, typecheck, 40 test files / 209 tests)                                                                                     | working tree of "feat: human round instrument, bot sight trials off"                                                                 | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | equivalence check `pnpm balance --matches 30 --seed 1`, all trial switches off                                                                                                            | same tree                                                                                                                            | identical to the night's piece 1 row: 26.7 / 43.3 / 30.0 %, 8.7 swaps, 1304.2 steals, 39 125 steals                                                                                                                                 | `reports/session-2026-11-16-human.md`                                                          |

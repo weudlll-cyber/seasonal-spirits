@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runBalance, type BalanceReport } from './balance.js';
+import { numberArg, textArg } from './cli-args.js';
 import { DEFAULT_CONFIG } from './config.js';
 import { distanceFromEven, gridConfigs, meetsTarget, type Overrides } from './fairness.js';
 
@@ -20,28 +21,12 @@ interface Row {
   meets: boolean;
 }
 
-function arg(argv: readonly string[], name: string, fallback: number, max: number): number {
-  const i = argv.indexOf(name);
-  if (i === -1) return fallback;
-  const raw = argv[i + 1] ?? '';
-  if (!/^\d{1,9}$/.test(raw) || Number(raw) > max) {
-    console.error(`${name} needs a whole number from 0 to ${max}, got "${raw}"`);
-    process.exit(2);
-  }
-  return Number(raw);
-}
-
-function text(argv: readonly string[], name: string): string | null {
-  const i = argv.indexOf(name);
-  return i === -1 ? null : (argv[i + 1] ?? null);
-}
-
 function worker(argv: readonly string[]): void {
-  const list = JSON.parse(fs.readFileSync(text(argv, '--worker') ?? '', 'utf8')) as Overrides[];
-  const matches = arg(argv, '--matches', 30, 100_000);
-  const seed = arg(argv, '--seed', 1, 999_999_999);
-  const to = Math.min(list.length, arg(argv, '--to', list.length, 100_000));
-  for (let k = arg(argv, '--from', 0, 100_000); k < to; k++) {
+  const list = JSON.parse(fs.readFileSync(textArg(argv, '--worker') ?? '', 'utf8')) as Overrides[];
+  const matches = numberArg(argv, '--matches', 30, 100_000);
+  const seed = numberArg(argv, '--seed', 1, 999_999_999);
+  const to = Math.min(list.length, numberArg(argv, '--to', list.length, 100_000));
+  for (let k = numberArg(argv, '--from', 0, 100_000); k < to; k++) {
     const overrides = list[k] ?? {};
     const report = runBalance({ ...DEFAULT_CONFIG, ...overrides }, matches, seed);
     process.stdout.write(`${JSON.stringify({ overrides, report })}\n`);
@@ -58,9 +43,9 @@ function runSlice(
   const self = fileURLToPath(import.meta.url);
   const pass = [
     '--matches',
-    String(arg(argv, '--matches', 30, 100_000)),
+    String(numberArg(argv, '--matches', 30, 100_000)),
     '--seed',
-    String(arg(argv, '--seed', 1, 999_999_999)),
+    String(numberArg(argv, '--seed', 1, 999_999_999)),
   ];
   const args = [
     ...process.execArgv,
@@ -124,11 +109,11 @@ function summary(rows: readonly Row[], top: number): string {
 }
 
 async function main(argv: readonly string[]): Promise<void> {
-  const configsFile = text(argv, '--configs');
+  const configsFile = textArg(argv, '--configs');
   const fromFile = (f: string): Overrides[] =>
     JSON.parse(fs.readFileSync(f, 'utf8')) as Overrides[];
   const list = configsFile ? fromFile(configsFile) : gridConfigs();
-  const jobs = Math.max(1, Math.min(list.length, arg(argv, '--jobs', 1, 64)));
+  const jobs = Math.max(1, Math.min(list.length, numberArg(argv, '--jobs', 1, 64)));
   const listFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fairness-')), 'configs.json');
   fs.writeFileSync(listFile, JSON.stringify(list));
   const per = Math.ceil(list.length / jobs);
@@ -136,9 +121,9 @@ async function main(argv: readonly string[]): Promise<void> {
     runSlice(listFile, j * per, (j + 1) * per, argv),
   );
   const rows = (await Promise.all(slices)).flat().sort((a, b) => a.distance - b.distance);
-  const out = text(argv, '--out');
+  const out = textArg(argv, '--out');
   if (out) fs.writeFileSync(out, `${JSON.stringify(rows, null, 1)}\n`);
-  console.log(summary(rows, arg(argv, '--top', 20, 10_000)));
+  console.log(summary(rows, numberArg(argv, '--top', 20, 10_000)));
 }
 
 const argv = process.argv.slice(2);

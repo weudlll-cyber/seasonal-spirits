@@ -41,14 +41,18 @@ export function botRoster(ghosts: number): (Roster & { strategy: Strategy })[] {
   }));
 }
 
+// A seat may bring its own bot instead of its strategy's: the human stand-in of session
+// 2026-11-16-HUMAN (human/standin.ts), measured, never part of the balance pool.
+export type Seat = Roster & { strategy: Strategy; bot?: Bot };
+
 export function simulate(
   cfg: GameConfig,
   seed: number,
-  roster: (Roster & { strategy: Strategy })[] = botRoster(32),
+  roster: Seat[] = botRoster(32),
   afterTick?: (s: Readonly<MatchState>) => void, // tests watch every tick through it
 ): SimulationReport {
   const match = new Match(cfg, seed, roster);
-  const bots = new Map<number, Bot>(roster.map((r) => [r.id, createBot(cfg, r.strategy)]));
+  const bots = new Map<number, Bot>(roster.map((r) => [r.id, r.bot ?? createBot(cfg, r.strategy)]));
   const halvings: HalvingRecord[] = [];
   let negativeSeen = false;
   while (!match.state.ended) {
