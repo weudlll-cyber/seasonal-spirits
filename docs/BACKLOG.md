@@ -6,6 +6,9 @@ means), `CLOSED` (appended to, each topic with the commit that finished it) and
 
 ## OPEN
 
+**Seasonal Spirits paused 2026-11-16 by the owner; V5 prototype kept as tag v5-prototype; master is the last merged Spirits state (look B, pre-V5 rules).** (Recorded 2026-11-17, NIGHT 2026-11-17 piece 1.) The topics below stay as they
+were; none is worked on while the game is paused.
+
 In the order decided on 2026-11-14.
 
 a. **Safety net — owner part.** CodeQL, osv-scanner and Renovate are in the repository
@@ -460,6 +463,10 @@ fixed, with the spec green ten runs in a row.
   picture branch `shots/ghost-look` deleted (the choice of B is recorded above, "Ghost look
   B") — this commit and the merge.
 
+- 2026-11-17 — **Seasonal Spirits paused** (owner decision 2026-11-16; NIGHT 2026-11-17
+  piece 1): Seasonal Spirits paused 2026-11-16 by the owner; V5 prototype kept as tag v5-prototype; master is the last merged Spirits state (look B, pre-V5 rules). The branch `feat/v5-rules` was deleted after tagging; its last commit is
+  `d635cf2` — commit "chore: Seasonal Spirits paused" on `chore/pause`, merged into `master`.
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -663,3 +670,4 @@ fixed, with the spec green ten runs in a row.
 | 2026-11-16 | `pnpm looks`                                                                                                                                                                              | same tree                                                                                                                                 | 6 PNGs (three scenes × desktop, phone), scenes as before: crowd seed 5 at 72.1 s, halved seed 3 at 77.35 s, shield seed 5 at 144.9 s                                                                                                | `reports/screens/latest/look-*.png` (git-ignored)                                              |
 | 2026-11-16 | one full match played on `pnpm dev` (1280 × 800, keyboard): "Near" to the Autumn season, then "Overview"; every frame's labels checked                                                    | same tree                                                                                                                                 | 300 s, no label out of view, unnamed or overlapping; the own ghost carried at most 1 coin                                                                                                                                           | 15 screenshots, session report                                                                 |
 | 2026-11-16 | full CI (verify, dependencies, e2e) and CodeQL                                                                                                                                            | `4213ec6` on `feat/ghost-look`                                                                                                            | success (CI 43942775911, CodeQL 43942775895)                                                                                                                                                                                        | `gh run list --branch feat/ghost-look`                                                         |
+| 2026-11-17 | `prettier --check` on CONCEPT.md and BACKLOG.md (documentation-only commit: no tests, no typecheck)                                                                                       | working tree of "chore: Seasonal Spirits paused"                                                                                          | green                                                                                                                                                                                                                               | this commit                                                                                    |
