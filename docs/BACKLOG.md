@@ -316,6 +316,18 @@ when: the owner has decided whether and how.
   check in `readability.e2e.ts` adds: no label on another label or a shrine label, every
   shrine label wholly in view — commit "fix: labels clear of ghosts and shrine labels, shrine
   labels in view" on `feat/night-2026-11-16` (not merged).
+- 2026-11-16 — **Final countdown built** (open item m; night 2026-11-16, piece 3): the match
+  end is staged like a halving with one mechanism — the core's `countdownMs` runs before
+  every deadline (config `deadlineCountdownMs`, renamed from `halvingCountdownMs`), a
+  `match-end` event in the last tick; header flags `STATE_TO_END` (the server says the next
+  deadline is the match end) and `STATE_MATCH_END_EVENT` (THREATS row 32); the clock reads
+  "LAST CHANCE — secure now · 0:07", then "MATCH OVER" with flash and tone
+  (`Hud.deadline`, `DeadlineTone`), then the result; during the result the clock says
+  "Match over". Before, nothing marked the match end but the clock reaching 0:00. Tests:
+  `halving.test.ts`, `state.test.ts`, `match-host.test.ts`, new `clock.test.ts`;
+  `play.e2e.ts` checks the countdown and "MATCH OVER" — commit "feat: final countdown, LAST
+  CHANCE and MATCH OVER" on `feat/night-2026-11-16` (not merged; m stays open until the
+  owner has played and merged it).
 
 ## CHECKS DONE
 
@@ -473,3 +485,5 @@ when: the owner has decided whether and how.
 | 2026-11-16 | `pnpm exec vitest run packages/render` (3 files / 20 tests)                                                                                                                               | working tree of "fix: labels clear of ghosts and shrine labels, shrine labels in view"                                               | green; the five new label tests fail without the change                                                                                                                                                                             | same commit                                                                                    |
 | 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 4 related test files / 23 tests)                                                                                                          | same tree                                                                                                                            | green                                                                                                                                                                                                                               | same commit                                                                                    |
 | 2026-11-16 | `pnpm e2e readability` (desktop and phone)                                                                                                                                                | same tree                                                                                                                            | 2 passed                                                                                                                                                                                                                            | `reports/screens/latest/*-overview.png` (git-ignored)                                          |
+| 2026-11-16 | `pnpm verify:changed` (format, lint, typecheck, 23 related test files / 134 tests)                                                                                                        | working tree of "feat: final countdown, LAST CHANCE and MATCH OVER"                                                                  | green                                                                                                                                                                                                                               | same commit                                                                                    |
+| 2026-11-16 | `pnpm e2e play spectate` (desktop and phone; spectate desktop only)                                                                                                                       | same tree                                                                                                                            | 3 passed, 1 skipped by design                                                                                                                                                                                                       | `reports/screens/latest/*-last-chance.png`, `*-match-over.png` (git-ignored)                   |

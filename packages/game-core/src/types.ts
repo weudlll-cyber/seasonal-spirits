@@ -51,7 +51,9 @@ export type MatchEvent =
   | { type: 'secure-start'; ghost: number }
   | { type: 'secured'; ghost: number; value: number }
   | { type: 'secure-interrupted'; ghost: number }
-  | { type: 'steal'; thief: number; victim: number; coins: number };
+  | { type: 'steal'; thief: number; victim: number; coins: number }
+  // The match ended in this tick (owner decision 2026-11-16: "MATCH OVER" at the end).
+  | { type: 'match-end'; atMs: number };
 
 // Running totals kept for the sanity list of `pnpm simulate`.
 export interface MatchStats {
@@ -64,7 +66,9 @@ export interface MatchState {
   elapsedMs: number;
   tick: number;
   clock: SeasonClock;
-  halvingCountdownMs: number | null; // set during the last halvingCountdownMs before a halving
+  // Set during the last deadlineCountdownMs before the season's end: a halving, or in the
+  // last season the match end; null otherwise and once the match has ended.
+  countdownMs: number | null;
   ended: boolean;
   ghosts: Ghost[]; // sorted by id
   coins: FieldCoin[];

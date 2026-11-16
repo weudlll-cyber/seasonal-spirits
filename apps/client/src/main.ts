@@ -10,7 +10,9 @@ import {
   GHOST_CAN_STEAL,
   RenderClock,
   STATE_HALVING_EVENT,
+  STATE_MATCH_END_EVENT,
   STATE_RESULT,
+  STATE_TO_END,
   ghostName,
   interpolate,
   latestServerMs,
@@ -21,11 +23,11 @@ import {
 import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
 import { Help } from './help.js';
-import { Hud, bindMute, el, hudOnField } from './hud.js';
+import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
 import { ResultScreen } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
-import { HalvingTone } from './sound.js';
+import { DeadlineTone } from './sound.js';
 import { ViewToggle } from './view-mode.js';
 
 const BUFFER_MS = 100; // render this far behind the newest state (docs/PHASE0.md)
@@ -47,7 +49,7 @@ document.body.classList.toggle('touch', matchMedia('(pointer: coarse)').matches)
 const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
-const tone = new HalvingTone();
+const tone = new DeadlineTone();
 bindMute(() => tone.toggleMute(), tone.muted);
 const viewButton = el('view', HTMLButtonElement);
 // A spectator by URL has no view choice (and its keys do nothing).
@@ -57,6 +59,7 @@ const trails = new Trails();
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 const result = new ResultScreen();
 let halvings = 0;
+let resultFrom = 0; // performance.now() from which the result screen may show
 
 const NOTICES: Record<Mode, string | null> = {
   connecting: 'Connecting…',
@@ -67,10 +70,12 @@ const NOTICES: Record<Mode, string | null> = {
 
 const conn = new Connection(spectate ? 'spectator' : 'player', {
   onState: (s: ServerState) => {
-    // The event is in one state only; every state passes here, so none is missed.
-    if (!(s.flags & STATE_HALVING_EVENT)) return;
-    halvings++;
-    hud.halving(s);
+    // Each deadline event is in one state only; every state passes here, so none is missed.
+    if (!(s.flags & (STATE_HALVING_EVENT | STATE_MATCH_END_EVENT))) return;
+    if (s.flags & STATE_HALVING_EVENT) halvings++;
+    // The result screen waits until "MATCH OVER" has been seen.
+    if (s.flags & STATE_MATCH_END_EVENT) resultFrom = performance.now() + MATCH_OVER_MS;
+    hud.deadline(s);
     tone.play();
   },
   onMode: (mode, reason) => {
@@ -154,8 +159,13 @@ function draw(f: Frame): Drawn {
   const ownFlags = f.latest?.ghosts.find((g) => g.id === f.ownId)?.flags ?? 0;
   const canSteal = (ownFlags & GHOST_CAN_STEAL) !== 0;
   hud.showControls(f.playing && !f.over, offer, f.latest?.season ?? 0, canSteal);
-  result.update(f.latest, f.over, f.ownId);
+  result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId);
   return drawn;
+}
+
+function countdownOf(s: ServerState | undefined): { ms: number; toEnd: boolean } | null {
+  if (!s || s.countdownMs === null) return null;
+  return { ms: s.countdownMs, toEnd: (s.flags & STATE_TO_END) !== 0 };
 }
 
 // Read by the Playwright specs: what this client knows and drew, never more than it shows.
@@ -168,6 +178,8 @@ function expose(f: Frame, drawn: Drawn): void {
     season: f.latest?.season ?? null,
     coins: f.latest?.coins.length ?? 0,
     halvings,
+    // The clock's countdown as the server sent it, and whether it runs to the match end.
+    countdown: countdownOf(f.latest),
     result: f.over,
     ...drawn,
   };

@@ -40,7 +40,7 @@ export interface GameConfig {
   stealCooldownMs: number;
   separationRadius: number;
   separationStrength: number;
-  halvingCountdownMs: number;
+  deadlineCountdownMs: number;
   reconnectGraceMs: number;
   resultPauseMs: number;
   bots: BotConfig;
@@ -87,8 +87,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   separationRadius: 28, // placeholder — owner decides
   separationStrength: 0.5, // placeholder — owner decides
   // CONCEPT.md §2b / §13: every season turn inside a match is a halving, counted down from
-  // 10 s before.
-  halvingCountdownMs: 10_000,
+  // 10 s before; the match end the same way (owner decision 2026-11-16, "last chance").
+  deadlineCountdownMs: 10_000,
   // CONCEPT.md §8: a disconnected player stands 10–15 s, then a bot takes over.
   reconnectGraceMs: 12_000,
   resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)

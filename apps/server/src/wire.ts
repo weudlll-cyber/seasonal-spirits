@@ -8,6 +8,7 @@ import {
   atOwnShrine,
   canSteal,
   carriesShielded,
+  isLastSeason,
   shrineOffer,
   totalCount,
   type GameConfig,
@@ -24,7 +25,9 @@ import {
   GHOST_SECURING,
   GHOST_SHIELDED,
   STATE_HALVING_EVENT,
+  STATE_MATCH_END_EVENT,
   STATE_RESULT,
+  STATE_TO_END,
   type GhostState,
   type OfferState,
   type ServerState,
@@ -56,10 +59,13 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
     season: SEASONS.indexOf(s.clock.current),
     seasonNumber: s.clock.index,
     seasonLeftMs: s.clock.timeLeftMs,
-    countdownMs: s.halvingCountdownMs,
+    countdownMs: s.countdownMs,
+    // The server says which deadline is next: the match end in the last season, else a halving.
     flags:
       (ctx.events.some((e) => e.type === 'halving') ? STATE_HALVING_EVENT : 0) |
-      (s.ended ? STATE_RESULT : 0),
+      (s.ended ? STATE_RESULT : 0) |
+      (!s.ended && isLastSeason(ctx.cfg, s.clock) ? STATE_TO_END : 0) |
+      (ctx.events.some((e) => e.type === 'match-end') ? STATE_MATCH_END_EVENT : 0),
     nextMatchMs: ctx.nextMatchMs,
     teamSecured: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
     ghosts,

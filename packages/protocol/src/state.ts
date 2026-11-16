@@ -46,7 +46,9 @@ export interface ServerState {
   season: number; // current season index; the next is (season + 1) % 4
   seasonNumber: number; // 0-based season within the match; the start season is season - this
   seasonLeftMs: number; // u32 until the next halving (or the match end)
-  countdownMs: number | null; // countdown to the next halving, null outside its last 10 s
+  // Countdown to the next deadline — a halving, or with STATE_TO_END the match end — null
+  // outside its last 10 s.
+  countdownMs: number | null;
   flags: number; // STATE_* bits
   nextMatchMs: number; // during the result: ms until the next match starts; else 0
   teamSecured: [number, number, number, number]; // secured value per team
@@ -58,6 +60,11 @@ export interface ServerState {
 // A halving (every season turn inside a match) happened in this tick; `season` is the new one.
 export const STATE_HALVING_EVENT = 1;
 export const STATE_RESULT = 2; // the match is over; the result pause before the next
+// The next deadline is the match end, not a halving (the last season): seasonLeftMs and
+// countdownMs run to it — "LAST CHANCE — secure now".
+export const STATE_TO_END = 4;
+// The match ended in this tick: "MATCH OVER" (in exactly one state, like the halving).
+export const STATE_MATCH_END_EVENT = 8;
 
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonNumber u8 ·
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·

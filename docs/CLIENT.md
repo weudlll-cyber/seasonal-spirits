@@ -161,6 +161,12 @@ season switch to the dashed half-value look, and one tone plays. The tone is gen
 Web Audio (no audio file), sounds only after the first key or touch, and can be muted with
 the "Sound on/off" button (remembered in the browser).
 
+The match end is staged the same way (owner decision 2026-11-16; one mechanism, `Hud.deadline`
+and `DeadlineTone`): in the last 10 s the clock reads "LAST CHANCE — secure now · 0:07" in
+red — the server says the countdown runs to the end (`STATE_TO_END`) —, at the end
+"MATCH OVER" (2 s), the flash and the tone; then the result screen. During the result the
+clock reads "Match over".
+
 ## After the match
 
 The result screen lists the teams and the top eight players by secured value, the own place,

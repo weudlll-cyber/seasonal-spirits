@@ -1,5 +1,6 @@
 // Seasonal Spirits — the halving at every season turn: field coins go, carried coins stay,
-// countdown and one-tick event each time, nothing at the match end.
+// countdown and one-tick event each time; the match end is no halving but has its own
+// countdown and one-tick event (owner decision 2026-11-16).
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from './config.js';
@@ -57,26 +58,32 @@ describe('halving', () => {
 });
 
 describe('halving countdown and event', () => {
-  it('carries a 10 s countdown before every halving and none in the last 10 s of the match', () => {
+  it('carries a 10 s countdown before every halving and before the match end, none after', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
-    for (const turn of [75_000, 150_000, 225_000]) {
+    for (const turn of [75_000, 150_000, 225_000, 300_000]) {
       runTo(m, turn - 11_000);
-      expect(m.state.halvingCountdownMs).toBeNull();
+      expect(m.state.countdownMs, `before ${turn}`).toBeNull();
       runTo(m, turn - 9000);
-      expect(m.state.halvingCountdownMs).toBe(9000);
+      expect(m.state.countdownMs, `before ${turn}`).toBe(9000);
       runTo(m, turn);
-      expect(m.state.halvingCountdownMs).toBeNull();
+      expect(m.state.countdownMs, `at ${turn}`).toBeNull();
     }
-    runTo(m, 295_000);
-    expect(m.state.halvingCountdownMs).toBeNull();
+    expect(m.state.ended).toBe(true);
   });
 
-  it('emits each HALVING event in exactly one tick', () => {
+  it('emits each HALVING event in exactly one tick, and the match end once at its end', () => {
     const m = matchOf(quietConfig(), [{ id: 1, team: 0 }]);
     let ticksWithHalving = 0;
-    while (!m.state.ended)
-      if (halvingsOf(m.tick(50, new Map()).events).length > 0) ticksWithHalving++;
+    const ends: number[] = [];
+    while (!m.state.ended) {
+      const events = m.tick(50, new Map()).events;
+      if (halvingsOf(events).length > 0) ticksWithHalving++;
+      for (const e of events) if (e.type === 'match-end') ends.push(e.atMs);
+    }
+    m.tick(50, new Map()); // after the end nothing happens any more
+    expect(m.state.events).toEqual([]);
     expect(ticksWithHalving).toBe(3);
+    expect(ends).toEqual([300_000]);
   });
 });
 

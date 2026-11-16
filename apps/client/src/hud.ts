@@ -1,11 +1,18 @@
 // Seasonal Spirits — the client's controls and messages on top of the canvas (DOM, so they are
 // real buttons): the one action button, at the own shrine "Secure (…)" and "Swap (…)" with the
-// server's numbers, the HALVING announcement with its flash, and notices.
+// server's numbers, the HALVING and MATCH OVER announcements with their flash, and notices.
 
-import type { GameAction, OfferState, ServerState } from '@seasonal-spirits/protocol';
+import {
+  STATE_MATCH_END_EVENT,
+  type GameAction,
+  type OfferState,
+  type ServerState,
+} from '@seasonal-spirits/protocol';
 import { seasonName, value, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
+// "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
+export const MATCH_OVER_MS = 2000;
 const TOAST_MS = 2500; // how long a steal message stays
 
 // An element of index.html, checked to be of the expected kind.
@@ -64,17 +71,24 @@ export class Hud {
     this.swap.disabled = offer.swapCoins === 0;
   }
 
-  // CONCEPT.md §2b: "HALVING — <Season> is in season", a short flash, at every halving.
-  halving(s: ServerState): void {
-    this.announce.textContent = `HALVING — ${seasonName(s.season)} is in season`;
+  // CONCEPT.md §2b: a large announcement and a short flash at every deadline — "HALVING —
+  // <Season> is in season" at a halving, "MATCH OVER" at the match end (2026-11-16).
+  deadline(s: ServerState): void {
+    const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;
+    this.announce.textContent = end
+      ? 'MATCH OVER'
+      : `HALVING — ${seasonName(s.season)} is in season`;
     this.announce.hidden = false;
     this.flash.classList.remove('go');
     this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation
     this.flash.classList.add('go');
     window.clearTimeout(this.announceTimer);
-    this.announceTimer = window.setTimeout(() => {
-      this.announce.hidden = true;
-    }, ANNOUNCE_MS);
+    this.announceTimer = window.setTimeout(
+      () => {
+        this.announce.hidden = true;
+      },
+      end ? MATCH_OVER_MS : ANNOUNCE_MS,
+    );
   }
 
   say(text: string | null): void {

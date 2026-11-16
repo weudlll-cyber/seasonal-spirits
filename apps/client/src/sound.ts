@@ -1,12 +1,13 @@
 // Seasonal Spirits — the one sound of Phase 1 (CONCEPT.md §2b): a recognisable tone at every
-// halving, generated with Web Audio (no audio file). Browsers allow sound only after a user
-// gesture, so the context starts on the first key or touch; the mute choice is remembered.
+// deadline — each halving and the match end — generated with Web Audio (no audio file).
+// Browsers allow sound only after a user gesture, so the context starts on the first key or
+// touch; the mute choice is remembered.
 
 import { readSetting, writeSetting } from './storage.js';
 
 const MUTE_KEY = 'seasonal-spirits.muted';
 
-export class HalvingTone {
+export class DeadlineTone {
   private ctx: AudioContext | null = null;
   muted: boolean;
 

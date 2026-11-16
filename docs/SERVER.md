@@ -67,13 +67,16 @@ One binary encoding, little endian; values (secured, offers) travel in halves:
 
 - **Header, 34 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
   3 Winter; the next is +1), season number within the match u8 (the start season is season −
-  number), ms left in the season u32, countdown to the next halving u16 (0xffff = none; set
-  in the 10 s before every season turn, CONCEPT.md §13), flags u8 (a halving in this tick —
-  the season field is then the new season —, result), ms to the next match u16 (during the
-  result), secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
+  number), ms left in the season u32, countdown to the next deadline u16 (0xffff = none; set
+  in the 10 s before every season turn, CONCEPT.md §13, and since 2026-11-16 before the match
+  end), flags u8 (a halving in this tick — the season field is then the new season —,
+  result, the next deadline is the match end `STATE_TO_END` — the server says it, the
+  client shows "LAST CHANCE — secure now" —, the match ended in this tick
+  `STATE_MATCH_END_EVENT` — "MATCH OVER"), ms to the next match u16 (during the result),
+  secured value per team 4×u16, ghost count u8, coin count u8, offer count u8.
 - **Per ghost, 13 bytes:** id u8, x u16, y u16, team u8, carried coins u16, of those not of
   the current season (worth half now) u16, secured value u16, flags u8 (carrier, securing,
-  bot, in its own shrine).
+  bot, in its own shrine, can steal, carries steal-proof coins).
 - **Per field coin, 4 bytes:** x u16, y u16 (every field coin is of the current season).
 - **Per offer, 9 bytes:** for each player (never a bot) inside its own shrine: ghost u8, the
   secure value, the swap's coin count of the next season, its value now and later — the

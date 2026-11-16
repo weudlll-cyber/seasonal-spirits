@@ -40,6 +40,7 @@ export interface ClientView {
   season: number | null;
   coins: number;
   halvings: number;
+  countdown: { ms: number; toEnd: boolean } | null; // the clock's countdown (main.ts)
   result: boolean;
   // What the frame drew (apps/client/src/scene.ts, Drawn).
   view: 'near' | 'overview' | 'spectator';
