@@ -7,7 +7,6 @@
 // under it (jump.ts); a bomb carrier has the ticking bomb above it (bomb.ts). What the drawing
 // remembers between frames is trails.ts.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
   GHOST_AIRBORNE,
   GHOST_BOMB,
@@ -35,11 +34,12 @@ import {
 } from './jump.js';
 import { OWN_REACH, drawOwnMarks } from './own.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
+import { shape } from './shape.js';
 import type { Trails } from './trails.js';
 import { circle, sx, sy, visibleArea, type View } from './view.js';
 
 // A ghost faster than running can make it leaves a trail: a dash or a knock.
-const TRAIL_SPEED = DEFAULT_CONFIG.maxSpeed * 1.1;
+const trailSpeed = (): number => shape().maxSpeed * 1.1;
 
 export interface GhostStyle {
   ownId: number | null; // the ghost this client steers, marked clearly
@@ -48,12 +48,11 @@ export interface GhostStyle {
   labelAll: boolean; // every ghost named (spectators, the viewer)
   fuse: number; // the bombs' fuse: 1 full … 0 going off (fuseLeft in modes.ts)
   ownPulseMs?: number | null; // since the own ghost's pulse began (own.ts), null: none
-  airMs?: number; // a jump's time in the air (the live tuning's), for the arc; else the default
 }
 
 export function ghostRadiusPx(v: View): number {
-  // The game core's size; at least 4 px, so a ghost stays visible on a small phone.
-  return Math.max(4, DEFAULT_CONFIG.ghostRadius * v.scale);
+  // The match's size; at least 4 px, so a ghost stays visible on a small phone.
+  return Math.max(4, shape().ghostRadius * v.scale);
 }
 
 const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
@@ -67,7 +66,7 @@ interface Aloft {
 }
 
 function aloft(g: GhostState, style: GhostStyle): Aloft {
-  const t = style.trails.air(g.id, style.nowMs, style.airMs ?? DEFAULT_CONFIG.jump.airMs);
+  const t = style.trails.air(g.id, style.nowMs, shape().jump.airMs);
   if (t === null) return { g, real: g, h: 0 };
   const h = arcHeight(t);
   return { g: { ...g, ...lifted(g, h) }, real: g, h };
@@ -81,7 +80,7 @@ export function drawGhosts(
 ): PlacedLabel[] {
   const shown = ghosts.filter(visible).map((g) => aloft(g, style));
   for (const { real, h } of shown) {
-    if (Math.hypot(real.vx, real.vy) > TRAIL_SPEED && !(real.flags & GHOST_FALLING)) {
+    if (Math.hypot(real.vx, real.vy) > trailSpeed() && !(real.flags & GHOST_FALLING)) {
       drawTrail(v, real, style.trails);
     }
     // On the ground: the shadow of one in the air, the ring of a take-off or a landing.

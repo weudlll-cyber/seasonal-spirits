@@ -4,15 +4,15 @@
 // GAME_MODES, sumo's variant as STATE_LAST_STANDING.
 
 import {
-  DEFAULT_CONFIG,
+  DEFAULT_SETTINGS,
   GAME_MODES,
-  modeConfig,
+  configFrom,
   seasonsInMatch,
-  tunedFields,
   type GameConfig,
   type GameMode,
+  type Settings,
 } from '@seasonal-spirits/game-core';
-import { STATE_LAST_STANDING, type Tuning } from '@seasonal-spirits/protocol';
+import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
 
 export interface ModeWords {
   name: string;
@@ -70,9 +70,8 @@ export function matchName(s: { mode: number; flags: number }): string {
 // The mode's config as the clients know it (the server's is the truth; the clients need its
 // walls, its season count and its season length for drawing and their prediction), with the
 // owner's live tuning when the server sent one (development only).
-export function clientConfig(index: number, tuning: Tuning | null = null): GameConfig {
-  const cfg = modeConfig(DEFAULT_CONFIG, modeOf(index));
-  return tuning ? { ...cfg, ...tunedFields(tuning) } : cfg;
+export function clientConfig(index: number, tuning: Settings | null = null): GameConfig {
+  return configFrom(tuning ?? DEFAULT_SETTINGS, modeOf(index));
 }
 
 export function seasonsOf(index: number): number {

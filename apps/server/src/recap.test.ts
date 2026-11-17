@@ -3,7 +3,7 @@
 // pause; never while a match runs. A 1 s match keeps the real server test short.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type MatchResult, type PlayerResult } from '@seasonal-spirits/game-core';
+import { DEFAULT_SETTINGS, type MatchResult, type PlayerResult } from '@seasonal-spirits/game-core';
 import { STATE_RESULT, parseServerMessage, type ServerRecap } from '@seasonal-spirits/protocol';
 import type WebSocket from 'ws';
 import { MatchHost } from './match-host.js';
@@ -11,7 +11,8 @@ import { recapOf } from './recap.js';
 import type { GameServer } from './server.js';
 import { connect, nthState, player, startServer } from './test-client.js';
 
-const SHORT = { ...DEFAULT_CONFIG, seasonDurationMs: 250, matchDurationMs: 1000 };
+// Short sumo matches: four seasons of 0.25 s.
+const SHORT = { ...DEFAULT_SETTINGS, sumoSeason: 0.25, sumoMatch: 1 };
 
 let server: GameServer | null = null;
 afterEach(async () => {
@@ -77,7 +78,7 @@ describe('match recap', () => {
   });
 
   it('is offered once at the end, during the pause for latecomers, never while a match runs', () => {
-    const host = new MatchHost({ ...SHORT, resultPauseMs: 500 }, 8, 1);
+    const host = new MatchHost({ ...SHORT, teamSize: 2, resultPause: 0.5 }, 1);
     const fresh: number[] = [];
     let duringMatch = 0;
     for (let t = 50; t <= 1600; t += 50) {
@@ -90,7 +91,7 @@ describe('match recap', () => {
   });
 
   it('reaches every client at the end, and a spectator who arrives in the pause', async () => {
-    server = await startServer({ game: { ...SHORT, resultPauseMs: 3000 } });
+    server = await startServer({ settings: { ...SHORT, teamSize: 1, resultPause: 3 } });
     const { ws } = await player(server);
     const recap = await nextRecap(ws);
     expect(recap.players.length).toBe(4);

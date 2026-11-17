@@ -147,16 +147,18 @@ function modeChecks(cfg: GameConfig, r: Seen): SanityCheck[] {
     return [
       { name: 'nobody falls inside the walls', ok: fell === 0, detail: `${fell} falls` },
       {
-        name: 'always one bomb per 8 players, each with its own carrier',
+        name: `always one bomb per ${String(cfg.bomb.playersPerBomb)} players, each with its own carrier`,
         ok: !r.badBombs,
         detail: 'checked after every tick',
       },
     ];
   }
-  const start = cfg.mode === 'sumo' ? cfg.arenaRadius : cfg.hill.zoneRadius;
-  const off = r.halvings.map((h, k) => Math.abs((h.size ?? 0) - start * Math.SQRT1_2 ** (k + 1)));
+  const sumo = cfg.mode === 'sumo';
+  const start = sumo ? cfg.arenaRadius : cfg.hill.zoneRadius;
+  const shrink = sumo ? cfg.sumo.shrink : cfg.hill.shrink;
+  const off = r.halvings.map((h, k) => Math.abs((h.size ?? 0) - start * shrink ** (k + 1)));
   const halves = {
-    name: `the ${cfg.mode === 'sumo' ? 'arena' : 'zone'} halves its area at each halving`,
+    name: `the ${sumo ? 'arena' : 'zone'} shrinks by its setting at each halving`,
     ok: off.every((d) => d < 1e-6),
     detail: r.halvings.map((h) => (h.size ?? 0).toFixed(1)).join(' → '),
   };

@@ -1,7 +1,8 @@
 // Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
-// The server's own bots fill all 32 slots; Sumo only, Points and Last One Standing in turn
-// (SUMO_VARIANT=alternate; GAME_MODE=rotate brings in the other modes); the viewer carries the
-// owner's live tuning sliders (DEV_TUNING=1).
+// The server's own bots fill all 32 seats; the modes take turns — Sumo Points, King of the
+// Season, Halving Bomb, Sumo Last One Standing (GAME_MODE=rotate) — unless the admin panel's last
+// loaded preset says otherwise (NIGHT 2026-11-18); the viewer carries the admin panel
+// (DEV_TUNING=1).
 // Starts all three as hidden background processes (no windows on Windows, the same on Linux
 // and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
 // tmp/dev-pids.json, and stops exactly those PIDs again. `pnpm dev --lan` (development only,
@@ -17,6 +18,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The admin panel's last loaded preset (apps/server presets.ts), if any.
+const lastPreset = () => fs.existsSync(path.join(ROOT, 'data/presets/last-loaded.txt'));
 const PID_FILE = path.join(ROOT, 'tmp', 'dev-pids.json');
 const SERVER_PORT = 3930;
 const CLIENT_PORT = 5930;
@@ -161,13 +164,12 @@ async function start(lan) {
     'server',
     'apps/server',
     ['--import', 'tsx', 'src/main.ts'],
-    // Sumo, its two variants in turn (LIVES 2026-11-17: the owner's dev default); GAME_MODE=rotate
-    // lets the modes take turns. DEV_TUNING: the owner's live sliders in the viewer
-    // (docs/SERVER.md, "Live tuning").
+    // Every mode in turn, unless a preset was loaded last (the server starts with it) or the
+    // caller names GAME_MODE (passed on as it is). DEV_TUNING: the admin panel in the viewer
+    // (docs/SERVER.md, "Settings and presets").
     {
       HOST: host,
-      GAME_MODE: process.env.GAME_MODE ?? 'sumo',
-      SUMO_VARIANT: process.env.SUMO_VARIANT ?? 'alternate',
+      ...(lastPreset() ? {} : { GAME_MODE: process.env.GAME_MODE ?? 'rotate' }),
       DEV_TUNING: '1',
       VIEWER_PORT: String(VIEWER_PORT),
     },

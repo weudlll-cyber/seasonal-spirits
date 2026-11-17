@@ -5,8 +5,14 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import { GameServer, envInt, refuseProduction, type ServerMetrics } from '@seasonal-spirits/server';
+import { DEFAULT_CONFIG, DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
+import {
+  GameServer,
+  envInt,
+  refuseProduction,
+  teamSizeFromEnv,
+  type ServerMetrics,
+} from '@seasonal-spirits/server';
 import { spawnBots } from './bot.js';
 import {
   evaluateCriteria,
@@ -20,6 +26,8 @@ import { HeadlessSpectator } from './spectator.js';
 
 const env = process.env;
 refuseProduction(env, 'The probe');
+// GHOSTS seats (4–48, a multiple of 4), the server's own rule (start-settings.ts).
+const teamSize = teamSizeFromEnv(env) ?? DEFAULT_SETTINGS.teamSize;
 
 const cfg: ProbeConfig = {
   port: envInt(env, 'PORT', 3930, [1, 65535]),
@@ -28,7 +36,7 @@ const cfg: ProbeConfig = {
   // (packages/game-core/src/config.ts).
   world: DEFAULT_CONFIG.fieldSize,
   speed: DEFAULT_CONFIG.dashSpeed + DEFAULT_CONFIG.knockSpeed,
-  maxGhosts: envInt(env, 'GHOSTS', 32, [4, 252]),
+  maxGhosts: 4 * teamSize,
   maxInputsPerSecond: envInt(env, 'MAX_INPUTS_PER_SECOND', 20, [1, 1000]),
   latencyMin: envInt(env, 'LATENCY_MIN', 100, [0, 10_000]),
   latencyMax: envInt(env, 'LATENCY_MAX', 200, [0, 10_000]),
@@ -43,8 +51,7 @@ async function main(): Promise<void> {
     port: cfg.port,
     host: '127.0.0.1', // server and every client of the probe run on this machine
     tickHz: cfg.tickHz,
-    game: DEFAULT_CONFIG,
-    maxGhosts: cfg.maxGhosts,
+    settings: { ...DEFAULT_SETTINGS, teamSize },
     maxInputsPerSecond: cfg.maxInputsPerSecond,
     // All bots and the spectator connect from this machine.
     maxConnectionsPerAddress: cfg.maxGhosts + 1,

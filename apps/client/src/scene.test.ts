@@ -10,7 +10,7 @@ import { stickZone } from './hud.js';
 import { camera, playArea } from './scene.js';
 
 const C = DEFAULT_CONFIG.fieldSize / 2;
-const HALVED = Math.SQRT1_2; // a halving's radius factor (game-core arena.ts HALF_AREA)
+const HALVED = DEFAULT_CONFIG.sumo.shrink; // a halving's radius factor (the setting)
 const DASH = 96; // index.html #dash, 16 px from the bottom right corner
 const SCREENS = [
   { width: 1918, height: 945, touch: false },

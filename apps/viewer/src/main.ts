@@ -1,11 +1,12 @@
 // Seasonal Spirits — browser viewer: a spectator of the running match, as a debug view.
 // Connects through the artificial delay queue, interpolates the ghosts and draws the whole
 // match with the client's drawing (packages/render). The HUD shows the network numbers; they
-// are also exposed on window for Playwright checks. With the server's live tuning on (pnpm dev)
-// it carries the owner's sliders (tuning-panel.ts).
+// are also exposed on window for Playwright checks. With the server's admin settings endpoint on
+// (pnpm dev) it carries the admin panel (admin-panel.ts); it draws with the settings in force.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { DEFAULT_SETTINGS, type Settings } from '@seasonal-spirits/game-core';
 import {
+  ADMIN_SETTINGS_PATH,
   DelayQueue,
   JumpDetector,
   PerMinuteCounter,
@@ -23,10 +24,12 @@ import {
   drawClock,
   drawField,
   drawGhosts,
+  clientConfig,
   fuseLeft,
   fitField,
+  useShape,
 } from '@seasonal-spirits/render';
-import { startTuningPanel } from './tuning-panel.js';
+import { startAdminPanel } from './admin-panel.js';
 
 declare const __SERVER_WS_URL__: string;
 declare const __SERVER_HTTP_URL__: string;
@@ -56,14 +59,14 @@ const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const trails = new Trails();
 // The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump); with the
-// live tuning, as the sliders set them.
-const fastest = (t: { dashSpeed: number; knockSpeed: number }): JumpDetector =>
-  new JumpDetector({ speedUnitsPerSecond: t.dashSpeed + t.knockSpeed });
-let jumpDetector = fastest(DEFAULT_CONFIG);
-let airMs = DEFAULT_CONFIG.jump.airMs; // a jump's time in the air: the arc it is drawn on
-void startTuningPanel(`${__SERVER_HTTP_URL__}/dev/tune`, tuningRoot, (t) => {
-  jumpDetector = fastest(t);
-  airMs = t.jumpMs;
+// settings the panel shows.
+const fastest = (s: Settings): JumpDetector =>
+  new JumpDetector({ speedUnitsPerSecond: s.dashSpeed + s.knockSpeed });
+let settings: Settings = DEFAULT_SETTINGS;
+let jumpDetector = fastest(settings);
+void startAdminPanel(`${__SERVER_HTTP_URL__}${ADMIN_SETTINGS_PATH}`, tuningRoot, (s) => {
+  settings = s;
+  jumpDetector = fastest(s);
 });
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
@@ -116,6 +119,7 @@ function frame(): void {
 
   // Ghosts are interpolated; the field, the bombs' fuse and the clock come from the newest state.
   const latest = buffer.at(-1)?.state;
+  if (latest) useShape(clientConfig(latest.mode, settings));
   trails.record(ghosts, now);
   drawField(fitField(ctx, CLOCK_HEIGHT), latest);
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
@@ -124,7 +128,6 @@ function frame(): void {
     nowMs: now,
     labelAll: true,
     fuse: latest ? fuseLeft(latest) : 1,
-    airMs,
   });
   drawClock(ctx, latest);
 

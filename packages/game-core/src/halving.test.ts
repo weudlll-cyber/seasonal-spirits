@@ -30,22 +30,22 @@ describe('halving', () => {
     ]);
     targets.forEach((t, k) => {
       // Area × ½ each time: radius × 1/√2.
-      expect(t).toBeCloseTo(r * Math.SQRT1_2 ** (k + 1), 6);
+      expect(t).toBeCloseTo(r * cfg.sumo.shrink ** (k + 1), 6);
     });
   });
 
   it('eases the edge in over arenaShrinkMs, and shows the next edge before it', () => {
     const m = matchOf(cfg, one);
     const r = cfg.arenaRadius;
-    expect(nextRadius(m.state.arena)).toBeCloseTo(r * Math.SQRT1_2, 6);
+    expect(nextRadius(cfg, m.state.arena)).toBeCloseTo(r * cfg.sumo.shrink, 6);
     runTo(m, 75_000);
     expect(m.state.arena.radius).toBeGreaterThan(r * 0.99);
     runTo(m, 75_000 + cfg.arenaShrinkMs / 2);
     const mid = m.state.arena.radius;
     expect(mid).toBeLessThan(r * 0.9);
-    expect(mid).toBeGreaterThan(r * Math.SQRT1_2 * 1.05);
+    expect(mid).toBeGreaterThan(r * cfg.sumo.shrink * 1.05);
     runTo(m, 75_000 + cfg.arenaShrinkMs);
-    expect(m.state.arena.radius).toBeCloseTo(r * Math.SQRT1_2, 6);
+    expect(m.state.arena.radius).toBeCloseTo(r * cfg.sumo.shrink, 6);
   });
 });
 

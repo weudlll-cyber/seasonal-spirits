@@ -1,27 +1,29 @@
-// Seasonal Sumo — the match server's game side: 32 slots, who steers each, match after match,
-// and each match's game mode: the modes given take turns (development: sumo → hill → bomb →
-// sumo …), and each sumo match's variant: the config's, or Points and Last One Standing in
-// turn ("alternate"). Every slot holds a ghost; a bot steers it until a player joins, and again
-// when a player has been gone for reconnectGraceMs. Seats are filled at the start only: a ghost
-// out of lives stays out until the next match. The game core decides everything; this file only
-// routes intents in (wire.ts turns the core's state into the wire state).
+// Seasonal Sumo — the match server's game side: the seats, who steers each, match after match,
+// and each match's mode and sumo variant from the rotation (settings rotation1…6; "alternate"
+// takes Points and Last One Standing in turn). Every number comes from the settings (game-core
+// settings.ts, NIGHT 2026-11-18): those that apply at once reach the running match on a change
+// (tune), the rest wait for the next match. Every seat holds a ghost; a bot steers it until a
+// player joins, and again when a player has been gone for reconnectGraceMs. Seats are filled at a
+// match's start only (teamSize per team): a ghost out of lives stays out until the next match.
+// The game core decides everything; this file only routes intents in (wire.ts turns the core's
+// state into the wire state).
 
 import {
   Match,
   SUMO_VARIANTS,
   botRoster,
   botSeed,
+  configFrom,
   createBot,
-  modeConfig,
-  tunedFields,
+  nowPart,
+  rotationOf,
   type Bot,
   type GameConfig,
-  type GameMode,
   type Intent,
   type MatchEvent,
   type Roster,
+  type Settings,
   type SumoVariant,
-  type Tunable,
 } from '@seasonal-spirits/game-core';
 import type { GameAction, ServerRecap } from '@seasonal-spirits/protocol';
 import { recapOf } from './recap.js';
@@ -34,13 +36,24 @@ type Controller =
   | { kind: 'player'; clientId: number; dx: number; dy: number; action: GameAction | null }
   | { kind: 'standing'; since: number }; // a player left; the ghost waits for the grace time
 
+// `target` takes `source`'s values in place, nested objects and arrays included: the running
+// match, its rules and its bots keep reading the same config object.
+function refresh(target: Record<string, unknown>, source: Record<string, unknown>): void {
+  for (const [k, v] of Object.entries(source)) {
+    const t = target[k];
+    if (typeof v === 'object' && v !== null && typeof t === 'object' && t !== null) {
+      refresh(t as Record<string, unknown>, v as Record<string, unknown>);
+    } else target[k] = v;
+  }
+}
+
 export class MatchHost {
-  private readonly base: GameConfig;
-  private readonly modes: readonly GameMode[];
-  private cfg: GameConfig; // of the running match: the base with its mode's times
+  private wanted: Settings; // the latest settings: the next match starts with them
+  private running: Settings; // the running match's: its start's, with the at-once changes
+  private cfg: GameConfig; // the running match's config, built from `running`
   private matchNumber = 0;
   private sumoMatches = 0; // sumo matches started: "alternate" takes the variants in turn
-  private readonly roster: Roster[];
+  private roster: Roster[] = [];
   private readonly control = new Map<number, Controller>();
   private match: Match;
   private seed: number;
@@ -48,22 +61,19 @@ export class MatchHost {
   private resultUntil: number | null = null;
   private lastEvents: readonly MatchEvent[] = []; // of the tick just run
   private recap: ServerRecap | null = null; // of the match just ended, during the result pause
+  private told = false; // the clients know the running settings
 
-  // `modes` take turns match by match; the base config's own mode alone by default.
-  constructor(base: GameConfig, slots: number, firstSeed: number, modes?: readonly GameMode[]) {
-    // Its own copy, its sumo and jump settings too: the live tuning changes them in place (tune).
-    this.base = { ...base, sumo: { ...base.sumo }, jump: { ...base.jump } };
-    this.modes = modes && modes.length > 0 ? modes : [base.mode];
-    this.cfg = this.configFor(0);
-    this.roster = botRoster(slots);
+  constructor(settings: Settings, firstSeed: number) {
+    this.wanted = settings;
+    this.running = settings;
     this.seed = firstSeed;
+    this.cfg = configFrom(settings, rotationOf(settings)[0]?.mode ?? 'sumo');
     this.match = this.newMatch();
-    for (const r of this.roster) this.control.set(r.id, this.botFor(r.id));
   }
 
   // A joining player replaces a bot on the team with the fewest players — a bot whose ghost
   // still has lives when there is one (else the player watches until the next match); null
-  // when every slot is a player or a standing ghost.
+  // when every seat is a player or a standing ghost.
   join(clientId: number): { ghost: number; team: number } | null {
     const taken = this.takenPerTeam();
     const bots = this.roster.filter((r) => this.control.get(r.id)?.kind === 'bot');
@@ -100,19 +110,46 @@ export class MatchHost {
     if (c) c.action = action;
   }
 
-  // The owner's live tuning (development only; server.ts checks who asks): the base, the running
-  // match, its rules and its bots all read this one config object (and one sumo settings object),
-  // so the change holds from the next tick on and for every later match; the running arena eases
-  // to its new size. Lives and the variant are read when a match starts: from the next match.
-  // The jump's switch, time and cooldown hold at once (one jump settings object, like sumo's).
-  tune(t: Tunable): void {
-    const { sumo, jump, ...fields } = tunedFields(t);
-    const factor = fields.arenaRadius / this.base.arenaRadius;
-    Object.assign(this.base, fields);
-    Object.assign(this.base.sumo, sumo);
-    Object.assign(this.base.jump, jump);
-    if (this.cfg !== this.base) Object.assign(this.cfg, fields);
-    this.match.rescaleArena(factor);
+  // New settings (the admin panel; server.ts checks who asks — the caller has validated them):
+  // the next match starts with all of them; the running match takes those that apply at once,
+  // its arena easing to a new size, its bots rebuilt with the new numbers.
+  tune(settings: Settings): void {
+    this.wanted = settings;
+    const before = this.running;
+    this.running = nowPart(before, settings);
+    refresh(
+      this.cfg as unknown as Record<string, unknown>,
+      configFrom(this.running, this.cfg.mode) as unknown as Record<string, unknown>,
+    );
+    if (this.running.arenaRadius !== before.arenaRadius) {
+      this.match.rescaleArena(this.running.arenaRadius / before.arenaRadius);
+    }
+    for (const [ghost, c] of this.control) {
+      if (c.kind === 'bot') this.control.set(ghost, this.botFor(ghost));
+    }
+    this.told = false;
+  }
+
+  // The settings the clients play by now, once after each change (the tuning message); null
+  // when they know them already.
+  settingsToTell(): Settings | null {
+    if (this.told) return null;
+    this.told = true;
+    return this.running;
+  }
+
+  // The settings in force now: for a client that says hello.
+  settingsInForce(): Settings {
+    return this.running;
+  }
+
+  // The settings the next match starts with: what the admin panel shows.
+  settingsWanted(): Settings {
+    return this.wanted;
+  }
+
+  seats(): number {
+    return this.roster.length;
   }
 
   players(): number {
@@ -142,38 +179,53 @@ export class MatchHost {
     return this.wire(s.events, s.ended ? this.cfg.resultPauseMs : 0);
   }
 
-  // A new match: the next mode, same slots and players, a fresh seed, everyone back at the
-  // start; the bots get the new mode's brain.
+  // A new match: the next in the rotation, with the latest settings, a fresh seed, everyone back
+  // at the start; the bots get the new mode's brain.
   private nextMatch(): void {
     this.resultUntil = null;
     this.recap = null;
     this.seed++;
     this.matchNumber++;
-    this.cfg = this.configFor(this.matchNumber);
+    this.running = this.wanted;
     this.match = this.newMatch();
-    for (const [ghost, c] of this.control) {
-      if (c.kind === 'bot') this.control.set(ghost, this.botFor(ghost));
-    }
   }
 
-  // The match of this.cfg and this.seed; a sumo match plays the variant chosen — in turn for
-  // "alternate", Points first.
+  // The match of `running` and this.seed: the rotation's slot for this match number, its sumo
+  // variant — in turn for "alternate", Points first —, the seats for the team size.
   private newMatch(): Match {
+    const rotation = rotationOf(this.running);
+    const slot = rotation[this.matchNumber % rotation.length] ?? {
+      mode: 'sumo',
+      variant: 'points',
+    };
+    this.cfg = configFrom(this.running, slot.mode);
     let variant: SumoVariant = 'points';
-    if (this.cfg.mode === 'sumo') {
-      const choice = this.base.sumo.variant;
+    if (slot.mode === 'sumo') {
       const turn = SUMO_VARIANTS[this.sumoMatches % SUMO_VARIANTS.length] ?? 'points';
-      variant = choice === 'alternate' ? turn : choice;
+      variant = slot.variant === 'alternate' ? turn : slot.variant;
       this.sumoMatches++;
     }
-    return new Match(this.cfg, this.seed, this.roster, variant);
+    this.seat(4 * this.running.teamSize);
+    this.told = false;
+    const match = new Match(this.cfg, this.seed, this.roster, variant);
+    // A bot for every seat no player holds: a new one, or the new mode's brain.
+    for (const r of this.roster) {
+      const c = this.control.get(r.id);
+      if (!c || c.kind === 'bot') this.control.set(r.id, this.botFor(r.id));
+    }
+    return match;
   }
 
-  // The base config as it is for its own mode (a test may have shortened it), else the base
-  // with the mode's own times (the sumo settings shared).
-  private configFor(matchNumber: number): GameConfig {
-    const mode = this.modes[matchNumber % this.modes.length] ?? this.base.mode;
-    return mode === this.base.mode ? this.base : modeConfig(this.base, mode);
+  // `count` seats (slot i is team i mod 4); a seat a player holds, or stands in, is kept even past
+  // the count, so nobody loses a ghost when the team size shrinks.
+  private seat(count: number): void {
+    const held = this.roster.filter((r) => this.control.get(r.id)?.kind !== 'bot');
+    const seats = botRoster(count);
+    for (const r of held) if (!seats.some((s) => s.id === r.id)) seats.push(r);
+    for (const id of this.control.keys()) {
+      if (!seats.some((s) => s.id === id)) this.control.delete(id);
+    }
+    this.roster = seats.sort((a, b) => a.id - b.id);
   }
 
   // The match recap for every client: `fresh` only in the tick the match ended (sent to all);
@@ -210,7 +262,7 @@ export class MatchHost {
     });
   }
 
-  // Slots per team held by a player or a standing ghost.
+  // Seats per team held by a player or a standing ghost.
   private takenPerTeam(): number[] {
     const taken = [0, 0, 0, 0];
     for (const r of this.roster) {

@@ -1,11 +1,17 @@
 // Seasonal Sumo — helpers for the game-core tests: a match, a ghost by id, placing ghosts.
 // Test-only; not exported from the package index.
 
-import { DEFAULT_CONFIG, type GameConfig } from './config.js';
+import { DEFAULT_CONFIG, configFrom, type GameConfig, type GameMode } from './config.js';
 import { Match, type Roster } from './match.js';
+import { DEFAULT_SETTINGS } from './settings.js';
 import type { Ghost, Intent } from './types.js';
 
 export const cfg: GameConfig = DEFAULT_CONFIG;
+
+// A mode's config with the default settings.
+export function modeCfg(mode: GameMode): GameConfig {
+  return configFrom(DEFAULT_SETTINGS, mode);
+}
 
 export function matchOf(c: GameConfig, roster: Roster[]): Match {
   return new Match(c, 1, roster);

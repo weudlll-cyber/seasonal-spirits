@@ -26,6 +26,22 @@ reaction, noise and dash gap of 3 s, the bots' `dashRange`, set for the old 900 
 of the time in clumps —, and their edge share (OPEN ad); the walls, the zone's size, the bomb count
 and the times of hill and bomb).
 
+af. **An admin area inside the game itself** (owner decision 2026-11-17, CONCEPT.md section 16):
+an admin area inside the game itself — the settings schema, panel and presets behind the game's
+own admin login — following the admin pattern of Seasonal Bingo Royale and Seasonal Mini Games
+(read their docs and code read-only before designing it; do not invent a different one); the
+tuning channel stays dev-only until that admin login exists. Read on 2026-11-18 (read-only):
+Bingo Royale `docs/spec/11-admin-panel.md`, `docs/spec/03-security-architecture.md`,
+`docs/spec/05-api-design.md`, `apps/admin/src/index.ts`, `apps/server/src/cli.ts`; Mini Games
+`docs/spec/08-admin-settings.md`, `docs/spec/05-security-threat-model.md`,
+`docs/spec/06-data-model-api-realtime.md`, `apps/server/src/http/routes/adminGuard.ts`,
+`apps/server/src/http/routes/adminSettings.ts`, `apps/admin/src/settings/SettingsPage.tsx`. Their
+pattern: admin accounts with roles, argon2id and mandatory TOTP, a `__Host-` session cookie,
+CSRF token, step-up for writes, one permission guard per route, routes under
+`/api/v1/admin/…`, a separate admin app at `/admin`, settings stored versioned and audited.
+Prepared here: one endpoint (`/api/v1/admin/settings`) and one access check (`adminAccess`).
+Done when: the game has that admin login and the endpoint sits behind it, outside development.
+
 ad. **The bots' edge margin in a shrinking arena** (FIX 2026-11-17-4, seeded 32-bot runs,
 seeds 1–10): it is min(140 with each bot's slack, `bots.edgeShare` × radius); one share trades
 full-length matches against Last One Standing without a time limit ending — 0.35: 4 of 10 end
@@ -688,6 +704,23 @@ Done when: the spec is green ten runs in a row.
   state's `GHOST_DODGED`); the halving and blast banner a slim strip under the band — commit
   "feat: the jump clearly visible; banners out of the way".
 
+- 2026-11-18 — **Night piece 3: every gameplay value a setting** (owner: as much of the play as
+  possible controlled by settings in an admin area; ADDENDUM: the game's own admin area): one
+  schema (game-core `settings.ts`, `settings-list.ts`: 83 settings in six groups) is the single
+  source; the config is built from it (`configFrom`; `modeConfig`, `tunedFields`, `tuningOf`
+  and `MODE_TIMES` removed); `readSettings` for the server and the clients (protocol's
+  `tuning.ts` with its own list removed); the docs table generated (`pnpm settings:doc`,
+  docs/SETTINGS.md); the host on settings — now-values in the running match, the rest from the
+  next, the rotation (`rotationOf`) and the seats (`teamSize`) from them; the endpoint
+  `/api/v1/admin/settings` with one access check (`adminAccess`; `tuning-route.ts` became
+  `admin-settings.ts`), named presets in `data/presets/` (`presets.ts`), the starting settings
+  (`start-settings.ts`, `PRESET`); the panel generated from the schema (`admin-panel.ts`,
+  grouped, units, now/next, Reset per group, presets; the copy line removed); the drawing with
+  the settings in force (render `shape.ts`); numbers that were constants in code made settings
+  (the halving shrink, points per second, the blast's share, the respawn band, four bot brain
+  shapes); THREATS rows 39 and 42; CONCEPT.md section 16 — commit "feat: every gameplay value a
+  setting, with presets".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -962,3 +995,5 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | CI and CodeQL on GitHub                                                                                                                                                                   | `c375410` on `proto/sumo`                                                                                                                 | verify, e2e, CodeQL success; `dependencies` picomatch (OPEN ab) (CI 44189300517)                                                                                                                                                    | `gh run list --branch proto/sumo`                                                              |
 | 2026-11-18 | jump top, "Dodged!" and the banner on `pnpm dev` (15 s seasons, desktop 1280 × 860 and phone 390 × 844, scratch Playwright script with a spectator watching for the dodge flag)           | working tree of night pieces 1–2                                                                                                          | arc, shadow and ground ring seen; a dodge flagged and "Dodged!" drawn; the banner a strip under the band at both sizes                                                                                                              | `reports/screens/latest/*-jump-top.png`, `*-dodged.png`, `*-banner.png`                        |
 | 2026-11-18 | `pnpm verify:changed` (format, lint, typecheck; all tests: 43 files / 251 tests)                                                                                                          | same tree                                                                                                                                 | green after splitting a long test block; one run before: `packs.test.ts` past its 20 s with `pnpm dev` running (alone 12.6 s, as on `c375410`)                                                                                      | this commit                                                                                    |
+| 2026-11-18 | the admin panel on `pnpm dev` (scratch Playwright script): groups, a change into play, preset save/load/delete, Reset per group, a foreign page                                           | working tree of night piece 3                                                                                                             | 6 groups, 83 controls; walking speed 240 → 300 reached the server; preset saved, loaded back after a change, deleted; Reset General back to 240; foreign `Origin` 403                                                               | `reports/screens/latest/panel-*.png`                                                           |
+| 2026-11-18 | `pnpm verify:changed` (format, lint, typecheck; all tests: 45 files / 262 tests)                                                                                                          | working tree of night piece 3                                                                                                             | green after lint splits (schema file, `configFrom`, `startSettings`, panel) and regenerating docs/SETTINGS.md (its test caught a range); before: `packs.test.ts` failed once beside the suite, alone 7.4 s                          | this commit                                                                                    |

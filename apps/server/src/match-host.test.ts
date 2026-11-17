@@ -1,14 +1,13 @@
-// Seasonal Sumo — the match host: bots fill slots, players replace them, matches, modes and
-// sumo's variants follow, the owner's live tuning applies in the running match (lives and the
-// variant from the next). Time is the dt passed in; nothing here waits.
+// Seasonal Sumo — the match host: bots fill seats, players replace them, matches, modes and
+// sumo's variants follow the rotation, a change of the settings applies in the running match
+// (lives, the variant and the seats from the next). Time is the dt passed in; nothing waits.
 
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CONFIG,
-  GAME_MODES,
-  modeConfig,
-  tuningOf,
-  type GameConfig,
+  DEFAULT_SETTINGS,
+  configFrom,
+  type Settings,
 } from '@seasonal-spirits/game-core';
 import {
   GHOST_BOMB,
@@ -33,16 +32,24 @@ function runFor(host: MatchHost, ms: number): WireState[] {
   return out;
 }
 
+// A host with the default settings, `over` changed, and `seats` seats (four per team size).
+function hostOf(seats: number, over: Partial<Settings> = {}): MatchHost {
+  return new MatchHost({ ...DEFAULT_SETTINGS, teamSize: seats / 4, ...over }, 1);
+}
+
+// Short sumo matches: four seasons of 0.25 s.
+const SHORT: Partial<Settings> = { sumoSeason: 0.25, sumoMatch: 1 };
+
 describe('match host slots', () => {
   it('fills every slot with a bot until a player joins', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    const host = hostOf(32);
     const s = host.tick(50);
     expect(s.ghosts).toHaveLength(32);
     expect(s.ghosts.every((g) => g.flags & GHOST_BOT)).toBe(true);
   });
 
   it('lets a joining player replace a bot, spreading players over the teams', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    const host = hostOf(32);
     const teams = [1, 2, 3, 4].map((client) => host.join(client)?.team);
     expect(new Set(teams)).toEqual(new Set([0, 1, 2, 3]));
     expect(host.players()).toBe(4);
@@ -50,7 +57,7 @@ describe('match host slots', () => {
 
   // Owner requirement 2026-11-17: bots only fill seats; the four teams stay equal in size.
   it('keeps the teams equal: 8 seats each, humans spread evenly, a leaver back to a bot', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    const host = hostOf(32);
     const teams = Array.from({ length: 8 }, (_, c) => host.join(c + 1)?.team ?? -1);
     for (let t = 0; t < 4; t++) expect(teams.filter((x) => x === t)).toHaveLength(2);
     const s = host.tick(50);
@@ -63,14 +70,13 @@ describe('match host slots', () => {
   });
 
   it('refuses a player when every slot has one', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
+    const host = hostOf(4);
     for (let c = 1; c <= 4; c++) expect(host.join(c)).not.toBeNull();
     expect(host.join(5)).toBeNull();
   });
 
   it('keeps a left player’s ghost standing for the grace time, then a bot takes over', () => {
-    const cfg: GameConfig = { ...DEFAULT_CONFIG, reconnectGraceMs: 12_000 };
-    const host = new MatchHost(cfg, 4, 1);
+    const host = hostOf(4, { reconnectGrace: 12 });
     const slot = host.join(7);
     if (!slot) throw new Error('no slot');
     host.leave(7);
@@ -84,7 +90,7 @@ describe('match host slots', () => {
 
 describe('match host inputs', () => {
   it('moves the player’s ghost by its direction and ignores other clients', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
+    const host = hostOf(4);
     const slot = host.join(1);
     if (!slot) throw new Error('no slot');
     const x0 = host.tick(50).ghosts.find((g) => g.id === slot.ghost)?.x ?? NaN;
@@ -100,7 +106,7 @@ describe('match host inputs', () => {
   });
 
   it('dashes once per cooldown, however often the player sends it', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
+    const host = hostOf(4);
     const slot = host.join(1);
     if (!slot) throw new Error('no slot');
     host.steer(1, 1, 0);
@@ -123,7 +129,7 @@ describe('match host state size', () => {
       timeout: 20_000,
     },
     () => {
-      const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+      const host = hostOf(32);
       let max = 0;
       let halvings = 0;
       for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
@@ -133,7 +139,7 @@ describe('match host state size', () => {
       }
       expect(halvings).toBe(3);
       expect(max).toBeLessThan(1024);
-      // The state has no variable part but the ghosts: 46 + 15 · 32.
+      // The state has no variable part but the ghosts: 46 + 16 · 32.
       expect(max).toBe(encodedSize(32));
     },
   );
@@ -141,11 +147,11 @@ describe('match host state size', () => {
 
 // The clock over a whole match: lives enough that no early end cuts it short (LIVES and FIX
 // 2026-11-17: with 3 lives the bots may knock out all but one team before 5:00).
-const CLOCK = { ...DEFAULT_CONFIG, sumo: { ...DEFAULT_CONFIG.sumo, lives: 99 } };
+const CLOCK: Partial<Settings> = { lives: 99 };
 
 describe('match host lifecycle', () => {
   it('flags each of the three halvings in exactly one tick, with the new season', () => {
-    const host = new MatchHost(CLOCK, 8, 1);
+    const host = hostOf(8, CLOCK);
     const states = runFor(host, DEFAULT_CONFIG.matchDurationMs);
     const flagged = states.filter((s) => s.flags & STATE_HALVING_EVENT);
     expect(flagged.map((s) => [s.matchMs, s.season])).toEqual([
@@ -156,7 +162,7 @@ describe('match host lifecycle', () => {
   });
 
   it('counts down to the match end in the last season and flags the end in one state', () => {
-    const host = new MatchHost(CLOCK, 8, 1);
+    const host = hostOf(8, CLOCK);
     const states = runFor(host, DEFAULT_CONFIG.matchDurationMs + 1000);
     const lastSeason = 3 * DEFAULT_CONFIG.seasonDurationMs;
     const toEnd = states.filter((s) => s.flags & STATE_TO_END);
@@ -170,12 +176,12 @@ describe('match host lifecycle', () => {
     ]);
   });
 
-  it('rotates the modes match by match when asked, each with its own rules and bots', () => {
-    const short = { ...DEFAULT_CONFIG, seasonDurationMs: 250, matchDurationMs: 1000 };
-    const host = new MatchHost({ ...short, resultPauseMs: 500 }, 8, 1, GAME_MODES);
+  it('rotates the modes match by match as the rotation asks, each with its own rules and bots', () => {
+    const rotation = { rotation1: 1, rotation2: 4, rotation3: 5 }; // Sumo, King, Bomb
+    const host = hostOf(8, { ...SHORT, resultPause: 0.5, ...rotation });
     const modes: number[] = [];
     let carriers = new Set<number>();
-    const hill = modeConfig(DEFAULT_CONFIG, 'hill').matchDurationMs;
+    const hill = configFrom(DEFAULT_SETTINGS, 'hill').matchDurationMs;
     for (const s of runFor(host, 1000 + 500 + hill + 500 + 1000)) {
       if (modes.at(-1) !== s.mode) modes.push(s.mode);
       if (s.mode === 2)
@@ -188,13 +194,13 @@ describe('match host lifecycle', () => {
   });
 
   it('shows the result for the pause, then starts the next match with the same players', () => {
-    const cfg: GameConfig = { ...DEFAULT_CONFIG, resultPauseMs: 15_000 };
-    const host = new MatchHost(cfg, 8, 1);
+    const pauseMs = 15_000;
+    const host = hostOf(8, { resultPause: pauseMs / 1000 });
     host.join(1);
-    const states = runFor(host, cfg.matchDurationMs + cfg.resultPauseMs + 100);
+    const states = runFor(host, DEFAULT_CONFIG.matchDurationMs + pauseMs + 100);
     // The match may end before its time limit (lives: one team left); the pause follows its end.
     const end = states.findIndex((s) => s.flags & STATE_MATCH_END_EVENT);
-    const pause = cfg.resultPauseMs / 50;
+    const pause = pauseMs / 50;
     const after = states.slice(end, end + pause + 1);
     expect(after.slice(0, pause).every((s) => s.flags & STATE_RESULT)).toBe(true);
     const next = after.at(-1);
@@ -207,11 +213,8 @@ describe('match host lifecycle', () => {
 // LIVES 2026-11-17: Points and Last One Standing in turn; a ghost out of lives is not handed
 // to a joining player while one with lives is free.
 describe('match host sumo variants and lives', () => {
-  const short = { ...DEFAULT_CONFIG, seasonDurationMs: 250, matchDurationMs: 1000 };
-
   it('alternates Points and Last One Standing match by match, Points first', () => {
-    const sumo = { ...short.sumo, variant: 'alternate' as const };
-    const host = new MatchHost({ ...short, sumo, resultPauseMs: 500 }, 8, 1);
+    const host = hostOf(8, { ...SHORT, resultPause: 0.5, variant: 2 }); // alternate
     const variants: number[] = [];
     for (const s of runFor(host, 3 * 1500)) {
       const v = s.flags & STATE_LAST_STANDING;
@@ -221,9 +224,10 @@ describe('match host sumo variants and lives', () => {
   });
 
   it('takes lives and the variant from the next match on, the halving setting at once', () => {
-    const host = new MatchHost({ ...short, resultPauseMs: 500 }, 8, 1);
+    const start = { ...DEFAULT_SETTINGS, teamSize: 2, ...SHORT, resultPause: 0.5 };
+    const host = new MatchHost(start, 1);
     host.tick(50);
-    host.tune({ ...tuningOf(short), lives: 5, variant: 1, afterLast: 1 });
+    host.tune({ ...start, lives: 5, variant: 1, afterLast: 1 });
     const running = host.tick(50);
     expect(running.livesAtStart).toBe(3);
     expect(running.flags & STATE_LAST_STANDING).toBe(0);
@@ -238,8 +242,7 @@ describe('match host sumo variants and lives', () => {
   });
 
   it('gives a joining player a ghost with lives left while there is one', () => {
-    const one = { ...short, matchDurationMs: 600_000, sumo: { ...short.sumo, lives: 1 } };
-    const host = new MatchHost(one, 8, 1);
+    const host = hostOf(8, { ...SHORT, sumoMatch: 600, lives: 1 });
     let s = host.tick(50);
     while (!s.ghosts.some((g) => g.lives === 0) && s.matchMs < 600_000) s = host.tick(50);
     const out = s.ghosts.filter((g) => g.lives === 0).map((g) => g.id);
@@ -254,12 +257,12 @@ describe('match host sumo variants and lives', () => {
 describe('match host live tuning', () => {
   it('eases the running arena to the new size and walks the ghosts at the new top speed', () => {
     const startRadius = DEFAULT_CONFIG.arenaRadius;
-    const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
+    const host = hostOf(4);
     const slot = host.join(1);
     if (!slot) throw new Error('no slot');
     host.tick(50);
-    const t = { ...tuningOf(DEFAULT_CONFIG), arenaRadius: 600, maxSpeed: 400, dashSpeed: 800 };
-    host.tune({ ...t, knockSpeed: 500 });
+    const faster = { arenaRadius: 600, maxSpeed: 400, dashSpeed: 800, knockSpeed: 500 };
+    host.tune({ ...DEFAULT_SETTINGS, teamSize: 1, ...faster });
     host.steer(1, 1, 0);
     const states = runFor(host, 1000);
     const own = states.at(-1)?.ghosts.find((g) => g.id === slot.ghost);
@@ -272,14 +275,28 @@ describe('match host live tuning', () => {
 
   // FIX 2026-11-17-3: shrinking the arena with the slider throws nobody off.
   it('carries the ghosts inward with the edge when the arena slider shrinks it', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    const host = hostOf(32);
     host.tick(50);
     const small = DEFAULT_CONFIG.arenaRadius / 2;
-    host.tune({ ...tuningOf(DEFAULT_CONFIG), arenaRadius: small });
+    host.tune({ ...DEFAULT_SETTINGS, arenaRadius: small });
     // Standing still (every seat a player holding nothing): only the edge moves them.
     for (let c = 1; c <= 32; c++) host.join(c);
     const states = runFor(host, DEFAULT_CONFIG.arenaShrinkMs + 500);
     expect(states.at(-1)?.area?.r).toBeCloseTo(small);
     for (const s of states) expect(s.ghosts.every((g) => !(g.flags & GHOST_FALLING))).toBe(true);
+  });
+});
+
+// NIGHT 2026-11-18: the seats follow the team size from the next match; a player keeps theirs.
+describe('match host seats', () => {
+  it('seats the new team size at the next match, keeping the players', () => {
+    const start = { ...DEFAULT_SETTINGS, teamSize: 2, ...SHORT, resultPause: 0.5 };
+    const host = new MatchHost(start, 1);
+    const slot = host.join(1);
+    host.tune({ ...start, teamSize: 3 });
+    expect(host.tick(50).ghosts).toHaveLength(8); // the running match keeps its seats
+    const next = runFor(host, 1500).at(-1);
+    expect(next?.ghosts).toHaveLength(12);
+    expect(next?.ghosts.some((g) => g.id === slot?.ghost && !(g.flags & GHOST_BOT))).toBe(true);
   });
 });

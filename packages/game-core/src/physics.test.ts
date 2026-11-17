@@ -4,9 +4,8 @@
 // bomb, and bad input.
 
 import { describe, expect, it } from 'vitest';
-import { modeConfig } from './config.js';
 import { stepGhost } from './geometry.js';
-import { act, cfg, ghost, matchOf, place, runTo } from './test-helpers.js';
+import { act, cfg, ghost, matchOf, modeCfg, place, runTo } from './test-helpers.js';
 
 const two = [
   { id: 1, team: 0 as const },
@@ -80,7 +79,7 @@ describe('running', () => {
   });
 
   it('stops at a wall in the walled modes, keeping its speed along the wall', () => {
-    const walls = modeConfig(cfg, 'hill');
+    const walls = modeCfg('hill');
     const edge = cfg.fieldSize / 2 + walls.wallHalf - walls.ghostRadius;
     const m = stepGhost(walls, { x: edge - 5, y: 1000, vx: 600, vy: 200 }, { dx: 1, dy: 0 }, 50);
     expect(m.x).toBe(edge);

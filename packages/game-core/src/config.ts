@@ -1,8 +1,9 @@
-// Seasonal Sumo — every number of the prototype in one place, and the three game modes'
-// own times (modeConfig). Every value is a placeholder the owner decides after playing
-// (NIGHT 2026-11-17); nothing else holds a magic number.
+// Seasonal Sumo — the shape of a match's config and how it is built from the settings
+// (configFrom): every gameplay number lives in the settings schema (settings.ts, NIGHT 2026-11-18)
+// and is a placeholder the owner sets with the admin panel; nothing here holds one.
 
 import type { Season } from './seasons.js';
+import { DEFAULT_SETTINGS, type Settings } from './settings.js';
 
 // The game mode of a match, chosen by the server per match (NIGHT 2026-11-17, piece 5):
 // "sumo" — push them off a shrinking disc; "hill" — King of the Season, hold the zone;
@@ -11,13 +12,17 @@ export const GAME_MODES = ['sumo', 'hill', 'bomb'] as const;
 export type GameMode = (typeof GAME_MODES)[number];
 
 export interface HillConfig {
-  zoneRadius: number; // the zone at the start; its area halves at each halving
+  zoneRadius: number; // the zone at the start
   bounceMs: number; // leaving the zone within this of an opponent's touch: a bounce for it
+  shrink: number; // each jump: the zone's radius × this
+  pointsPerSecond: number; // each ghost in the zone
 }
 
 export interface BombConfig {
   playersPerBomb: number; // one bomb per this many players, at least one
   passBackMs: number; // a bomb cannot go back to the ghost that just gave it before this
+  blastShare: number; // the share of its points a carrier loses when the bomb goes off
+  pointsPerSecond: number; // everyone
 }
 
 // Sumo's two variants (LIVES 2026-11-17): "points" — the most knockout points wins (the time
@@ -38,6 +43,7 @@ export interface SumoConfig {
   variant: VariantChoice; // the server's choice; a match plays one SumoVariant
   afterLast: AfterLast; // Last One Standing only; read every tick (the owner's slider)
   halvingEveryMs: number; // "keep-halving": the interval after the third halving
+  shrink: number; // each halving: the arena's radius × this
 }
 
 // The jump (owner's idea, JUMP 2026-11-17): a moment in the air to let a dash pass underneath.
@@ -56,6 +62,7 @@ export interface BotConfig {
   edgeShare: number;
   dashRange: number; // a bot dashes at an opponent closer than this…
   dashAimCos: number; // …when its heading points at it at least this well (cosine)
+  approach: number; // share of the dash range a bot aims beside its target, from its own side
   // FIX 2026-11-17-5 (the last bots circled each other): once no halving is coming and fewer
   // than boldAt ghosts are left a bot grows bolder — it aims up to leadMs ahead of its target
   // from its seen speed, its dash angle widens towards boldAimCos and, after commitMs without a
@@ -64,6 +71,9 @@ export interface BotConfig {
   boldAt: number;
   boldAimCos: number;
   commitMs: number;
+  holdShare: number; // hill: the bot's spot sits within this share of the zone's radius
+  fleeRanges: number; // bomb: a carrier closer than this many dash ranges is a threat…
+  middlePull: number; // …fled from, bending this much towards the middle
   wanderMs: number; // how often a bot's own offset around its target moves on
   // The human-like layer (bots/human.ts, owner requirement 2026-11-17):
   reactionMs: [number, number]; // each bot's reaction time is drawn from this range
@@ -87,7 +97,7 @@ export interface GameConfig {
   startSeason: Season;
   fieldSize: number;
   wallHalf: number; // hill and bomb: half the side of the walled square around the middle
-  arenaRadius: number; // at the start; every halving divides the area by 2
+  arenaRadius: number; // at the start; every halving shrinks it (sumo.shrink)
   arenaShrinkMs: number; // how long the edge takes to ease in after a halving
   ghostRadius: number;
   acceleration: number; // units/s² towards the held direction
@@ -104,6 +114,8 @@ export interface GameConfig {
   outMs: number; // from the fall until the respawn
   protectMs: number; // after the respawn: nothing pushes it, it pushes nothing
   creditMs: number; // a fall counts for the last opponent that touched within this time
+  // Where a team's ghosts come back: its quarter, from `inner` to `outer` of the radius.
+  respawnBand: { inner: number; outer: number };
   startSpread: number; // share of the radius the start ring sits at
   deadlineCountdownMs: number;
   reconnectGraceMs: number;
@@ -115,170 +127,148 @@ export interface GameConfig {
   bots: BotConfig;
 }
 
-export const DEFAULT_CONFIG: GameConfig = {
-  mode: 'sumo',
-  matchDurationMs: 300_000, // 5 minutes, as Seasonal Spirits
-  seasonDurationMs: 75_000, // four seasons of 75 s
-  startSeason: 'spring', // placeholder — the website's season clock later
-  fieldSize: 2000,
-  wallHalf: 700, // placeholder — owner decides (a 1400 square: hill and bomb)
-  // 25 ghost diameters across (TUNE 2026-11-17: at 56 nobody fell in the first season and the
-  // ghosts were drawn tiny); after three halvings (400 → 141) still 9 across. Placeholder —
-  // owner decides with the live sliders (docs/SERVER.md, "Live tuning").
-  arenaRadius: 400,
-  arenaShrinkMs: 2000, // placeholder — owner decides
-  ghostRadius: 16, // placeholder — owner decides
-  // Walking 25 % slower than the first prototype's 320 and 1200 (TUNE 2026-11-17); the
-  // tuning sliders scale the acceleration with the top speed. Placeholders — owner decides.
-  acceleration: 900,
-  friction: 2.5, // placeholder — owner decides
-  maxSpeed: 240,
-  // Twice the top speed: a dash carries (dashSpeed − maxSpeed) / friction = 96, 3 ghost
-  // diameters, before it is back at top speed (FIX 2026-11-17-2 measured 7 at 900 and found the
-  // bots zipping around; at most 4 since). Placeholder — owner decides.
-  dashSpeed: 480,
-  dashMs: 250, // placeholder — owner decides
-  dashCooldownMs: 1500, // placeholder — owner decides (owner's sketch: about 1.5 s)
-  // A dash hit throws a standing ghost about 5 ghost diameters (knockSpeed / friction plus the
-  // dasher's follow-through); the crowd it flies into gives way (knockWeight). Placeholders —
-  // owner decides (TUNE 2026-11-17: 4–5 diameters, not cancelled by a crowd).
-  knockSpeed: 320,
-  knockWeight: 10,
-  // No bounce: a ghost running into a standing one at top speed moves it about 1.5 diameters
-  // (TUNE 2026-11-17 asked for about 1; at 0.6 it was 2.3). Placeholder — owner decides.
-  restitution: 0,
-  inSeasonPush: 1.25, // placeholder — owner decides (owner's sketch: about 1.25)
-  fallMs: 600, // placeholder — owner decides
-  outMs: 3000, // placeholder — owner decides (owner's sketch: about 3 s)
-  protectMs: 1000, // placeholder — owner decides (owner's sketch: about 1 s)
-  creditMs: 3000, // placeholder — owner decides (owner's sketch: 3 s)
-  startSpread: 0.6, // placeholder — owner decides
-  deadlineCountdownMs: 10_000, // the countdown before every halving and the end, as before
-  reconnectGraceMs: 12_000, // a disconnected player stands 12 s, then a bot takes over
-  resultPauseMs: 15_000, // placeholder — owner decides (result screen before the next match)
-  hill: {
-    zoneRadius: 300, // placeholder — owner decides
-    bounceMs: 1000, // placeholder — owner decides
-  },
-  bomb: {
-    playersPerBomb: 8, // placeholder — owner decides (owner's sketch: one per 8 players)
-    passBackMs: 1000, // owner's rule: not back to the giver for 1 s
-  },
-  // Placeholders — owner decides with the live sliders (LIVES 2026-11-17).
-  sumo: { lives: 3, variant: 'points', afterLast: 'stop-time', halvingEveryMs: 75_000 },
-  // Half a second in the air, every 3 s at most, a tenth of the steering left. Placeholders —
-  // owner decides with the live panel (JUMP 2026-11-17).
-  jump: { enabled: true, airMs: 500, cooldownMs: 3000, steer: 0.1 },
-  bots: {
-    edgeMargin: 140, // placeholder — owner decides
-    // 140 of the starting radius 400, so the full arena keeps the absolute margin; 49 of the last
-    // halving's 141, where 140 left the bots only the middle (FIX 2026-11-17-4: a share of 0.15
-    // everywhere made it 60 in the full arena, and every match ended by elimination at 2–4 min).
-    // Placeholder — owner decides.
-    edgeShare: 0.35,
-    dashRange: 220, // placeholder — owner decides
-    dashAimCos: 0.9, // placeholder — owner decides
-    leadMs: 300, // placeholder — owner decides
-    boldAt: 8, // placeholder — owner decides
-    boldAimCos: 0.5, // placeholder — owner decides
-    commitMs: 3000, // placeholder — owner decides (owner's sketch: about 3 s)
-    wanderMs: 3000, // placeholder — owner decides
-    reactionMs: [250, 450], // placeholder — owner decides (owner's sketch: 250–450 ms)
-    reactionJitterMs: 50, // placeholder — owner decides
-    aimNoiseDeg: 6, // placeholder — owner decides (owner's sketch: a few degrees)
-    dashChance: 0.6, // placeholder — owner decides
-    // At most one dash per 3 s, as a calm player (owner 2026-11-17: the bots zipped around at
-    // ~23 dashes a minute). Placeholder — owner decides.
-    dashGapMs: 3000,
-    hesitateChance: 0.002, // placeholder — owner decides
-    hesitateMs: 400, // placeholder — owner decides
-    edgeSlack: 0.6, // placeholder — owner decides
-    jumpChance: 0.5, // placeholder — owner decides (JUMP 2026-11-17: never a perfect dodge)
-    form: [0.85, 1.15], // placeholder — owner decides
-    formStep: 0.06, // placeholder — owner decides
-    formEveryMs: 5000, // placeholder — owner decides
-  },
-};
-
-// Each mode's own times over the shared numbers: a season turn is the mode's halving — the
-// arena halves (sumo), the zone jumps and halves (hill), the bombs go off (bomb).
-const MODE_TIMES: Record<GameMode, Partial<GameConfig>> = {
-  sumo: {},
-  // placeholders — owner decides (owner's sketch: 3 min, the zone jumps every 45 s)
-  hill: { matchDurationMs: 180_000, seasonDurationMs: 45_000 },
-  // placeholders — owner decides (owner's sketch: 3 min, the bombs go off every 20 s); a
-  // shorter countdown, so it does not run for half of every fuse
-  bomb: { matchDurationMs: 180_000, seasonDurationMs: 20_000, deadlineCountdownMs: 5000 },
-};
-
-export function modeConfig(base: GameConfig, mode: GameMode): GameConfig {
-  return { ...base, ...MODE_TIMES[mode], mode };
-}
-
-// The owner's live tuning (TUNE, LIVES and JUMP 2026-11-17, development only; the numbers and
-// their ranges are protocol's tuning.ts): the config fields eleven whole numbers set — the
-// acceleration scales with the top speed, so a ghost reaches it in the same time; variant and
-// afterLast are indices in VARIANT_CHOICES and AFTER_LAST, the halving interval is in seconds,
-// jump is 1 on and 0 off.
-export interface Tunable {
-  arenaRadius: number;
-  maxSpeed: number;
-  dashSpeed: number;
-  knockSpeed: number;
-  lives: number;
-  variant: number;
-  afterLast: number;
-  halvingEverySec: number;
-  jump: number;
-  jumpMs: number;
-  jumpCooldownMs: number;
-}
-export type TunedFields = Pick<
-  GameConfig,
-  'arenaRadius' | 'maxSpeed' | 'dashSpeed' | 'knockSpeed' | 'acceleration' | 'sumo' | 'jump'
->;
-const ACCELERATION_PER_SPEED = DEFAULT_CONFIG.acceleration / DEFAULT_CONFIG.maxSpeed;
-
-export function tunedFields(t: Tunable): TunedFields {
-  const { arenaRadius, maxSpeed, dashSpeed, knockSpeed } = t;
-  return {
-    arenaRadius,
-    maxSpeed,
-    dashSpeed,
-    knockSpeed,
-    acceleration: maxSpeed * ACCELERATION_PER_SPEED,
+// The config of a match in `mode`, built from the settings (settings.ts: one schema holds every
+// gameplay number; times there in seconds). Each mode's own times, field and countdown are its
+// settings'; the rest is shared.
+export function configFrom(s: Settings, mode: GameMode): GameConfig {
+  const times = {
+    // Sumo has no walls: its field's edge (fieldBounds keeps walls for hill and bomb only).
     sumo: {
-      lives: t.lives,
-      variant: VARIANT_CHOICES[t.variant] ?? 'points',
-      afterLast: AFTER_LAST[t.afterLast] ?? 'stop-time',
-      halvingEveryMs: t.halvingEverySec * 1000,
+      match: s.sumoMatch,
+      season: s.sumoSeason,
+      countdown: s.countdown,
+      wall: FIELD_SIZE / 2,
+    },
+    hill: { match: s.hillMatch, season: s.hillJump, countdown: s.countdown, wall: s.hillWall },
+    bomb: { match: s.bombMatch, season: s.bombBlast, countdown: s.bombCountdown, wall: s.bombWall },
+  }[mode];
+  return {
+    mode,
+    matchDurationMs: ms(times.match),
+    seasonDurationMs: ms(times.season),
+    startSeason: 'spring', // the website's season clock later
+    fieldSize: FIELD_SIZE,
+    wallHalf: times.wall,
+    arenaRadius: s.arenaRadius,
+    arenaShrinkMs: ms(s.edgeEase),
+    ghostRadius: s.ghostRadius,
+    acceleration: s.acceleration,
+    friction: s.friction,
+    maxSpeed: s.maxSpeed,
+    dashSpeed: s.dashSpeed,
+    dashMs: ms(s.dashTime),
+    dashCooldownMs: ms(s.dashCooldown),
+    knockSpeed: s.knockSpeed,
+    knockWeight: s.knockWeight,
+    restitution: s.restitution,
+    inSeasonPush: s.inSeasonPush,
+    fallMs: ms(s.fall),
+    outMs: ms(s.respawn),
+    protectMs: ms(s.protect),
+    creditMs: ms(s.credit),
+    respawnBand: { inner: s.respawnInner, outer: s.respawnOuter },
+    startSpread: s.startSpread,
+    deadlineCountdownMs: ms(times.countdown),
+    reconnectGraceMs: ms(s.reconnectGrace),
+    resultPauseMs: ms(s.resultPause),
+    ...rulesFrom(s),
+    bots: botsFrom(s),
+  };
+}
+
+// Settings hold seconds; the config milliseconds.
+const ms = (seconds: number): number => Math.round(seconds * 1000);
+
+// The modes' own rules and the jump.
+function rulesFrom(s: Settings): Pick<GameConfig, 'hill' | 'bomb' | 'sumo' | 'jump'> {
+  return {
+    hill: {
+      zoneRadius: s.zoneRadius,
+      bounceMs: ms(s.bounce),
+      shrink: s.zoneShrink,
+      pointsPerSecond: s.hillRate,
+    },
+    bomb: {
+      playersPerBomb: s.perBomb,
+      passBackMs: ms(s.passBack),
+      blastShare: s.blastShare,
+      pointsPerSecond: s.bombRate,
+    },
+    sumo: {
+      lives: s.lives,
+      variant: VARIANT_CHOICES[s.variant] ?? 'points',
+      afterLast: AFTER_LAST[s.afterLast] ?? 'stop-time',
+      halvingEveryMs: ms(s.halvingEvery),
+      shrink: s.sumoShrink,
     },
     jump: {
-      ...DEFAULT_CONFIG.jump,
-      enabled: t.jump === 1,
-      airMs: t.jumpMs,
-      cooldownMs: t.jumpCooldownMs,
+      enabled: s.jump === 1,
+      airMs: ms(s.jumpAir),
+      cooldownMs: ms(s.jumpCooldown),
+      steer: s.jumpSteer,
     },
   };
 }
 
-// The other way round: a config's numbers as the sliders show them (their starting values).
-export function tuningOf(cfg: GameConfig): Tunable {
-  const { arenaRadius, maxSpeed, dashSpeed, knockSpeed, sumo, jump } = cfg;
+// The bots' brains and their human-like layer.
+function botsFrom(s: Settings): BotConfig {
   return {
-    arenaRadius,
-    maxSpeed,
-    dashSpeed,
-    knockSpeed,
-    lives: sumo.lives,
-    variant: VARIANT_CHOICES.indexOf(sumo.variant),
-    afterLast: AFTER_LAST.indexOf(sumo.afterLast),
-    halvingEverySec: Math.round(sumo.halvingEveryMs / 1000),
-    jump: jump.enabled ? 1 : 0,
-    jumpMs: jump.airMs,
-    jumpCooldownMs: jump.cooldownMs,
+    edgeMargin: s.botEdgeMargin,
+    edgeShare: s.botEdgeShare,
+    dashRange: s.botDashRange,
+    dashAimCos: s.botDashAim,
+    approach: s.botApproach,
+    leadMs: ms(s.botLead),
+    boldAt: s.botBoldAt,
+    boldAimCos: s.botBoldAim,
+    commitMs: ms(s.botCommit),
+    holdShare: s.botHold,
+    fleeRanges: s.botFlee,
+    middlePull: s.botMiddlePull,
+    wanderMs: ms(s.botWander),
+    reactionMs: [ms(s.botReactionMin), ms(s.botReactionMax)],
+    reactionJitterMs: ms(s.botJitter),
+    aimNoiseDeg: s.botAimNoise,
+    dashChance: s.botDashChance,
+    dashGapMs: ms(s.botDashGap),
+    hesitateChance: s.botHesitateChance,
+    hesitateMs: ms(s.botHesitate),
+    edgeSlack: s.botEdgeSlack,
+    jumpChance: s.botJumpChance,
+    form: [s.botFormMin, s.botFormMax],
+    formStep: s.botFormStep,
+    formEveryMs: ms(s.botFormEvery),
   };
 }
+
+// One match of the rotation (settings rotation1…6, ROTATION_SLOTS): its mode and, for sumo, the
+// variant — or the Sumo variant setting's choice ("Sumo", which may alternate).
+export interface RotationSlot {
+  mode: GameMode;
+  variant: VariantChoice;
+}
+
+// The matches in turn, from the rotation settings; every slot off: Sumo alone.
+export function rotationOf(s: Settings): RotationSlot[] {
+  const own = VARIANT_CHOICES[s.variant] ?? 'points';
+  const slots: Record<number, RotationSlot> = {
+    1: { mode: 'sumo', variant: own },
+    2: { mode: 'sumo', variant: 'points' },
+    3: { mode: 'sumo', variant: 'last-standing' },
+    4: { mode: 'hill', variant: 'points' },
+    5: { mode: 'bomb', variant: 'points' },
+  };
+  const picked = [s.rotation1, s.rotation2, s.rotation3, s.rotation4, s.rotation5, s.rotation6]
+    .map((v) => slots[v])
+    .filter((x): x is RotationSlot => x !== undefined);
+  return picked.length > 0 ? picked : [{ mode: 'sumo', variant: own }];
+}
+
+// The coordinate space every position lives in (the wire carries it as u16): not a play size.
+export const FIELD_SIZE = 2000;
+
+// Sumo with the default settings: what tests and tools start from.
+export const DEFAULT_CONFIG: GameConfig = configFrom(DEFAULT_SETTINGS, 'sumo');
 
 // Hill and bomb play inside walls (nobody falls); sumo on the disc.
 export function walled(cfg: GameConfig): boolean {

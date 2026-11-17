@@ -1,9 +1,9 @@
 // Seasonal Sumo — "King of the Season" (hill): walls, nobody falls. A glowing zone sits in the
-// quarter of the season in season; every ghost inside earns 1 point per second for itself and
-// its team. At every halving the zone jumps to the new season's quarter and its area halves.
+// quarter of the season in season; every ghost inside earns hill.pointsPerSecond for itself and
+// its team. At every halving the zone jumps to the new season's quarter and shrinks (hill.shrink).
 // Leaving the zone within hill.bounceMs of an opponent's touch is a bounce for that opponent.
 
-import { HALF_AREA, quarterCentre } from '../arena.js';
+import { quarterCentre } from '../arena.js';
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
 import { SEASONS, type Season } from '../seasons.js';
@@ -17,7 +17,7 @@ function zoneFor(cfg: GameConfig, s: Readonly<MatchState>, season: Season, r: nu
 
 // Where the zone jumps at the next halving: the dashed outline of the countdown.
 export function nextZone(cfg: GameConfig, s: Readonly<MatchState>): Disc | null {
-  return s.zone && zoneFor(cfg, s, s.clock.next, s.zone.r * HALF_AREA);
+  return s.zone && zoneFor(cfg, s, s.clock.next, s.zone.r * cfg.hill.shrink);
 }
 
 export function inZone(z: Readonly<Disc>, p: Vec): boolean {
@@ -31,7 +31,8 @@ export function hillRules(cfg: GameConfig): ModeRules {
       s.zone = zoneFor(cfg, s, s.clock.current, cfg.hill.zoneRadius);
     },
     turn: (s) => {
-      s.zone = zoneFor(cfg, s, s.clock.current, (s.zone?.r ?? cfg.hill.zoneRadius) * HALF_AREA);
+      const r = (s.zone?.r ?? cfg.hill.zoneRadius) * cfg.hill.shrink;
+      s.zone = zoneFor(cfg, s, s.clock.current, r);
       inside = new Set(); // the jump moves the zone away from everyone: no bounces for it
     },
     after: (s, dtMs) => {
@@ -47,7 +48,7 @@ function score(cfg: GameConfig, s: MatchState, dtMs: number, before: Set<number>
   for (const g of s.ghosts) {
     if (g.phase === 'in' && inZone(z, g)) {
       now.add(g.id);
-      g.scoreMs += dtMs;
+      g.scoreMs += dtMs * cfg.hill.pointsPerSecond;
     } else if (before.has(g.id)) bounced(cfg, s, g);
   }
   return now;

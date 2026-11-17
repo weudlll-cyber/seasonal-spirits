@@ -5,8 +5,8 @@
 // ground at the take-off and the landing; "Dodged!" shows above a ghost a dash passed under (the
 // server's GHOST_DODGED). One drawing for the player client and the viewer (ghosts.ts calls it).
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import { TEXT } from './palette.js';
+import { shape } from './shape.js';
 import { circle, sx, sy, type View } from './view.js';
 
 export const AIR_TOP_SCALE = 1.5; // the body's size at the top of the arc
@@ -21,7 +21,7 @@ export function arcHeight(t: number): number {
 // Where a ghost at height `h` is drawn: one ghost diameter up at the top (field units), and how
 // much larger.
 export function lifted(g: { x: number; y: number }, h: number): { x: number; y: number } {
-  return { x: g.x, y: g.y - h * 2 * DEFAULT_CONFIG.ghostRadius };
+  return { x: g.x, y: g.y - h * 2 * shape().ghostRadius };
 }
 
 export function airScale(h: number): number {

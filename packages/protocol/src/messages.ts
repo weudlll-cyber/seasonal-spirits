@@ -3,7 +3,7 @@
 // notice that the client watches instead, the match recap, the live tuning. Shapes only; the
 // readers check them.
 
-import type { Tuning } from './tuning.js';
+import type { Settings } from '@seasonal-spirits/game-core';
 
 // A player sends a direction (each component in [-1, 1]; the server clamps the magnitude)
 // and an action, Dash or Jump (the core keeps their cooldowns and decides who is in the air).
@@ -61,13 +61,18 @@ export interface ServerRecap {
 
 // Server → every client, only when the server runs with the owner's live tuning (development
 // only): the numbers now in force, on the hello and after every change, so the own ghost's
-// prediction moves by the server's rules (tuning.ts).
+// prediction and drawing follow the server's rules (every setting, game-core settings.ts).
 export interface ServerTuning {
   kind: 'tuning';
-  values: Tuning;
+  values: Settings;
 }
 
 export type ServerMessage = ServerWelcome | ServerSpectating | ServerRecap | ServerTuning;
+
+// The game's admin settings endpoint (apps/server admin-settings.ts), which the admin panel talks
+// to, and the names its presets may have: 1–32 lowercase letters, digits and dashes.
+export const ADMIN_SETTINGS_PATH = '/api/v1/admin/settings';
+export const PRESET_NAME = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 // The name shown for a ghost, the same on every client. Development mode has no sign-in, so a
 // player is "Player <ghost>" until the website provides names (CONCEPT.md §12, point 2).

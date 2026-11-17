@@ -2,7 +2,7 @@
 // Waits on socket events (open, close, the n-th state message), never on fixed sleeps.
 
 import WebSocket from 'ws';
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import {
   decodeState,
   parseServerMessage,
@@ -11,13 +11,12 @@ import {
 } from '@seasonal-spirits/protocol';
 import { GameServer, type ServerConfig } from './server.js';
 
-// Four slots; a left player's slot goes back to a bot on the next tick.
+// Four seats; a left player's seat goes back to a bot on the next tick.
 export const TEST_CONFIG: ServerConfig = {
   port: 0,
   host: '127.0.0.1',
   tickHz: 20,
-  game: { ...DEFAULT_CONFIG, reconnectGraceMs: 0 },
-  maxGhosts: 4,
+  settings: { ...DEFAULT_SETTINGS, teamSize: 1, reconnectGrace: 0 },
   maxInputsPerSecond: 20,
   maxConnectionsPerAddress: 6,
   helloTimeoutMs: 10_000,

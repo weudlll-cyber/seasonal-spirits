@@ -3,7 +3,6 @@
 // animation), when it took off and landed (the jump's arc and ground rings) and when a dash
 // passed under it ("Dodged!"). Bounded by the ghost ids: a ghost no longer drawn is forgotten.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
   GHOST_AIRBORNE,
   GHOST_DODGED,
@@ -11,6 +10,7 @@ import {
   type GhostState,
 } from '@seasonal-spirits/protocol';
 import { DODGED_MS, RING_MS } from './jump.js';
+import { shape } from './shape.js';
 
 const TRAIL_POINTS = 12;
 
@@ -57,7 +57,7 @@ export class Trails {
   // 0 just fallen … 1 gone.
   fall(id: number, nowMs: number): number {
     const at = this.fellAt.get(id);
-    return at === undefined ? 0 : Math.min(1, (nowMs - at) / DEFAULT_CONFIG.fallMs);
+    return at === undefined ? 0 : Math.min(1, (nowMs - at) / shape().fallMs);
   }
 
   // In the air: 0 at the take-off … 1 after `airMs`; null on the ground.

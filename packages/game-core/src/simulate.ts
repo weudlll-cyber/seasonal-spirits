@@ -3,7 +3,8 @@
 // the sanity list. Exits 1 if a sanity check fails.
 
 import { modeArg, numberArg } from './cli-args.js';
-import { DEFAULT_CONFIG, modeConfig } from './config.js';
+import { configFrom } from './config.js';
+import { DEFAULT_SETTINGS } from './settings.js';
 import { simulate, type SimulationReport } from './simulation.js';
 
 const TEAM_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
@@ -39,7 +40,7 @@ function print(r: SimulationReport, durationMs: number, mode: string): void {
 }
 
 const argv = process.argv.slice(2);
-const cfg = modeConfig(DEFAULT_CONFIG, modeArg(argv));
+const cfg = configFrom(DEFAULT_SETTINGS, modeArg(argv));
 const report = simulate(cfg, numberArg(argv, '--seed', 1, 999_999_999));
 print(report, cfg.matchDurationMs, cfg.mode);
 process.exit(report.sanity.every((c) => c.ok) ? 0 : 1);

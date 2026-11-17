@@ -3,12 +3,11 @@
 // the halving that halves each carrier's points and hands out new bombs.
 
 import { describe, expect, it } from 'vitest';
-import { modeConfig } from '../config.js';
 import { botRoster } from '../simulation.js';
-import { cfg as base, ghost, matchOf, place, runTo } from '../test-helpers.js';
+import { ghost, matchOf, modeCfg, place, runTo } from '../test-helpers.js';
 import type { Match } from '../match.js';
 
-const cfg = modeConfig(base, 'bomb');
+const cfg = modeCfg('bomb');
 // Ghosts 1 and 2 on Spring, 3 and 4 on Summer.
 const four = [
   { id: 1, team: 0 as const },

@@ -38,5 +38,5 @@ export function areaOf(
   if (cfg.mode === 'hill') return { now: s.zone, next: nextZone(cfg, s) };
   if (cfg.mode === 'bomb') return { now: null, next: null };
   const { x, y } = s.arena.centre;
-  return { now: { x, y, r: s.arena.radius }, next: { x, y, r: nextRadius(s.arena) } };
+  return { now: { x, y, r: s.arena.radius }, next: { x, y, r: nextRadius(cfg, s.arena) } };
 }

@@ -2,11 +2,10 @@
 // team, the zone's jump and halving at every halving (shown before it), the bounce credit.
 
 import { describe, expect, it } from 'vitest';
-import { modeConfig } from '../config.js';
-import { cfg as base, ghost, matchOf, runTo } from '../test-helpers.js';
+import { ghost, matchOf, modeCfg, runTo } from '../test-helpers.js';
 import { areaOf } from './rules.js';
 
-const cfg = modeConfig(base, 'hill');
+const cfg = modeCfg('hill');
 const two = [
   { id: 1, team: 0 as const },
   { id: 2, team: 1 as const },
@@ -66,7 +65,7 @@ describe('hill zone', () => {
     if (!z) throw new Error('no zone');
     // Summer's quarter: top right; the area halved; the dashed outline showed exactly it.
     expect([z.x > c.x, z.y < c.y]).toEqual([true, true]);
-    expect(z.r).toBeCloseTo(cfg.hill.zoneRadius * Math.SQRT1_2, 6);
+    expect(z.r).toBeCloseTo(cfg.hill.zoneRadius * cfg.hill.shrink, 6);
     expect(shown).toEqual(z);
   });
 

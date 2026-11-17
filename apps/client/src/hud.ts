@@ -3,7 +3,6 @@
 // owner's switch has it off — JUMP 2026-11-17), the HALVING and MATCH OVER announcements (a slim strip under the band) with
 // their flash, and notices.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
   STATE_MATCH_END_EVENT,
   type GameAction,
@@ -61,10 +60,9 @@ export class Hud {
   }
 
   // Players only: the Dash and Jump buttons, their rings filling up while the server's
-  // cooldowns run.
-  showControls(playing: boolean, dashLeftMs: number, jump: ActionButton): void {
-    const cooldownMs = DEFAULT_CONFIG.dashCooldownMs;
-    showButton(this.dash, { shown: playing, leftMs: dashLeftMs, cooldownMs });
+  // cooldowns run (the match's settings).
+  showControls(playing: boolean, dash: ActionButton, jump: ActionButton): void {
+    showButton(this.dash, { ...dash, shown: playing && dash.shown });
     showButton(this.jump, { ...jump, shown: playing && jump.shown });
   }
 

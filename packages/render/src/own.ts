@@ -1,11 +1,12 @@
 // Seasonal Sumo — the own ghost's marks, so the player always finds it (FIX 2026-11-17-3): a
 // bright thick ring with a dark edge, a small arrow pointing down at it from above, a pulsing
 // ring after a respawn and at the start of a match, and — while it is out — its team's respawn
-// band drawn faintly (game-core RESPAWN_BAND). Sizes in pixels, so they read on desktop and phone.
+// band drawn faintly (the match's respawnBand, render shape.ts). Sizes in pixels, so they read on desktop and phone.
 
-import { RESPAWN_BAND, teamAngle, type Team } from '@seasonal-spirits/game-core';
+import { QUARTER, teamAngle, type Team } from '@seasonal-spirits/game-core';
 import type { WireDisc } from '@seasonal-spirits/protocol';
 import { seasonColour } from './palette.js';
+import { shape } from './shape.js';
 import { circle, sx, sy, type View } from './view.js';
 
 const BRIGHT = '#ffffff';
@@ -63,7 +64,8 @@ export function drawOwnMarks(
 // inner to the outer share of the radius, faint in the team's colour with a dashed edge.
 export function drawRespawnBand(v: View, area: WireDisc, team: Team): void {
   const { ctx } = v;
-  const { spread, inner, outer } = RESPAWN_BAND;
+  const { inner, outer } = shape().respawnBand;
+  const spread = QUARTER;
   const from = teamAngle(team) - spread / 2;
   const to = from + spread;
   const cx = sx(v, area.x);

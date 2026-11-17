@@ -2,7 +2,7 @@
 // ghosts and labels, the own ghost's marks (its pulse; its respawn band while out), and the
 // season clock. Returns what it drew, for the browser specs.
 
-import { DEFAULT_CONFIG, type Team } from '@seasonal-spirits/game-core';
+import type { Team } from '@seasonal-spirits/game-core';
 import {
   GHOST_FALLING,
   GHOST_OUT,
@@ -18,6 +18,7 @@ import {
   drawGhosts,
   fitBox,
   fuseLeft,
+  shape,
   ghostRadiusPx,
   playBox,
   sx,
@@ -45,7 +46,6 @@ export interface Frame {
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
   marks: OwnMarks;
-  airMs: number; // a jump's time in the air (the server's tuning): the arc it is drawn on
 }
 
 // When the own ghost needs finding (own-marker.ts): its pulse, and while it is out after a
@@ -84,7 +84,7 @@ export function camera(
   zones: readonly Rect[],
 ): View {
   const box = playBox(s);
-  const fitted = { ...box, half: box.half + DEFAULT_CONFIG.ghostRadius };
+  const fitted = { ...box, half: box.half + shape().ghostRadius };
   return fitBox(ctx, CLOCK_HEIGHT + BAND_HEIGHT, fitted, { keepOut: zones, marginPx: MARGIN_PX });
 }
 
@@ -118,7 +118,6 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trail
       labelAll: !f.playing,
       fuse: f.latest ? fuseLeft(f.latest) : 1,
       ownPulseMs: f.marks.pulseMs,
-      airMs: f.airMs,
     });
   });
   drawClock(ctx, f.latest);

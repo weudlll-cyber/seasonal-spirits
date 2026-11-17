@@ -348,3 +348,12 @@ The game is rebuilt to the owner's concept V5.0 (sections 2, 2a, 2b above). Deci
    becomes the valuable one — hold it before it rises."
 8. **The old game stays on `master`** until the owner has played the new one; the V5 branch
    is merged only with the owner's word.
+
+## 16. Owner decision of 2026-11-17: the new game runs standalone, with its own admin area
+
+The new game (Seasonal Sumo and its sister modes on `proto/sumo`) is built standalone, like
+Seasonal Bingo Royale and Seasonal Mini Games; for it this replaces section 12, point 3
+("embedded only"). Its gameplay settings and presets belong in an **admin area of the game
+itself**, behind the game's own admin login, following the admin pattern of those two games —
+not in the website's admin area. Until that login exists the settings endpoint and the panel
+stay development only (docs/SERVER.md "Settings and presets").

@@ -2,12 +2,12 @@
 // Clients and the probe never trust a server frame's shape either: a frame that does not
 // match is dropped instead of being read field by field.
 
+import { readSettings } from '@seasonal-spirits/game-core';
 import { isIntIn, isObject } from './checks.js';
 import type { ServerMessage, ServerWelcome } from './messages.js';
 import { MAX_RECAP_BYTES, readRecap } from './recap-message.js';
-import { readTuning } from './tuning.js';
 
-// Every message but the recap is a welcome, a tuning or shorter, well under this.
+// Every message but the recap and the tuning is a welcome or shorter, well under this.
 const MAX_SERVER_TEXT_BYTES = 256;
 const MAX_NAME_LENGTH = 64;
 
@@ -22,13 +22,15 @@ export function parseServerMessage(text: string): ServerMessage | null {
   if (!isObject(value)) return null;
   const fields = value;
   if (fields.kind === 'recap') return readRecap(fields);
+  // The live tuning: every setting, each read against the game's one schema (game-core
+  // settings.ts) — within the recap's bound.
+  if (fields.kind === 'tuning') {
+    const values = readSettings(fields.values);
+    return values ? { kind: 'tuning', values } : null;
+  }
   if (text.length > MAX_SERVER_TEXT_BYTES) return null;
   if (fields.kind === 'spectating') {
     return fields.reason === 'full' ? { kind: 'spectating', reason: 'full' } : null;
-  }
-  if (fields.kind === 'tuning') {
-    const values = readTuning(fields.values);
-    return values ? { kind: 'tuning', values } : null;
   }
   return fields.kind === 'welcome' ? readWelcome(fields) : null;
 }

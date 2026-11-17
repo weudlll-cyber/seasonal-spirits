@@ -18,7 +18,6 @@ import { IDLE, type Ghost, type Intent, type MatchState, type Vec } from '../typ
 export type Bot = (s: Readonly<MatchState>, me: Readonly<Ghost>) => Intent;
 
 const GOLDEN = 0.6180339887498949; // spreads the wander points of consecutive ids evenly
-const APPROACH_OFFSET = 0.25; // share of the dash range a bot aims beside its target
 
 export function toward(from: Vec, to: Vec): Intent {
   const d = distance(from, to);
@@ -120,7 +119,7 @@ export function botIntent(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly
   if (d > cfg.bots.dashRange) {
     // Approach from the bot's own side: a little towards its wander point.
     const side = toward(target, wander);
-    const off = cfg.bots.dashRange * APPROACH_OFFSET;
+    const off = cfg.bots.dashRange * cfg.bots.approach;
     return toward(me, { x: target.x + side.dx * off, y: target.y + side.dy * off });
   }
   // Never a dash that would carry it past the edge on its own: half a dash range, but in a small

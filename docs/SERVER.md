@@ -7,15 +7,17 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 
 ## Files
 
-| File                  | What it holds                                                         |
-| --------------------- | --------------------------------------------------------------------- |
-| `src/main.ts`         | Reads and validates the environment, starts the server                |
-| `src/server.ts`       | The tick loop, the WebSocket handler, connection bounds, metrics      |
-| `src/match-host.ts`   | The seats (bot, player, standing ghost), the match lifecycle          |
-| `src/wire.ts`         | Game state → wire state: per-ghost values, the arena, the team scores |
-| `src/http-routes.ts`  | `/metrics-lite` (loopback only), everything else 404                  |
-| `src/tuning-route.ts` | `/dev/tune`: the owner's live tuning sliders (only with `DEV_TUNING`) |
-| `src/env.ts`          | `envInt`, `envChoice`, `refuseProduction` — shared with the probe     |
+| File                    | What it holds                                                         |
+| ----------------------- | --------------------------------------------------------------------- |
+| `src/main.ts`           | Reads and validates the environment, starts the server                |
+| `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds, metrics      |
+| `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle          |
+| `src/wire.ts`           | Game state → wire state: per-ghost values, the arena, the team scores |
+| `src/http-routes.ts`    | `/metrics-lite` (loopback only), everything else 404                  |
+| `src/admin-settings.ts` | The admin settings endpoint and its one access check (`DEV_TUNING`)   |
+| `src/presets.ts`        | Named presets in the dev data folder, checked against the schema      |
+| `src/start-settings.ts` | The starting settings: defaults, a preset, the environment            |
+| `src/env.ts`            | `envInt`, `envChoice`, `refuseProduction` — shared with the probe     |
 
 ## The loop
 
@@ -26,7 +28,8 @@ is encoded once and sent to every client that has said hello.
 
 ## Slots and players
 
-- A match has `GHOSTS` seats (32: 8 per team); seat `i` is team `i mod 4`. Bots only fill
+- A match has four times the `teamSize` setting seats (32: 8 per team; `GHOSTS` sets it at the
+  start), taken at a match's start; seat `i` is team `i mod 4`. Bots only fill
   seats without a player (owner requirement 2026-11-17), each a human-like bot seeded from
   the match and its seat (game-core `createBot`, docs/GAME-CORE.md "Bots").
 - A player who says `{"kind":"player"}` takes a bot's seat on the team with the fewest players
@@ -48,11 +51,12 @@ is encoded once and sent to every client that has said hello.
 
 ## Match lifecycle
 
-Each match has a game mode (docs/GAME-CORE.md "Game modes"): `GAME_MODE` names one, or
-`rotate` lets them take turns match by match — sumo → hill → bomb → sumo … (development only,
-like the whole server). Each sumo match plays one variant (docs/GAME-CORE.md "Lives and the two
-variants"): `SUMO_VARIANT` names `points` or `last-standing`, or `alternate` takes them in turn,
-Points first (`pnpm dev`: Sumo only, alternating — the owner's dev default, LIVES 2026-11-17).
+Each match takes the next slot of the rotation (the settings `rotation1`…`rotation6`, game-core
+`rotationOf`): Sumo with the variant setting (Points, Last One Standing, or both in turn),
+Sumo Points, Sumo Last One Standing, King of the Season or Halving Bomb (docs/GAME-CORE.md "Game
+modes", "Lives and the two variants"). `GAME_MODE` names one mode, or `rotate` — Sumo Points,
+King of the Season, Halving Bomb, Sumo Last One Standing — which `pnpm dev` asks for unless a
+preset was loaded last (development only, like the whole server).
 Seats are filled with bots at the start only: a ghost out of lives stays out until the next
 match, and a joining player gets a bot's ghost with lives left while there is one. A sumo match
 runs 5:00 (Points; Last One Standing per its setting after the last season), hill and bomb
@@ -110,7 +114,7 @@ and in total (twice the slots). The full list, with the test for each, is
 | ----------------------------- | --------- | ----------------------------------------------- |
 | `PORT`                        | 3930      | 1–65535                                         |
 | `TICK_HZ`                     | 20        | 1–60                                            |
-| `GHOSTS`                      | 32        | 4–252                                           |
+| `GHOSTS`                      | 32        | 4–48, a multiple of 4 (the team size × 4)       |
 | `MAX_INPUTS_PER_SECOND`       | 20        | 1–1000                                          |
 | `MAX_CONNECTIONS_PER_ADDRESS` | 40        | 1–1000                                          |
 | `SEED`                        | 1         | 0–999999999                                     |
@@ -120,7 +124,8 @@ and in total (twice the slots). The full list, with the test for each, is
 | `SUMO_LIVES`                  | 3         | 1–9 (the browser specs: 9)                      |
 | `SEASON_SECONDS`              | 75        | 15–75 (sumo: four seasons; shorter for tests)   |
 | `RESULT_SECONDS`              | 15        | 3–60                                            |
-| `DEV_TUNING`                  | 0         | `0` or `1` (`pnpm dev`: the live tuning)        |
+| `DEV_TUNING`                  | 0         | `0` or `1` (`pnpm dev`: the admin settings)     |
+| `PRESET`                      | —         | a saved preset's name to start with             |
 | `VIEWER_PORT`                 | 5931      | 1–65535 (the page allowed to tune)              |
 
 Other game numbers are not environment variables: they live in
@@ -133,35 +138,44 @@ Other game numbers are not environment variables: they live in
 players, ghosts, last and largest state bytes, uptime. CORS `*` only in development, for the
 viewer on its own port.
 
-## Live tuning (development only)
+## Settings and presets (development only until the game's admin login exists)
 
-The owner tunes the feel with a panel instead of guessing numbers round by round
-(TUNE and LIVES 2026-11-17). `pnpm dev` starts the server with `DEV_TUNING=1`; the viewer
-(http://localhost:5931) then shows: **arena size** (`arenaRadius`, the start; shown as ghost
-diameters across), **walking speed** (`maxSpeed`; `acceleration` scales with it), **dash
-strength** (`dashSpeed`), **push strength** (`knockSpeed`, how fast a dash hit throws a ghost
-off), **lives** (1–9), **sumo variant** (Points / Last One Standing / alternate), **after the
-last season** (stop, time limit / keep halving / stop, no time limit), **keep halving every**
-(30–120 s), **jump** (off / on; off hides the clients' Jump button), **jump: time in the air**
-(0.2–1.5 s) and **jump: cooldown** (0.5–5 s). Each slider shows its number and moves within a wide band around the starting value
-(`TUNING_RANGES`, packages/protocol `tuning.ts`; the choices travel as indices). The physics,
-the setting after the last season and the jump hold at once in the running match: the match, its rules
-and its bots read the host's one config object (`MatchHost.tune`), the running arena eases to
-its new size like a halving (`Match.rescaleArena`); lives and the variant hold from the next
-match. Every client gets the values as `{"kind":"tuning","values":…}`, so its own ghost's
-prediction keeps to the server's rules. **Reset** brings back the starting values; the line
-below holds every value to copy, the choices by name (**Copy**). The panel scrolls inside the
-window when it is taller (FIX 2026-11-17-5).
+Every number that shapes play is a setting in one schema (game-core `settings.ts`, the table in
+[SETTINGS.md](SETTINGS.md), generated by `pnpm settings:doc`): its key, label, unit, range,
+step, default, the modes it belongs to, and whether it applies **now** — in the running match:
+the host takes those at once (`MatchHost.tune`, game-core `nowPart`), the running arena eases to
+a new size like a halving, the bots get the new numbers — or from the **next match** (lives,
+the variant, the seats, the match and season lengths, the field sizes, the rotation). The server
+starts with the defaults, then a preset (`PRESET`, or with the admin endpoint on the one loaded
+last), then the environment's overrides (`GAME_MODE`, `SUMO_VARIANT`, `SUMO_LIVES`,
+`SEASON_SECONDS`, `RESULT_SECONDS`, `GHOSTS`), all checked against the schema
+(`start-settings.ts`). Every client gets the settings in force as `{"kind":"tuning","values":…}` on
+its hello, after a change and at every new match (public: the rules everyone plays by), and
+predicts and draws with them.
 
-The channel (`tuning-route.ts`) is `GET` / `POST /dev/tune`:
+The admin panel (the viewer's, http://localhost:5931, with `DEV_TUNING=1`, which `pnpm dev`
+sets) is generated from the schema: grouped (General, Bots, Sumo, King of the Season, Halving
+Bomb, Rotation), each control with its unit and "now" or "next match", Reset per group, and the
+**presets**: save the current settings under a name, load one, delete one. A preset is a JSON
+file in the git-ignored dev data folder `data/presets/` (`presets.ts`), checked against the schema
+when saved and when loaded (an invalid or unknown value is refused, never applied); `pnpm dev`
+starts with the last loaded one. Presets replaced the copy line.
 
-- absent (404 like any unknown path) without `DEV_TUNING=1`, and the route refuses to exist
-  with `NODE_ENV=production` (the whole server does too);
+The panel talks to one endpoint, `GET` / `POST /api/v1/admin/settings` (`admin-settings.ts`; the
+path follows the sibling games' admin routes), with one access check in front of it,
+`adminAccess` — today the dev flag, loopback and the panel's origin; later the game's own admin
+login (CONCEPT.md section 16, BACKLOG OPEN):
+
+- absent (404 like any unknown path) without `DEV_TUNING=1`, and it refuses to exist with
+  `NODE_ENV=production` (the whole server does too);
 - loopback callers only (anything else: 404), from the viewer's page only (the `Origin`
   `http://localhost:5931` or `http://127.0.0.1:5931`, else 403), `content-type:
 application/json` only (415), so another page cannot reach it without the browser's
   preflight, which only the viewer's origin passes;
-- a body of at most 256 bytes (413), exactly the eleven keys, each a whole number in its range
-  (400 otherwise, nothing applied); at most 20 changes a second (429);
+- a body of at most 4096 bytes (413) holding one command: `apply` with every setting, each in its
+  range and on its step (400 otherwise, nothing applied), or `save` / `load` / `delete` with a
+  preset name of 1–32 lowercase letters, digits and dashes (400), an unknown preset 404, a stored
+  one that does not pass the schema 422 (not applied), at most 50 presets (409); at most 20
+  commands a second (429);
 - never through the player message validator: `parseClientMessage` still takes a hello, a
-  direction and Dash only. [THREATS.md](THREATS.md) row 39.
+  direction and the two actions only. [THREATS.md](THREATS.md) rows 39 and 42.

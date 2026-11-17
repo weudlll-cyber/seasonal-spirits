@@ -17,7 +17,7 @@ Spirits' client is on `master`.
 | `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys      |
 | `src/scores.ts`            | The team chips in the band: score and ghosts still in per team, the leader framed |
 | `src/lives.ts`             | The own lives as hearts in the band; "You are out — watching"                     |
-| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, tuning     |
+| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, settings   |
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated     |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server  |
 | `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown               |
@@ -37,17 +37,18 @@ every seat has a player, the client watches instead and says so. `?spectate=1` o
 the whole field, every name, the clock and the halving staging, no controls; it sends its
 hello and nothing more.
 
-With the server's live tuning on (`pnpm dev`, [SERVER.md](SERVER.md) "Live tuning") the
-client hears the numbers in force (`{"kind":"tuning",…}`, checked by `parseServerMessage`)
-and predicts its own ghost with them (`clientConfig(mode, tuning)`), so it does not drift
-from the server after a change.
+The client hears the settings in force (`{"kind":"tuning",…}`, every setting, checked against
+the schema by `parseServerMessage`; [SERVER.md](SERVER.md) "Settings and presets") on its hello,
+after a change and at every match, and predicts its own ghost and draws with them
+(`clientConfig(mode, settings)`, render `useShape`: the ghosts' size, the trail, the fall, the
+jump's arc, the respawn band), so it does not drift from the server after a change.
 
 ## Controls
 
 - Keyboard: WASD or arrows to move, **Space to dash**, **Shift to jump**, ? the help.
 - Buttons at the bottom right: **Jump** (smaller) left of **Dash**, both round with a ring that
   fills while the server's cooldown runs; Jump hidden while the owner's switch has the jump off
-  (the live tuning). The camera keeps the arena clear of both.
+  (the settings). The camera keeps the arena clear of both.
 - Touch: a joystick where the left thumb touches the left half; the round **Dash** button
   under the right thumb. Its ring fills while the server's cooldown runs (`dashLeftMs` in the
   state) and it glows when a dash is ready.

@@ -163,12 +163,11 @@ describe('server connection bounds', () => {
     expect(await closed(third)).toBe(1008);
   });
 
-  it('refuses connections beyond twice the slot count in total', async () => {
-    server = await startServer({ maxGhosts: 1, maxConnectionsPerAddress: 10 });
-    await connect(server);
-    await connect(server);
-    const third = await connect(server);
-    expect(await closed(third)).toBe(1008);
+  it('refuses connections beyond twice the seat count in total', async () => {
+    server = await startServer({ maxConnectionsPerAddress: 20 }); // four seats
+    for (let i = 0; i < 8; i++) await connect(server);
+    const ninth = await connect(server);
+    expect(await closed(ninth)).toBe(1008);
   });
 });
 

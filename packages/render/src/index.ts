@@ -7,6 +7,7 @@ export { drawField, playBox } from './field.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 export { drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
 export { Trails } from './trails.js';
+export { shape, useShape } from './shape.js';
 export { PULSE_MS, drawRespawnBand } from './own.js';
 export { LEGEND, type LegendMarker } from './legend.js';
 export { CLOCK_HEIGHT, drawClock, mmss } from './clock.js';

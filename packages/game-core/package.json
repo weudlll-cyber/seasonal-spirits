@@ -10,6 +10,7 @@
   },
   "scripts": {
     "simulate": "tsx src/simulate.ts",
+    "settings:doc": "tsx src/settings-doc.ts ../../docs/SETTINGS.md",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

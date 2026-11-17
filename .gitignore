@@ -2,6 +2,8 @@ node_modules/
 dist/
 logs/
 tmp/
+# Dev data: the admin panel's saved presets (apps/server presets.ts), never committed.
+data/
 night-task.md
 reports/screens/latest/
 # Raw per-run outputs above 200 KB stay out of the repository (docs/BALANCE.md "Raw data"

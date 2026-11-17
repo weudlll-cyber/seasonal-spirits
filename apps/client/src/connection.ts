@@ -1,9 +1,10 @@
 // Seasonal Spirits — the client's one WebSocket: hello, welcome, states, the match recap, the
-// owner's live tuning (development only), and what it sends.
-// A player sends only a direction and the one action (the server is the only truth); the
+// settings in force (every gameplay number, game-core settings.ts), and what it sends.
+// A player sends only a direction and an action (the server is the only truth); the
 // direction goes out as soon as it changes, within the gap of input-sender.ts. A spectator
 // sends nothing after its hello.
 
+import type { Settings } from '@seasonal-spirits/game-core';
 import {
   decodeState,
   parseServerMessage,
@@ -14,7 +15,6 @@ import {
   type ServerRecap,
   type ServerState,
   type ServerWelcome,
-  type Tuning,
 } from '@seasonal-spirits/protocol';
 
 import { InputSender, type Direction } from './input-sender.js';
@@ -35,7 +35,7 @@ export class Connection {
   readonly buffer: BufferedState[] = [];
   mode: Mode = 'connecting';
   welcome: ServerWelcome | null = null;
-  tuning: Tuning | null = null; // the server's live tuning, when it runs with one
+  tuning: Settings | null = null; // the settings in force, as the server last sent them
   private readonly ws: WebSocket;
   private readonly events: ConnectionEvents;
   private readonly sender = new InputSender();

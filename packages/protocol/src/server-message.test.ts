@@ -2,6 +2,7 @@
 // are read, anything else is dropped.
 
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import { parseServerMessage } from './server-message.js';
 
 describe('parseServerMessage', () => {
@@ -28,22 +29,11 @@ describe('parseServerMessage', () => {
   });
 });
 
-// TUNE 2026-11-17: the live tuning reaches the clients; a forged one is checked like any frame.
-describe('parseServerMessage: live tuning', () => {
-  it('reads the live tuning with exactly the eleven numbers, each whole and in range', () => {
-    const values = {
-      arenaRadius: 400,
-      maxSpeed: 240,
-      dashSpeed: 480,
-      knockSpeed: 320,
-      lives: 3,
-      variant: 2,
-      afterLast: 1,
-      halvingEverySec: 75,
-      jump: 1,
-      jumpMs: 500,
-      jumpCooldownMs: 3000,
-    };
+// The settings in force reach the clients (NIGHT 2026-11-18: every setting, read against the
+// game's one schema); a forged message is checked like any frame.
+describe('parseServerMessage: the settings in force', () => {
+  it('reads every setting, each in its range and on its step, and nothing else', () => {
+    const values = { ...DEFAULT_SETTINGS, lives: 5, variant: 2 };
     expect(parseServerMessage(JSON.stringify({ kind: 'tuning', values }))).toEqual({
       kind: 'tuning',
       values,
@@ -55,9 +45,9 @@ describe('parseServerMessage: live tuning', () => {
       { ...values, lives: 10 },
       { ...values, variant: 3 },
       { ...values, afterLast: 'keep-halving' },
-      { ...values, halvingEverySec: 20 },
+      { ...values, halvingEvery: 20 },
       { ...values, jump: 2 },
-      { ...values, jumpCooldownMs: 5001 },
+      { ...values, jumpCooldown: 5.1 },
       { ...values, extra: 1 },
       { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480 },
       null,

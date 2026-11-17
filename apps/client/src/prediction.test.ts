@@ -6,8 +6,8 @@
 import {
   DEFAULT_CONFIG,
   Match,
-  tunedFields,
-  tuningOf,
+  DEFAULT_SETTINGS,
+  configFrom,
   type Intent,
 } from '@seasonal-spirits/game-core';
 import { clientConfig } from '@seasonal-spirits/render';
@@ -27,16 +27,16 @@ const at = (x: number, y: number, receivedAt: number, frozen = false): ServerOwn
   receivedAt,
 });
 
-// The owner's live tuning (TUNE 2026-11-17): the server tunes its config in place, the client
-// builds the same from the tuning message (render clientConfig).
+// Changed settings (the admin panel, NIGHT 2026-11-18): the server builds its config from them,
+// the client the same from the tuning message (render clientConfig).
 const TUNING = {
-  ...tuningOf(DEFAULT_CONFIG),
+  ...DEFAULT_SETTINGS,
   arenaRadius: 600,
   maxSpeed: 400,
   dashSpeed: 900,
   knockSpeed: 500,
 };
-const SERVER_TUNED = { ...DEFAULT_CONFIG, ...tunedFields(TUNING) };
+const SERVER_TUNED = configFrom(TUNING, 'sumo');
 
 describe('OwnPrediction against the server', () => {
   it.each([

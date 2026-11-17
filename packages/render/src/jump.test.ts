@@ -9,7 +9,7 @@ import { Trails } from './trails.js';
 import { fitField, sx, sy } from './view.js';
 
 const canvas = { width: 1280, height: 800 };
-const AIR_MS = 500;
+const AIR_MS = 500; // the default jump's time in the air (render shape.ts)
 
 // A canvas that records the circles (arc) and ellipses drawn, and the texts filled.
 function recorder() {
@@ -63,7 +63,6 @@ function frame(atMs: number, flags = GHOST_AIRBORNE) {
     nowMs: atMs,
     labelAll: false,
     fuse: 1,
-    airMs: AIR_MS,
   });
   // The body: lifted off the ground (the take-off ring stays at the real position).
   const body = r.arcs.filter((a) => a.x === sx(v, 1000) && a.y < sy(v, 1000))[0];

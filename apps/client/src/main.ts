@@ -29,6 +29,7 @@ import {
   modeOf,
   seasonColour,
   seasonName,
+  useShape,
 } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
 import { Help, variantRule } from './help.js';
@@ -155,8 +156,14 @@ const AWAY = GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED | GHOST_AIRBORNE;
 // Other ghosts a render buffer behind, smoothly; the own one where the own input has already
 // taken it (prediction.ts), stopped at the drawn ghosts the server would let it touch.
 function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
+  // The running match's rules (the server's tuning, or the defaults): for the prediction and the
+  // drawing alike.
   const mode = conn.buffer.at(-1)?.state.mode;
-  if (mode !== undefined) prediction.useConfig(clientConfig(mode, conn.tuning));
+  if (mode !== undefined) {
+    const cfg = clientConfig(mode, conn.tuning);
+    prediction.useConfig(cfg);
+    useShape(cfg);
+  }
   const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
   const own = ghosts.find((g) => g.id === ownId);
   const others =
@@ -190,7 +197,6 @@ function snapshot(now: number): Frame {
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
     marks: playing ? { pulseMs: marker.pulseMs(now), backInMs: marker.backInMs() } : NO_MARKS,
-    airMs: clientConfig(latest?.mode ?? 0, conn.tuning).jump.airMs,
   };
 }
 
@@ -231,11 +237,12 @@ function draw(f: Frame): Drawn {
   const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
   // Out of lives: nothing to steer until the next match, so no buttons. Jump only while the
   // owner's switch has it on (the tuning the server sent; on without one).
-  const jump = clientConfig(f.latest?.mode ?? 0, conn.tuning).jump;
-  hud.showControls(f.playing && !f.over && !lives.out, own?.dashLeftMs ?? 0, {
-    shown: jump.enabled,
+  const cfg = clientConfig(f.latest?.mode ?? 0, conn.tuning);
+  const dash = { shown: true, leftMs: own?.dashLeftMs ?? 0, cooldownMs: cfg.dashCooldownMs };
+  hud.showControls(f.playing && !f.over && !lives.out, dash, {
+    shown: cfg.jump.enabled,
     leftMs: own?.jumpLeftMs ?? 0,
-    cooldownMs: jump.cooldownMs,
+    cooldownMs: cfg.jump.cooldownMs,
   });
   scores.update(f.latest);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
