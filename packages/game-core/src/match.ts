@@ -3,11 +3,11 @@
 // every random value comes from the seed, so the same seed and intents give the same match.
 // The shared physics live here once; the mode's own rules come from modes/rules.ts.
 
-import { newArena, scaleArena, startSpot, updateArena } from './arena.js';
+import { followEdge, newArena, scaleArena, startSpot, updateArena } from './arena.js';
 import { collideGhosts } from './collisions.js';
 import { walled, type GameConfig } from './config.js';
 import { advancePhases } from './falls.js';
-import { dashVelocity, stepGhost } from './geometry.js';
+import { dashVelocity, moveOnce, subSteps } from './geometry.js';
 import { rulesFor, scoreOf, type ModeRules } from './modes/rules.js';
 import { mulberry32 } from './rng.js';
 import { seasonClock } from './seasons.js';
@@ -65,8 +65,8 @@ export class Match {
   }
 
   // One step. Order: time and season (a season turn is the mode's halving), the arena's edge,
-  // falls ending and respawns, each ghost's intent and movement (by id), collisions, the mode's
-  // rules (sumo: new falls; hill: the zone's points; bomb: points and passes), the end, the
+  // falls ending and respawns, each ghost's dash (by id), movement and collisions in sub-steps,
+  // the mode's rules (sumo: new falls; hill: the zone's points; bomb: points and passes), the end, the
   // countdown. Intents of unknown ids are ignored.
   tick(dtMs: number, intents: ReadonlyMap<number, Intent>): Readonly<MatchState> {
     const s = this.s;
@@ -80,10 +80,18 @@ export class Match {
       s.events.push({ type: 'halving', atMs: s.elapsedMs, season: s.clock.current });
       this.rules.turn(s, this.rng);
     }
+    const before = s.arena.radius;
     updateArena(this.cfg, s.arena, s.elapsedMs);
+    followEdge(s, before);
     advancePhases(this.cfg, s, this.rng);
-    for (const g of s.ghosts) this.move(g, intents.get(g.id) ?? IDLE, dtMs);
-    collideGhosts(this.cfg, s);
+    for (const g of s.ghosts) this.dash(g, intents.get(g.id) ?? IDLE);
+    // Sub-steps: every ghost moves a short way, then the contacts are resolved — so a ghost that
+    // reaches another always touches it, however fast it goes (FIX 2026-11-17-3).
+    const n = subSteps(this.cfg, dtMs);
+    for (let i = 0; i < n; i++) {
+      for (const g of s.ghosts) this.move(g, intents.get(g.id) ?? IDLE, dtMs / n);
+      collideGhosts(this.cfg, s);
+    }
     this.rules.after(s, dtMs);
     s.ended = s.elapsedMs >= this.cfg.matchDurationMs;
     if (s.ended) s.events.push({ type: 'match-end', atMs: s.elapsedMs });
@@ -102,10 +110,10 @@ export class Match {
   }
 
   // The owner's live tuning changed the arena's starting size (development only): the running
-  // arena eases to the same share of the new size; inside the walls of hill and bomb nothing
-  // changes.
+  // arena eases to the same share of the new size and carries the ghosts with its edge, so
+  // nobody falls by a slider (followEdge); inside the walls of hill and bomb nothing changes.
   rescaleArena(factor: number): void {
-    if (!walled(this.cfg)) scaleArena(this.s.arena, factor, this.s.elapsedMs);
+    if (!walled(this.cfg)) scaleArena(this.s.arena, factor, this.s.elapsedMs, true);
   }
 
   // Each player's counts and its score in the mode, the scores summed per team; a ghost's
@@ -125,23 +133,25 @@ export class Match {
     return { mode, players, teams };
   }
 
-  // A ghost on the arena runs and may dash (the cooldown is the core's: a dash before
-  // dashReadyMs does nothing); a falling ghost drifts without control; an out ghost waits.
+  // A ghost on the arena may dash, once per tick (the cooldown is the core's: a dash before
+  // dashReadyMs does nothing).
+  private dash(g: Ghost, intent: Intent): void {
+    const now = this.s.elapsedMs;
+    if (g.phase !== 'in' || intent.action !== 'dash' || now < g.dashReadyMs) return;
+    const v = dashVelocity(this.cfg, g, intent);
+    if (!v) return;
+    g.vx = v.x;
+    g.vy = v.y;
+    g.dashUntilMs = now + this.cfg.dashMs;
+    g.dashReadyMs = now + this.cfg.dashCooldownMs;
+    this.s.events.push({ type: 'dash', ghost: g.id });
+  }
+
+  // One sub-step: a ghost on the arena runs; a falling ghost drifts without control; an out
+  // ghost waits.
   private move(g: Ghost, intent: Intent, dtMs: number): void {
     if (g.phase === 'out') return;
-    const now = this.s.elapsedMs;
-    const steer = g.phase === 'in' ? intent : IDLE;
-    if (g.phase === 'in' && intent.action === 'dash' && now >= g.dashReadyMs) {
-      const v = dashVelocity(this.cfg, g, intent);
-      if (v) {
-        g.vx = v.x;
-        g.vy = v.y;
-        g.dashUntilMs = now + this.cfg.dashMs;
-        g.dashReadyMs = now + this.cfg.dashCooldownMs;
-        this.s.events.push({ type: 'dash', ghost: g.id });
-      }
-    }
-    Object.assign(g, stepGhost(this.cfg, g, steer, dtMs));
+    Object.assign(g, moveOnce(this.cfg, g, g.phase === 'in' ? intent : IDLE, dtMs));
   }
 }
 

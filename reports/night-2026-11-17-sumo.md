@@ -218,6 +218,49 @@ and shows the starting line; arena 400 → 560 and walking 240 → 360 reached t
 (the client's arena 560 after 3 s), Reset brought 400 back, a POST with a foreign `Origin` got
 403. Security: docs/SERVER.md "Live tuning", THREATS row 39.
 
+## Fix 3 — passing through, and finding the own ghost
+
+Owner's observation after the tune: the own ghost is found but not distinct enough; driving at
+bots to push them, he often passed straight through them.
+
+**Cause, measured.** Two things, one on each side.
+
+- Server: a bug from the tune. The thrown ghost's crowd weight (`knockWeight` 10) went into
+  the throw speed too: a ghost thrown a moment ago that dashed — or was dashed into — threw at
+  10 × 320 = 3200 u/s, 160 units a tick, five ghost diameters, and flew through everything in
+  its way. Running is 12 units a tick, a dash start 24, the diameter 32: at the normal speeds
+  one tick never stepped over a ghost, but the sliders allow a dash of 60 a tick.
+- Client: the own ghost's prediction ignored the other ghosts: it was drawn running through a
+  bot until the server's answer (with the contact) arrived and pulled it back.
+
+| Measure                                                                   | Before (`9f3c65a`) | After |
+| ------------------------------------------------------------------------- | ------------------ | ----- |
+| Seeded 32-bot matches (seeds 1–10): pairs crossing without a contact       | 3125 (62 a match-minute; 1413 through the middle) | 2 (grazes) |
+| … ghost steps longer than a diameter in one tick (longest)                 | 5329 (188 units)   | 7 (37) |
+| Scripted player on the live stack: own ghost crossing another (server)     | 1 in 90 s          | 0 in 90 s |
+| … own ghost drawn deep in another (closer than 0.75 diameter) while the server has them apart | 10.7 % of frames | 0.8 % (28 of 3488, 180 s) |
+
+**Fix.** The weight now only moves ghosts apart; a throw is `knockSpeed` times the season
+ratio. A tick runs in sub-steps (no ghost moves more than a third of a radius in one, at the
+fastest the rules and sliders allow: 5 at the starting values, up to 12 at the slider tops),
+contacts resolved after each; `stepGhost` takes the same sub-steps, so the prediction matches.
+The prediction stops the own ghost at a ghost it touches (it may slide round it, as the
+server's contact lets it; wedged between two, it stays where it was drawn). What is left on the
+client: another ghost moving into the standing own one within a frame, until the server pushes
+it aside.
+
+**The own ghost now.** Drawn on top of every other ghost; a thick white ring on a dark edge; a
+small white arrow pointing down at it from above; "You". After a respawn, at every match start
+and on joining, a ring pulses three times (1.5 s). While out after a fall the band's team line
+reads "You fell — back in 3 / 2 / 1" and the team's respawn band (its quarter, a quarter to
+three quarters of the radius) is drawn faintly on the arena — derived from what the client
+already has, no new message. The arena-size slider moves every ghost with the edge (nobody falls
+by a slider; the change still shows at once).
+
+**Checked live** (`pnpm dev`, Sumo, 15 s seasons for the check): 108 s, two match changes, 15
+falls, five slider changes 400 ↔ 300: the client owned its ghost in all 537 samples; the band
+line counted 3, 2, 1.
+
 ## Notes
 
 - Addendum 1 (no team check, no stand-in) and addendum 2 (human-like bots, equal seats)

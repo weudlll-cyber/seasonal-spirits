@@ -13,6 +13,7 @@ import {
 import {
   GHOST_BOMB,
   GHOST_BOT,
+  GHOST_FALLING,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
@@ -212,5 +213,19 @@ describe('match host live tuning', () => {
     const settled = runFor(host, DEFAULT_CONFIG.arenaShrinkMs).at(-1);
     expect(settled?.area?.r).toBeCloseTo(600);
     expect(DEFAULT_CONFIG.arenaRadius).toBe(startRadius); // the host tuned its own copy
+  });
+
+  // FIX 2026-11-17-3: shrinking the arena with the slider throws nobody off.
+  it('carries the ghosts inward with the edge when the arena slider shrinks it', () => {
+    const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
+    host.tick(50);
+    const small = DEFAULT_CONFIG.arenaRadius / 2;
+    const { maxSpeed, dashSpeed, knockSpeed } = DEFAULT_CONFIG;
+    host.tune(tunedFields({ arenaRadius: small, maxSpeed, dashSpeed, knockSpeed }));
+    // Standing still (every seat a player holding nothing): only the edge moves them.
+    for (let c = 1; c <= 32; c++) host.join(c);
+    const states = runFor(host, DEFAULT_CONFIG.arenaShrinkMs + 500);
+    expect(states.at(-1)?.area?.r).toBeCloseTo(small);
+    for (const s of states) expect(s.ghosts.every((g) => !(g.flags & GHOST_FALLING))).toBe(true);
   });
 });

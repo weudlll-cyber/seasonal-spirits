@@ -1,6 +1,7 @@
 // Seasonal Sumo — the own ghost's prediction (prediction.ts): it moves as the server moves for
 // the same inputs — momentum, top speed, a dash —, fades a small gap to the server's word,
-// snaps across a large one, and stands while the server holds the ghost still.
+// snaps across a large one, stands while the server holds the ghost still, and stops at another
+// ghost instead of being drawn through it.
 
 import { DEFAULT_CONFIG, Match, tunedFields, type Intent } from '@seasonal-spirits/game-core';
 import { clientConfig } from '@seasonal-spirits/render';
@@ -54,7 +55,7 @@ describe('OwnPrediction against the server', () => {
       match.tick(TICK, new Map([[0, intent]]));
       // The frame at the end of tick k holds the direction the tick applied and knows the
       // state of tick k - 1.
-      const shown = p.update(k * TICK, intent, seen, intent.action === 'dash');
+      const shown = p.update(k * TICK, intent, seen, { dash: intent.action === 'dash' });
       expect(shown?.x).toBeCloseTo(ghost.x, 6);
       expect(shown?.y).toBeCloseTo(ghost.y, 6);
       seen = server(k);
@@ -90,5 +91,26 @@ describe('OwnPrediction against a gap', () => {
     for (let t = 16; t <= 1000; t += 16)
       shown = p.update(t, { dx: 1, dy: 0 }, at(500, 500, t, true));
     expect(shown).toEqual({ x: 500, y: 500 });
+  });
+});
+
+// FIX 2026-11-17-3: the owner drove at bots and saw his ghost pass straight through them.
+describe('OwnPrediction against other ghosts', () => {
+  it('never draws the own ghost through another, also before the server answers', () => {
+    const p = new OwnPrediction();
+    const D = 2 * DEFAULT_CONFIG.ghostRadius;
+    const other = { x: 500, y: 503 };
+    const run = { dx: 1, dy: 0 };
+    // The server's word stays at the start: its answer to the run has not arrived.
+    p.update(0, run, at(400, 500, 0));
+    let last = { x: 400, y: 500 };
+    for (let t = 16; t <= 1500; t += 16) {
+      const shown = p.update(t, run, at(400, 500, 0), { others: [other] });
+      if (!shown) throw new Error('nothing drawn');
+      expect(Math.hypot(shown.x - other.x, shown.y - other.y)).toBeGreaterThanOrEqual(D - 1e-6);
+      // No hop over it either: it may only slide round it, as the server's contact lets it.
+      expect(Math.hypot(shown.x - last.x, shown.y - last.y)).toBeLessThan(D / 4);
+      last = shown;
+    }
   });
 });

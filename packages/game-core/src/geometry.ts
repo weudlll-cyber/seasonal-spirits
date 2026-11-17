@@ -1,7 +1,8 @@
 // Seasonal Sumo — plane geometry and one step of movement with momentum: distances, clamping,
 // a direction clamped to length 1, and stepGhost — the one movement rule the server's tick and
-// the client's prediction of the own ghost both use, so they cannot drift apart. The walls of
-// hill and bomb are part of it.
+// the client's prediction of the own ghost both use, so they cannot drift apart, cut into
+// sub-steps short enough that no contact is stepped over. The walls of hill and bomb are part of
+// it.
 
 import { walled, type GameConfig } from './config.js';
 import type { Vec } from './types.js';
@@ -44,11 +45,36 @@ export interface Motion {
   vy: number;
 }
 
-// One step: accelerate towards the held direction — but only while the speed along it is
-// below maxSpeed, so running never exceeds it while a dash or a knock may, and then slows —,
-// lose `friction` of the speed per second (exponential, so the step size does not matter),
-// move, and stay inside the bounds (fieldBounds).
+// The sub-steps a step of dtMs is cut into: none moves a ghost more than a third of its radius,
+// even at the fastest the rules allow (a dash, a throw from the team in season), so the
+// match's contacts after every sub-step never miss a ghost (FIX 2026-11-17-3). At most
+// MAX_SUB_STEPS (a stalled step stays bounded).
+const MAX_SUB_STEPS = 64;
+export function subSteps(cfg: GameConfig, dtMs: number): number {
+  const fastest = Math.max(cfg.maxSpeed, cfg.dashSpeed, cfg.knockSpeed * cfg.inSeasonPush);
+  const reach = (fastest * dtMs) / 1000 / (cfg.ghostRadius / 3);
+  return Math.min(MAX_SUB_STEPS, Math.max(1, Math.ceil(reach)));
+}
+
+// A step of dtMs in its sub-steps (subSteps): the client's prediction moves its own ghost
+// exactly as the match moves one that touches nothing.
 export function stepGhost(
+  cfg: GameConfig,
+  m: Motion,
+  dir: { dx: number; dy: number },
+  dtMs: number,
+): Motion {
+  const n = subSteps(cfg, dtMs);
+  let out = m;
+  for (let i = 0; i < n; i++) out = moveOnce(cfg, out, dir, dtMs / n);
+  return out;
+}
+
+// One sub-step: accelerate towards the held direction — but only while the speed along it is
+// below maxSpeed, so running never exceeds it while a dash or a knock may, and then slows —,
+// lose `friction` of the speed per second (exponential), move, and stay inside the bounds
+// (fieldBounds).
+export function moveOnce(
   cfg: GameConfig,
   m: Motion,
   dir: { dx: number; dy: number },

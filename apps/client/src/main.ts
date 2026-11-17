@@ -9,6 +9,7 @@
 import {
   GHOST_FALLING,
   GHOST_OUT,
+  GHOST_PROTECTED,
   RenderClock,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
@@ -32,9 +33,10 @@ import { Connection, type Mode } from './connection.js';
 import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
+import { OwnMarker, fellLine } from './own-marker.js';
 import { OwnPrediction, type ServerOwn } from './prediction.js';
 import { ResultScreen } from './result.js';
-import { drawScene, type Drawn, type Frame } from './scene.js';
+import { NO_MARKS, drawScene, type Drawn, type Frame } from './scene.js';
 import { ScoreBoard } from './scores.js';
 import { DeadlineTone } from './sound.js';
 
@@ -80,8 +82,11 @@ const NOTICES: Record<Mode, string | null> = {
   closed: 'The connection to the match server is gone. Reload the page to join again.',
 };
 
+const marker = new OwnMarker();
+
 const conn = new Connection(spectate ? 'spectator' : 'player', {
   onState: (s: ServerState) => {
+    marker.observe(s, conn.welcome?.ghost ?? null, performance.now(), clientConfig(s.mode).outMs);
     if (!(s.flags & STATE_RESULT)) recap = null; // a match runs: the last recap is over
     // Each deadline event is in one state only; every state passes here, so none is missed.
     if (!(s.flags & (STATE_HALVING_EVENT | STATE_MATCH_END_EVENT))) return;
@@ -137,14 +142,23 @@ function ownServer(ownId: number | null): ServerOwn | null {
   };
 }
 
+// Off the arena or protected after a respawn: the server lets it touch nobody.
+const AWAY = GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED;
+
 // Other ghosts a render buffer behind, smoothly; the own one where the own input has already
-// taken it (prediction.ts).
+// taken it (prediction.ts), stopped at the drawn ghosts the server would let it touch.
 function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
   const mode = conn.buffer.at(-1)?.state.mode;
   if (mode !== undefined) prediction.useConfig(clientConfig(mode, conn.tuning));
-  const predicted = prediction.update(now, conn.direction, ownServer(ownId), dashPressed);
-  dashPressed = false;
   const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
+  const own = ghosts.find((g) => g.id === ownId);
+  const others =
+    own && !(own.flags & AWAY) ? ghosts.filter((g) => g !== own && !(g.flags & AWAY)) : [];
+  const predicted = prediction.update(now, conn.direction, ownServer(ownId), {
+    dash: dashPressed,
+    others,
+  });
+  dashPressed = false;
   return ghosts.map((g) => (g.id === ownId && predicted ? { ...g, ...predicted } : g));
 }
 
@@ -163,13 +177,21 @@ function snapshot(now: number): Frame {
     playing,
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
+    marks: playing ? { pulseMs: marker.pulseMs(now), backInMs: marker.backInMs() } : NO_MARKS,
   };
 }
 
 // "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
 // On a narrow phone "You are " is hidden (index.html), so the team's name is never cut off.
-function showTeam(team: number | null): void {
+// While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3).
+function showTeam(team: number | null, backInMs: number | null): void {
   teamLine.hidden = team === null;
+  if (team !== null && backInMs !== null) {
+    teamLine.textContent = fellLine(backInMs);
+    teamLine.style.color = seasonColour(team);
+    delete teamLine.dataset.team;
+    return;
+  }
   if (team === null || teamLine.dataset.team === String(team)) return;
   const lead = document.createElement('span');
   lead.className = 'lead';
@@ -182,7 +204,7 @@ function showTeam(team: number | null): void {
 function draw(f: Frame): Drawn {
   if (f.latest) help.show(modeOf(f.latest.mode), modeWords(f.latest.mode).name);
   const drawn = drawScene(ctx, f, trails);
-  showTeam(f.ownTeam);
+  showTeam(f.ownTeam, f.marks.backInMs);
   const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
   hud.showControls(f.playing && !f.over, own?.dashLeftMs ?? 0);
   scores.update(f.latest);

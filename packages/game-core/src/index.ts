@@ -6,6 +6,7 @@ export * from './config.js';
 export * from './seasons.js';
 export * from './types.js';
 export { Match, type Roster } from './match.js';
+export { RESPAWN_BAND, teamAngle } from './arena.js';
 export { mulberry32 } from './rng.js';
 export { clamp, dashVelocity, fieldBounds, stepGhost, type Motion } from './geometry.js';
 export { areaOf, scoreOf } from './modes/rules.js';

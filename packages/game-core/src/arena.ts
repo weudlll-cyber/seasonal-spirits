@@ -12,20 +12,36 @@ export const HALF_AREA = Math.SQRT1_2; // the radius factor that halves a disc's
 export function newArena(cfg: GameConfig): Arena {
   const c = cfg.fieldSize / 2;
   const r = walled(cfg) ? cfg.wallHalf : cfg.arenaRadius;
-  return { centre: { x: c, y: c }, radius: r, from: r, target: r, shrinkFromMs: 0 };
+  return { centre: { x: c, y: c }, radius: r, from: r, target: r, shrinkFromMs: 0, carry: false };
 }
 
 // The halving: the edge will ease from where it is now to half the area of the last target.
 export function halveArena(a: Arena, atMs: number): void {
-  scaleArena(a, HALF_AREA, atMs);
+  scaleArena(a, HALF_AREA, atMs, false);
 }
 
-// The edge eases from where it is now to the last target times `factor`: the halving, and the
-// owner's live tuning of the starting size (Match.rescaleArena).
-export function scaleArena(a: Arena, factor: number, atMs: number): void {
+// The edge eases from where it is now to the last target times `factor`: the halving (the ghosts
+// stay put), and the owner's live tuning of the starting size (Match.rescaleArena: `carry`, the
+// ghosts move with the edge — followEdge).
+export function scaleArena(a: Arena, factor: number, atMs: number, carry: boolean): void {
   a.from = a.radius;
   a.target = a.target * factor;
   a.shrinkFromMs = atMs;
+  a.carry = carry;
+}
+
+// After updateArena: while the edge carries them, every ghost on the arena moves by the same
+// share as the edge did since `before` (its radius then), towards or away from the centre — so
+// the arena-size slider throws nobody off (FIX 2026-11-17-3).
+export function followEdge(s: MatchState, before: number): void {
+  const a = s.arena;
+  if (!a.carry || a.radius === before || before <= 0) return;
+  const k = a.radius / before;
+  for (const g of s.ghosts) {
+    if (g.phase !== 'in') continue;
+    g.x = a.centre.x + (g.x - a.centre.x) * k;
+    g.y = a.centre.y + (g.y - a.centre.y) * k;
+  }
 }
 
 // The radius the next halving leads to: the dashed ring the clients draw in its countdown.
@@ -46,7 +62,7 @@ export function outside(a: Readonly<Arena>, p: Vec): boolean {
 
 // The middle of a team's quarter, as an angle: Spring top left, Summer top right, Autumn
 // bottom right, Winter bottom left — the corners its shrine had in Seasonal Spirits.
-function teamAngle(team: Team): number {
+export function teamAngle(team: Team): number {
   return -0.75 * Math.PI + (team * Math.PI) / 2;
 }
 
@@ -77,8 +93,13 @@ export function startSpot(
 
 const SPAWN_TRIES = 12;
 
-// A respawn spot on the team's quarter, inside the arena, as far from every ghost on it as a
-// few seeded tries find; `rng` is the match's seeded random source.
+// Where a team's ghosts come back: its quarter (around teamAngle, `spread` wide), from `inner` to
+// `outer` of the radius. The client draws it faintly for its player while out
+// (FIX 2026-11-17-3).
+export const RESPAWN_BAND = { spread: Math.PI / 2, inner: 0.25, outer: 0.75 } as const;
+
+// A respawn spot in the team's RESPAWN_BAND, as far from every ghost on the arena as a few
+// seeded tries find; `rng` is the match's seeded random source.
 export function respawnSpot(
   cfg: GameConfig,
   s: Readonly<MatchState>,
@@ -89,8 +110,9 @@ export function respawnSpot(
   let bestRoom = -1;
   const onArena = s.ghosts.filter((g: Ghost) => g.phase === 'in');
   for (let i = 0; i < SPAWN_TRIES; i++) {
-    const angle = teamAngle(team) + (rng() - 0.5) * (Math.PI / 2);
-    const p = at(s.arena, angle, s.arena.radius * (0.25 + 0.5 * rng()));
+    const { spread, inner, outer } = RESPAWN_BAND;
+    const angle = teamAngle(team) + (rng() - 0.5) * spread;
+    const p = at(s.arena, angle, s.arena.radius * (inner + (outer - inner) * rng()));
     const room = Math.min(Infinity, ...onArena.map((g) => distance(g, p)));
     if (room > bestRoom) {
       best = p;

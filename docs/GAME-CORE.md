@@ -23,7 +23,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/modes/sumo.ts`       | Sumo: the arena halves at each halving; falls after the moves                  |
 | `src/modes/hill.ts`       | King of the Season: the zone, its points, its jump and halving, bounces        |
 | `src/modes/bomb.ts`       | Halving Bomb: points, the bombs, passing, the explosion                        |
-| `src/geometry.ts`         | Distances, `stepGhost` (momentum, the walls: `fieldBounds`), `dashVelocity`    |
+| `src/geometry.ts`         | Distances, `stepGhost` in `subSteps` (momentum, walls), `dashVelocity`         |
 | `src/arena.ts`            | The arena disc, its halving and easing, start and respawn spots, quarters      |
 | `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash hit's throw, the in-season push, credit   |
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
@@ -84,31 +84,38 @@ bounces; bomb: points and passes), the end, the countdown.
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
 - **Arena.** A disc in the middle of the field, `arenaRadius` 400 at the start (25 ghost
   diameters across; the owner's live tuning eases a running arena to a new size,
-  `Match.rescaleArena`, the same easing as a halving, `scaleArena`). Each team
+  `Match.rescaleArena`, the same easing as a halving, `scaleArena` — but carrying the ghosts
+  with its edge, `followEdge`, so a slider throws nobody off). Each team
   starts on its own quarter (Spring top left, Summer top right, Autumn bottom right, Winter
   bottom left), on a ring at `startSpread` of the radius.
 - **Movement with momentum** (`stepGhost`, also the client's prediction): the held direction
   accelerates by `acceleration` while the speed along it is below `maxSpeed`; `friction`
-  takes a share of the speed per second (exponential, so the step size does not matter). A
-  dash or a knock may go faster than running and then slows.
+  takes a share of the speed per second (exponential). A dash or a knock may go faster than
+  running and then slows. A tick runs in sub-steps (`subSteps`): none moves a ghost more than
+  a third of its radius even at the fastest the rules allow, and the contacts are resolved
+  after each, so a ghost that reaches another always touches it (FIX 2026-11-17-3: before,
+  ghosts crossed each other without a contact). `stepGhost` takes the same sub-steps, so the
+  client's prediction moves exactly as a ghost that touches nothing.
 - **Dash** (the one action): the speed becomes `dashSpeed` towards the held direction (or
   along the motion); for `dashMs` the ghost knocks what it hits; the next dash only after
   `dashCooldownMs` — the core's rule, whatever a client sends.
 - **Collisions** (`collideGhosts`, grown from Spirits' soft separation): two ghosts on the
   arena that overlap are moved apart and bounce (`restitution`), the overlap shared by their
   push factors; the team whose season is in season pushes `inSeasonPush` harder. A dashing
-  ghost throws the one it hits off at `knockSpeed` (times the push ratio) at least — set, not
+  ghost throws the one it hits off at `knockSpeed` (times the in-season ratio) at least — set, not
   added, so a throw is about `knockSpeed / friction` long however many ticks the dash touches;
   the thrown ghost counts `knockWeight` heavier for `dashMs`, so a crowd behind it gives way
-  instead of stopping it. Each remembers the last opponent that touched it; teammates give no
+  instead of stopping it (the weight moves ghosts apart; it never makes a throw harder). Each
+  remembers the last opponent that touched it; teammates give no
   credit.
 - **Falling.** A ghost whose centre leaves the arena falls: +1 knockout for the last opponent
   that touched it within `creditMs`, and for its team; nobody scores without one. It falls
   for `fallMs` (the animation), is out until `outMs` after the fall, then respawns on its
-  team's quarter at the freest of a few seeded spots, protected for `protectMs` (nothing
+  team's quarter (`RESPAWN_BAND`: a quarter wide, from 0.25 to 0.75 of the radius, drawn
+  faintly for a player while out) at the freest of a few seeded spots, protected for `protectMs` (nothing
   pushes it, it pushes nothing).
 - **Halving** at 1:15, 2:30 and 3:45: the next season comes into season and the arena's area
-  halves (radius × 1/√2: 900 → 636 → 450 → 318); the edge eases in over `arenaShrinkMs`
+  halves (radius × 1/√2: 400 → 283 → 200 → 141); the edge eases in over `arenaShrinkMs`
   (slow, fast, slow). A ghost the edge passes under falls. During the 10 s countdown the
   clients draw the edge after the halving (`nextRadius`) as a dashed ring.
 - **End.** The team with the most knockouts wins; `result()` gives knockouts and falls per

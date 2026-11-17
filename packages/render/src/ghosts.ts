@@ -1,5 +1,5 @@
 // Seasonal Sumo — the ghosts in Seasonal Spirits' look B: the body in its team's colour,
-// players and bots alike, a thick white ring for "You". A fast ghost — dashing or knocked
+// players and bots alike; the own one drawn on top of all with its marks (own.ts). A fast ghost — dashing or knocked
 // flying — leaves a short trail in its team's colour; a ghost falling off the arena shrinks and
 // fades (fallMs); one out is not drawn; one just back (protected) wears a pale dashed ring; a
 // bomb carrier has the ticking bomb above it (bomb.ts).
@@ -20,6 +20,7 @@ import {
   type LabelCandidate,
   type PlacedLabel,
 } from './labels.js';
+import { OWN_REACH, drawOwnMarks } from './own.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
 import { circle, sx, sy, visibleArea, type View } from './view.js';
 
@@ -65,6 +66,7 @@ export interface GhostStyle {
   nowMs: number; // drives the fall animation
   labelAll: boolean; // every ghost named (spectators, the viewer)
   fuse: number; // the bombs' fuse: 1 full … 0 going off (fuseLeft in modes.ts)
+  ownPulseMs?: number | null; // since the own ghost's pulse began (own.ts), null: none
 }
 
 export function ghostRadiusPx(v: View): number {
@@ -86,7 +88,9 @@ export function drawGhosts(
       drawTrail(v, g, style.trails);
     }
   }
-  for (const g of shown) drawBody(v, g, style);
+  // The own ghost last: on top of every other (FIX 2026-11-17-3).
+  const own = shown.filter((g) => g.id === style.ownId);
+  for (const g of [...shown.filter((g) => g.id !== style.ownId), ...own]) drawBody(v, g, style);
   return drawLabels(
     v,
     shown.filter((g) => !(g.flags & GHOST_FALLING)),
@@ -113,9 +117,7 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
   ctx.globalAlpha = 1;
 }
 
-// Pixels outside the body: the own ghost's ring and the protection ring (each line's centre).
-// ghostReach adds half a line width for the outer edge.
-const OWN_RING = 4;
+// Pixels outside the body to the protection ring's centre line; ghostReach adds half its width.
 const PROTECT_RING = 9;
 
 function drawBody(v: View, g: GhostState, style: GhostStyle): void {
@@ -136,12 +138,7 @@ function drawBody(v: View, g: GhostState, style: GhostStyle): void {
     ctx.stroke();
     ctx.setLineDash([]);
   }
-  if (g.id === style.ownId) {
-    ctx.strokeStyle = TEXT;
-    ctx.lineWidth = 3;
-    circle(v, g.x, g.y, r + OWN_RING);
-    ctx.stroke();
-  }
+  if (g.id === style.ownId) drawOwnMarks(v, { x: g.x, y: g.y, r }, style.ownPulseMs ?? null);
   if (g.flags & GHOST_BOMB) drawBomb(v, { x: g.x, y: g.y, r }, style.fuse, style.nowMs);
 }
 
@@ -153,7 +150,7 @@ export function ghostReach(
   ownId: number | null,
 ): number {
   const outside = [
-    g.id === ownId ? OWN_RING + 1.5 : 0,
+    g.id === ownId ? OWN_REACH : 0,
     g.flags & GHOST_PROTECTED ? PROTECT_RING + 1 : 0,
     g.flags & GHOST_BOMB ? bombReach(r) - r : 0,
   ];

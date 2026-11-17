@@ -1,7 +1,8 @@
 // Seasonal Sumo — one frame of the canvas: the whole playing area fitted below the band, its
-// ghosts and labels, and the season clock. Returns what it drew, for the browser specs.
+// ghosts and labels, the own ghost's marks (its pulse; its respawn band while out), and the
+// season clock. Returns what it drew, for the browser specs.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { DEFAULT_CONFIG, type Team } from '@seasonal-spirits/game-core';
 import {
   GHOST_FALLING,
   GHOST_OUT,
@@ -13,6 +14,7 @@ import {
   belowBar,
   drawClock,
   drawField,
+  drawRespawnBand,
   drawGhosts,
   fitBox,
   fuseLeft,
@@ -42,7 +44,16 @@ export interface Frame {
   playing: boolean;
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
+  marks: OwnMarks;
 }
+
+// When the own ghost needs finding (own-marker.ts): its pulse, and while it is out after a
+// fall, the time until it is back.
+export interface OwnMarks {
+  pulseMs: number | null;
+  backInMs: number | null;
+}
+export const NO_MARKS: OwnMarks = { pulseMs: null, backInMs: null };
 
 export interface Drawn {
   barBottom: number; // pixels: nothing of the field is drawn above this line
@@ -96,12 +107,16 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trail
   let labels: PlacedLabel[] = [];
   belowBar(view, () => {
     drawField(view, f.latest);
+    const area = f.latest?.area;
+    if (f.marks.backInMs !== null && f.ownTeam !== null && area)
+      drawRespawnBand(view, area, f.ownTeam as Team);
     labels = drawGhosts(view, f.ghosts, {
       ownId: f.ownId,
       trails,
       nowMs: now,
       labelAll: !f.playing,
       fuse: f.latest ? fuseLeft(f.latest) : 1,
+      ownPulseMs: f.marks.pulseMs,
     });
   });
   drawClock(ctx, f.latest);

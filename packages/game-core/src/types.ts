@@ -87,6 +87,9 @@ export interface Arena {
   from: number;
   target: number;
   shrinkFromMs: number;
+  // The ghosts move with the edge while it eases (the owner's live tuning of the size, so a
+  // slider never throws anyone off); a halving's edge leaves them where they are.
+  carry: boolean;
 }
 
 export interface MatchState {

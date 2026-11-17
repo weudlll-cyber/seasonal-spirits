@@ -19,6 +19,7 @@ Spirits' client is on `master`.
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, tuning    |
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated    |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server |
+| `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown              |
 | `src/input.ts`             | Keyboard (WASD/arrows, Space to dash) and the touch joystick                     |
 | `src/hud.ts`               | The Dash button and its cooldown ring, announcements and flash, notices, mute    |
 | `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box     |
@@ -50,7 +51,9 @@ from the server after a change.
   twice the same.
 - **The own ghost answers at once**: it is drawn where the own input — with momentum, top
   speed and a dash — has already taken it, moved with the server's own rules (`stepGhost`,
-  `dashVelocity`, the walls of the mode on screen), pulled smoothly towards the server's position and restarted from the
+  `dashVelocity`, the walls of the mode on screen), stopped at a ghost it touches (never drawn
+  through one; wedged between two it stays where it was drawn until the server moves them —
+  FIX 2026-11-17-3), pulled smoothly towards the server's position and restarted from the
   server's position and speed when more than `SNAP_DISTANCE` off (a knock it could not see
   coming, a respawn). Display only (THREATS row 36). Every other ghost is drawn 50 ms (one
   tick) behind the newest state, interpolated, and extrapolated from its last two states
@@ -72,8 +75,12 @@ from the server after a change.
 - **Bomb** (render `bomb.ts`): a carrier has a ticking bomb drawn above it — black with a
   pale rim, a fuse as long as the share of the time left before the bombs go off, and a
   flickering spark; its label keeps clear of it.
-- **Ghosts** (look B of Seasonal Spirits): circles in their team colour, a thick white ring
-  and "You" for the own one; a ghost faster than running (a dash, a knock) leaves a short
+- **Ghosts** (look B of Seasonal Spirits): circles in their team colour. The own one (render
+  `own.ts`, FIX 2026-11-17-3) is drawn on top of all, with a thick white ring on a dark edge,
+  a small arrow pointing down at it and "You"; after a respawn, at every match start and on
+  joining, a ring pulses three times (1.5 s). While it is out after a fall, the band's team
+  line says "You fell — back in 3 … 1" (server time of the fall plus `outMs`) and its team's
+  respawn band is drawn faintly on the arena (`own-marker.ts`). A ghost faster than running (a dash, a knock) leaves a short
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
   points), the short tag

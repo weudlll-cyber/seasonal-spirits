@@ -19,32 +19,43 @@ function solid(g: Ghost, nowMs: number): boolean {
 // same match).
 export function collideGhosts(cfg: GameConfig, s: MatchState): void {
   const now = s.elapsedMs;
-  const gs = s.ghosts.filter((g) => solid(g, now));
   // The team whose season is in season (team index = season index) pushes harder; a thrown
   // ghost counts knockWeight heavier, so the ghosts it flies into give way (TUNE 2026-11-17: a
-  // crowd cancelled the dash hit).
+  // crowd cancelled the dash hit). The weight moves them apart; only the season makes a throw
+  // harder (FIX 2026-11-17-3: with the weight in it, a thrown ghost that dashed threw at
+  // 10 × knockSpeed, 160 units a tick, and flew through everything).
   const teamInSeason = SEASONS.indexOf(s.clock.current);
-  const weight = (g: Ghost): number =>
-    (g.team === teamInSeason ? cfg.inSeasonPush : 1) *
-    (now < g.knockedUntilMs ? cfg.knockWeight : 1);
-  for (let i = 0; i < gs.length; i++) {
-    for (let j = i + 1; j < gs.length; j++) {
-      const a = gs[i];
-      const b = gs[j];
-      if (a && b) bump(cfg, [a, b], [weight(a), weight(b)], now);
+  const bodies = s.ghosts
+    .filter((g) => solid(g, now))
+    .map((g): Body => {
+      const season = g.team === teamInSeason ? cfg.inSeasonPush : 1;
+      return { g, season, weight: season * (now < g.knockedUntilMs ? cfg.knockWeight : 1) };
+    });
+  for (let i = 0; i < bodies.length; i++) {
+    for (let j = i + 1; j < bodies.length; j++) {
+      const a = bodies[i];
+      const b = bodies[j];
+      if (a && b) bump(cfg, a, b, now);
     }
   }
 }
 
-// One pair: `push` holds each one's weight.
-function bump(cfg: GameConfig, pair: [Ghost, Ghost], push: [number, number], now: number): void {
-  const [a, b] = pair;
-  const [ma, mb] = push;
+// A ghost in a collision: its weight (apart and bounce) and its season's push factor (a throw).
+interface Body {
+  g: Ghost;
+  weight: number;
+  season: number;
+}
+
+function bump(cfg: GameConfig, pa: Body, pb: Body, now: number): void {
+  const { g: a, weight: ma } = pa;
+  const { g: b, weight: mb } = pb;
   const dx = b.x - a.x;
   const dy = b.y - a.y;
-  const d = Math.hypot(dx, dy);
   const reach = 2 * cfg.ghostRadius;
-  if (d >= reach) return;
+  // Most pairs are far apart: no square root for them (this runs every sub-step).
+  if (dx * dx + dy * dy >= reach * reach) return;
+  const d = Math.hypot(dx, dy);
   const angle = (a.id + b.id) * GOLDEN_ANGLE;
   const nx = d > 0 ? dx / d : Math.cos(angle);
   const ny = d > 0 ? dy / d : Math.sin(angle);
@@ -66,8 +77,9 @@ function bump(cfg: GameConfig, pair: [Ghost, Ghost], push: [number, number], now
   }
   // A dash throws the other off, harder from the team in season.
   const until = now + cfg.dashMs;
-  if (now < a.dashUntilMs) throwOff(b, { x: nx, y: ny }, (ma / mb) * cfg.knockSpeed, until);
-  if (now < b.dashUntilMs) throwOff(a, { x: -nx, y: -ny }, (mb / ma) * cfg.knockSpeed, until);
+  const ratio = pa.season / pb.season;
+  if (now < a.dashUntilMs) throwOff(b, { x: nx, y: ny }, ratio * cfg.knockSpeed, until);
+  if (now < b.dashUntilMs) throwOff(a, { x: -nx, y: -ny }, cfg.knockSpeed / ratio, until);
   // Teammates give no credit: a team cannot score by pushing its own ghost off.
   if (a.team !== b.team) {
     a.lastTouch = { by: b.id, atMs: now };

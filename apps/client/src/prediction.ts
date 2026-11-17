@@ -2,8 +2,9 @@
 // 2026-11-16-RESPONSE): moved at once by the player's own direction and dash with the server's
 // movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity), pulled
 // smoothly towards what the server says, snapped to it when far off; inside the walls of hill
-// and bomb as the core keeps it (fieldBounds). Display only: the server's position is the
-// truth and nothing of this leaves the client (THREATS row 36).
+// and bomb as the core keeps it (fieldBounds); stopped at another ghost it touches, never drawn
+// through it (FIX 2026-11-17-3), until the server's answer moves it on. Display only: the
+// server's position is the truth and nothing of this leaves the client (THREATS row 36).
 
 import {
   DEFAULT_CONFIG,
@@ -38,11 +39,62 @@ const MAX_FRAME_MS = 100; // a stalled tab does not fling the ghost forward
 
 type Point = Motion & { at: number };
 
+// What the player did since the last frame, and the ghosts the own one may not pass through
+// (those the server lets it touch: on the arena, not protected — drawn where they are now).
+export interface FrameInput {
+  dash?: boolean; // the player pressed Dash
+  others?: readonly { x: number; y: number }[];
+}
+
+// Moved out of every ghost it overlaps to touching distance, with the speed into it taken
+// away: the own ghost stops at a ghost as the server's contact stops it (restitution 0). In a
+// crowd, moving out of one may move it into the next: a few passes, until none overlaps (or
+// none can — wedged between two, where the server pushes the others aside).
+const STOP_PASSES = 4;
+function stopAt(m: Motion, others: readonly { x: number; y: number }[], reach: number): Motion {
+  let out = m;
+  for (let pass = 0; pass < STOP_PASSES; pass++) {
+    const next = stopOnce(out, others, reach);
+    if (next.x === out.x && next.y === out.y) break;
+    out = next;
+  }
+  return out;
+}
+
+function clear(
+  p: { x: number; y: number },
+  others: readonly { x: number; y: number }[],
+  reach: number,
+): boolean {
+  return others.every((o) => Math.hypot(p.x - o.x, p.y - o.y) >= reach - 1e-6);
+}
+
+function stopOnce(m: Motion, others: readonly { x: number; y: number }[], reach: number): Motion {
+  let { x, y, vx, vy } = m;
+  for (const o of others) {
+    const dx = x - o.x;
+    const dy = y - o.y;
+    const d = Math.hypot(dx, dy);
+    if (d >= reach || d === 0) continue;
+    const nx = dx / d;
+    const ny = dy / d;
+    x = o.x + nx * reach;
+    y = o.y + ny * reach;
+    const into = vx * nx + vy * ny;
+    if (into < 0) {
+      vx -= into * nx;
+      vy -= into * ny;
+    }
+  }
+  return { x, y, vx, vy };
+}
+
 export class OwnPrediction {
   private cfg: GameConfig;
   // The path the own inputs alone give, and the correction added to it for drawing.
   private path: Point[] = [];
   private offset = { x: 0, y: 0 };
+  private shown: { x: number; y: number } | null = null; // drawn in the last frame
 
   constructor(cfg: GameConfig = DEFAULT_CONFIG) {
     this.cfg = cfg;
@@ -53,37 +105,56 @@ export class OwnPrediction {
     this.cfg = cfg;
   }
 
-  // Once per frame; null without a server position (not placed yet, or watching). `dash`: the
-  // player pressed Dash since the last frame.
+  // Once per frame; null without a server position (not placed yet, or watching).
   update(
     now: number,
     dir: Direction,
     server: ServerOwn | null,
-    dash = false,
+    input: FrameInput = {},
   ): { x: number; y: number } | null {
     if (!server) {
       this.path = [];
+      this.shown = null;
       return null;
     }
+    const others = input.others ?? [];
+    const reach = 2 * this.cfg.ghostRadius;
     const last = this.path.at(-1);
     if (!last || server.frozen) {
       this.path = [{ at: now, x: server.x, y: server.y, vx: server.vx, vy: server.vy }];
       this.offset = { x: 0, y: 0 };
     } else {
-      const dt = Math.min(MAX_FRAME_MS, Math.max(0, now - last.at));
-      const v = dash && server.dashLeftMs === 0 ? dashVelocity(this.cfg, last, dir) : null;
-      const from = v ? { ...last, vx: v.x, vy: v.y } : last;
-      const to = stepGhost(this.cfg, from, dir, dt);
-      this.path.push({ at: now, ...to });
-      while ((this.path[0]?.at ?? now) < now - HISTORY_MS) this.path.shift();
-      this.correct(server, dt);
+      this.advance(last, { now, dir, dash: input.dash === true }, server, others);
     }
     const head = this.path.at(-1) ?? server;
     const b = fieldBounds(this.cfg);
-    return {
-      x: clamp(head.x + this.offset.x, b.lo, b.hi),
-      y: clamp(head.y + this.offset.y, b.lo, b.hi),
-    };
+    // The correction may pull it into a ghost too: what is drawn stays outside every one.
+    const drawn = { x: head.x + this.offset.x, y: head.y + this.offset.y, vx: 0, vy: 0 };
+    const out = stopAt(drawn, others, reach);
+    const free = { x: clamp(out.x, b.lo, b.hi), y: clamp(out.y, b.lo, b.hi) };
+    // Wedged between ghosts with no free spot: it stays where it was drawn, as long as that is
+    // clear, until the server's answer moves the others aside.
+    const stay = !clear(free, others, reach) && this.shown && clear(this.shown, others, reach);
+    this.shown = stay && this.shown ? this.shown : free;
+    return this.shown;
+  }
+
+  // One frame on from the last path point by the own input, stopped at the ghosts it touches,
+  // then corrected towards the server's word.
+  private advance(
+    last: Point,
+    frame: { now: number; dir: Direction; dash: boolean },
+    server: ServerOwn,
+    others: readonly { x: number; y: number }[],
+  ): void {
+    const { now, dir, dash } = frame;
+    const dt = Math.min(MAX_FRAME_MS, Math.max(0, now - last.at));
+    const v = dash && server.dashLeftMs === 0 ? dashVelocity(this.cfg, last, dir) : null;
+    const from = v ? { ...last, vx: v.x, vy: v.y } : last;
+    const to = stopAt(stepGhost(this.cfg, from, dir, dt), others, 2 * this.cfg.ghostRadius);
+    this.path.push({ at: now, ...to });
+    while ((this.path[0]?.at ?? now) < now - HISTORY_MS) this.path.shift();
+    this.correct(server, dt);
   }
 
   // The server's position is where the own path was PREDICTION_LAG_MS before the state
