@@ -25,6 +25,9 @@ export const GHOST_OUT = 8; // fallen, waiting to respawn: not drawn
 export const GHOST_PROTECTED = 16; // just respawned: nothing pushes it
 export const GHOST_BOMB = 32; // bomb mode: it carries a bomb
 export const GHOST_AIRBORNE = 64; // a jump: in the air, nothing hits it (JUMP 2026-11-17)
+// A dash passed under it in the air in this tick: "Dodged!" (in exactly one state, like the
+// halving; NIGHT 2026-11-18).
+export const GHOST_DODGED = 128;
 
 // A disc on the field: sumo's arena, the hill's zone.
 export interface WireDisc {

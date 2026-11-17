@@ -4,7 +4,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { GHOST_BOT, GHOST_PROTECTED, type GhostState } from '@seasonal-spirits/protocol';
-import { Trails, drawGhosts, ghostRadiusPx } from './ghosts.js';
+import { drawGhosts, ghostRadiusPx } from './ghosts.js';
+import { Trails } from './trails.js';
 import { fitField, sx, sy } from './view.js';
 
 // A canvas that draws nothing and measures text at 6 px per character.

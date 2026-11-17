@@ -90,7 +90,7 @@ One binary encoding, little endian:
 - **Per ghost, 16 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
   prediction starts from it), team u8, the mode's score u16, ms to its next dash u8 (in 20 ms
   steps: the Dash button's ring), flags u8 (bot, dashing, falling, out, protected, carries a
-  bomb, in the air), lives left u8 (0: out until the next match), ms to its next jump u8 (20 ms
+  bomb, in the air, a dash passed under it in the air in this tick — "Dodged!"), lives left u8 (0: out until the next match), ms to its next jump u8 (20 ms
   steps: the Jump button's ring).
 
 At 32 ghosts: 558 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are

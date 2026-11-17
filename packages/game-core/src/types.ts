@@ -37,6 +37,7 @@ export interface Ghost {
   dashReadyMs: number; // the next dash is allowed from this match time on
   airUntilMs: number; // a jump: in the air until this match time (jump.ts)
   jumpReadyMs: number; // the next jump is allowed from this match time on
+  dodged: boolean; // this jump has let a dash pass underneath (one "Dodged!" per jump)
   // The last opponent that touched it and when: a fall within creditMs counts for that one.
   lastTouch: { by: number; atMs: number } | null;
   knockouts: number; // sumo: opponents it pushed off
@@ -79,6 +80,8 @@ export type MatchEvent =
   | { type: 'halving'; atMs: number; season: Season }
   | { type: 'dash'; ghost: number }
   | { type: 'jump'; ghost: number }
+  // A rival's dash (by) passed under the ghost in the air.
+  | { type: 'dodge'; ghost: number; by: number }
   // by: the opponent credited with the knockout, null when nobody touched it in time.
   | { type: 'fall'; ghost: number; by: number | null; atMs: number }
   | { type: 'respawn'; ghost: number }

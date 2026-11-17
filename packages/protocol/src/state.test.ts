@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 import {
   GHOST_BOMB,
   GHOST_BOT,
+  GHOST_AIRBORNE,
   GHOST_BYTES,
+  GHOST_DODGED,
   GHOST_DASHING,
   GHOST_FALLING,
   GHOST_OUT,
@@ -45,7 +47,8 @@ function sample(ghosts: number): ServerState {
       team: i % 4,
       score: i * 300,
       dashLeftMs: (i % 8) * 200,
-      flags: i % 2 ? GHOST_DASHING : 0,
+      // NIGHT 2026-11-18: the dodge flag (bit 128) round-trips with the rest.
+      flags: i === 3 ? GHOST_AIRBORNE | GHOST_DODGED : i % 2 ? GHOST_DASHING : 0,
       lives: i % 4,
       jumpLeftMs: (i % 4) * 1000,
     })),

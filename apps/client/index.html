@@ -149,16 +149,21 @@
       #knob {
         background: rgba(230, 237, 243, 0.35);
       }
+      /* The halving, the bombs' blast and the match end (hud.ts): a slim strip at the top edge of
+         the play area, right under the band — never over the middle of the field (NIGHT
+         2026-11-18); with the flash and the tone, the clock's countdown stays above it. */
       #announce {
         position: fixed;
-        top: 32%;
+        top: 132px;
         left: 0;
         right: 0;
+        padding: 5px 12px;
         text-align: center;
-        font-size: clamp(28px, 7vw, 64px);
+        font-size: clamp(15px, 4vw, 22px);
         font-weight: 800;
-        letter-spacing: 0.04em;
-        text-shadow: 0 0 24px rgba(0, 0, 0, 0.9);
+        letter-spacing: 0.03em;
+        background: rgba(5, 8, 11, 0.85);
+        border-bottom: 2px solid #ffd54f;
         pointer-events: none;
       }
       #flash {
@@ -248,7 +253,7 @@
       }
       #notice {
         position: fixed;
-        top: 142px;
+        top: 186px; /* below the banner strip (#announce) */
         left: 50%;
         transform: translateX(-50%);
         background: var(--panel);

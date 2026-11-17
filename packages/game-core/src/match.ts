@@ -9,7 +9,7 @@ import { collideGhosts } from './collisions.js';
 import { walled, type GameConfig, type SumoVariant } from './config.js';
 import { advancePhases } from './falls.js';
 import { dashVelocity, moveOnce, subSteps } from './geometry.js';
-import { airSteer, canJump, inAir } from './jump.js';
+import { airSteer, canJump, inAir, noteDodges } from './jump.js';
 import { rulesFor, scoreOf, type ModeRules } from './modes/rules.js';
 import { mulberry32 } from './rng.js';
 import { seasonClock } from './seasons.js';
@@ -100,6 +100,7 @@ export class Match {
     for (let i = 0; i < n; i++) {
       for (const g of s.ghosts) this.move(g, intents.get(g.id) ?? IDLE, dtMs / n);
       collideGhosts(this.cfg, s);
+      noteDodges(this.cfg, s);
     }
     this.rules.after(s, dtMs);
     this.finish();
@@ -185,6 +186,7 @@ export class Match {
       if (!canJump(this.cfg, g, now)) return;
       g.airUntilMs = now + this.cfg.jump.airMs;
       g.jumpReadyMs = now + this.cfg.jump.cooldownMs;
+      g.dodged = false;
       this.s.events.push({ type: 'jump', ghost: g.id });
       return;
     }
@@ -225,6 +227,7 @@ function newGhost(r: Roster, p: { x: number; y: number }, lives: number): Ghost 
     dashReadyMs: 0,
     airUntilMs: 0,
     jumpReadyMs: 0,
+    dodged: false,
     lastTouch: null,
     knockouts: 0,
     falls: 0,

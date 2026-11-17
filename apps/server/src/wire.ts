@@ -21,6 +21,7 @@ import {
 import {
   GHOST_AIRBORNE,
   GHOST_BOMB,
+  GHOST_DODGED,
   GHOST_BOT,
   GHOST_DASHING,
   GHOST_FALLING,
@@ -92,7 +93,8 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (g.phase === 'out' ? GHOST_OUT : 0) |
       (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0) |
       (s.bombs.some((b) => b.carrier === g.id) ? GHOST_BOMB : 0) |
-      (inAir(g, now) ? GHOST_AIRBORNE : 0),
+      (inAir(g, now) ? GHOST_AIRBORNE : 0) |
+      (ctx.events.some((e) => e.type === 'dodge' && e.ghost === g.id) ? GHOST_DODGED : 0),
     lives: g.lives,
     jumpLeftMs: Math.max(0, g.jumpReadyMs - now),
   };

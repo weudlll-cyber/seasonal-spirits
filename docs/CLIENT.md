@@ -92,9 +92,13 @@ from the server after a change.
   joining, a ring pulses three times (1.5 s). While it is out after a fall, the band's team
   line says "You fell — back in 3 … 1" (server time of the fall plus `outMs`) and its team's
   respawn band is drawn faintly on the arena (`own-marker.ts`; not after the last life). A
-  ghost in the air after a jump (render `jump.ts`, JUMP 2026-11-17) is drawn a fifth larger
-  over a soft shadow on the ground below it, and lands with a small pale puff; the own one from
-  the press on (the prediction), not from the server's echo. A
+  ghost in the air after a jump (render `jump.ts`, NIGHT 2026-11-18) rises on a smooth arc over
+  its time in the air — up to 1.5× its size and one ghost diameter up at the top, its label (and
+  for the own one its ring and arrow) with it — over a shadow on the ground at its real position,
+  smaller and darker the higher it is; a short ring spreads on the ground at the take-off and the
+  landing; "Dodged!" shows above it for a second when the server flags a dash passing under
+  (`GHOST_DODGED`). The own one jumps from the press on (the prediction), not from the server's
+  echo. What the drawing remembers between frames is render `trails.ts`. A
   ghost faster than running (a dash, a knock) leaves a short
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
@@ -109,9 +113,10 @@ from the server after a change.
   the smaller arena stays as large on screen. There is no view choice and no minimap.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
-  zone jumps to Summer and halves", "— the bomb goes off"); at the halving a large "HALVING —
-  the arena halves · <Season> is in season" ("the zone halves · …", "the bomb goes off";
-  3.5 s), a short flash and one tone. The match end the same way: "LAST CHANCE — push them
+  zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena
+  halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; 3.5 s) in a slim
+  strip right under the band, at the top edge of the play area — never over its middle (NIGHT
+  2026-11-18) — with a short flash and one tone. The match end the same way: "LAST CHANCE — push them
   off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
   rules with drawings (sumo: push them off, dash, the arena halves; hill: stand in the zone,

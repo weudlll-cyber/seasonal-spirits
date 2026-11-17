@@ -190,6 +190,7 @@ function snapshot(now: number): Frame {
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
     marks: playing ? { pulseMs: marker.pulseMs(now), backInMs: marker.backInMs() } : NO_MARKS,
+    airMs: clientConfig(latest?.mode ?? 0, conn.tuning).jump.airMs,
   };
 }
 

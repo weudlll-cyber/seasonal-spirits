@@ -60,8 +60,10 @@ const trails = new Trails();
 const fastest = (t: { dashSpeed: number; knockSpeed: number }): JumpDetector =>
   new JumpDetector({ speedUnitsPerSecond: t.dashSpeed + t.knockSpeed });
 let jumpDetector = fastest(DEFAULT_CONFIG);
+let airMs = DEFAULT_CONFIG.jump.airMs; // a jump's time in the air: the arc it is drawn on
 void startTuningPanel(`${__SERVER_HTTP_URL__}/dev/tune`, tuningRoot, (t) => {
   jumpDetector = fastest(t);
+  airMs = t.jumpMs;
 });
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
@@ -122,6 +124,7 @@ function frame(): void {
     nowMs: now,
     labelAll: true,
     fuse: latest ? fuseLeft(latest) : 1,
+    airMs,
   });
   drawClock(ctx, latest);
 

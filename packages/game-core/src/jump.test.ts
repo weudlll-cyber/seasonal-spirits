@@ -30,7 +30,35 @@ describe('in the air', () => {
     expect(ghost(m, 2).lastTouch).toBeNull();
     expect(ghost(m, 1).x).toBeGreaterThan(ghost(m, 2).x); // it went right through
   });
+});
 
+// NIGHT 2026-11-18: "Dodged!" on every screen — decided by the server, once per jump.
+describe('a dodge', () => {
+  it('reports a dodge once when a dash really passes under, never without one', () => {
+    const run = (dashing: boolean, jumping: boolean): number => {
+      const m = matchOf(cfg, two);
+      place(m, 1, -60, 0);
+      place(m, 2, 0, 0);
+      let n = 0;
+      const first = both(
+        dashing ? { dx: 1, dy: 0, action: 'dash' } : { dx: 1, dy: 0 },
+        jumping ? JUMP : { dx: 0, dy: 0 },
+      );
+      m.tick(50, first);
+      n += m.state.events.filter((e) => e.type === 'dodge' && e.ghost === 2).length;
+      for (let i = 0; i < 6; i++) {
+        m.tick(50, both({ dx: 1, dy: 0 }, { dx: 0, dy: 0 }));
+        n += m.state.events.filter((e) => e.type === 'dodge' && e.ghost === 2).length;
+      }
+      return n;
+    };
+    expect(run(true, true)).toBe(1); // a dash under the jumper: once
+    expect(run(false, true)).toBe(0); // only running under it: no dash
+    expect(run(true, false)).toBe(0); // on the ground: a hit, not a dodge
+  });
+});
+
+describe('in the air, pushing', () => {
   it('a jumper pushes nobody: it passes over a standing ghost', () => {
     const m = matchOf(cfg, two);
     place(m, 1, -40, 0).vx = 300;

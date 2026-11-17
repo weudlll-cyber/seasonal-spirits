@@ -110,7 +110,9 @@ countdown.
   (a tenth) of the held direction, so it keeps almost the direction of its take-off (`airSteer`,
   which the client's prediction uses too); it falls only when it lands outside the arena. The
   next jump only after `jump.cooldownMs` (3 s), and only with `jump.enabled` — the owner's
-  switch (off: the action does nothing). All placeholders, set with the live panel.
+  switch (off: the action does nothing). A rival's dash that overlaps it in the air is a dodge:
+  one `dodge` event per jump (`noteDodges`, after every sub-step's contacts; NIGHT 2026-11-18:
+  "Dodged!" on every screen). All placeholders, set with the live panel.
 - **Collisions** (`collideGhosts`, grown from Spirits' soft separation): two ghosts on the
   arena that overlap are moved apart and bounce (`restitution`), the overlap shared by their
   push factors; the team whose season is in season pushes `inSeasonPush` harder. A dashing

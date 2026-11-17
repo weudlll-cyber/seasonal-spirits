@@ -1,6 +1,6 @@
 // Seasonal Sumo — the client's controls and messages on top of the canvas (DOM, so they are
 // real buttons): the Dash and Jump buttons with their cooldown rings (Jump hidden while the
-// owner's switch has it off — JUMP 2026-11-17), the HALVING and MATCH OVER announcements with
+// owner's switch has it off — JUMP 2026-11-17), the HALVING and MATCH OVER announcements (a slim strip under the band) with
 // their flash, and notices.
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
@@ -68,7 +68,7 @@ export class Hud {
     showButton(this.jump, { ...jump, shown: playing && jump.shown });
   }
 
-  // A large announcement and a short flash at every deadline — the mode's halving ("HALVING —
+  // An announcement in the strip under the band and a short flash at every deadline — the mode's halving ("HALVING —
   // the arena halves · <Season> is in season", "HALVING — the bomb goes off") or "MATCH OVER".
   deadline(s: ServerState): void {
     const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;

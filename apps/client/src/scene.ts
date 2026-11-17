@@ -45,6 +45,7 @@ export interface Frame {
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
   marks: OwnMarks;
+  airMs: number; // a jump's time in the air (the server's tuning): the arc it is drawn on
 }
 
 // When the own ghost needs finding (own-marker.ts): its pulse, and while it is out after a
@@ -117,6 +118,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trail
       labelAll: !f.playing,
       fuse: f.latest ? fuseLeft(f.latest) : 1,
       ownPulseMs: f.marks.pulseMs,
+      airMs: f.airMs,
     });
   });
   drawClock(ctx, f.latest);
