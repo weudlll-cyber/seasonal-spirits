@@ -12,7 +12,7 @@ import {
   type GameMode,
   type Settings,
 } from '@seasonal-spirits/game-core';
-import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
+import { STATE_LAST_STANDING, type WireDisc } from '@seasonal-spirits/protocol';
 
 export interface ModeWords {
   name: string;
@@ -53,6 +53,11 @@ export function modeOf(index: number): GameMode {
 
 export function modeWords(index: number): ModeWords {
   return WORDS[modeOf(index)];
+}
+
+// King of the Season's zone in a state (its glowing disc); null in the other modes.
+export function zoneOf(s: { mode: number; area: WireDisc | null } | undefined): WireDisc | null {
+  return s && modeOf(s.mode) === 'hill' ? s.area : null;
 }
 
 // Sumo's variant of the match on screen, by its name; null in the walled modes.

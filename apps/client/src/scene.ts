@@ -19,6 +19,7 @@ import {
   fitBox,
   fuseLeft,
   shape,
+  zoneOf,
   ghostRadiusPx,
   playBox,
   sx,
@@ -118,6 +119,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trail
       labelAll: !f.playing,
       fuse: f.latest ? fuseLeft(f.latest) : 1,
       ownPulseMs: f.marks.pulseMs,
+      zone: zoneOf(f.latest),
     });
   });
   drawClock(ctx, f.latest);

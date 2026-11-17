@@ -48,6 +48,9 @@ export interface GhostStyle {
   labelAll: boolean; // every ghost named (spectators, the viewer)
   fuse: number; // the bombs' fuse: 1 full … 0 going off (fuseLeft in modes.ts)
   ownPulseMs?: number | null; // since the own ghost's pulse began (own.ts), null: none
+  // King of the Season's zone: inside it the crowd is labelled by its short tags only (NIGHT
+  // 2026-11-18: full names piled up there), full names outside; the own ghost stays "You".
+  zone?: { x: number; y: number; r: number } | null;
 }
 
 export function ghostRadiusPx(v: View): number {
@@ -171,7 +174,11 @@ const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui
 function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate {
   const { ctx } = v;
   const own = g.id === style.ownId;
-  const { full, tag } = labelText(g, own, style.labelAll);
+  const text = labelText(g, own, style.labelAll);
+  const z = style.zone;
+  const crowded = !own && z && Math.hypot(g.x - z.x, g.y - z.y) <= z.r;
+  const { tag } = text;
+  const full = crowded ? tag : text.full;
   ctx.font = labelFont(own);
   return {
     id: g.id,

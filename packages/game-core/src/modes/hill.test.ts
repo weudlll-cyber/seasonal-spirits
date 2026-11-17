@@ -31,22 +31,36 @@ describe('hill scoring', () => {
     expect(r.teams).toEqual([10, 0, 0, 0]);
   });
 
-  it('credits a bounce to the opponent that touched a ghost just before it left the zone', () => {
+  it('credits a bounce to the opponent whose dash put a ghost out of the zone just before', () => {
     const m = matchOf(cfg, two);
     const z = m.state.zone;
     if (!z) throw new Error('no zone');
     standAt(m, 1, z.x, z.y);
     runTo(m, 1000);
-    // Pushed out right after ghost 2's touch: a bounce for 2.
-    Object.assign(ghost(m, 1), { x: z.x + z.r + 50, lastTouch: { by: 2, atMs: 950 } });
+    // Out right after ghost 2's dash hit: a bounce for 2.
+    const hit = { by: 2, atMs: 950, dash: true };
+    Object.assign(ghost(m, 1), { x: z.x + z.r + 50, lastTouch: hit });
     runTo(m, 1050);
     expect(ghost(m, 2).bounces).toBe(1);
-    // Walking out long after a touch is nobody's bounce.
+    // Walking out long after a dash hit is nobody's bounce.
     standAt(m, 1, z.x, z.y);
     runTo(m, 5000);
-    Object.assign(ghost(m, 1), { x: z.x + z.r + 50, lastTouch: { by: 2, atMs: 1000 } });
+    Object.assign(ghost(m, 1), { x: z.x + z.r + 50, lastTouch: { ...hit, atMs: 1000 } });
     runTo(m, 5050);
     expect(ghost(m, 2).bounces).toBe(1);
+  });
+
+  // NIGHT 2026-11-18: "Bouncer" counted any touch; only the bouncer's own dash counts now.
+  it('gives no bounce for a plain push out of the zone, without a dash', () => {
+    const m = matchOf(cfg, two);
+    const z = m.state.zone;
+    if (!z) throw new Error('no zone');
+    standAt(m, 1, z.x, z.y);
+    runTo(m, 1000);
+    const push = { by: 2, atMs: 950, dash: false };
+    Object.assign(ghost(m, 1), { x: z.x + z.r + 50, lastTouch: push });
+    runTo(m, 1050);
+    expect(ghost(m, 2).bounces).toBe(0);
   });
 });
 

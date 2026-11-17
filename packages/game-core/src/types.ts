@@ -38,8 +38,9 @@ export interface Ghost {
   airUntilMs: number; // a jump: in the air until this match time (jump.ts)
   jumpReadyMs: number; // the next jump is allowed from this match time on
   dodged: boolean; // this jump has let a dash pass underneath (one "Dodged!" per jump)
-  // The last opponent that touched it and when: a fall within creditMs counts for that one.
-  lastTouch: { by: number; atMs: number } | null;
+  // The last opponent that touched it, when, and whether by a dash: a fall within creditMs counts
+  // for that one; in hill a dash that pushes it out of the zone is a bounce.
+  lastTouch: { by: number; atMs: number; dash: boolean } | null;
   knockouts: number; // sumo: opponents it pushed off
   falls: number;
   lives: number; // left in this match; 0: out for the rest of it (LIVES 2026-11-17)

@@ -49,6 +49,13 @@ before the third halving, all "stop, no time limit" end (longest 7:54); 0.45: no
 over at 30:00; 140 alone: none early, 7 not over. Done when: the owner has played it and set
 the share and the lives so that the late phases are reached as he wants.
 
+ag. **Halving Bomb up to date and the dash wind-up** (NIGHT 2026-11-18, pieces 5 and 6, dropped
+for time): the carrier unmistakable (a larger bomb, a clear fuse and spark, the carrier's body
+pulsing); labels with the name only, the score for the top three and the own ghost; an optional
+dash wind-up (a setting, default off) with its glow and line, enforced on the server, matched by
+the prediction and the bots, measured with seeded runs and a 250 ms scripted player. Done when:
+built, played at both sizes, the wind-up's dodge numbers in a sheet.
+
 ae. **The jump as a dodge** (JUMP 2026-11-17): built with the owner's switch; with a player's
 reaction (~250 ms) a dash from 150 away arrives first, so a reactive jump rarely helps — it
 works when it anticipates; the bots jump at every dash they see (about 320 jumps a match).
@@ -728,6 +735,11 @@ Done when: the spec is green ten runs in a row.
   rotates every mode unless a preset was loaded last — commit "test: a play spec per mode, the
   panel spec; pnpm dev rotates all modes".
 
+- 2026-11-18 — **Night piece 4: King of the Season up to date**: "Bouncer" only for the bouncer's
+  own dash (`lastTouch.dash`); short tags inside the zone (render `zoneOf`, `GhostStyle.zone`);
+  King's bots always aim ahead (the endgame boldness never comes where nobody is knocked out) —
+  commit "fix: King's Bouncer by dash only, short tags in the zone, bots aim ahead".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1008,3 +1020,4 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | server tick per mode, in-process (`MatchHost.tick` + `encodeState`, 32 ghosts, a full match each, scratch script)                                                                         | working tree of night piece 7                                                                                                             | sumo 0.213 / p99 1.07 / max 8.9 ms; hill 0.330 / 1.13 / 5.6 ms; bomb 0.329 / 0.84 / 11.1 ms; background CPU load 71 %                                                                                                               | the sheet, piece 7                                                                             |
 | 2026-11-18 | `pnpm e2e` (all specs, both sizes, three stacks)                                                                                                                                          | same tree                                                                                                                                 | 13 passed, 3 skipped (by design) in 7.9 min                                                                                                                                                                                         | this commit                                                                                    |
 | 2026-11-18 | `pnpm verify:changed` (format, lint, typecheck; all tests: 45 files / 262 tests)                                                                                                          | same tree                                                                                                                                 | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-18 | `pnpm verify:changed` (format, lint, typecheck; all tests: 45 files / 265 tests)                                                                                                          | working tree of night piece 4                                                                                                             | green                                                                                                                                                                                                                               | this commit                                                                                    |

@@ -55,6 +55,27 @@ describe('own label', () => {
   });
 });
 
+// NIGHT 2026-11-18: in King of the Season's crowded zone full names piled up.
+describe('labels in the hill zone', () => {
+  it('names the ghosts in the zone by their short tags, those outside in full, "You" always', () => {
+    const inside = [ghost(5, 1000, GHOST_BOT, 2), ghost(6, 1020, GHOST_BOT, 1)];
+    const outside = ghost(7, 1500, GHOST_BOT, 3);
+    const own = ghost(3, 990, 0, 4);
+    const labels = drawGhosts(fitField(ctx, 132), [...inside, outside, own], {
+      ownId: 3,
+      trails: new Trails(),
+      nowMs: 0,
+      labelAll: true,
+      fuse: 1,
+      zone: { x: 1000, y: 1000, r: 120 },
+    });
+    const text = (id: number) => labels.find((l) => l.id === id)?.text;
+    expect([text(5), text(6)]).toEqual(['5', '6']);
+    expect(text(7)).toBe('Bot 7 · 3');
+    expect(text(3)).toBe('You · 4');
+  });
+});
+
 // A canvas that records its arcs (centre and radius in px) and the paths it closes (arrows).
 function recorder() {
   const arcs: { x: number; y: number; r: number }[] = [];

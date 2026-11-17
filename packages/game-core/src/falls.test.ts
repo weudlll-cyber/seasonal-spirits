@@ -37,7 +37,7 @@ describe('falls and credit', () => {
   it('gives no credit for a fall after the credit time has run out', () => {
     const m = matchOf(cfg, pair(1));
     const g = place(m, 2, 0, 0);
-    g.lastTouch = { by: 1, atMs: 0 };
+    g.lastTouch = { by: 1, atMs: 0, dash: false };
     runTo(m, cfg.creditMs + 100);
     Object.assign(g, { x: m.state.arena.centre.x + cfg.arenaRadius + 5 });
     m.tick(50, new Map());

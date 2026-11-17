@@ -3,8 +3,9 @@
 // coming, and attack after a wait without a dash.
 
 import { describe, expect, it } from 'vitest';
-import type { GameConfig } from '../config.js';
+import { configFrom, type GameConfig } from '../config.js';
 import { Match } from '../match.js';
+import { DEFAULT_SETTINGS } from '../settings.js';
 import { cfg, ghost, place, runTo } from '../test-helpers.js';
 import { botIntent } from './bot.js';
 import { bolder, boldness } from './human.js';
@@ -45,6 +46,15 @@ describe('bots in the endgame', () => {
     expect(steps.at(-1)).toBe(1); // two left
     const { brain } = bolder(SHORT, knocked.state, 0);
     expect(brain.bots.dashAimCos).toBe(SHORT.bots.boldAimCos); // the wider dash angle
+  });
+
+  // NIGHT 2026-11-18: nobody is knocked out in hill, so the boldness never comes; the bots lead.
+  it('aim ahead in King of the Season from the start, but not in a full sumo arena', () => {
+    const hill = configFrom(DEFAULT_SETTINGS, 'hill');
+    expect(bolder(hill, new Match(hill, 1, eight).state, 0).brain.bots.leadMs).toBe(
+      hill.bots.leadMs,
+    );
+    expect(bolder(SHORT, new Match(SHORT, 1, eight).state, 0).brain.bots.leadMs).toBe(0);
   });
 
   it('attack after a wait without a dash, sooner the fewer are left', () => {

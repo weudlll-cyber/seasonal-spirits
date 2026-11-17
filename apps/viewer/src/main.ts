@@ -28,6 +28,7 @@ import {
   fuseLeft,
   fitField,
   useShape,
+  zoneOf,
 } from '@seasonal-spirits/render';
 import { startAdminPanel } from './admin-panel.js';
 
@@ -128,6 +129,7 @@ function frame(): void {
     nowMs: now,
     labelAll: true,
     fuse: latest ? fuseLeft(latest) : 1,
+    zone: zoneOf(latest),
   });
   drawClock(ctx, latest);
 

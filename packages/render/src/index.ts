@@ -18,6 +18,7 @@ export {
   modeOf,
   modeWords,
   variantName,
+  zoneOf,
   type ModeWords,
 } from './modes.js';
 export { drawBomb } from './bomb.js';

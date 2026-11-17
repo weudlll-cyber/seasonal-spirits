@@ -104,7 +104,9 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
   points), the short tag
-  in a crowd; never on another label, under the bar or past the screen edge.
+  in a crowd — in King of the Season's zone always the short tag (NIGHT 2026-11-18: full
+  names piled up there), "You" stays; never on another label, under the bar or past the screen
+  edge.
 - **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
   sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
   below the band with a ghost's radius and 8 px to spare (`scene.ts` `camera`, render

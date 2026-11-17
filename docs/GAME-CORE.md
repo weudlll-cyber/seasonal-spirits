@@ -78,8 +78,9 @@ countdown.
   per second for itself and its team (`scoreMs`, whole ms, so the sum is exact). At each
   halving it jumps to the new season's quarter and its area halves (300 → 212 → 150 → 106);
   during the countdown the clients draw where it goes (`areaOf(...).next`). A ghost that leaves
-  the zone within `hill.bounceMs` (1 s) of an opponent's touch is a bounce for that opponent; a
-  jump is nobody's bounce.
+  the zone within `hill.bounceMs` (1 s) of an opponent's dash into it is a bounce for that
+  opponent — its own dash, not a plain push (NIGHT 2026-11-18; `lastTouch.dash`); a jump is
+  nobody's bounce.
 - **Halving Bomb** (`modes/bomb.ts`). Everyone earns 1 point per second. One bomb per
   `bomb.playersPerBomb` (8) players, at least one, goes to distinct random players (the
   match's seeded source). A carrier passes it by touching an opponent that holds none — never
@@ -238,7 +239,9 @@ the wander point.
   minutes): it aims up to `bots.leadMs` (0.3 s) ahead of its target from its seen speed, its dash
   angle widens towards `bots.boldAimCos` (0.5), and after `bots.commitMs` (3 s, a quarter of it
   with two left) without a dash it attacks anyway, whatever its dash chance (`bolder`). Bold
-  while halvings were still to come, every match ended before the third;
+  while halvings were still to come, every match ended before the third. In King of the Season
+  nobody is knocked out, so the boldness never comes; there the bots always aim ahead, to hit
+  the moving rivals in the zone (NIGHT 2026-11-18);
 - its form drifts by up to ± `bots.formStep` every `bots.formEveryMs` within `bots.form`
   (0.85–1.15): sharper and steadier on a good run, sloppier in a weak spell;
 - all of it from the bot's own seeded source, `botSeed(match seed, seat)`: runs repeat.

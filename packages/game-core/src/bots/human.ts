@@ -73,9 +73,10 @@ export function bolder(
   const bold = boldness(cfg, s);
   const committed = bold > 0 && sinceDashMs >= b.commitMs * (1 - 0.75 * bold);
   const dashAimCos = committed ? -1 : b.dashAimCos - (b.dashAimCos - b.boldAimCos) * bold;
-  // The lead grows with the boldness too: in a full arena it aims where it sees them, as before
-  // (a full lead there ended every match at about 2 min).
-  const leadMs = b.leadMs * bold;
+  // The lead grows with the boldness: in a full sumo arena it aims where it sees them, as before
+  // (a full lead there ended every match at about 2 min). In hill, where nobody is knocked out,
+  // it always leads: the zone is a crowd of moving rivals to hit (NIGHT 2026-11-18).
+  const leadMs = b.leadMs * (cfg.mode === 'hill' ? 1 : bold);
   return { brain: { ...cfg, bots: { ...b, dashAimCos, leadMs } }, committed };
 }
 

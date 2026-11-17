@@ -1,7 +1,8 @@
 // Seasonal Sumo — "King of the Season" (hill): walls, nobody falls. A glowing zone sits in the
 // quarter of the season in season; every ghost inside earns hill.pointsPerSecond for itself and
 // its team. At every halving the zone jumps to the new season's quarter and shrinks (hill.shrink).
-// Leaving the zone within hill.bounceMs of an opponent's touch is a bounce for that opponent.
+// Leaving the zone within hill.bounceMs of an opponent's dash into it is a bounce for that
+// opponent — its own dash, not a plain push (NIGHT 2026-11-18).
 
 import { quarterCentre } from '../arena.js';
 import type { GameConfig } from '../config.js';
@@ -56,7 +57,7 @@ function score(cfg: GameConfig, s: MatchState, dtMs: number, before: Set<number>
 
 function bounced(cfg: GameConfig, s: MatchState, g: Ghost): void {
   const t = g.lastTouch;
-  if (!t || s.elapsedMs - t.atMs > cfg.hill.bounceMs) return;
+  if (!t || !t.dash || s.elapsedMs - t.atMs > cfg.hill.bounceMs) return;
   const by = s.ghosts.find((x) => x.id === t.by);
   if (by) by.bounces++;
 }

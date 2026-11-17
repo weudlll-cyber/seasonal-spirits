@@ -84,8 +84,8 @@ function bump(cfg: GameConfig, pa: Body, pb: Body, now: number): void {
   if (now < b.dashUntilMs) throwOff(a, { x: -nx, y: -ny }, cfg.knockSpeed / ratio, until);
   // Teammates give no credit: a team cannot score by pushing its own ghost off.
   if (a.team !== b.team) {
-    a.lastTouch = { by: b.id, atMs: now };
-    b.lastTouch = { by: a.id, atMs: now };
+    a.lastTouch = { by: b.id, atMs: now, dash: now < b.dashUntilMs };
+    b.lastTouch = { by: a.id, atMs: now, dash: now < a.dashUntilMs };
   }
 }
 
