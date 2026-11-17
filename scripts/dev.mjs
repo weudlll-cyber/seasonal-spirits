@@ -1,9 +1,10 @@
 // Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
-// The server's own bots fill all 32 slots; the game modes take turns. Starts all three as hidden background processes
-// (no windows on Windows, the same on Linux and macOS), logs to logs/dev-*.log (and
-// dev-*.err.log on Windows), records their PIDs in tmp/dev-pids.json, and stops exactly
-// those PIDs again. `pnpm dev --lan` (development only, never the default) also opens server
-// and client to the local network and prints the address for a phone in the same Wi-Fi.
+// The server's own bots fill all 32 slots; the game modes take turns (GAME_MODE=rotate).
+// Starts all three as hidden background processes (no windows on Windows, the same on Linux
+// and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
+// tmp/dev-pids.json, and stops exactly those PIDs again. `pnpm dev --lan` (development only,
+// never the default) also opens server and client to the local network and prints the
+// address for a phone in the same Wi-Fi.
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
