@@ -44,12 +44,12 @@
         opacity: 0.45;
         cursor: default;
       }
+      /* Jump left of Dash, both at the bottom right (JUMP 2026-11-17). */
       #actions {
         position: fixed;
         right: 16px;
         bottom: 16px;
         display: flex;
-        flex-direction: column;
         align-items: flex-end;
         gap: 10px;
       }
@@ -80,8 +80,11 @@
       body.touch #actions {
         max-width: calc(50vw - 24px);
       }
-      /* Dash: a round button whose ring fills while the cooldown runs (--ready 0 … 1). */
-      #dash {
+      /* Dash and Jump: round buttons whose ring fills while the cooldown runs (--ready 0 … 1);
+         Jump a little smaller, so both fit a phone's right half. */
+      #dash,
+      #jump {
+        -webkit-tap-highlight-color: transparent;
         width: 96px;
         height: 96px;
         border-radius: 50%;
@@ -92,9 +95,15 @@
           conic-gradient(#ffd54f calc(var(--ready, 1) * 360deg), var(--line) 0) border-box;
         opacity: 0.6;
       }
-      #dash.ready {
+      #dash.ready,
+      #jump.ready {
         opacity: 1;
         box-shadow: 0 0 16px rgba(255, 213, 79, 0.5);
+      }
+      #jump {
+        width: 64px;
+        height: 64px;
+        font-size: 13px;
       }
       .key {
         color: var(--muted);
@@ -322,6 +331,7 @@
     <canvas id="map"></canvas>
     <div id="stick"><div id="knob"></div></div>
     <div id="actions">
+      <button id="jump" type="button" hidden>Jump <span class="key">(Shift)</span></button>
       <button id="dash" type="button" hidden>Dash <span class="key">(Space)</span></button>
     </div>
     <div id="flash"></div>

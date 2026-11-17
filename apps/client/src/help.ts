@@ -1,6 +1,6 @@
 // Seasonal Sumo — the help overlay (owner's observation 2026-11-15: the rules were not
-// understood): the mode's three short rules in plain words, each with a small drawing made in
-// code; in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
+// understood): the mode's three short rules in plain words and the jump (JUMP 2026-11-17), each
+// with a small drawing made in code; in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
 // mark on the field, as the game draws it (LEGEND); and the controls. Shown once on the first
 // visit, any time with "?" or the band's "?" button; one tap or any key closes it. It follows
 // the match on screen.
@@ -59,8 +59,19 @@ const DASH = {
   drawing: svg(trail(AUTUMN) + ghost(76, 31, 9, AUTUMN) + ghost(100, 28, 9, WINTER)),
 };
 
+// The jump, as ghosts.ts draws it: larger, over its shadow, a dash passing underneath.
+const JUMP = {
+  text: 'Jump with Shift or the Jump button: half a second in the air — no dash can hit you and you push nobody, but you can barely steer. Land outside the arena and you fall.',
+  drawing: svg(
+    trail(SUMMER) +
+      ghost(72, 38, 8, SUMMER) +
+      '<ellipse cx="94" cy="42" rx="9" ry="4" fill="#000" fill-opacity="0.45"/>' +
+      ghost(90, 26, 11, WINTER),
+  ),
+};
+
 // Static text and drawings only; nothing from the server or the player goes in here. Three
-// rules per mode.
+// rules per mode, then the jump (a hidden button when the owner's switch has it off).
 export const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
   sumo: [
     {
@@ -72,6 +83,7 @@ export const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
       text: 'At every halving the arena halves. A dashed ring shows the new edge before it comes.',
       drawing: svg(arc(26, SPRING) + arc(18, SPRING, '5 4')),
     },
+    JUMP,
   ],
   hill: [
     {
@@ -89,6 +101,7 @@ export const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
           `<g transform="translate(30 0)">${zone(13, SUMMER, '5 4')}</g>`,
       ),
     },
+    JUMP,
   ],
   bomb: [
     {
@@ -107,6 +120,7 @@ export const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
       text: 'At every halving the bombs go off: whoever holds one loses half their points. New bombs go out.',
       drawing: svg(bomb(52, 36) + label(84, 40, '÷2')),
     },
+    JUMP,
   ],
 };
 
@@ -137,8 +151,8 @@ const SEEN =
   '</ol>';
 
 const CONTROLS =
-  '<p><b>Keyboard:</b> WASD or arrows to move, Space to dash, ? help.</p>' +
-  '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Dash under the right thumb.</p>';
+  '<p><b>Keyboard:</b> WASD or arrows to move, Space to dash, Shift to jump, ? help.</p>' +
+  '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Dash and Jump under the right thumb.</p>';
 
 // Sumo's variant in one sentence, with the match's lives (a whole number from the decoded
 // state); null in the walled modes.

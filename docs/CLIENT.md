@@ -21,8 +21,8 @@ Spirits' client is on `master`.
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated     |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server  |
 | `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown               |
-| `src/input.ts`             | Keyboard (WASD/arrows, Space to dash) and the touch joystick                      |
-| `src/hud.ts`               | The Dash button and its cooldown ring, announcements and flash, notices, mute     |
+| `src/input.ts`             | Keyboard (WASD/arrows, Space to dash, Shift to jump) and the touch joystick       |
+| `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute |
 | `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box      |
 | `src/sound.ts`             | The halving tone (Web Audio)                                                      |
 | `src/config.ts`            | Bridge box on/off and its links                                                   |
@@ -44,7 +44,10 @@ from the server after a change.
 
 ## Controls
 
-- Keyboard: WASD or arrows to move, **Space to dash**, ? the help.
+- Keyboard: WASD or arrows to move, **Space to dash**, **Shift to jump**, ? the help.
+- Buttons at the bottom right: **Jump** (smaller) left of **Dash**, both round with a ring that
+  fills while the server's cooldown runs; Jump hidden while the owner's switch has the jump off
+  (the live tuning). The camera keeps the arena clear of both.
 - Touch: a joystick where the left thumb touches the left half; the round **Dash** button
   under the right thumb. Its ring fills while the server's cooldown runs (`dashLeftMs` in the
   state) and it glows when a dash is ready.
@@ -72,7 +75,7 @@ from the server after a change.
   (sumo Points "Spring 12 · 7 in": knockouts and ghosts still in; Last One Standing "Spring 7
   in"; hill and bomb "Spring 12"; the leader framed; on a narrow phone the team's name is left
   out, its colour names it). Out of lives the team line says "You are out — watching" until
-  the next match, without a Dash button; the view stays on the whole arena. The band is 68 px
+  the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 68 px
   (`BAND_HEIGHT`).
 - **Field** (render `field.ts`). Sumo: a dark void around a disc in the season's ground colour
   with a glowing edge in the season's colour; during the countdown before a halving a dashed
@@ -88,6 +91,9 @@ from the server after a change.
   joining, a ring pulses three times (1.5 s). While it is out after a fall, the band's team
   line says "You fell — back in 3 … 1" (server time of the fall plus `outMs`) and its team's
   respawn band is drawn faintly on the arena (`own-marker.ts`; not after the last life). A
+  ghost in the air after a jump (render `jump.ts`, JUMP 2026-11-17) is drawn a fifth larger
+  over a soft shadow on the ground below it, and lands with a small pale puff; the own one from
+  the press on (the prediction), not from the server's echo. A
   ghost faster than running (a dash, a knock) leaves a short
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
@@ -109,15 +115,16 @@ from the server after a change.
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
   rules with drawings (sumo: push them off, dash, the arena halves; hill: stand in the zone,
   push them out, the zone jumps and halves; bomb: points every second, pass the bomb, it
-  goes off and halves the carrier's points), in sumo the variant's rule in one sentence with the
+  goes off and halves the carrier's points), the jump in every mode (a ghost over its shadow, a
+  dash passing below), in sumo the variant's rule in one sentence with the
   match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
   controls. It follows the match on screen.
 - **Result**: the mode's two awards ("Best pusher"/"Survivor", "Last one standing"/"Best
   pusher", "King"/"Bouncer", "Hot hands"/"Cool head"), the score per team — in Last One
   Standing the teams in their final order instead: the winner, the teams still in at the time
   limit ("5 still in"), then those knocked out, last out first ("out 2nd") — and the top eight
-  players, the
-  own place, the time to the next match, and the bridge box: "This is how Seasonal Tokens
+  players and the own place in the server's order (game-core `ranked`: by score; in Last One
+  Standing by survival, FIX 2026-11-17), the time to the next match, and the bridge box: "This is how Seasonal Tokens
   work: every halving cuts in half — here it cuts the arena.", "Start here", "Try the
   simulator", "No financial advice".
 

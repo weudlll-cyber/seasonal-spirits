@@ -1,9 +1,10 @@
 // Seasonal Sumo — the recap's awards per mode, from the result: the top count wins, the lowest
-// id of equal ones, nobody for a count of 0; Last One Standing names the one ghost left.
+// id of equal ones, nobody for a count of 0; Last One Standing names the one ghost left. The
+// players' places: by score, in Last One Standing by survival.
 
 import { describe, expect, it } from 'vitest';
 import type { GameMode } from './config.js';
-import { awardsOf } from './recap.js';
+import { awardsOf, ranked } from './recap.js';
 import type { MatchResult, PlayerResult } from './types.js';
 
 const player = (id: number, counts: Partial<PlayerResult>): PlayerResult => ({
@@ -13,11 +14,47 @@ const player = (id: number, counts: Partial<PlayerResult>): PlayerResult => ({
   knockouts: 0,
   falls: 0,
   lives: 1,
+  outAtMs: null,
+  aliveMs: 0,
   longestAliveMs: 0,
   scoreMs: 0,
   bounces: 0,
   passes: 0,
   ...counts,
+});
+
+const resultOf = (mode: GameMode, players: PlayerResult[], more: Partial<MatchResult> = {}) => ({
+  mode,
+  variant: 'points' as const,
+  players,
+  teams: [0, 0, 0, 0],
+  left: [0, 0, 0, 0],
+  knockedOut: [],
+  winner: null,
+  lastStanding: null,
+  ...more,
+});
+
+// FIX 2026-11-17: "Your place" in Last One Standing ranked by knockouts.
+describe('the players in their final places', () => {
+  it('Points: by score, the lowest id first among equals', () => {
+    const players = [player(1, { score: 2 }), player(2, { score: 5 }), player(3, { score: 2 })];
+    expect(ranked(resultOf('sumo', players)).map((p) => p.id)).toEqual([2, 1, 3]);
+  });
+
+  it('Last One Standing: the winner, then later out first, ties by time alive, then knockouts', () => {
+    const out = (id: number, outAtMs: number, aliveMs: number, knockouts = 0) =>
+      player(id, { lives: 0, outAtMs, aliveMs, knockouts, score: knockouts });
+    const players = [
+      out(1, 90_000, 80_000, 9), // out first: last place despite the most knockouts
+      out(2, 200_000, 150_000),
+      out(3, 200_000, 170_000), // as late as 2, longer on the arena
+      out(4, 200_000, 170_000, 1), // as 3, one knockout more
+      player(5, { lives: 2, aliveMs: 280_000 }), // the last one standing
+    ];
+    const r = resultOf('sumo', players, { variant: 'last-standing', winner: 0, lastStanding: 5 });
+    expect(ranked(r).map((p) => p.id)).toEqual([5, 4, 3, 2, 1]);
+  });
 });
 
 const awards = (mode: GameMode, players: PlayerResult[], more: Partial<MatchResult> = {}) =>

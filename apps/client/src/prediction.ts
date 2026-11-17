@@ -3,11 +3,14 @@
 // movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity), pulled
 // smoothly towards what the server says, snapped to it when far off; inside the walls of hill
 // and bomb as the core keeps it (fieldBounds); stopped at another ghost it touches, never drawn
-// through it (FIX 2026-11-17-3), until the server's answer moves it on. Display only: the
+// through it (FIX 2026-11-17-3), until the server's answer moves it on; in the air after a jump
+// barely steered and touching nobody, as the core (jump.ts airSteer; JUMP 2026-11-17). Display
+// only: the
 // server's position is the truth and nothing of this leaves the client (THREATS row 36).
 
 import {
   DEFAULT_CONFIG,
+  airSteer,
   clamp,
   dashVelocity,
   fieldBounds,
@@ -20,6 +23,8 @@ import type { Direction } from './input-sender.js';
 // The newest server state's word on the own ghost.
 export interface ServerOwn extends Motion {
   dashLeftMs: number; // the server's cooldown: a dash before 0 does nothing
+  jumpLeftMs: number; // the same for the jump
+  airborne: boolean; // the server has it in the air
   frozen: boolean; // falling, out, or the match is over: the server does not let it move
   receivedAt: number; // client time the state arrived
 }
@@ -43,6 +48,7 @@ type Point = Motion & { at: number };
 // (those the server lets it touch: on the arena, not protected — drawn where they are now).
 export interface FrameInput {
   dash?: boolean; // the player pressed Dash
+  jump?: boolean; // the player pressed Jump
   others?: readonly { x: number; y: number }[];
 }
 
@@ -95,6 +101,8 @@ export class OwnPrediction {
   private path: Point[] = [];
   private offset = { x: 0, y: 0 };
   private shown: { x: number; y: number } | null = null; // drawn in the last frame
+  private airUntil = 0; // client time a jump the player pressed ends
+  private air = false; // in the air in the last frame
 
   constructor(cfg: GameConfig = DEFAULT_CONFIG) {
     this.cfg = cfg;
@@ -117,14 +125,17 @@ export class OwnPrediction {
       this.shown = null;
       return null;
     }
-    const others = input.others ?? [];
+    const air = this.inAir(now, server, input.jump === true);
+    this.air = air;
+    // In the air it touches nobody (jump.ts): no ghost stops it.
+    const others = air ? [] : (input.others ?? []);
     const reach = 2 * this.cfg.ghostRadius;
     const last = this.path.at(-1);
     if (!last || server.frozen) {
       this.path = [{ at: now, x: server.x, y: server.y, vx: server.vx, vy: server.vy }];
       this.offset = { x: 0, y: 0 };
     } else {
-      this.advance(last, { now, dir, dash: input.dash === true }, server, others);
+      this.advance(last, { now, dir, dash: input.dash === true, air }, server, others);
     }
     const head = this.path.at(-1) ?? server;
     const b = fieldBounds(this.cfg);
@@ -139,19 +150,40 @@ export class OwnPrediction {
     return this.shown;
   }
 
-  // One frame on from the last path point by the own input, stopped at the ghosts it touches,
-  // then corrected towards the server's word.
+  // Drawn in the air in the last frame (the jump's look starts with the press, not the echo).
+  airborne(): boolean {
+    return this.air;
+  }
+
+  // In the air now: a jump pressed now or a moment ago that the server allows (switch on,
+  // cooldown over — the core's rule), so the drawn take-off and landing are not a tick late; a
+  // jump the server reports that this client did not start (its state is newer than the own
+  // jump's end) counts from that state's time.
+  private inAir(now: number, server: ServerOwn, jump: boolean): boolean {
+    const ready = this.cfg.jump.enabled && server.jumpLeftMs === 0 && !server.frozen;
+    if (jump && ready && !server.airborne && now >= this.airUntil) {
+      this.airUntil = now + this.cfg.jump.airMs;
+    }
+    const stateAt = server.receivedAt - PREDICTION_LAG_MS;
+    if (server.airborne && this.airUntil <= stateAt) this.airUntil = stateAt + this.cfg.jump.airMs;
+    return now < this.airUntil;
+  }
+
+  // One frame on from the last path point by the own input (in the air barely steered, no dash),
+  // stopped at the ghosts it touches, then corrected towards the server's word.
   private advance(
     last: Point,
-    frame: { now: number; dir: Direction; dash: boolean },
+    frame: { now: number; dir: Direction; dash: boolean; air: boolean },
     server: ServerOwn,
     others: readonly { x: number; y: number }[],
   ): void {
-    const { now, dir, dash } = frame;
+    const { now, dir, dash, air } = frame;
     const dt = Math.min(MAX_FRAME_MS, Math.max(0, now - last.at));
-    const v = dash && server.dashLeftMs === 0 ? dashVelocity(this.cfg, last, dir) : null;
+    const ready = dash && !air && server.dashLeftMs === 0;
+    const v = ready ? dashVelocity(this.cfg, last, dir) : null;
     const from = v ? { ...last, vx: v.x, vy: v.y } : last;
-    const to = stopAt(stepGhost(this.cfg, from, dir, dt), others, 2 * this.cfg.ghostRadius);
+    const steer = air ? airSteer(this.cfg, dir) : dir;
+    const to = stopAt(stepGhost(this.cfg, from, steer, dt), others, 2 * this.cfg.ghostRadius);
     this.path.push({ at: now, ...to });
     while ((this.path[0]?.at ?? now) < now - HISTORY_MS) this.path.shift();
     this.correct(server, dt);

@@ -30,7 +30,7 @@ describe('parseServerMessage', () => {
 
 // TUNE 2026-11-17: the live tuning reaches the clients; a forged one is checked like any frame.
 describe('parseServerMessage: live tuning', () => {
-  it('reads the live tuning with exactly the eight numbers, each whole and in range', () => {
+  it('reads the live tuning with exactly the eleven numbers, each whole and in range', () => {
     const values = {
       arenaRadius: 400,
       maxSpeed: 240,
@@ -40,6 +40,9 @@ describe('parseServerMessage: live tuning', () => {
       variant: 2,
       afterLast: 1,
       halvingEverySec: 75,
+      jump: 1,
+      jumpMs: 500,
+      jumpCooldownMs: 3000,
     };
     expect(parseServerMessage(JSON.stringify({ kind: 'tuning', values }))).toEqual({
       kind: 'tuning',
@@ -53,6 +56,8 @@ describe('parseServerMessage: live tuning', () => {
       { ...values, variant: 3 },
       { ...values, afterLast: 'keep-halving' },
       { ...values, halvingEverySec: 20 },
+      { ...values, jump: 2 },
+      { ...values, jumpCooldownMs: 5001 },
       { ...values, extra: 1 },
       { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480 },
       null,

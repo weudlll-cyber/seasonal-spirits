@@ -51,8 +51,8 @@ export class MatchHost {
 
   // `modes` take turns match by match; the base config's own mode alone by default.
   constructor(base: GameConfig, slots: number, firstSeed: number, modes?: readonly GameMode[]) {
-    // Its own copy, its sumo settings too: the live tuning changes them in place (tune).
-    this.base = { ...base, sumo: { ...base.sumo } };
+    // Its own copy, its sumo and jump settings too: the live tuning changes them in place (tune).
+    this.base = { ...base, sumo: { ...base.sumo }, jump: { ...base.jump } };
     this.modes = modes && modes.length > 0 ? modes : [base.mode];
     this.cfg = this.configFor(0);
     this.roster = botRoster(slots);
@@ -93,7 +93,8 @@ export class MatchHost {
     }
   }
 
-  // One action per tick: the latest one before the tick wins, and it is used once.
+  // One action per tick, Dash or Jump: the latest one before the tick wins, and it is used once
+  // (the core ignores a jump with the switch off or in its cooldown).
   act(clientId: number, action: GameAction): void {
     const c = this.playerControl(clientId);
     if (c) c.action = action;
@@ -103,11 +104,13 @@ export class MatchHost {
   // match, its rules and its bots all read this one config object (and one sumo settings object),
   // so the change holds from the next tick on and for every later match; the running arena eases
   // to its new size. Lives and the variant are read when a match starts: from the next match.
+  // The jump's switch, time and cooldown hold at once (one jump settings object, like sumo's).
   tune(t: Tunable): void {
-    const { sumo, ...fields } = tunedFields(t);
+    const { sumo, jump, ...fields } = tunedFields(t);
     const factor = fields.arenaRadius / this.base.arenaRadius;
     Object.assign(this.base, fields);
     Object.assign(this.base.sumo, sumo);
+    Object.assign(this.base.jump, jump);
     if (this.cfg !== this.base) Object.assign(this.cfg, fields);
     this.match.rescaleArena(factor);
   }

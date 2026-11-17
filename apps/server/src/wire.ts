@@ -1,6 +1,7 @@
 // Seasonal Sumo — the game core's match state as the wire state every client receives.
 // One place turns the core's numbers into what clients show: the game mode, per ghost its
-// position, speed, score, lives, the time to its next dash, its phase and its bomb, the disc
+// position, speed, score, lives, the time to its next dash and jump, its phase, whether it is in
+// the air and its bomb, the disc
 // that halves (sumo's arena, the hill's zone) now and after the next halving, the score per
 // team, sumo's variant and what the clock runs to (a halving, the end, or nothing).
 
@@ -8,6 +9,7 @@ import {
   GAME_MODES,
   SEASONS,
   areaOf,
+  inAir,
   nextDeadline,
   scoreOf,
   type GameConfig,
@@ -17,6 +19,7 @@ import {
   type MatchState,
 } from '@seasonal-spirits/game-core';
 import {
+  GHOST_AIRBORNE,
   GHOST_BOMB,
   GHOST_BOT,
   GHOST_DASHING,
@@ -88,7 +91,9 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (g.phase === 'falling' ? GHOST_FALLING : 0) |
       (g.phase === 'out' ? GHOST_OUT : 0) |
       (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0) |
-      (s.bombs.some((b) => b.carrier === g.id) ? GHOST_BOMB : 0),
+      (s.bombs.some((b) => b.carrier === g.id) ? GHOST_BOMB : 0) |
+      (inAir(g, now) ? GHOST_AIRBORNE : 0),
     lives: g.lives,
+    jumpLeftMs: Math.max(0, g.jumpReadyMs - now),
   };
 }

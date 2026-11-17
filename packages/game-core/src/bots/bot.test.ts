@@ -2,7 +2,7 @@
 // a dash when lined up close and not near the edge, nothing while it is out.
 
 import { describe, expect, it } from 'vitest';
-import { botIntent } from './bot.js';
+import { botIntent, edgeMargin } from './bot.js';
 import { cfg, ghost, matchOf, place } from '../test-helpers.js';
 
 const two = [
@@ -13,7 +13,7 @@ const two = [
 describe('bot', () => {
   it('turns back inward near the edge', () => {
     const m = matchOf(cfg, two);
-    place(m, 1, cfg.arenaRadius - cfg.bots.edgeMargin / 2, 0);
+    place(m, 1, cfg.arenaRadius - edgeMargin(cfg, cfg.arenaRadius) / 2, 0);
     place(m, 2, cfg.arenaRadius - 20, 0); // an opponent further out does not tempt it
     const step = botIntent(cfg, m.state, ghost(m, 1));
     expect(step.dx).toBeLessThan(-0.9);

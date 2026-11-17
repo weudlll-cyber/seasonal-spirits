@@ -1,7 +1,7 @@
 // Seasonal Sumo — the owner's live tuning channel (TUNE 2026-11-17, development only): GET and
 // POST /dev/tune for the viewer's sliders. The server creates it only when started with
 // DEV_TUNING=1 (`pnpm dev`), and it refuses to exist with NODE_ENV=production. It answers
-// loopback callers from the viewer's page only and takes nothing but the eight numbers, each in
+// loopback callers from the viewer's page only and takes nothing but the eleven numbers, each in
 // its range (protocol readTuning); the player message validator never sees it (THREATS row 39).
 
 import type http from 'node:http';
@@ -11,7 +11,7 @@ import { refuseProduction, type Env } from './env.js';
 import { isLoopback } from './http-routes.js';
 
 export const TUNE_PATH = '/dev/tune';
-const MAX_BODY_BYTES = 256; // the eight numbers as JSON take under 150
+const MAX_BODY_BYTES = 256; // the eleven numbers as JSON take under 200
 // The viewer sends a slider's value at most every 100 ms; a burst above this is refused.
 const MAX_CHANGES_PER_SECOND = 20;
 
@@ -121,7 +121,7 @@ export class TuningRoute {
     return null;
   }
 
-  // Every POST counts against the rate, valid or not; only the eight numbers in range apply.
+  // Every POST counts against the rate, valid or not; only the eleven numbers in range apply.
   private post(body: string | null): TuneAnswer {
     if (!this.withinRate()) return { status: 429 };
     let value: unknown;

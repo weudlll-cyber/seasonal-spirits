@@ -1,7 +1,7 @@
-// Seasonal Sumo — the owner's live tuning panel in the viewer (TUNE and LIVES 2026-11-17,
-// development only): sliders and two choices for the server's /dev/tune (apps/server
-// tuning-route.ts) — the physics and the halving setting at once, lives and variant from the
-// next match — Reset to the starting values, and every value as one line to copy. Shown only
+// Seasonal Sumo — the owner's live tuning panel in the viewer (TUNE, LIVES and JUMP 2026-11-17,
+// development only): sliders and three choices for the server's /dev/tune (apps/server
+// tuning-route.ts) — the physics, the halving setting and the jump at once, lives and variant
+// from the next match — Reset to the starting values, and every value as one line to copy. Shown only
 // when the server answers: without DEV_TUNING the channel does not exist and the panel stays
 // hidden.
 
@@ -18,7 +18,7 @@ const SEND_GAP_MS = 100; // a dragged slider sends its newest value at most this
 const GHOST = 2 * DEFAULT_CONFIG.ghostRadius;
 
 // A slider (its step and its number in words) or a choice (its options by index: game-core's
-// VARIANT_CHOICES and AFTER_LAST, in the same order).
+// VARIANT_CHOICES and AFTER_LAST, in the same order; the jump 0 off, 1 on).
 type Row =
   | { label: string; step: number; unit: (n: number) => string }
   | { label: string; options: readonly string[]; names: readonly string[] };
@@ -44,6 +44,10 @@ const ROWS: Record<TuningKey, Row> = {
     names: AFTER_LAST,
   },
   halvingEverySec: { label: 'Keep halving every', step: 5, unit: (s) => `${s} s` },
+  // JUMP 2026-11-17: off, a jump does nothing and the clients hide the button.
+  jump: { label: 'Jump', options: ['Off', 'On'], names: ['off', 'on'] },
+  jumpMs: { label: 'Jump: time in the air', step: 50, unit: (ms) => `${ms / 1000} s` },
+  jumpCooldownMs: { label: 'Jump: cooldown', step: 100, unit: (ms) => `${ms / 1000} s` },
 };
 
 // Every value as the line the owner copies; a choice by its name.
@@ -59,7 +63,7 @@ interface Answer {
   start: Tuning;
 }
 
-// GET (no body) or POST the four numbers; null when the channel is absent or refuses.
+// GET (no body) or POST every value; null when the channel is absent or refuses.
 async function call(url: string, body: Tuning | null): Promise<Answer | null> {
   try {
     const r = await fetch(

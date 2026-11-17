@@ -5,14 +5,16 @@
 // remembers the last opponent that touched it, for the fall's credit.
 
 import type { GameConfig } from './config.js';
+import { inAir } from './jump.js';
 import { SEASONS } from './seasons.js';
 import type { Ghost, MatchState } from './types.js';
 
 const GOLDEN_ANGLE = 2.399963229728653; // parts ghosts that share one point evenly
 
-// Takes part in collisions: on the arena and not protected after a respawn.
+// Takes part in collisions: on the arena, not protected after a respawn and not in the air (a
+// jump: nothing hits it, it pushes nobody — JUMP 2026-11-17).
 function solid(g: Ghost, nowMs: number): boolean {
-  return g.phase === 'in' && nowMs >= g.protectedUntilMs;
+  return g.phase === 'in' && nowMs >= g.protectedUntilMs && !inAir(g, nowMs);
 }
 
 // Every overlapping pair once, in id order (the ghosts are sorted, so the same seed gives the

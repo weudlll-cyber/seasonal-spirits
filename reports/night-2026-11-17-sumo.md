@@ -308,6 +308,49 @@ over at 5:10–5:17; "stop, no time limit" was over twice (18:39, 20:45) and thr
 after 30:00 — at radius 141 the bots' edge margin of 140 keeps them in the middle (BACKLOG
 OPEN ac).
 
+## Fix + Jump — bots in a small arena, "Your place", a jump to dodge
+
+**Fix 1, bots in a small arena (BACKLOG ac).** The bots' edge margin is now a share of the
+arena's radius (`bots.edgeShare` 0.15, never less than a ghost radius; each bot keeps its own
+slack). Check, 5 seeded 32-bot matches of Last One Standing with "stop, no time limit": all
+five end — median 3:07, longest 3:47 (before: 3 of 5 not over after 30:00). The side effect is
+large: at the full arena the margin is 60 instead of 140, the bots stand closer to the edge and
+are pushed off far more often — in every variant and setting the matches end by elimination
+between 2:07 and 3:47 (94–95 of 96 lives used), before the third halving, so the settings
+after the last season hardly come into play with bots. With 0.35 (140 at the full arena, as
+before) the median is 3:46, longest 5:00–6:25; with 5 lives at 0.15 the matches end even sooner
+(median 2:17), the arena stays more crowded. The share is a placeholder (not on the panel).
+
+**Fix 2, "Your place" in Last One Standing.** The server now sends the players in their final
+places (game-core `ranked`): by score in Points; in Last One Standing the last one standing
+first, then those still in, then by when they lost their last life (later out, better place),
+ties by their time on the arena, then knockouts. The result's player list and "Your place"
+follow it.
+
+**The jump.** Shift on the keyboard, on touch a round Jump button (a little smaller) left of
+Dash, with its cooldown ring. Half a second in the air: no dash hits the jumper, it pushes
+nobody, passes or takes no bomb, steers with a tenth of the held direction; it falls only if it
+lands outside the arena; 3 s cooldown — all on the server. In the air the ghost is drawn a fifth
+larger over a soft shadow below it and lands with a small pale puff; the own ghost shows it from
+the press on (the prediction jumps with it, exact to the server tick by tick in the test). Bots
+jump over a dash at them with 50 % × form, a reaction time late, one decision per dash. Help:
+a fourth line with a drawing. Panel: Jump on/off (off: the button goes, a jump does nothing),
+time in the air (0.2–1.5 s), cooldown (0.5–5 s); the copy line has all three.
+
+**Played** (`pnpm dev`, 15 s seasons, desktop 1280 × 860 with Shift and a phone 390 × 844
+tapping Jump, both jumping 250 ms after a rival's dash at them, as a player would; two matches —
+Points and Last One Standing — with the jump on, two with it off): the switch off hid the button
+on both at once. Dodging with a player's reaction rarely works: a dash from 150 units away
+arrives in about 0.3 s, so the jump came too late almost every time (hits taken with the jump
+on 7 in 34 dashes at the two players, off 9 in 52; no dash seen passing under them). Bots dodge
+more often — in seeded matches 59–75 ticks a match with a dash passing under a jumping bot —
+because they jump at every dash they see (about 320 jumps a match). The jump works when it
+anticipates the dash, not as a reaction.
+
+**Odd, noted.** On the phone a square tap highlight showed behind the round Jump button (now
+transparent). The own ghost's shadow was hidden under its white ring (now lower). The early
+ends above (OPEN ad).
+
 ## Notes
 
 - Addendum 1 (no team check, no stand-in) and addendum 2 (human-like bots, equal seats)

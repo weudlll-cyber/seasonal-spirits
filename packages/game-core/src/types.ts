@@ -35,6 +35,8 @@ export interface Ghost {
   dashUntilMs: number; // a dash in progress knocks what it hits until this match time
   knockedUntilMs: number; // thrown by a dash hit: a crowd gives way to it until this match time
   dashReadyMs: number; // the next dash is allowed from this match time on
+  airUntilMs: number; // a jump: in the air until this match time (jump.ts)
+  jumpReadyMs: number; // the next jump is allowed from this match time on
   // The last opponent that touched it and when: a fall within creditMs counts for that one.
   lastTouch: { by: number; atMs: number } | null;
   knockouts: number; // sumo: opponents it pushed off
@@ -43,6 +45,7 @@ export interface Ghost {
   outAtMs: number | null; // when it lost its last life
   aliveSinceMs: number; // the start or the last respawn
   longestAliveMs: number; // the longest stretch without a fall so far
+  aliveMs: number; // all its stretches on the arena before the current one
   // hill: ms in the zone; bomb: its points in ms, 1000 a second (halved when it goes off) —
   // whole ms, so a sum of ticks is exact; a point is 1000.
   scoreMs: number;
@@ -58,8 +61,8 @@ export interface Bomb {
   backAtMs: number;
 }
 
-// The one action (NIGHT 2026-11-17: Seasonal Sumo).
-export type Action = 'dash';
+// The actions: Dash (NIGHT 2026-11-17: Seasonal Sumo) and Jump (JUMP 2026-11-17).
+export type Action = 'dash' | 'jump';
 
 // A direction (magnitude clamped to 1 by the core) and at most one action per tick.
 export interface Intent {
@@ -75,6 +78,7 @@ export type MatchEvent =
   // Every season turn inside a match, season the new one: the mode's halving.
   | { type: 'halving'; atMs: number; season: Season }
   | { type: 'dash'; ghost: number }
+  | { type: 'jump'; ghost: number }
   // by: the opponent credited with the knockout, null when nobody touched it in time.
   | { type: 'fall'; ghost: number; by: number | null; atMs: number }
   | { type: 'respawn'; ghost: number }
@@ -124,6 +128,8 @@ export interface PlayerResult {
   knockouts: number;
   falls: number;
   lives: number;
+  outAtMs: number | null; // when it lost its last life; null: still in at the end
+  aliveMs: number; // its time on the arena in all
   longestAliveMs: number;
   scoreMs: number;
   bounces: number;

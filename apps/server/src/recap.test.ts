@@ -38,6 +38,8 @@ const row = (id: number, knockouts: number, longestAliveMs: number): PlayerResul
   knockouts,
   falls: 1,
   lives: 2,
+  outAtMs: null,
+  aliveMs: longestAliveMs,
   longestAliveMs,
   scoreMs: 0,
   bounces: 0,

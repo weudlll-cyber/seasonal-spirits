@@ -1,4 +1,5 @@
-// Seasonal Sumo — falling off and coming back. A ghost whose centre leaves the arena falls: the
+// Seasonal Sumo — falling off and coming back. A ghost whose centre is outside the arena falls
+// (one in the air when it lands — jump.ts): the
 // fall counts +1 for the last opponent that touched it within creditMs (and its team), for
 // nobody without one. Every fall costs a life (LIVES 2026-11-17). It falls for fallMs (the
 // animation), is out until outMs after the fall, then respawns on its team's quarter,
@@ -6,12 +7,13 @@
 
 import { outside, respawnSpot } from './arena.js';
 import type { GameConfig } from './config.js';
+import { inAir } from './jump.js';
 import type { Ghost, MatchState } from './types.js';
 
 export function checkFalls(cfg: GameConfig, s: MatchState): void {
   const now = s.elapsedMs;
   for (const g of s.ghosts) {
-    if (g.phase !== 'in' || !outside(s.arena, g)) continue;
+    if (g.phase !== 'in' || inAir(g, now) || !outside(s.arena, g)) continue;
     const t = g.lastTouch;
     const by = t && now - t.atMs <= cfg.creditMs ? t.by : null;
     if (by !== null) {
@@ -22,6 +24,7 @@ export function checkFalls(cfg: GameConfig, s: MatchState): void {
     g.lives = Math.max(0, g.lives - 1);
     if (g.lives === 0) g.outAtMs = now;
     g.longestAliveMs = Math.max(g.longestAliveMs, now - g.aliveSinceMs);
+    g.aliveMs += now - g.aliveSinceMs;
     g.phase = 'falling';
     g.phaseUntilMs = now + cfg.fallMs;
     g.dashUntilMs = 0;

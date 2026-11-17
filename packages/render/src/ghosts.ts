@@ -1,11 +1,13 @@
 // Seasonal Sumo — the ghosts in Seasonal Spirits' look B: the body in its team's colour,
 // players and bots alike; the own one drawn on top of all with its marks (own.ts). A fast ghost — dashing or knocked
 // flying — leaves a short trail in its team's colour; a ghost falling off the arena shrinks and
-// fades (fallMs); one out is not drawn; one just back (protected) wears a pale dashed ring; a
+// fades (fallMs); one out is not drawn; one just back (protected) wears a pale dashed ring; one
+// in the air after a jump is drawn larger over its shadow, and lands with a puff (jump.ts); a
 // bomb carrier has the ticking bomb above it (bomb.ts).
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
+  GHOST_AIRBORNE,
   GHOST_BOMB,
   GHOST_FALLING,
   GHOST_OUT,
@@ -20,6 +22,7 @@ import {
   type LabelCandidate,
   type PlacedLabel,
 } from './labels.js';
+import { AIR_SCALE, PUFF_MS, drawPuff, drawShadow } from './jump.js';
 import { OWN_REACH, drawOwnMarks } from './own.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
 import { circle, sx, sy, visibleArea, type View } from './view.js';
@@ -28,11 +31,13 @@ const TRAIL_POINTS = 12;
 // A ghost faster than running can make it leaves a trail: a dash or a knock.
 const TRAIL_SPEED = DEFAULT_CONFIG.maxSpeed * 1.1;
 
-// The last few positions of each ghost, for the trails, and when each began to fall, for the
-// fall animation. Bounded by the ghost ids.
+// The last few positions of each ghost, for the trails, when each began to fall, for the fall
+// animation, and when each landed from a jump, for the puff. Bounded by the ghost ids.
 export class Trails {
   private readonly points = new Map<number, { x: number; y: number }[]>();
   private readonly fellAt = new Map<number, number>();
+  private readonly aloft = new Set<number>();
+  private readonly landedAt = new Map<number, number>();
 
   record(ghosts: readonly GhostState[], nowMs: number): void {
     const seen = new Set<number>();
@@ -42,11 +47,26 @@ export class Trails {
       list.push({ x: g.x, y: g.y });
       if (list.length > TRAIL_POINTS) list.shift();
       this.points.set(g.id, list);
-      if (!(g.flags & GHOST_FALLING)) this.fellAt.delete(g.id);
-      else if (!this.fellAt.has(g.id)) this.fellAt.set(g.id, nowMs);
+      this.moments(g, nowMs);
     }
-    for (const id of this.points.keys()) if (!seen.has(id)) this.points.delete(id);
-    for (const id of this.fellAt.keys()) if (!seen.has(id)) this.fellAt.delete(id);
+    // Ghosts no longer in the state are forgotten.
+    for (const ids of [this.points, this.fellAt, this.aloft, this.landedAt]) {
+      for (const id of ids.keys()) if (!seen.has(id)) ids.delete(id);
+    }
+  }
+
+  // When the ghost began to fall and when it landed from a jump.
+  private moments(g: GhostState, nowMs: number): void {
+    if (!(g.flags & GHOST_FALLING)) this.fellAt.delete(g.id);
+    else if (!this.fellAt.has(g.id)) this.fellAt.set(g.id, nowMs);
+    if (g.flags & GHOST_AIRBORNE) this.aloft.add(g.id);
+    else if (this.aloft.delete(g.id)) this.landedAt.set(g.id, nowMs);
+  }
+
+  // Since the landing from a jump: 0 just landed … below 1; null when its puff is over.
+  landing(id: number, nowMs: number): number | null {
+    const at = this.landedAt.get(id);
+    return at === undefined || nowMs - at >= PUFF_MS ? null : (nowMs - at) / PUFF_MS;
   }
 
   of(id: number): readonly { x: number; y: number }[] {
@@ -123,13 +143,18 @@ const PROTECT_RING = 9;
 function drawBody(v: View, g: GhostState, style: GhostStyle): void {
   const { ctx } = v;
   const fall = g.flags & GHOST_FALLING ? style.trails.fall(g.id, style.nowMs) : 0;
-  const r = ghostRadiusPx(v) * (1 - 0.8 * fall);
+  const ground = ghostRadiusPx(v) * (1 - 0.8 * fall);
+  const air = (g.flags & GHOST_AIRBORNE) !== 0;
+  if (air) drawShadow(v, g, ground);
+  const r = air ? ground * AIR_SCALE : ground;
   ctx.globalAlpha = 1 - 0.8 * fall;
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);
   ctx.fill();
   ctx.globalAlpha = 1;
   if (fall > 0) return;
+  const puff = style.trails.landing(g.id, style.nowMs);
+  if (puff !== null) drawPuff(v, g, ground, puff);
   if (g.flags & GHOST_PROTECTED) {
     ctx.strokeStyle = MUTED;
     ctx.lineWidth = 2;
@@ -153,6 +178,7 @@ export function ghostReach(
     g.id === ownId ? OWN_REACH : 0,
     g.flags & GHOST_PROTECTED ? PROTECT_RING + 1 : 0,
     g.flags & GHOST_BOMB ? bombReach(r) - r : 0,
+    g.flags & GHOST_AIRBORNE ? r * (AIR_SCALE - 1) : 0,
   ];
   return r + Math.max(...outside);
 }

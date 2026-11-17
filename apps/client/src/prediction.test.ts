@@ -21,6 +21,8 @@ const at = (x: number, y: number, receivedAt: number, frozen = false): ServerOwn
   vx: 0,
   vy: 0,
   dashLeftMs: 0,
+  jumpLeftMs: 0,
+  airborne: false,
   frozen,
   receivedAt,
 });
@@ -40,39 +42,48 @@ describe('OwnPrediction against the server', () => {
   it.each([
     ['the starting values', DEFAULT_CONFIG, clientConfig(0)],
     ['a live tuning', SERVER_TUNED, clientConfig(0, TUNING)],
-  ])('moves exactly as the server does with %s: momentum, top speed, a dash', (_, cfg, own) => {
-    const match = new Match(cfg, 7, [{ id: 0, team: 0 }]);
-    const ghost = match.state.ghosts[0];
-    if (!ghost) throw new Error('no ghost');
-    const p = new OwnPrediction(own);
-    // Towards the middle of the arena, a dash downwards, then on down.
-    const intents: Intent[] = [
-      ...Array.from({ length: 20 }, () => ({ dx: 1, dy: 0 })),
-      { dx: 0, dy: 1, action: 'dash' },
-      ...Array.from({ length: 20 }, () => ({ dx: 0, dy: 1 })),
-    ];
-    const server = (k: number): ServerOwn => ({
-      x: ghost.x,
-      y: ghost.y,
-      vx: ghost.vx,
-      vy: ghost.vy,
-      dashLeftMs: Math.max(0, ghost.dashReadyMs - match.state.elapsedMs),
-      frozen: false,
-      receivedAt: k * TICK + PREDICTION_LAG_MS, // the state after tick k arrives then
-    });
-    let seen = server(0);
-    p.update(0, { dx: 0, dy: 0 }, seen);
-    intents.forEach((intent, i) => {
-      const k = i + 1;
-      match.tick(TICK, new Map([[0, intent]]));
-      // The frame at the end of tick k holds the direction the tick applied and knows the
-      // state of tick k - 1.
-      const shown = p.update(k * TICK, intent, seen, { dash: intent.action === 'dash' });
-      expect(shown?.x).toBeCloseTo(ghost.x, 6);
-      expect(shown?.y).toBeCloseTo(ghost.y, 6);
-      seen = server(k);
-    });
-  });
+  ])(
+    'moves exactly as the server does with %s: momentum, top speed, a dash, a jump',
+    (_, cfg, own) => {
+      const match = new Match(cfg, 7, [{ id: 0, team: 0 }]);
+      const ghost = match.state.ghosts[0];
+      if (!ghost) throw new Error('no ghost');
+      const p = new OwnPrediction(own);
+      // Towards the middle of the arena, a dash downwards, then on down; a jump, and in the air
+      // a turn the jump barely follows (JUMP 2026-11-17).
+      const intents: Intent[] = [
+        ...Array.from({ length: 20 }, () => ({ dx: 1, dy: 0 })),
+        { dx: 0, dy: 1, action: 'dash' },
+        ...Array.from({ length: 20 }, () => ({ dx: 0, dy: 1 })),
+        { dx: 0, dy: 1, action: 'jump' },
+        ...Array.from({ length: 20 }, () => ({ dx: -1, dy: 0 })),
+      ];
+      const server = (k: number): ServerOwn => ({
+        x: ghost.x,
+        y: ghost.y,
+        vx: ghost.vx,
+        vy: ghost.vy,
+        dashLeftMs: Math.max(0, ghost.dashReadyMs - match.state.elapsedMs),
+        jumpLeftMs: Math.max(0, ghost.jumpReadyMs - match.state.elapsedMs),
+        airborne: match.state.elapsedMs < ghost.airUntilMs,
+        frozen: false,
+        receivedAt: k * TICK + PREDICTION_LAG_MS, // the state after tick k arrives then
+      });
+      let seen = server(0);
+      p.update(0, { dx: 0, dy: 0 }, seen);
+      intents.forEach((intent, i) => {
+        const k = i + 1;
+        match.tick(TICK, new Map([[0, intent]]));
+        // The frame at the end of tick k holds the direction the tick applied and knows the
+        // state of tick k - 1.
+        const pressed = { dash: intent.action === 'dash', jump: intent.action === 'jump' };
+        const shown = p.update(k * TICK, intent, seen, pressed);
+        expect(shown?.x).toBeCloseTo(ghost.x, 6);
+        expect(shown?.y).toBeCloseTo(ghost.y, 6);
+        seen = server(k);
+      });
+    },
+  );
 });
 
 describe('OwnPrediction against a gap', () => {

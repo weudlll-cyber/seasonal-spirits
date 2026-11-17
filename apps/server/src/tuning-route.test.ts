@@ -1,5 +1,5 @@
 // Seasonal Sumo — the owner's live tuning channel (THREATS row 39): absent without the flag and in
-// production, refused from another host or page, only the eight numbers in range applied, rate
+// production, refused from another host or page, only the eleven numbers in range applied, rate
 // bounded; a change reaches the running match and every client.
 
 import http from 'node:http';
@@ -11,7 +11,15 @@ import { connect, startServer } from './test-client.js';
 import { TUNE_PATH, TuningRoute, type TuneHead } from './tuning-route.js';
 
 const VIEWER = 'http://localhost:5931';
-const RULES = { lives: 3, variant: 0, afterLast: 0, halvingEverySec: 75 };
+const RULES = {
+  lives: 3,
+  variant: 0,
+  afterLast: 0,
+  halvingEverySec: 75,
+  jump: 1,
+  jumpMs: 500,
+  jumpCooldownMs: 3000,
+};
 const START: Tuning = {
   arenaRadius: 400,
   maxSpeed: 240,
@@ -28,6 +36,9 @@ const VALID: Tuning = {
   variant: 2,
   afterLast: 1,
   halvingEverySec: 30,
+  jump: 0,
+  jumpMs: 800,
+  jumpCooldownMs: 1500,
 };
 const POST: TuneHead = {
   method: 'POST',
@@ -70,7 +81,8 @@ describe('tuning route refusals', () => {
 
   it('refuses values out of range, not whole, missing, extra keys and broken JSON', () => {
     const applied: Tuning[] = [];
-    const r = route(applied);
+    let now = 0; // a request every 100 ms: under the rate limit, however many bodies
+    const r = route(applied, {}, () => (now += 100));
     for (const body of [
       JSON.stringify({ ...VALID, arenaRadius: 100 }),
       JSON.stringify({ ...VALID, maxSpeed: 481 }),
@@ -87,6 +99,11 @@ describe('tuning route refusals', () => {
       JSON.stringify({ ...VALID, afterLast: 3 }),
       JSON.stringify({ ...VALID, halvingEverySec: 29 }),
       JSON.stringify({ ...VALID, halvingEverySec: 121 }),
+      // JUMP 2026-11-17: the switch 0 or 1, 200–1500 ms in the air, a 500–5000 ms cooldown.
+      JSON.stringify({ ...VALID, jump: 2 }),
+      JSON.stringify({ ...VALID, jump: true }),
+      JSON.stringify({ ...VALID, jumpMs: 100 }),
+      JSON.stringify({ ...VALID, jumpCooldownMs: 6000 }),
       JSON.stringify({ arenaRadius: 500, maxSpeed: 300, dashSpeed: 600 }),
       JSON.stringify({ ...VALID, friction: 1 }),
       '{"arenaRadius":',

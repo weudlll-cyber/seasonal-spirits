@@ -3,7 +3,7 @@
 // knocked out in order, Last One Standing's winner — and the mode's awards (game-core recap.ts).
 // An award nobody earned is left out; the client names the ghosts.
 
-import { awardsOf, type MatchResult } from '@seasonal-spirits/game-core';
+import { awardsOf, ranked, type MatchResult } from '@seasonal-spirits/game-core';
 import type { ServerRecap } from '@seasonal-spirits/protocol';
 
 export function recapOf(result: MatchResult): ServerRecap {
@@ -19,7 +19,8 @@ export function recapOf(result: MatchResult): ServerRecap {
     left: four(result.left),
     knockedOut: [...result.knockedOut],
     winner: result.winner,
-    players: result.players.map((p) => ({ ghost: p.id, team: p.team, score: p.score })),
+    // In their final places (game-core ranked): the client shows them in this order.
+    players: ranked(result).map((p) => ({ ghost: p.id, team: p.team, score: p.score })),
     awards: awardsOf(result).map((a) => ({ ...a, value: Math.round(a.value) })),
   };
 }

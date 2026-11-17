@@ -6,6 +6,7 @@
 
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
+import { inAir } from '../jump.js';
 import type { Bomb, Ghost, MatchState } from '../types.js';
 import type { ModeRules } from './rules.js';
 
@@ -46,15 +47,17 @@ function handOut(cfg: GameConfig, s: Readonly<MatchState>, rng: () => number): B
   return out;
 }
 
-// The bomb goes to the nearest opponent touching its carrier that may take it.
+// The bomb goes to the nearest opponent touching its carrier that may take it; nobody in the
+// air passes or takes one (a jump touches nobody).
 function pass(cfg: GameConfig, s: MatchState, b: Bomb): void {
   const c = s.ghosts.find((g) => g.id === b.carrier);
-  if (!c) return;
   const now = s.elapsedMs;
+  if (!c || inAir(c, now)) return;
   const reach = 2 * cfg.ghostRadius + TOUCH_SLACK;
   const takes = (g: Ghost): boolean =>
     g.team !== c.team &&
     g.phase === 'in' &&
+    !inAir(g, now) &&
     !(g.id === b.from && now < b.backAtMs) &&
     !s.bombs.some((x) => x.carrier === g.id);
   let to: Ghost | null = null;

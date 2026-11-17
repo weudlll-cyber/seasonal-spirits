@@ -28,6 +28,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash hit's throw, the in-season push, credit   |
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
 | `src/recap.ts`            | The recap's awards, two per mode (`awardsOf`)                                  |
+| `src/jump.ts`             | The jump: in the air, its steering, when a ghost may jump                      |
 | `src/standing.ts`         | Lives and sumo's variants: time limit, clock past the last season, end, winner |
 | `src/bots/bot.ts`         | The sumo brain (`botIntent`) and the helpers every brain shares                |
 | `src/bots/hill.ts`        | The hill brain: to the zone, push rivals out of it                             |
@@ -100,9 +101,16 @@ countdown.
   after each, so a ghost that reaches another always touches it (FIX 2026-11-17-3: before,
   ghosts crossed each other without a contact). `stepGhost` takes the same sub-steps, so the
   client's prediction moves exactly as a ghost that touches nothing.
-- **Dash** (the one action): the speed becomes `dashSpeed` towards the held direction (or
+- **Dash** (an action): the speed becomes `dashSpeed` towards the held direction (or
   along the motion); for `dashMs` the ghost knocks what it hits; the next dash only after
-  `dashCooldownMs` — the core's rule, whatever a client sends.
+  `dashCooldownMs` — the core's rule, whatever a client sends. Not in the air.
+- **Jump** (the other action, owner's idea, JUMP 2026-11-17, `src/jump.ts`; every mode): for
+  `jump.airMs` (0.5 s) the ghost is in the air — it takes part in no collision, so no dash hits
+  it and it pushes nobody, and it neither passes nor takes a bomb; it steers with `jump.steer`
+  (a tenth) of the held direction, so it keeps almost the direction of its take-off (`airSteer`,
+  which the client's prediction uses too); it falls only when it lands outside the arena. The
+  next jump only after `jump.cooldownMs` (3 s), and only with `jump.enabled` — the owner's
+  switch (off: the action does nothing). All placeholders, set with the live panel.
 - **Collisions** (`collideGhosts`, grown from Spirits' soft separation): two ghosts on the
   arena that overlap are moved apart and bounce (`restitution`), the overlap shared by their
   push factors; the team whose season is in season pushes `inSeasonPush` harder. A dashing
@@ -127,6 +135,11 @@ countdown.
   the ghosts still in per team, the teams knocked out in order, the winner and the last one
   standing, and each ghost's longest time on the arena without a fall. The end is staged like a
   halving (countdown, `match-end` event).
+- **Places** (`ranked`, FIX 2026-11-17): the players in their final order — by the mode's
+  score; in Last One Standing by survival: the last one standing, the winning team's ghosts
+  still in, the others still in, then the rest by when they lost their last life (later out,
+  better place), ties by their time on the arena (`aliveMs`), then knockouts. The server sends
+  the recap's players in this order.
 - **Recap** (`src/recap.ts`, every mode): two awards per mode from the result at the end —
   sumo Points "Best pusher" (most knockouts) and "Survivor" (longest without a fall); sumo Last
   One Standing "Last one standing" (the one ghost left, with its lives left; none when the time
@@ -183,7 +196,10 @@ zone; inside it, at the nearest opponent in the zone, dashing when lined up clos
 to push, its own spot in the zone. Bomb (`bots/bomb.ts`): a carrier chases the nearest
 opponent that may take its bomb and dashes into it; the others flee from the nearest opposing
 carrier within two dash ranges, bending towards the middle so they do not pin themselves to a
-wall, and else walk to their wander point. Sumo (`botIntent`): near the edge (`bots.edgeMargin`) back inward; otherwise to the
+wall, and else walk to their wander point. Sumo (`botIntent`): near the edge back inward — within
+`bots.edgeShare` (0.15) of the edge's radius, never less than a ghost radius (`edgeMargin`;
+FIX 2026-11-17: an absolute 140 left the last halving's arena of 141 only its middle, and Last
+One Standing without a time limit did not end) —; otherwise to the
 nearest opponent it can push, approaching a little from the side of its own wander point
 (an angle by id, moved on every `bots.wanderMs`, so bots do not all meet in one spot), and a
 dash when within `bots.dashRange`, lined up (`bots.dashAimCos`), not near the edge and the
@@ -199,8 +215,11 @@ cooldown over; with nobody to push, to the wander point.
 - it dashes only when its brain has a target lined up, takes such a chance only with
   `bots.dashChance` × form (0.6: else too late) and never sooner than `bots.dashGapMs` (3 s)
   after its last dash — a calm player's pace (owner 2026-11-17); it hesitates for
-  `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge margin is
-  drawn from [`bots.edgeSlack`, 1] × `bots.edgeMargin` (some go too close to the edge);
+  `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge share is
+  drawn from [`bots.edgeSlack`, 1] × `bots.edgeShare` (some go too close to the edge);
+- a rival dashing at it within `bots.dashRange`, heading at it as well as a bot lines up a dash
+  (`underAttack`), it jumps over with `bots.jumpChance` × form (0.5) — as it sees it, a reaction
+  time late, one decision per dash, only when its jump is ready: never a perfect dodge;
 - its form drifts by up to ± `bots.formStep` every `bots.formEveryMs` within `bots.form`
   (0.85–1.15): sharper and steadier on a good run, sloppier in a weak spell;
 - all of it from the bot's own seeded source, `botSeed(match seed, seat)`: runs repeat.

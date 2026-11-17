@@ -9,6 +9,7 @@ import { collideGhosts } from './collisions.js';
 import { walled, type GameConfig, type SumoVariant } from './config.js';
 import { advancePhases } from './falls.js';
 import { dashVelocity, moveOnce, subSteps } from './geometry.js';
+import { airSteer, canJump, inAir } from './jump.js';
 import { rulesFor, scoreOf, type ModeRules } from './modes/rules.js';
 import { mulberry32 } from './rng.js';
 import { seasonClock } from './seasons.js';
@@ -79,7 +80,8 @@ export class Match {
   }
 
   // One step. Order: time and season (a season turn is the mode's halving), the arena's edge,
-  // falls ending and respawns, each ghost's dash (by id), movement and collisions in sub-steps,
+  // falls ending and respawns, each ghost's action — dash or jump — (by id), movement and
+  // collisions in sub-steps,
   // the mode's rules (sumo: new falls; hill: the zone's points; bomb: points and passes), the
   // teams knocked out, the end and its winner, the countdown. Intents of unknown ids are ignored.
   tick(dtMs: number, intents: ReadonlyMap<number, Intent>): Readonly<MatchState> {
@@ -91,7 +93,7 @@ export class Match {
     updateArena(this.cfg, s.arena, s.elapsedMs);
     followEdge(s, before);
     advancePhases(this.cfg, s, this.rng);
-    for (const g of s.ghosts) this.dash(g, intents.get(g.id) ?? IDLE);
+    for (const g of s.ghosts) this.act(g, intents.get(g.id) ?? IDLE);
     // Sub-steps: every ghost moves a short way, then the contacts are resolved — so a ghost that
     // reaches another always touches it, however fast it goes (FIX 2026-11-17-3).
     const n = subSteps(this.cfg, dtMs);
@@ -163,20 +165,31 @@ export class Match {
       teams[g.team] = (teams[g.team] ?? 0) + score;
       if (g.lives > 0) left[g.team] = (left[g.team] ?? 0) + 1;
       const running = g.phase === 'in' ? s.elapsedMs - g.aliveSinceMs : 0;
-      const { id, team, knockouts, falls, lives, scoreMs, bounces, passes } = g;
+      const { id, team, knockouts, falls, lives, outAtMs, scoreMs, bounces, passes } = g;
       const longestAliveMs = Math.max(g.longestAliveMs, running);
-      return { id, team, score, knockouts, falls, lives, longestAliveMs, scoreMs, bounces, passes };
+      const aliveMs = g.aliveMs + running;
+      const counts = { knockouts, falls, lives, outAtMs, aliveMs, longestAliveMs };
+      return { id, team, score, ...counts, scoreMs, bounces, passes };
     });
     const { variant, winner, lastStanding } = s;
     const knockedOut = [...s.knockedOut];
     return { mode, variant, players, teams, left, knockedOut, winner, lastStanding };
   }
 
-  // A ghost on the arena may dash, once per tick (the cooldown is the core's: a dash before
-  // dashReadyMs does nothing).
-  private dash(g: Ghost, intent: Intent): void {
+  // A ghost's one action of the tick. A jump: in the air for jump.airMs (jump.ts canJump: the
+  // switch, the ground, the cooldown). A dash: on the arena and on the ground (nothing steers
+  // in the air); the cooldown is the core's, a dash before dashReadyMs does nothing.
+  private act(g: Ghost, intent: Intent): void {
     const now = this.s.elapsedMs;
+    if (intent.action === 'jump') {
+      if (!canJump(this.cfg, g, now)) return;
+      g.airUntilMs = now + this.cfg.jump.airMs;
+      g.jumpReadyMs = now + this.cfg.jump.cooldownMs;
+      this.s.events.push({ type: 'jump', ghost: g.id });
+      return;
+    }
     if (g.phase !== 'in' || intent.action !== 'dash' || now < g.dashReadyMs) return;
+    if (inAir(g, now)) return;
     const v = dashVelocity(this.cfg, g, intent);
     if (!v) return;
     g.vx = v.x;
@@ -186,11 +199,13 @@ export class Match {
     this.s.events.push({ type: 'dash', ghost: g.id });
   }
 
-  // One sub-step: a ghost on the arena runs; a falling ghost drifts without control; an out
-  // ghost waits.
+  // One sub-step: a ghost on the arena runs (in the air it barely steers); a falling ghost
+  // drifts without control; an out ghost waits.
   private move(g: Ghost, intent: Intent, dtMs: number): void {
     if (g.phase === 'out') return;
-    Object.assign(g, moveOnce(this.cfg, g, g.phase === 'in' ? intent : IDLE, dtMs));
+    const held = g.phase === 'in' ? intent : IDLE;
+    const dir = inAir(g, this.s.elapsedMs) ? airSteer(this.cfg, held) : held;
+    Object.assign(g, moveOnce(this.cfg, g, dir, dtMs));
   }
 }
 
@@ -208,6 +223,8 @@ function newGhost(r: Roster, p: { x: number; y: number }, lives: number): Ghost 
     dashUntilMs: 0,
     knockedUntilMs: 0,
     dashReadyMs: 0,
+    airUntilMs: 0,
+    jumpReadyMs: 0,
     lastTouch: null,
     knockouts: 0,
     falls: 0,
@@ -215,6 +232,7 @@ function newGhost(r: Roster, p: { x: number; y: number }, lives: number): Ghost 
     outAtMs: null,
     aliveSinceMs: 0,
     longestAliveMs: 0,
+    aliveMs: 0,
     scoreMs: 0,
     bounces: 0,
     passes: 0,

@@ -74,7 +74,8 @@ export class ResultScreen {
         row(`${i + 1}. ${seasonName(team)}`, text, seasonColour(team)),
       ),
     );
-    const ranked = [...r.players].sort((a, b) => b.score - a.score || a.ghost - b.ghost);
+    // The players come in their final places (the server ranks: game-core `ranked`).
+    const ranked = r.players;
     this.players.replaceChildren(
       ...ranked
         .slice(0, SHOWN_PLAYERS)

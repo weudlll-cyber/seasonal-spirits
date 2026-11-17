@@ -1,6 +1,7 @@
 // Seasonal Sumo — the client's controls and messages on top of the canvas (DOM, so they are
-// real buttons): the Dash button with its cooldown ring, the HALVING and MATCH OVER
-// announcements with their flash, and notices.
+// real buttons): the Dash and Jump buttons with their cooldown rings (Jump hidden while the
+// owner's switch has it off — JUMP 2026-11-17), the HALVING and MATCH OVER announcements with
+// their flash, and notices.
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
@@ -23,8 +24,24 @@ function el(id: string, kind: new () => HTMLElement = HTMLElement): HTMLElement 
   return found;
 }
 
+// An action button's state: shown or not, ms until it is ready, and its whole cooldown.
+export interface ActionButton {
+  shown: boolean;
+  leftMs: number;
+  cooldownMs: number;
+}
+
+// A round action button: hidden or shown, its ring filling while the cooldown runs.
+function showButton(button: HTMLButtonElement, b: ActionButton): void {
+  button.hidden = !b.shown;
+  const ready = 1 - Math.min(1, b.leftMs / b.cooldownMs);
+  button.style.setProperty('--ready', ready.toFixed(3));
+  button.classList.toggle('ready', b.leftMs === 0);
+}
+
 export class Hud {
   private readonly dash = el('dash', HTMLButtonElement);
+  private readonly jump = el('jump', HTMLButtonElement);
   private readonly announce = el('announce');
   private readonly flash = el('flash');
   private readonly notice = el('notice');
@@ -32,18 +49,23 @@ export class Hud {
 
   constructor(act: (a: GameAction) => void) {
     // pointerdown, not click: a thumb on the button must not wait for its release.
-    this.dash.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      act('dash');
-    });
+    for (const [button, action] of [
+      [this.dash, 'dash'],
+      [this.jump, 'jump'],
+    ] as const) {
+      button.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        act(action);
+      });
+    }
   }
 
-  // Players only: the Dash button, its ring filling up while the server's cooldown runs.
-  showControls(playing: boolean, dashLeftMs: number): void {
-    this.dash.hidden = !playing;
-    const ready = 1 - Math.min(1, dashLeftMs / DEFAULT_CONFIG.dashCooldownMs);
-    this.dash.style.setProperty('--ready', ready.toFixed(3));
-    this.dash.classList.toggle('ready', dashLeftMs === 0);
+  // Players only: the Dash and Jump buttons, their rings filling up while the server's
+  // cooldowns run.
+  showControls(playing: boolean, dashLeftMs: number, jump: ActionButton): void {
+    const cooldownMs = DEFAULT_CONFIG.dashCooldownMs;
+    showButton(this.dash, { shown: playing, leftMs: dashLeftMs, cooldownMs });
+    showButton(this.jump, { ...jump, shown: playing && jump.shown });
   }
 
   // A large announcement and a short flash at every deadline — the mode's halving ("HALVING —

@@ -139,9 +139,13 @@ describe('match host state size', () => {
   );
 });
 
+// The clock over a whole match: lives enough that no early end cuts it short (LIVES and FIX
+// 2026-11-17: with 3 lives the bots may knock out all but one team before 5:00).
+const CLOCK = { ...DEFAULT_CONFIG, sumo: { ...DEFAULT_CONFIG.sumo, lives: 99 } };
+
 describe('match host lifecycle', () => {
   it('flags each of the three halvings in exactly one tick, with the new season', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 8, 1);
+    const host = new MatchHost(CLOCK, 8, 1);
     const states = runFor(host, DEFAULT_CONFIG.matchDurationMs);
     const flagged = states.filter((s) => s.flags & STATE_HALVING_EVENT);
     expect(flagged.map((s) => [s.matchMs, s.season])).toEqual([
@@ -152,7 +156,7 @@ describe('match host lifecycle', () => {
   });
 
   it('counts down to the match end in the last season and flags the end in one state', () => {
-    const host = new MatchHost(DEFAULT_CONFIG, 8, 1);
+    const host = new MatchHost(CLOCK, 8, 1);
     const states = runFor(host, DEFAULT_CONFIG.matchDurationMs + 1000);
     const lastSeason = 3 * DEFAULT_CONFIG.seasonDurationMs;
     const toEnd = states.filter((s) => s.flags & STATE_TO_END);

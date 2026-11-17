@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';
 import { SCREENS } from './stack.js';
 
-const RULES = 3; // the numbered rules above "What you see", one drawing each
+const RULES = 4; // the numbered rules above "What you see" — three and the jump —, one drawing each
 
 // A first visit: nothing remembered in the browser.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -19,10 +19,11 @@ test('help appears on the first visit, not on the second, and opens again with "
   const help = page.locator('#help');
   await page.goto('/');
   await expect(help).toBeVisible();
-  // The three rules of Sumo.
+  // The three rules of Sumo and the jump.
   await expect(help).toContainText('Push the other teams off the arena');
   await expect(help).toContainText('Dash with Space or the Dash button');
   await expect(help).toContainText('At every halving the arena halves');
+  await expect(help).toContainText('Jump with Shift or the Jump button');
   await expect(help).toContainText('What you see');
   for (const { text } of LEGEND) await expect(help).toContainText(text);
   await expect(help.locator('svg')).toHaveCount(RULES + LEGEND.length);

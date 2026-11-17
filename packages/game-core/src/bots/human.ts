@@ -6,7 +6,9 @@
 // - its direction carries aim noise; it dashes only when its brain has a target lined up, a
 //   good chance is sometimes missed (too late), and never sooner than bots.dashGapMs after its
 //   last dash — a calm player's pace (owner 2026-11-17); it hesitates now and then; its own
-//   edge margin may be too small;
+//   edge share may be too small;
+// - a rival dashing at it (as it sees it, a reaction time late) it jumps over with a chance
+//   that grows with its form, one decision per dash (JUMP 2026-11-17: never a perfect dodge);
 // - its form drifts slowly within bots.form (a seeded random walk): sharper and steadier on a
 //   good run, sloppier in a weak spell.
 // All randomness comes from `seed` (derived from the match's seed), so runs are reproducible.
@@ -17,7 +19,7 @@ import { perceive } from '../human/perception.js';
 import { mulberry32 } from '../rng.js';
 import { IDLE, type Ghost, type Intent, type MatchState } from '../types.js';
 import { bombIntent } from './bomb.js';
-import { botIntent, type Bot } from './bot.js';
+import { botIntent, underAttack, type Bot } from './bot.js';
 import { hillIntent } from './hill.js';
 
 export type { Bot } from './bot.js';
@@ -49,11 +51,12 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
   const spread = (lo: number, hi: number): number => lo + rng() * (hi - lo);
   const reactionMs = spread(b.reactionMs[0], b.reactionMs[1]);
   // The bot's own idea of how close to the edge is safe.
-  const tuned = { ...cfg, bots: { ...b, edgeMargin: b.edgeMargin * spread(b.edgeSlack, 1) } };
+  const tuned = { ...cfg, bots: { ...b, edgeShare: b.edgeShare * spread(b.edgeSlack, 1) } };
   let form = 1;
   let nextFormMs = 0;
   let hesitateUntilMs = -1;
   let nextDashMs = 0;
+  let nextDodgeMs = 0; // one jump decision per dash at it
   return (s, me) => {
     const now = s.elapsedMs;
     if (now >= nextFormMs) {
@@ -73,6 +76,10 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
     // A weaker form aims worse: the noise grows from × form[0]… to × 1 / form.
     const noise = ((rng() * 2 - 1) * ((b.aimNoiseDeg * Math.PI) / 180)) / form;
     const dir = rotate(intent, noise);
+    if (now >= nextDodgeMs && underAttack(cfg, seen.state, seen.me)) {
+      nextDodgeMs = now + cfg.dashMs;
+      if (rng() < b.jumpChance * form) return { ...dir, action: 'jump' };
+    }
     // The dash rate limit: a bot's dashes lie at least dashGapMs apart, whatever its brain asks.
     const take = intent.action === 'dash' && now >= nextDashMs && rng() < b.dashChance * form;
     if (!take) return dir;

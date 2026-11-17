@@ -36,9 +36,10 @@ is encoded once and sent to every client that has said hello.
   Names are `ghostName` in `packages/protocol`, the same on every client, until the website
   provides them.
 - A player sends `{"kind":"input","dx":…,"dy":…}` (direction) and
-  `{"kind":"action","action":"dash"}` (the one action). An action is used once, in the next
-  tick. Whether it does anything is the game core's decision: a dash during its cooldown does
-  nothing (docs/THREATS.md, rows 18, 37). Seasonal Spirits' actions (secure, steal, swap) and
+  `{"kind":"action","action":"dash"}` or `"jump"` (JUMP 2026-11-17). An action is used once, in
+  the next tick. Whether it does anything is the game core's decision: a dash or a jump during
+  its cooldown, a dash in the air or a jump with the owner's switch off does nothing
+  (docs/THREATS.md, rows 18, 37, 41). Seasonal Spirits' actions (secure, steal, swap) and
   team signals are refused by the validator like any unknown message.
 - A player who disconnects leaves the ghost standing for `reconnectGraceMs` (12 s,
   CONCEPT.md §8: 10–15 s); then a bot takes over. Without the website sign-in a returning
@@ -86,12 +87,13 @@ One binary encoding, little endian:
   game-core's `GAME_MODES`), the disc that halves now — sumo's arena, the hill's zone — and
   after the next halving, each x, y, r u16 (tenths of a field unit; r 0 = none, as in bomb),
   ghost count u8, every ghost's lives at the match start u8 (the hearts).
-- **Per ghost, 15 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
+- **Per ghost, 16 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
   prediction starts from it), team u8, the mode's score u16, ms to its next dash u8 (in 20 ms
   steps: the Dash button's ring), flags u8 (bot, dashing, falling, out, protected, carries a
-  bomb), lives left u8 (0: out until the next match).
+  bomb, in the air), lives left u8 (0: out until the next match), ms to its next jump u8 (20 ms
+  steps: the Jump button's ring).
 
-At 32 ghosts: 526 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
+At 32 ghosts: 558 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
 gone; the probe runs of docs/PHASE0.md were measured with older layouts).
 
 ## Bounds and checks
@@ -138,10 +140,11 @@ The owner tunes the feel with a panel instead of guessing numbers round by round
 diameters across), **walking speed** (`maxSpeed`; `acceleration` scales with it), **dash
 strength** (`dashSpeed`), **push strength** (`knockSpeed`, how fast a dash hit throws a ghost
 off), **lives** (1–9), **sumo variant** (Points / Last One Standing / alternate), **after the
-last season** (stop, time limit / keep halving / stop, no time limit) and **keep halving every**
-(30–120 s). Each slider shows its number and moves within a wide band around the starting value
-(`TUNING_RANGES`, packages/protocol `tuning.ts`; the two choices travel as indices). The physics
-and the setting after the last season hold at once in the running match: the match, its rules
+last season** (stop, time limit / keep halving / stop, no time limit), **keep halving every**
+(30–120 s), **jump** (off / on; off hides the clients' Jump button), **jump: time in the air**
+(0.2–1.5 s) and **jump: cooldown** (0.5–5 s). Each slider shows its number and moves within a wide band around the starting value
+(`TUNING_RANGES`, packages/protocol `tuning.ts`; the choices travel as indices). The physics,
+the setting after the last season and the jump hold at once in the running match: the match, its rules
 and its bots read the host's one config object (`MatchHost.tune`), the running arena eases to
 its new size like a halving (`Match.rescaleArena`); lives and the variant hold from the next
 match. Every client gets the values as `{"kind":"tuning","values":…}`, so its own ghost's
@@ -156,7 +159,7 @@ The channel (`tuning-route.ts`) is `GET` / `POST /dev/tune`:
   `http://localhost:5931` or `http://127.0.0.1:5931`, else 403), `content-type:
 application/json` only (415), so another page cannot reach it without the browser's
   preflight, which only the viewer's origin passes;
-- a body of at most 256 bytes (413), exactly the eight keys, each a whole number in its range
+- a body of at most 256 bytes (413), exactly the eleven keys, each a whole number in its range
   (400 otherwise, nothing applied); at most 20 changes a second (429);
 - never through the player message validator: `parseClientMessage` still takes a hello, a
   direction and Dash only. [THREATS.md](THREATS.md) row 39.

@@ -9,6 +9,7 @@
 import {
   GHOST_FALLING,
   GHOST_OUT,
+  GHOST_AIRBORNE,
   GHOST_PROTECTED,
   RenderClock,
   STATE_HALVING_EVENT,
@@ -73,6 +74,7 @@ const result = new ResultScreen();
 const scores = new ScoreBoard();
 const hearts = new Hearts();
 let dashPressed = false; // since the last frame: the own prediction dashes too
+let jumpPressed = false; // … and jumps
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
 let recap: ServerRecap | null = null; // of the match just ended, during the result pause
@@ -119,7 +121,8 @@ const controls: Controls = {
     conn.steer(dx, dy);
   },
   act: (a) => {
-    dashPressed = true; // Dash is the one action
+    if (a === 'dash') dashPressed = true;
+    else jumpPressed = true;
     conn.act(a);
   },
 };
@@ -139,13 +142,15 @@ function ownServer(ownId: number | null): ServerOwn | null {
     vx: g.vx,
     vy: g.vy,
     dashLeftMs: g.dashLeftMs,
+    jumpLeftMs: g.jumpLeftMs,
+    airborne: (g.flags & GHOST_AIRBORNE) !== 0,
     frozen: away || (newest.state.flags & STATE_RESULT) !== 0,
     receivedAt: newest.receivedAt,
   };
 }
 
-// Off the arena or protected after a respawn: the server lets it touch nobody.
-const AWAY = GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED;
+// Off the arena, protected after a respawn or in the air: the server lets it touch nobody.
+const AWAY = GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED | GHOST_AIRBORNE;
 
 // Other ghosts a render buffer behind, smoothly; the own one where the own input has already
 // taken it (prediction.ts), stopped at the drawn ghosts the server would let it touch.
@@ -158,10 +163,15 @@ function drawnGhosts(now: number, target: number | null, ownId: number | null): 
     own && !(own.flags & AWAY) ? ghosts.filter((g) => g !== own && !(g.flags & AWAY)) : [];
   const predicted = prediction.update(now, conn.direction, ownServer(ownId), {
     dash: dashPressed,
+    jump: jumpPressed,
     others,
   });
   dashPressed = false;
-  return ghosts.map((g) => (g.id === ownId && predicted ? { ...g, ...predicted } : g));
+  jumpPressed = false;
+  const air = prediction.airborne() ? GHOST_AIRBORNE : 0;
+  return ghosts.map((g) =>
+    g.id === ownId && predicted ? { ...g, ...predicted, flags: g.flags | air } : g,
+  );
 }
 
 function snapshot(now: number): Frame {
@@ -218,8 +228,14 @@ function draw(f: Frame): Drawn {
   showTeam(f.ownTeam, f.marks.backInMs, lives.out);
   hearts.update(lives.hearts);
   const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
-  // Out of lives: nothing to steer until the next match, so no Dash button.
-  hud.showControls(f.playing && !f.over && !lives.out, own?.dashLeftMs ?? 0);
+  // Out of lives: nothing to steer until the next match, so no buttons. Jump only while the
+  // owner's switch has it on (the tuning the server sent; on without one).
+  const jump = clientConfig(f.latest?.mode ?? 0, conn.tuning).jump;
+  hud.showControls(f.playing && !f.over && !lives.out, own?.dashLeftMs ?? 0, {
+    shown: jump.enabled,
+    leftMs: own?.jumpLeftMs ?? 0,
+    cooldownMs: jump.cooldownMs,
+  });
   scores.update(f.latest);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;

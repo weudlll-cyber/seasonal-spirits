@@ -16,22 +16,28 @@ y. **Seasonal Sumo and its modes — the owner plays them** (NIGHT 2026-11-17, o
 Last One Standing (LIVES 2026-11-17, 3 lives); `GAME_MODE=rotate pnpm dev` brings in King of
 the Season (3:00) and Halving Bomb (3:00). The feel and the rules of Sumo are tuned live with
 the viewer's panel (arena size, walking speed, dash, push; lives, variant, after the last
-season, keep-halving interval; starting values arena 25 ghost diameters, top speed 240, dash
-480, push 320, 3 lives, stop at the time limit, 75 s). Done when: the owner has played all
+season, keep-halving interval; the jump on/off, its time in the air and cooldown; starting
+values arena 25 ghost diameters, top speed 240, dash 480, push 320, 3 lives, stop at the time
+limit, 75 s, jump on, 0.5 s, 3 s). Done when: the owner has played all
 three modes and both variants and said which is fun and which makes him want another round;
 has sent the panel's line, set as the new starting values; and has decided the other
 placeholders (the bump with no bounce — 1.5 diameters, not 1 —, respawn, the bot layer's
-reaction, noise and dash gap of 3 s, the bots' distances `edgeMargin` and `dashRange`, set for
-the old 900 arena: 33 % of the time in clumps now; the walls, the zone's size, the bomb count
+reaction, noise and dash gap of 3 s, the bots' `dashRange`, set for the old 900 arena — 33 %
+of the time in clumps —, and their edge share (OPEN ad); the walls, the zone's size, the bomb count
 and the times of hill and bomb).
 
-ac. **Last One Standing "stop, no time limit" with bots can run very long** (LIVES
-2026-11-17, seeded 32-bot runs): in 3 of 5 runs it was not over after 30 minutes — after the
-third halving the arena's radius is 141 and the bots' `edgeMargin` is 140, so they keep to the
-middle and hardly push each other off. Also: its result's "Your place" still ranks by
-knockouts. Done when: the owner has played the option and decided whether the bots get a
-margin relative to the arena (OPEN y) or the option a different end, and how "Your place"
-reads in Last One Standing.
+ad. **Matches end early since the bots' edge margin is relative** (FIX 2026-11-17, seeded
+32-bot runs): with `bots.edgeShare` 0.15 the bots keep 60 instead of 140 from the full arena's
+edge and are pushed off far more — every variant ends by elimination between 2:07 and 3:47,
+before the third halving, so "after the last season" hardly matters with bots (0.35: median
+3:46; 5 lives end sooner). Done when: the owner has played it and set the share (or asked for
+it on the panel) and the lives so that the late phases are reached as he wants.
+
+ae. **The jump as a dodge** (JUMP 2026-11-17): built with the owner's switch; with a player's
+reaction (~250 ms) a dash from 150 away arrives first, so a reactive jump rarely helps — it
+works when it anticipates; the bots jump at every dash they see (about 320 jumps a match).
+Done when: the owner has compared with and without, and decided the jump's time, cooldown,
+steering and the bots' jump chance (placeholders), or dropped it.
 
 ab. **`picomatch` advisory in the dependency scan** (CI 2026-11-17 on `9f3c65a`, new on
 GitHub that day): osv-scanner reports GHSA-fc5q-39xc-vjpf (High) for `picomatch` 4.0.7, with
@@ -646,6 +652,19 @@ Done when: the spec is green ten runs in a row.
   match simulation test got the whole-match timeout — commit "feat: Sumo lives and two variants,
   more sliders".
 
+- 2026-11-17 — **Fix + Jump** (owner decisions after LIVES): the bots' edge margin is a share of
+  the arena's radius (`bots.edgeShare`, `edgeMargin` in `bots/bot.ts`; OPEN ac closed: Last One
+  Standing without a time limit ends); "Your place" in Last One Standing by survival (game-core
+  `ranked`, the recap's players in that order, `Ghost.aliveMs`); the jump — game-core `jump.ts`
+  (`inAir`, `canJump`, `airSteer`), the match's second action, no contacts and no bomb passes in
+  the air, a fall only on landing, bots jumping over a dash (`underAttack`, `bots.jumpChance`),
+  the wire (`GHOST_AIRBORNE`, the jump's cooldown per ghost, 16 bytes), the validator taking
+  `jump`, the prediction jumping with the own ghost, Shift and the Jump button, the look (render
+  `jump.ts`: shadow, larger, puff), help, the panel's switch, time and cooldown (eleven values),
+  THREATS row 41. Removed: `bots.edgeMargin` (now `edgeShare`). Also: the lifecycle clock tests
+  run with ample lives, the tuning refusal test with a clock under the rate limit — commit
+  "feat: Sumo jump to dodge; bots' edge margin relative, places by survival".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -900,3 +919,8 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-17 | seeded 32-bot Sumo matches, seeds 1–5, every variant and setting (scratch script)                                                                                                         | same tree                                                                                                                                 | Points 5:00, 3–11 of 32 left; Last One Standing stop-time 5:00, winner by ghosts left; keep-halving over at 5:10–5:17; stop-open: 2 over (18:39, 20:45), 3 not over at 30:00 (OPEN ac)                                              | the sheet, "Lives"                                                                             |
 | 2026-11-17 | one Points and one Last One Standing match played on `pnpm dev` (15 s seasons, browser 1280 × 860, a scripted player running off the edge)                                                | same tree                                                                                                                                 | hearts 3 → 0, "back in 3, 2, 1", "You are out — watching"; chips counted down; help sentence per variant; both results right; Dash button left while out → now hidden                                                               | the sheet, "Lives"                                                                             |
 | 2026-11-17 | the panel on `pnpm dev`: new values, "after the last season" switched in a running Last One Standing match, a foreign origin, Reset                                                       | same tree                                                                                                                                 | copy line with every value; "1:07 played" past the 60 s limit; keep halving 30 s until one left; foreign `Origin` 403; Reset; copy line cut off → now four rows                                                                     | the sheet, "Lives"                                                                             |
+| 2026-11-17 | CI and CodeQL on GitHub                                                                                                                                                                   | `f627e55` on `proto/sumo`                                                                                                                 | verify, e2e, CodeQL success; `dependencies` failure: `picomatch` advisory (OPEN ab) (CI 44170974911, CodeQL 44170975017)                                                                                                            | `gh run list --branch proto/sumo`                                                              |
+| 2026-11-17 | seeded 32-bot Last One Standing "stop, no time limit", seeds 1–5 (scratch script), edge share 0.15, jump on                                                                               | working tree of FIX + JUMP                                                                                                                | all 5 end: median 3:07, longest 3:47 (before: 3 of 5 not over at 30:00); every variant ends by elimination 2:07–3:47 (94–95 of 96 lives)                                                                                            | the sheet, "Fix + Jump"                                                                        |
+| 2026-11-17 | the same with edge share 0.35, jump off, 5 lives (scratch script, seeds 1–5 / 1–3)                                                                                                        | same tree                                                                                                                                 | 0.35: median 3:46, longest 6:25; 0.15 jump off: Points median 3:50; 5 lives: median 2:17; 59–75 ticks a match with a dash under a jumping bot                                                                                       | the sheet, OPEN ad, ae                                                                         |
+| 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 41 files / 242 tests)                                                                                                          | same tree                                                                                                                                 | green after a complexity split in `Trails.record`; before it the jump prediction test found the landing a tick late (fixed), the tuning refusal test hit the rate limit and the clock tests an early end (both fixed)               | this commit                                                                                    |
+| 2026-11-17 | both variants played on `pnpm dev` (15 s seasons) with the jump on and off, desktop 1280 × 860 (Shift) and phone 390 × 844 (Jump button), reacting 250 ms after a dash                    | same tree                                                                                                                                 | switch off hid the button on both; hits with the jump on 7 in 34 dashes, off 9 in 52; no dash seen passing under the players; tap highlight and hidden shadow found → fixed                                                         | the sheet, "Fix + Jump"                                                                        |

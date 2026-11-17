@@ -10,8 +10,8 @@ import type { ClientMessage } from './messages.js';
 export const MAX_CLIENT_MESSAGE_BYTES = 256;
 
 // A parsed, valid message, or null for anything else: not JSON, not an object, an unknown
-// kind or action (only Dash is one), a missing or wrong-typed field, or a number outside its
-// range.
+// kind or action (Dash and Jump are the only ones), a missing or wrong-typed field, or a number
+// outside its range.
 export function parseClientMessage(text: string): ClientMessage | null {
   if (text.length > MAX_CLIENT_MESSAGE_BYTES) return null;
   let value: unknown;
@@ -29,7 +29,9 @@ export function parseClientMessage(text: string): ClientMessage | null {
     case 'input':
       return parseInput(fields);
     case 'action':
-      return fields.action === 'dash' ? { kind: 'action', action: 'dash' } : null;
+      return fields.action === 'dash' || fields.action === 'jump'
+        ? { kind: 'action', action: fields.action }
+        : null;
     default:
       return null;
   }

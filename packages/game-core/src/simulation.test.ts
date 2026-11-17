@@ -19,11 +19,15 @@ describe('simulated match', () => {
   it('passes every sanity check, and every team scores knockouts', { timeout: 20_000 }, () => {
     const r = simulate(DEFAULT_CONFIG, 1);
     expect(r.sanity.filter((c) => !c.ok)).toEqual([]);
-    expect(r.halvings.map((h) => [h.atMs, h.season])).toEqual([
+    // Each halving on its season turn; with lives the match may end before the last (FIX
+    // 2026-11-17: the bots' relative edge margin lets fewer last).
+    const turns = [
       [75_000, 'summer'],
       [150_000, 'autumn'],
       [225_000, 'winter'],
-    ]);
+    ];
+    expect(r.halvings.length).toBeGreaterThan(0);
+    expect(r.halvings.map((h) => [h.atMs, h.season])).toEqual(turns.slice(0, r.halvings.length));
     for (const k of r.result.teams) expect(k).toBeGreaterThan(0);
   });
 });

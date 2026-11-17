@@ -14,11 +14,15 @@ describe('parseClientMessage', () => {
     });
   });
 
-  it('accepts Dash, the one action, and nothing else as an action', () => {
+  it('accepts Dash and Jump, the two actions, and nothing else as an action', () => {
     const text = JSON.stringify({ kind: 'action', action: 'dash', target: 7 });
     expect(parseClientMessage(text)).toEqual({ kind: 'action', action: 'dash' });
+    const jump = JSON.stringify({ kind: 'action', action: 'jump', airMs: 99_999 });
+    expect(parseClientMessage(jump)).toEqual({ kind: 'action', action: 'jump' });
     for (const bad of [
       '{"kind":"action"}',
+      '{"kind":"action","action":"JUMP"}',
+      '{"kind":"action","action":["jump"]}',
       '{"kind":"action","action":"teleport"}',
       '{"kind":"action","action":["dash"]}',
     ]) {

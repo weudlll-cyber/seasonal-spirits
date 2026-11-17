@@ -1,7 +1,8 @@
 // Seasonal Sumo — the sumo bot's brain, and the helpers the other modes' brains (hill.ts,
 // bomb.ts) share: rough but lively (NIGHT 2026-11-17). It reads the public match state only,
 // the same a player's client sees; the human-like layer (human.ts) hands it what a player
-// would see and blurs what it decides. Near the edge it turns back inward; otherwise it
+// would see and blurs what it decides. Near the edge — a share of the arena's radius — it turns
+// back inward; otherwise it
 // heads for the nearest opponent it can push (in Last One Standing, once only its own team is
 // left, its teammates too — standing.ts rivals) and dashes when lined up close enough; with no
 // such opponent it walks to its own wander point. The wander point (by id, moved on every
@@ -9,6 +10,7 @@
 
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
+import { canJump } from '../jump.js';
 import { rivals } from '../standing.js';
 import { IDLE, type Ghost, type Intent, type MatchState, type Vec } from '../types.js';
 
@@ -66,12 +68,40 @@ function linedUp(cfg: GameConfig, me: Readonly<Ghost>, aim: Intent): boolean {
   return (me.vx * aim.dx + me.vy * aim.dy) / speed >= cfg.bots.dashAimCos;
 }
 
+// How far inside the edge a bot turns back: a share of the edge's radius, never less than a
+// ghost radius (FIX 2026-11-17, BACKLOG ac: an absolute 140 left a halved arena of 141 only its
+// middle, and "stop, no time limit" did not end).
+export function edgeMargin(cfg: GameConfig, edge: number): number {
+  return Math.max(cfg.ghostRadius, edge * cfg.bots.edgeShare);
+}
+
+// A rival dashing at it within dashRange, heading at it at least as well as a bot lines up a
+// dash (dashAimCos), while its own jump is ready: the moment to jump (JUMP 2026-11-17). The
+// human-like layer decides whether it does (bots/human.ts).
+export function underAttack(
+  cfg: GameConfig,
+  s: Readonly<MatchState>,
+  me: Readonly<Ghost>,
+): boolean {
+  const now = s.elapsedMs;
+  if (!canJump(cfg, me, now)) return false;
+  return s.ghosts.some((g) => {
+    if (g.id === me.id || g.phase !== 'in' || now >= g.dashUntilMs || !rivals(s, me, g)) {
+      return false;
+    }
+    const d = distance(me, g);
+    const speed = Math.hypot(g.vx, g.vy);
+    if (d > cfg.bots.dashRange || d === 0 || speed === 0) return false;
+    return (g.vx * (me.x - g.x) + g.vy * (me.y - g.y)) / (speed * d) >= cfg.bots.dashAimCos;
+  });
+}
+
 export function botIntent(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Intent {
   if (me.phase !== 'in' || s.ended) return IDLE;
   // The edge that counts is the smaller of now and where it is going.
   const edge = Math.min(s.arena.radius, s.arena.target);
   const fromCentre = distance(me, s.arena.centre);
-  if (fromCentre > edge - cfg.bots.edgeMargin) return toward(me, s.arena.centre);
+  if (fromCentre > edge - edgeMargin(cfg, edge)) return toward(me, s.arena.centre);
   // The nearest opponent a push would move (not protected after a respawn).
   const target = nearest(s, me, (g) => s.elapsedMs >= g.protectedUntilMs);
   const wander = wanderPoint(cfg, s, me.id);

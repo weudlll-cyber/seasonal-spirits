@@ -21,7 +21,21 @@ function s(serverMs: number, x: number, y: number): BufferedState {
       livesAtStart: 3,
       area: { x: 1000, y: 1000, r: 900 },
       next: { x: 1000, y: 1000, r: 636.4 },
-      ghosts: [{ id: 1, x, y, vx: 0, vy: 0, team: 0, score: 0, dashLeftMs: 0, flags: 0, lives: 3 }],
+      ghosts: [
+        {
+          id: 1,
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          team: 0,
+          score: 0,
+          dashLeftMs: 0,
+          flags: 0,
+          lives: 3,
+          jumpLeftMs: 0,
+        },
+      ],
     },
   };
 }

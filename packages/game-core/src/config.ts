@@ -40,8 +40,19 @@ export interface SumoConfig {
   halvingEveryMs: number; // "keep-halving": the interval after the third halving
 }
 
+// The jump (owner's idea, JUMP 2026-11-17): a moment in the air to let a dash pass underneath.
+export interface JumpConfig {
+  enabled: boolean; // the owner's switch: off, a jump does nothing and the clients hide it
+  airMs: number; // in the air: nothing hits it, it pushes nobody, it barely steers
+  cooldownMs: number; // between two jumps, enforced by the core
+  steer: number; // the share of the held direction that still steers in the air
+}
+
 export interface BotConfig {
-  edgeMargin: number; // field units from the edge where a bot turns back inward
+  // The share of the arena's radius from the edge where a bot turns back inward — relative, so a
+  // halved arena does not leave the bots only its middle (FIX 2026-11-17, BACKLOG ac) — never
+  // less than a ghost radius.
+  edgeShare: number;
   dashRange: number; // a bot dashes at an opponent closer than this…
   dashAimCos: number; // …when its heading points at it at least this well (cosine)
   wanderMs: number; // how often a bot's own offset around its target moves on
@@ -53,7 +64,8 @@ export interface BotConfig {
   dashGapMs: number; // the least time between two of a bot's dashes (a calm player's pace)
   hesitateChance: number; // per decision: a short pause
   hesitateMs: number;
-  edgeSlack: number; // a bot's own edge margin is drawn from [edgeSlack, 1] × edgeMargin
+  edgeSlack: number; // a bot's own edge share is drawn from [edgeSlack, 1] × edgeShare
+  jumpChance: number; // at average form: the share of dashes at it a bot jumps over
   form: [number, number]; // the band a bot's form drifts in (1 = average)
   formStep: number; // the largest step of the drift
   formEveryMs: number; // how often the form drifts
@@ -90,6 +102,7 @@ export interface GameConfig {
   hill: HillConfig;
   bomb: BombConfig;
   sumo: SumoConfig;
+  jump: JumpConfig;
   bots: BotConfig;
 }
 
@@ -144,8 +157,13 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Placeholders — owner decides with the live sliders (LIVES 2026-11-17).
   sumo: { lives: 3, variant: 'points', afterLast: 'stop-time', halvingEveryMs: 75_000 },
+  // Half a second in the air, every 3 s at most, a tenth of the steering left. Placeholders —
+  // owner decides with the live panel (JUMP 2026-11-17).
+  jump: { enabled: true, airMs: 500, cooldownMs: 3000, steer: 0.1 },
   bots: {
-    edgeMargin: 140, // placeholder — owner decides
+    // 60 of the starting radius 400, 21 of the last halving's 141 (the old absolute 140 left the
+    // bots nothing but the middle there). Placeholder — owner decides.
+    edgeShare: 0.15,
     dashRange: 220, // placeholder — owner decides
     dashAimCos: 0.9, // placeholder — owner decides
     wanderMs: 3000, // placeholder — owner decides
@@ -159,6 +177,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     hesitateChance: 0.002, // placeholder — owner decides
     hesitateMs: 400, // placeholder — owner decides
     edgeSlack: 0.6, // placeholder — owner decides
+    jumpChance: 0.5, // placeholder — owner decides (JUMP 2026-11-17: never a perfect dodge)
     form: [0.85, 1.15], // placeholder — owner decides
     formStep: 0.06, // placeholder — owner decides
     formEveryMs: 5000, // placeholder — owner decides
@@ -180,10 +199,11 @@ export function modeConfig(base: GameConfig, mode: GameMode): GameConfig {
   return { ...base, ...MODE_TIMES[mode], mode };
 }
 
-// The owner's live tuning (TUNE and LIVES 2026-11-17, development only; the numbers and their
-// ranges are protocol's tuning.ts): the config fields eight whole numbers set — the acceleration
-// scales with the top speed, so a ghost reaches it in the same time; variant and afterLast are
-// indices in VARIANT_CHOICES and AFTER_LAST, the halving interval is in seconds.
+// The owner's live tuning (TUNE, LIVES and JUMP 2026-11-17, development only; the numbers and
+// their ranges are protocol's tuning.ts): the config fields eleven whole numbers set — the
+// acceleration scales with the top speed, so a ghost reaches it in the same time; variant and
+// afterLast are indices in VARIANT_CHOICES and AFTER_LAST, the halving interval is in seconds,
+// jump is 1 on and 0 off.
 export interface Tunable {
   arenaRadius: number;
   maxSpeed: number;
@@ -193,10 +213,13 @@ export interface Tunable {
   variant: number;
   afterLast: number;
   halvingEverySec: number;
+  jump: number;
+  jumpMs: number;
+  jumpCooldownMs: number;
 }
 export type TunedFields = Pick<
   GameConfig,
-  'arenaRadius' | 'maxSpeed' | 'dashSpeed' | 'knockSpeed' | 'acceleration' | 'sumo'
+  'arenaRadius' | 'maxSpeed' | 'dashSpeed' | 'knockSpeed' | 'acceleration' | 'sumo' | 'jump'
 >;
 const ACCELERATION_PER_SPEED = DEFAULT_CONFIG.acceleration / DEFAULT_CONFIG.maxSpeed;
 
@@ -214,12 +237,18 @@ export function tunedFields(t: Tunable): TunedFields {
       afterLast: AFTER_LAST[t.afterLast] ?? 'stop-time',
       halvingEveryMs: t.halvingEverySec * 1000,
     },
+    jump: {
+      ...DEFAULT_CONFIG.jump,
+      enabled: t.jump === 1,
+      airMs: t.jumpMs,
+      cooldownMs: t.jumpCooldownMs,
+    },
   };
 }
 
 // The other way round: a config's numbers as the sliders show them (their starting values).
 export function tuningOf(cfg: GameConfig): Tunable {
-  const { arenaRadius, maxSpeed, dashSpeed, knockSpeed, sumo } = cfg;
+  const { arenaRadius, maxSpeed, dashSpeed, knockSpeed, sumo, jump } = cfg;
   return {
     arenaRadius,
     maxSpeed,
@@ -229,6 +258,9 @@ export function tuningOf(cfg: GameConfig): Tunable {
     variant: VARIANT_CHOICES.indexOf(sumo.variant),
     afterLast: AFTER_LAST.indexOf(sumo.afterLast),
     halvingEverySec: Math.round(sumo.halvingEveryMs / 1000),
+    jump: jump.enabled ? 1 : 0,
+    jumpMs: jump.airMs,
+    jumpCooldownMs: jump.cooldownMs,
   };
 }
 

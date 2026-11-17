@@ -6,8 +6,8 @@
 import type { Tuning } from './tuning.js';
 
 // A player sends a direction (each component in [-1, 1]; the server clamps the magnitude)
-// and the one action, Dash (the core keeps its cooldown). Spectators send nothing after the
-// hello.
+// and an action, Dash or Jump (the core keeps their cooldowns and decides who is in the air).
+// Spectators send nothing after the hello.
 export interface ClientHello {
   kind: 'player' | 'spectator';
 }
@@ -18,7 +18,7 @@ export interface ClientInput {
   dy: number;
 }
 
-export type GameAction = 'dash';
+export type GameAction = 'dash' | 'jump';
 
 export interface ClientAction {
   kind: 'action';
@@ -55,7 +55,7 @@ export interface ServerRecap {
   left: [number, number, number, number];
   knockedOut: number[];
   winner: number | null;
-  players: { ghost: number; team: number; score: number }[];
+  players: { ghost: number; team: number; score: number }[]; // in their final places
   awards: { kind: string; ghost: number; value: number }[];
 }
 

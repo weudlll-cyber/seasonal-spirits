@@ -1,5 +1,5 @@
-// Seasonal Sumo — the owner's live tuning (TUNE and LIVES 2026-11-17, development only): the
-// eight whole numbers the viewer's panel sets, their ranges, and the one reader every side checks
+// Seasonal Sumo — the owner's live tuning (TUNE, LIVES and JUMP 2026-11-17, development only):
+// the eleven whole numbers the viewer's panel sets, their ranges, and the one reader every side checks
 // them with — the server on the viewer's request, the clients on the server's word. Which config
 // fields they set is game-core's tunedFields (variant and afterLast: indices in its
 // VARIANT_CHOICES and AFTER_LAST).
@@ -15,6 +15,9 @@ export const TUNING_KEYS = [
   'variant',
   'afterLast',
   'halvingEverySec',
+  'jump',
+  'jumpMs',
+  'jumpCooldownMs',
 ] as const;
 export type TuningKey = (typeof TUNING_KEYS)[number];
 export type Tuning = Record<TuningKey, number>;
@@ -22,7 +25,8 @@ export type Tuning = Record<TuningKey, number>;
 // Whole numbers in field units and units/s, a wide band around the starting values: the arena
 // from 10 to 60 ghost diameters across, walking from half to twice today's top speed; 1 to 9
 // lives; three variant choices (Points, Last One Standing, alternate) and three ways after the
-// last season; keep-halving every 30 to 120 s.
+// last season; keep-halving every 30 to 120 s; the jump off (0) or on (1), 0.2 to 1.5 s in the
+// air, a cooldown of 0.5 to 5 s (at most 255 steps of 20 ms on the wire).
 export const TUNING_RANGES: Readonly<Record<TuningKey, readonly [number, number]>> = {
   arenaRadius: [160, 960],
   maxSpeed: [120, 480],
@@ -32,9 +36,12 @@ export const TUNING_RANGES: Readonly<Record<TuningKey, readonly [number, number]
   variant: [0, 2],
   afterLast: [0, 2],
   halvingEverySec: [30, 120],
+  jump: [0, 1],
+  jumpMs: [200, 1500],
+  jumpCooldownMs: [500, 5000],
 };
 
-// Exactly the eight keys, each a whole number in its range; anything else is null.
+// Exactly the eleven keys, each a whole number in its range; anything else is null.
 export function readTuning(value: unknown): Tuning | null {
   if (!isObject(value) || Object.keys(value).length !== TUNING_KEYS.length) return null;
   const out: Partial<Tuning> = {};

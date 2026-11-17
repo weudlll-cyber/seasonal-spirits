@@ -15,6 +15,7 @@ export interface GhostState {
   dashLeftMs: number; // until the next dash is allowed, in steps of 20 ms (the cooldown ring)
   flags: number; // GHOST_* bits
   lives: number; // 0..255 left in this match; 0: out for the rest of it
+  jumpLeftMs: number; // until the next jump is allowed, in steps of 20 ms (the Jump ring)
 }
 
 export const GHOST_BOT = 1;
@@ -23,6 +24,7 @@ export const GHOST_FALLING = 4; // falling off the arena (the animation)
 export const GHOST_OUT = 8; // fallen, waiting to respawn: not drawn
 export const GHOST_PROTECTED = 16; // just respawned: nothing pushes it
 export const GHOST_BOMB = 32; // bomb mode: it carries a bomb
+export const GHOST_AIRBORNE = 64; // a jump: in the air, nothing hits it (JUMP 2026-11-17)
 
 // A disc on the field: sumo's arena, the hill's zone.
 export interface WireDisc {
@@ -70,9 +72,9 @@ export const STATE_OPEN_END = 32;
 // teamScore 4×u16 · mode u8 · area x, y, r 3×u16 · next x, y, r 3×u16 (tenths; r 0 = none)
 // · ghost count u8 · livesAtStart u8.
 // Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 · score u16 · dashLeft u8
-// (20 ms steps) · flags u8 · lives u8. All little endian.
+// (20 ms steps) · flags u8 · lives u8 · jumpLeft u8 (20 ms steps). All little endian.
 export const HEADER_BYTES = 46;
-export const GHOST_BYTES = 15;
+export const GHOST_BYTES = 16;
 const NO_COUNTDOWN = 0xffff;
 const DASH_STEP_MS = 20;
 
@@ -139,6 +141,7 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setUint8(o + 12, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
   v.setUint8(o + 13, g.flags & 0xff);
   v.setUint8(o + 14, u8(g.lives));
+  v.setUint8(o + 15, u8(Math.ceil(g.jumpLeftMs / DASH_STEP_MS)));
   return o + GHOST_BYTES;
 }
 
@@ -188,5 +191,6 @@ function readGhost(v: DataView, o: number): GhostState {
     dashLeftMs: v.getUint8(o + 12) * DASH_STEP_MS,
     flags: v.getUint8(o + 13),
     lives: v.getUint8(o + 14),
+    jumpLeftMs: v.getUint8(o + 15) * DASH_STEP_MS,
   };
 }

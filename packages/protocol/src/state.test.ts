@@ -47,6 +47,7 @@ function sample(ghosts: number): ServerState {
       dashLeftMs: (i % 8) * 200,
       flags: i % 2 ? GHOST_DASHING : 0,
       lives: i % 4,
+      jumpLeftMs: (i % 4) * 1000,
     })),
   };
 }
@@ -67,7 +68,7 @@ describe('state encoding', () => {
   });
 
   it('stays well under 1 KB with 32 ghosts', () => {
-    expect(encodedSize(32)).toBe(526);
+    expect(encodedSize(32)).toBe(558);
   });
 
   it('sends a missing disc as none (bomb has no arena and no zone)', () => {
