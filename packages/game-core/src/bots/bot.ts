@@ -68,11 +68,13 @@ function linedUp(cfg: GameConfig, me: Readonly<Ghost>, aim: Intent): boolean {
   return (me.vx * aim.dx + me.vy * aim.dy) / speed >= cfg.bots.dashAimCos;
 }
 
-// How far inside the edge a bot turns back: a share of the edge's radius, never less than a
-// ghost radius (FIX 2026-11-17, BACKLOG ac: an absolute 140 left a halved arena of 141 only its
-// middle, and "stop, no time limit" did not end).
+// How far inside the edge a bot turns back: its own margin (bots.edgeMargin with its slack), but
+// at most a share of the edge's radius, never less than a ghost radius — so the full arena keeps
+// the margin and only a small one shrinks it (FIX 2026-11-17-4; FIX 2026-11-17, BACKLOG ac: the
+// absolute 140 left a halved arena of 141 only its middle, and "stop, no time limit" did not end).
 export function edgeMargin(cfg: GameConfig, edge: number): number {
-  return Math.max(cfg.ghostRadius, edge * cfg.bots.edgeShare);
+  const b = cfg.bots;
+  return Math.max(cfg.ghostRadius, Math.min(b.edgeMargin, edge * b.edgeShare));
 }
 
 // A rival dashing at it within dashRange, heading at it at least as well as a bot lines up a

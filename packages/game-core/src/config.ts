@@ -49,9 +49,10 @@ export interface JumpConfig {
 }
 
 export interface BotConfig {
-  // The share of the arena's radius from the edge where a bot turns back inward — relative, so a
-  // halved arena does not leave the bots only its middle (FIX 2026-11-17, BACKLOG ac) — never
-  // less than a ghost radius.
+  // Where a bot turns back inward (bots/bot.ts edgeMargin): edgeMargin field units from the edge,
+  // but in a small arena at most edgeShare of its radius, so a halved arena does not leave the
+  // bots only its middle (FIX 2026-11-17-4) — never less than a ghost radius.
+  edgeMargin: number;
   edgeShare: number;
   dashRange: number; // a bot dashes at an opponent closer than this…
   dashAimCos: number; // …when its heading points at it at least this well (cosine)
@@ -64,7 +65,7 @@ export interface BotConfig {
   dashGapMs: number; // the least time between two of a bot's dashes (a calm player's pace)
   hesitateChance: number; // per decision: a short pause
   hesitateMs: number;
-  edgeSlack: number; // a bot's own edge share is drawn from [edgeSlack, 1] × edgeShare
+  edgeSlack: number; // a bot's own edge margin is drawn from [edgeSlack, 1] × edgeMargin
   jumpChance: number; // at average form: the share of dashes at it a bot jumps over
   form: [number, number]; // the band a bot's form drifts in (1 = average)
   formStep: number; // the largest step of the drift
@@ -161,9 +162,12 @@ export const DEFAULT_CONFIG: GameConfig = {
   // owner decides with the live panel (JUMP 2026-11-17).
   jump: { enabled: true, airMs: 500, cooldownMs: 3000, steer: 0.1 },
   bots: {
-    // 60 of the starting radius 400, 21 of the last halving's 141 (the old absolute 140 left the
-    // bots nothing but the middle there). Placeholder — owner decides.
-    edgeShare: 0.15,
+    edgeMargin: 140, // placeholder — owner decides
+    // 140 of the starting radius 400, so the full arena keeps the absolute margin; 49 of the last
+    // halving's 141, where 140 left the bots only the middle (FIX 2026-11-17-4: a share of 0.15
+    // everywhere made it 60 in the full arena, and every match ended by elimination at 2–4 min).
+    // Placeholder — owner decides.
+    edgeShare: 0.35,
     dashRange: 220, // placeholder — owner decides
     dashAimCos: 0.9, // placeholder — owner decides
     wanderMs: 3000, // placeholder — owner decides

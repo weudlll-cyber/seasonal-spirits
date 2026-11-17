@@ -21,6 +21,9 @@ const modes = mode === 'rotate' ? GAME_MODES : [mode];
 // Sumo's variant: Points, Last One Standing, or both in turn (`pnpm dev`: "alternate";
 // LIVES 2026-11-17). The live tuning may change it from the next match on.
 const variant = envChoice(env, 'SUMO_VARIANT', 'points', VARIANT_CHOICES);
+// Each ghost's lives (FIX 2026-11-17-4: the browser specs pin many, so a short match always
+// reaches its last countdown); the live tuning may change them from the next match on.
+const lives = envInt(env, 'SUMO_LIVES', DEFAULT_CONFIG.sumo.lives, [1, 9]);
 
 // Shorter sumo matches for tests and trying things out (development only, like the whole
 // server): four seasons of SEASON_SECONDS, then RESULT_SECONDS of result screen. Hill and bomb
@@ -28,7 +31,7 @@ const variant = envChoice(env, 'SUMO_VARIANT', 'points', VARIANT_CHOICES);
 const seasonMs = envInt(env, 'SEASON_SECONDS', 75, [15, 75]) * 1000;
 const game: GameConfig = {
   ...DEFAULT_CONFIG,
-  sumo: { ...DEFAULT_CONFIG.sumo, variant },
+  sumo: { ...DEFAULT_CONFIG.sumo, variant, lives },
   seasonDurationMs: seasonMs,
   matchDurationMs: 4 * seasonMs,
   resultPauseMs: envInt(env, 'RESULT_SECONDS', 15, [3, 60]) * 1000,

@@ -26,12 +26,12 @@ reaction, noise and dash gap of 3 s, the bots' `dashRange`, set for the old 900 
 of the time in clumps —, and their edge share (OPEN ad); the walls, the zone's size, the bomb count
 and the times of hill and bomb).
 
-ad. **Matches end early since the bots' edge margin is relative** (FIX 2026-11-17, seeded
-32-bot runs): with `bots.edgeShare` 0.15 the bots keep 60 instead of 140 from the full arena's
-edge and are pushed off far more — every variant ends by elimination between 2:07 and 3:47,
-before the third halving, so "after the last season" hardly matters with bots (0.35: median
-3:46; 5 lives end sooner). Done when: the owner has played it and set the share (or asked for
-it on the panel) and the lives so that the late phases are reached as he wants.
+ad. **The bots' edge margin in a shrinking arena** (FIX 2026-11-17-4, seeded 32-bot runs,
+seeds 1–10): it is min(140 with each bot's slack, `bots.edgeShare` × radius); one share trades
+full-length matches against Last One Standing without a time limit ending — 0.35: 4 of 10 end
+before the third halving, all "stop, no time limit" end (longest 7:54); 0.45: none early, 2 not
+over at 30:00; 140 alone: none early, 7 not over. Done when: the owner has played it and set
+the share and the lives so that the late phases are reached as he wants.
 
 ae. **The jump as a dodge** (JUMP 2026-11-17): built with the owner's switch; with a player's
 reaction (~250 ms) a dash from 150 away arrives first, so a reactive jump rarely helps — it
@@ -665,6 +665,12 @@ Done when: the spec is green ten runs in a row.
   run with ample lives, the tuning refusal test with a clock under the rate limit — commit
   "feat: Sumo jump to dodge; bots' edge margin relative, places by survival".
 
+- 2026-11-17 — **Fix 4: the bots' edge margin shrinks only in a small arena** (review of
+  `70f1407`: every match ended at 2–4 min, the CI play spec timed out): `edgeMargin` is
+  min(`bots.edgeMargin` 140 with each bot's slack, `bots.edgeShare` 0.35 × the radius), never
+  less than a ghost radius; the server reads `SUMO_LIVES` (1–9), and the browser specs' server
+  runs Points with 9 lives — commit "fix: bots' edge margin shrinks only in a small arena".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -924,3 +930,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-17 | the same with edge share 0.35, jump off, 5 lives (scratch script, seeds 1–5 / 1–3)                                                                                                        | same tree                                                                                                                                 | 0.35: median 3:46, longest 6:25; 0.15 jump off: Points median 3:50; 5 lives: median 2:17; 59–75 ticks a match with a dash under a jumping bot                                                                                       | the sheet, OPEN ad, ae                                                                         |
 | 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 41 files / 242 tests)                                                                                                          | same tree                                                                                                                                 | green after a complexity split in `Trails.record`; before it the jump prediction test found the landing a tick late (fixed), the tuning refusal test hit the rate limit and the clock tests an early end (both fixed)               | this commit                                                                                    |
 | 2026-11-17 | both variants played on `pnpm dev` (15 s seasons) with the jump on and off, desktop 1280 × 860 (Shift) and phone 390 × 844 (Jump button), reacting 250 ms after a dash                    | same tree                                                                                                                                 | switch off hid the button on both; hits with the jump on 7 in 34 dashes, off 9 in 52; no dash seen passing under the players; tap highlight and hidden shadow found → fixed                                                         | the sheet, "Fix + Jump"                                                                        |
+| 2026-11-17 | CI and CodeQL on GitHub                                                                                                                                                                   | `70f1407` on `proto/sumo`                                                                                                                 | verify, CodeQL success; e2e failure: play spec, desktop and phone, no last countdown (matches ended early); `dependencies` picomatch (OPEN ab) (CI 44176357924)                                                                     | `gh run list --branch proto/sumo`                                                              |
+| 2026-11-17 | seeded 32-bot Sumo matches, seeds 1–10, default settings, per variant and "stop, no time limit" (scratch script); shares 0.35, 0.4, 0.45, 0.5 and 140 alone                               | working tree of fix 4                                                                                                                     | 0.35: Points 4 of 10 before the 3rd halving, median 4:01; all "stop, no time limit" over, longest 7:54; 0.45: none early, 2 not over; 140 alone: none early, 3 of 10 over                                                           | the sheet, "Fix 4"                                                                             |
+| 2026-11-17 | `pnpm e2e play` (both sizes)                                                                                                                                                              | same tree                                                                                                                                 | 2 passed                                                                                                                                                                                                                            | this commit                                                                                    |
+| 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 41 files / 242 tests)                                                                                                          | same tree                                                                                                                                 | green                                                                                                                                                                                                                               | this commit                                                                                    |

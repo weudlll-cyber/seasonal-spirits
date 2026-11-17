@@ -6,7 +6,7 @@
 // - its direction carries aim noise; it dashes only when its brain has a target lined up, a
 //   good chance is sometimes missed (too late), and never sooner than bots.dashGapMs after its
 //   last dash — a calm player's pace (owner 2026-11-17); it hesitates now and then; its own
-//   edge share may be too small;
+//   edge margin may be too small;
 // - a rival dashing at it (as it sees it, a reaction time late) it jumps over with a chance
 //   that grows with its form, one decision per dash (JUMP 2026-11-17: never a perfect dodge);
 // - its form drifts slowly within bots.form (a seeded random walk): sharper and steadier on a
@@ -51,7 +51,7 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
   const spread = (lo: number, hi: number): number => lo + rng() * (hi - lo);
   const reactionMs = spread(b.reactionMs[0], b.reactionMs[1]);
   // The bot's own idea of how close to the edge is safe.
-  const tuned = { ...cfg, bots: { ...b, edgeShare: b.edgeShare * spread(b.edgeSlack, 1) } };
+  const tuned = { ...cfg, bots: { ...b, edgeMargin: b.edgeMargin * spread(b.edgeSlack, 1) } };
   let form = 1;
   let nextFormMs = 0;
   let hesitateUntilMs = -1;

@@ -197,9 +197,11 @@ to push, its own spot in the zone. Bomb (`bots/bomb.ts`): a carrier chases the n
 opponent that may take its bomb and dashes into it; the others flee from the nearest opposing
 carrier within two dash ranges, bending towards the middle so they do not pin themselves to a
 wall, and else walk to their wander point. Sumo (`botIntent`): near the edge back inward — within
-`bots.edgeShare` (0.15) of the edge's radius, never less than a ghost radius (`edgeMargin`;
-FIX 2026-11-17: an absolute 140 left the last halving's arena of 141 only its middle, and Last
-One Standing without a time limit did not end) —; otherwise to the
+its own `bots.edgeMargin` (140, with its slack), but at most `bots.edgeShare` (0.35) of the
+edge's radius, never less than a ghost radius (`edgeMargin`): the full arena (400) keeps 140,
+the last halving's arena (141) 49 (FIX 2026-11-17-4; 140 there left the bots only its middle and
+Last One Standing without a time limit did not end; 0.15 of the radius everywhere ended every
+match by elimination at 2–4 min) —; otherwise to the
 nearest opponent it can push, approaching a little from the side of its own wander point
 (an angle by id, moved on every `bots.wanderMs`, so bots do not all meet in one spot), and a
 dash when within `bots.dashRange`, lined up (`bots.dashAimCos`), not near the edge and the
@@ -216,7 +218,7 @@ cooldown over; with nobody to push, to the wander point.
   `bots.dashChance` × form (0.6: else too late) and never sooner than `bots.dashGapMs` (3 s)
   after its last dash — a calm player's pace (owner 2026-11-17); it hesitates for
   `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge share is
-  drawn from [`bots.edgeSlack`, 1] × `bots.edgeShare` (some go too close to the edge);
+  drawn from [`bots.edgeSlack`, 1] × `bots.edgeMargin` (some go too close to the edge);
 - a rival dashing at it within `bots.dashRange`, heading at it as well as a bot lines up a dash
   (`underAttack`), it jumps over with `bots.jumpChance` × form (0.5) — as it sees it, a reaction
   time late, one decision per dash, only when its jump is ready: never a perfect dodge;

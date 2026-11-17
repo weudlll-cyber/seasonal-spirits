@@ -41,7 +41,15 @@ export default defineConfig({
       command: 'pnpm --filter @seasonal-spirits/server start',
       cwd: ROOT,
       url: `http://127.0.0.1:${SERVER_PORT}/metrics-lite`,
-      env: { PORT: String(SERVER_PORT), SEASON_SECONDS: '15', RESULT_SECONDS: '5' },
+      // Points with 9 lives (FIX 2026-11-17-4): the play spec waits for the last countdown, which a
+      // match ended early by lives would never reach.
+      env: {
+        PORT: String(SERVER_PORT),
+        SEASON_SECONDS: '15',
+        RESULT_SECONDS: '5',
+        SUMO_VARIANT: 'points',
+        SUMO_LIVES: '9',
+      },
       reuseExistingServer: false,
       timeout: 60_000,
     },

@@ -351,6 +351,30 @@ anticipates the dash, not as a reaction.
 transparent). The own ghost's shadow was hidden under its white ring (now lower). The early
 ends above (OPEN ad).
 
+## Fix 4 — the bots' edge margin shrinks only in a small arena
+
+Found in review of `70f1407`: the margin of 15 % of the radius everywhere fell from 140 to 60 in
+the full arena; every match ended by elimination at 2–4 min, and the CI play spec timed out
+waiting for the last countdown. Now the margin is min(140 with each bot's slack, 0.35 × the
+radius), never less than a ghost radius: the full arena (400) keeps 140 as before, the last
+halving's arena (141) gets 49.
+
+Seeded 32-bot matches, seeds 1–10, default settings (3 lives, jump on):
+
+| Margin                       | Points: before the 3rd halving | Points: median / max | Last One Standing (stop-time): early, median / max | "stop, no time limit": over, median / max |
+| ---------------------------- | ------------------------------ | -------------------- | -------------------------------------------------- | ----------------------------------------- |
+| 0.15 × radius (`70f1407`)    | 5 of 5 (seeds 1–5)             | 3:07 / 3:47          | 5 of 5, 3:07 / 3:47                                | 5 of 5, 3:07 / 3:47                       |
+| 140 alone (before `70f1407`) | 0                              | 5:00 / 5:00          | 0, 5:00 / 5:00                                     | 3 of 10, longest 21:04                     |
+| min(140, 0.35 × r) — now     | 4                              | 4:01 / 5:00          | 4, 4:29 / 5:00                                     | 10 of 10, 4:29 / 7:54                     |
+| min(140, 0.40 × r)           | 2                              | 4:48 / 5:00          | 2, 4:48 / 5:00                                     | 10 of 10, 5:02 / 23:00                    |
+| min(140, 0.45 × r)           | 0                              | 4:51 / 5:00          | 0, 4:51 / 5:00                                     | 8 of 10                                   |
+| min(140, 0.50 × r)           | 0                              | 5:00 / 5:00          | 0, 5:00 / 5:00                                     | 9 of 10                                   |
+
+0.35 is the smallest share that keeps the full arena as before and the one at which every
+"stop, no time limit" match ended; the share trades full-length matches against that ending
+(BACKLOG OPEN ad). The play spec now pins its server to Points with 9 lives (`SUMO_LIVES`), so
+its short match always reaches the last countdown; it passed at both sizes locally.
+
 ## Notes
 
 - Addendum 1 (no team check, no stand-in) and addendum 2 (human-like bots, equal seats)
