@@ -10,6 +10,11 @@ import type { Rect } from '@seasonal-spirits/render';
 
 export const SERVER_PORT = 3932;
 export const CLIENT_PORT = 5932;
+// The other modes' own stacks (NIGHT 2026-11-18): a server and a client each.
+export const MODE_STACKS = {
+  hill: { server: 3933, client: 5933 },
+  bomb: { server: 3934, client: 5934 },
+} as const;
 // The arena's centre: where the specs steer to stay on it.
 export const CENTRE = { x: DEFAULT_CONFIG.fieldSize / 2, y: DEFAULT_CONFIG.fieldSize / 2 };
 

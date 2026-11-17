@@ -1,12 +1,13 @@
-// Seasonal Spirits — Playwright: the player client against its own short-match server.
-// Starts the run's own stack, never the developer's `pnpm dev` (3930/5930/5931): the match
-// server on 3932 with 15 s seasons (a whole match in 60 s) and the client on 5932, then plays
-// it in Chromium at a desktop size and at a phone size with touch.
+// Seasonal Spirits — Playwright: the player client against its own short-match servers.
+// Starts the run's own stacks, never the developer's `pnpm dev` (3930/5930/5931): Sumo on
+// 3932/5932 — with the admin settings open to its own client page, for the panel spec — and King
+// of the Season and Halving Bomb on 3933/5933 and 3934/5934, each with 15 s seasons (a whole
+// match in 60 s), then plays them in Chromium at a desktop size and at a phone size with touch.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
-import { CLIENT_PORT, HELP_SEEN, SERVER_PORT } from './stack.js';
+import { CLIENT_PORT, HELP_SEEN, MODE_STACKS, SERVER_PORT } from './stack.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const CI = process.env.CI !== undefined;
@@ -37,29 +38,40 @@ export default defineConfig({
     { name: 'phone', use: { ...devices['Pixel 7'] } },
   ],
   webServer: [
+    // Points with 9 lives (FIX 2026-11-17-4): the play spec waits for the last countdown, which a
+    // match ended early by lives would never reach. The admin settings answer the client's own
+    // page (VIEWER_PORT), its presets kept under test-results/.
+    ...stack(SERVER_PORT, CLIENT_PORT, {
+      GAME_MODE: 'sumo',
+      SUMO_VARIANT: 'points',
+      SUMO_LIVES: '9',
+      DEV_TUNING: '1',
+      VIEWER_PORT: String(CLIENT_PORT),
+      PRESET_DIR: path.join(ROOT, 'test-results', 'presets'),
+    }),
+    ...stack(MODE_STACKS.hill.server, MODE_STACKS.hill.client, { GAME_MODE: 'hill' }),
+    ...stack(MODE_STACKS.bomb.server, MODE_STACKS.bomb.client, { GAME_MODE: 'bomb' }),
+  ],
+});
+
+// A match server with 15 s seasons and its client.
+function stack(server: number, client: number, env: Record<string, string>) {
+  return [
     {
       command: 'pnpm --filter @seasonal-spirits/server start',
       cwd: ROOT,
-      url: `http://127.0.0.1:${SERVER_PORT}/metrics-lite`,
-      // Points with 9 lives (FIX 2026-11-17-4): the play spec waits for the last countdown, which a
-      // match ended early by lives would never reach.
-      env: {
-        PORT: String(SERVER_PORT),
-        SEASON_SECONDS: '15',
-        RESULT_SECONDS: '5',
-        SUMO_VARIANT: 'points',
-        SUMO_LIVES: '9',
-      },
+      url: `http://127.0.0.1:${String(server)}/metrics-lite`,
+      env: { PORT: String(server), SEASON_SECONDS: '15', RESULT_SECONDS: '5', ...env },
       reuseExistingServer: false,
       timeout: 60_000,
     },
     {
       command: 'pnpm --filter @seasonal-spirits/client start',
       cwd: ROOT,
-      url: `http://localhost:${CLIENT_PORT}`,
-      env: { CLIENT_PORT: String(CLIENT_PORT), SERVER_PORT: String(SERVER_PORT) },
+      url: `http://localhost:${String(client)}`,
+      env: { CLIENT_PORT: String(client), SERVER_PORT: String(server) },
       reuseExistingServer: false,
       timeout: 60_000,
     },
-  ],
-});
+  ];
+}

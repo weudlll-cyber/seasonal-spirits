@@ -16,7 +16,9 @@ refuseProduction(env, 'The Seasonal Spirits dev server');
 // presets live in the repository's git-ignored dev data folder.
 const admin = envChoice(env, 'DEV_TUNING', '0', ['0', '1'] as const) === '1';
 const viewerPort = envInt(env, 'VIEWER_PORT', 5931, [1, 65535]);
-const presetDir = fileURLToPath(new URL('../../../data/presets', import.meta.url));
+// PRESET_DIR: elsewhere (the browser specs keep theirs under test-results/).
+const presetDir =
+  env.PRESET_DIR ?? fileURLToPath(new URL('../../../data/presets', import.meta.url));
 
 // Every gameplay number, the rotation and the seats: the defaults, a preset, the environment
 // (start-settings.ts).

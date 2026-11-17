@@ -1,10 +1,11 @@
 // Seasonal Sumo — one short match in the player client, at desktop and phone size: join, move,
-// dash (the button's cooldown ring runs), live through a HALVING with the arena halving, the
+// dash (the button's cooldown ring runs), jump (the own ghost in the air), live through a HALVING with the arena halving, the
 // last-chance countdown and "MATCH OVER", and see the result screen with the awards and the
 // bridge box. Screenshots of each step go to reports/screens/latest/ (git-ignored).
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { GHOST_AIRBORNE } from '@seasonal-spirits/protocol';
 import { CENTRE, SCREENS, joystick, keyboard, steerTo, view, type Steering } from './stack.js';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
@@ -57,6 +58,12 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   await expect(page.locator('#dash')).toBeVisible();
   await dash(page, info);
   await expect.poll(async () => (await view(page)).own?.dashLeftMs ?? 0).toBeGreaterThan(0);
+  // The jump (NIGHT 2026-11-18): Shift or the Jump button; the own ghost is in the air at once.
+  if (info.project.name === 'phone') await page.locator('#jump').tap();
+  else await page.keyboard.press('Shift');
+  await expect
+    .poll(async () => ((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE, { timeout: 2000 })
+    .toBe(GHOST_AIRBORNE);
   await steer.hold(0, 0);
   await shot(page, info, 'match');
 

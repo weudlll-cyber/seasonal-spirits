@@ -122,7 +122,8 @@ and in total (twice the slots). The full list, with the test for each, is
 | `GAME_MODE`                   | sumo      | `sumo` (`pnpm dev`), `hill`, `bomb` or `rotate` |
 | `SUMO_VARIANT`                | points    | `points`, `last-standing` or `alternate` (dev)  |
 | `SUMO_LIVES`                  | 3         | 1–9 (the browser specs: 9)                      |
-| `SEASON_SECONDS`              | 75        | 15–75 (sumo: four seasons; shorter for tests)   |
+| `SEASON_SECONDS`              | 75        | 15–75: four seasons in every mode (tests)       |
+| `PRESET_DIR`                  | data/…    | where presets live (the browser specs' own)     |
 | `RESULT_SECONDS`              | 15        | 3–60                                            |
 | `DEV_TUNING`                  | 0         | `0` or `1` (`pnpm dev`: the admin settings)     |
 | `PRESET`                      | —         | a saved preset's name to start with             |

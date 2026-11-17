@@ -137,11 +137,18 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
 
 ## Browser tests (`pnpm e2e`)
 
-Playwright starts its own server on 3932 with 15 s seasons and the client on 5932 and plays
-at desktop size (keyboard) and phone size (Pixel 7, touch):
+Playwright starts its own stacks with 15 s seasons — Sumo Points on 3932/5932 (9 lives; the admin
+settings open to its own page, presets under `test-results/`), King of the Season on 3933/5933,
+Halving Bomb on 3934/5934 — and plays at desktop size (keyboard) and phone size (Pixel 7,
+touch):
 
-- `e2e/play.e2e.ts`: join, move, dash (the cooldown starts), a halving with the arena
-  halving, the last chance, "MATCH OVER", the result with the awards and the bridge box;
+- `e2e/play.e2e.ts`: join, move, dash (the cooldown starts), jump (the own ghost in the air), a
+  halving with the arena halving, the last chance, "MATCH OVER", the result with the awards and
+  the bridge box;
+- `e2e/modes.e2e.ts`: King of the Season and Halving Bomb each — join, move, dash, jump, "MATCH
+  OVER", the result with the mode's awards and the bridge box;
+- `e2e/panel.e2e.ts` (desktop): a setting changes play (the jump off: the Jump button goes), a
+  preset saves and loads, the starting settings back at the end;
 - `e2e/readability.e2e.ts`: the team line, the scores readable in the band, every sampled
   frame's playing area wholly on screen and clear of the controls, its labels in view and
   apart;

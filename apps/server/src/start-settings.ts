@@ -48,9 +48,13 @@ function fromEnv(env: Env): Partial<Settings> {
     );
   }
   if (set('SUMO_LIVES')) out.lives = envInt(env, 'SUMO_LIVES', 3, [1, 9]);
+  // Shorter matches in every mode (tests, trying things out): four seasons, zone jumps or blasts
+  // of SEASON_SECONDS each (a blast at most every 60 s, its own range).
   if (set('SEASON_SECONDS')) {
-    out.sumoSeason = envInt(env, 'SEASON_SECONDS', 75, [15, 75]);
-    out.sumoMatch = 4 * out.sumoSeason;
+    const season = envInt(env, 'SEASON_SECONDS', 75, [15, 75]);
+    const blast = Math.min(season, 60);
+    Object.assign(out, { sumoSeason: season, hillJump: season, bombBlast: blast });
+    Object.assign(out, { sumoMatch: 4 * season, hillMatch: 4 * season, bombMatch: 4 * blast });
   }
   if (set('RESULT_SECONDS')) out.resultPause = envInt(env, 'RESULT_SECONDS', 15, [3, 60]);
   const teamSize = teamSizeFromEnv(env);
