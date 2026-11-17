@@ -1,13 +1,19 @@
 // Seasonal Sumo — one frame of the canvas: the arena, ghosts and labels below the top bar, the
 // season clock, and in "Near" the minimap. Returns what it drew, for the browser specs.
 
-import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
+import {
+  GHOST_FALLING,
+  GHOST_OUT,
+  type GhostState,
+  type ServerState,
+} from '@seasonal-spirits/protocol';
 import {
   CLOCK_HEIGHT,
   belowBar,
   drawClock,
   drawField,
   drawGhosts,
+  fuseLeft,
   fitField,
   follow,
   ghostRadiusPx,
@@ -46,7 +52,9 @@ export interface Drawn {
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
-  ghostsShown: GhostOnScreen[]; // every ghost drawn inside the visible field, in pixels
+  // Every ghost drawn and named inside the visible field, in pixels: one falling off (fading)
+  // or out (not drawn) has no label by design (render ghosts.ts).
+  ghostsShown: GhostOnScreen[];
 }
 
 export interface GhostOnScreen {
@@ -86,6 +94,7 @@ export function drawScene(
       trails,
       nowMs: now,
       labelAll: !f.playing,
+      fuse: f.latest ? fuseLeft(f.latest) : 1,
     });
   });
   drawClock(ctx, f.latest);
@@ -108,6 +117,7 @@ export function drawScene(
 function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
   const area = visibleArea(view);
   return ghosts
+    .filter((g) => !(g.flags & (GHOST_FALLING | GHOST_OUT)))
     .map((g) => ({ id: g.id, x: sx(view, g.x), y: sy(view, g.y), r: ghostRadiusPx(view) }))
     .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);
 }

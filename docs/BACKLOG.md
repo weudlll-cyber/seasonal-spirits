@@ -11,10 +11,12 @@ prototype is kept as the tag `v5-prototype`, `master` is the last merged Spirits
 On `proto/sumo` the rough prototype **Seasonal Sumo** is built; the topics below about
 Spirits wait.
 
-y. **Seasonal Sumo — the owner plays it** (NIGHT 2026-11-17, on `proto/sumo`, not merged).
-Done when: the owner has played it and said whether it is the game he is looking for, and
-decided the placeholders (arena size, dash, push factor, respawn, the bot layer's reaction
-and noise).
+y. **Seasonal Sumo and its modes — the owner plays them** (NIGHT 2026-11-17, on
+`proto/sumo`, not merged). `pnpm dev` rotates the modes match by match: Seasonal Sumo (5:00),
+King of the Season (3:00), Halving Bomb (3:00). Done when: the owner has played all three and
+said which is fun and which makes him want another round, and decided the placeholders
+(arena size, dash, push factor, respawn, the bot layer's reaction and noise; the walls, the
+zone's size, the bomb count and the times of hill and bomb).
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
@@ -540,6 +542,20 @@ Done when: the spec is green ten runs in a row.
   board, the shrine arrow, the team check, the fairness search, the human stand-in, the
   latency and picture tools — commit "feat: Seasonal Sumo prototype".
 
+- 2026-11-17 — **Seasonal Sumo, piece 3: played and timed** (addendum 1): two full matches at
+  desktop and phone size, plain-sentence notes and the tick times on the morning sheet
+  `reports/night-2026-11-17-sumo.md` — commit "docs: Sumo piece 3, played and timed".
+
+- 2026-11-17 — **Seasonal Sumo, pieces 5–7: game modes** (addendum 1): a mode per match —
+  `sumo`, `hill` (King of the Season), `bomb` (Halving Bomb) — over one shared core
+  (`ModeRules`: start, turn, after); walls for hill and bomb in `stepGhost`; the hill's zone
+  with its points, jump, halving and bounces; the bombs with passing, the second without a
+  pass back and the explosion; a bot brain per mode behind the same human-like layer; the
+  server's rotation (`GAME_MODE=rotate`, `pnpm dev`); the wire with the mode, the two discs and
+  a u16 score per ghost (493 bytes at 32 ghosts); the recap with two awards per mode; the
+  client's field, bomb, clock window, banner, help and result per mode; `pnpm simulate
+--mode` — commit "feat: Sumo game modes — King of the Season and Halving Bomb".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -763,3 +779,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-17 | two full Sumo matches played on `pnpm dev` (desktop 1280 × 800 keyboard and Pixel 7 joystick in parallel), "Near" until the third season, then "Overview"; labels checked every step      | `a8bfb32`                                                                                                                                 | 303 s each; no label fault; desktop script 32 / 35 knockouts, first of 32; phone 50 / 54 own falls (harness touch interference)                                                                                                     | `reports/screens/latest/sumo-*.png`, the sheet                                                 |
 | 2026-11-17 | server tick time, in-process (`MatchHost.tick` + `encodeState`, 32 ghosts, 3 full matches, 18 900 ticks)                                                                                  | `a8bfb32`                                                                                                                                 | mean 0.096 ms, p99 0.47 ms, max 8.9 ms; background CPU 74 % before, 34 % after                                                                                                                                                      | the sheet                                                                                      |
 | 2026-11-17 | `pnpm dev` server `/metrics-lite` after the play run                                                                                                                                      | `a8bfb32`                                                                                                                                 | 20.0 Hz, 452 bytes per state, `maxTickMs` 88 once over 15 min (machine shared with two browsers and Vite)                                                                                                                           | the sheet                                                                                      |
+| 2026-11-17 | `pnpm simulate --seed 1 --mode hill` and `--mode bomb`                                                                                                                                    | working tree of "feat: Sumo game modes …"                                                                                                 | sanity green in both; hill 744–789 points per team, zone 300 → 212 → 150 → 106; bomb 999–1260 points per team, 8 explosions, 2–9 passes per player                                                                                  | docs/GAME-CORE.md                                                                              |
+| 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 34 files / 171 tests)                                                                                                          | same tree                                                                                                                                 | green after three lint fixes (minimap complexity, a test's needless optional chains, sumo's arrow bodies) and one format fix                                                                                                        | this commit                                                                                    |
+| 2026-11-17 | `pnpm e2e` (help, play, readability both sizes; spectate desktop)                                                                                                                         | same tree before the `scene.ts` fix                                                                                                       | 6 passed, 1 skipped, 1 failed: readability desktop — "ghost N without a label" for ghosts falling or out (flags 4 / 8), which are unlabelled by design; `ghostsShown` now lists only drawn, named ghosts                            | this commit                                                                                    |
+| 2026-11-17 | `pnpm e2e readability --repeat-each 3` (both sizes)                                                                                                                                       | same tree with the `scene.ts` fix (only readability reads `ghostsShown`)                                                                  | 6 passed                                                                                                                                                                                                                            | this commit                                                                                    |

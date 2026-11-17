@@ -20,7 +20,14 @@ import {
   type ServerRecap,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { Trails, seasonColour, seasonName } from '@seasonal-spirits/render';
+import {
+  Trails,
+  clientConfig,
+  modeOf,
+  modeWords,
+  seasonColour,
+  seasonName,
+} from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
 import { Help } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
@@ -112,7 +119,7 @@ const controls: Controls = {
 };
 bindKeyboard(controls);
 bindJoystick(el('stick'), el('knob'), controls);
-new Help(el('help'), el('help-open', HTMLButtonElement));
+const help = new Help(el('help'), el('help-open', HTMLButtonElement));
 
 // The own ghost in the newest state, as the prediction needs it; null while watching.
 function ownServer(ownId: number | null): ServerOwn | null {
@@ -134,6 +141,8 @@ function ownServer(ownId: number | null): ServerOwn | null {
 // Other ghosts a render buffer behind, smoothly; the own one where the own input has already
 // taken it (prediction.ts).
 function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
+  const mode = conn.buffer.at(-1)?.state.mode;
+  if (mode !== undefined) prediction.useConfig(clientConfig(mode));
   const predicted = prediction.update(now, conn.direction, ownServer(ownId), dashPressed);
   dashPressed = false;
   const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;
@@ -172,6 +181,7 @@ function showTeam(team: number | null): void {
 }
 
 function draw(f: Frame): Drawn {
+  if (f.latest) help.show(modeOf(f.latest.mode), modeWords(f.latest.mode).name);
   const drawn = drawScene(ctx, f, viewToggle?.mode ?? 'overview', trails);
   showTeam(f.ownTeam);
   viewButton.hidden = !f.playing;
@@ -198,7 +208,9 @@ function expose(f: Frame, drawn: Drawn): void {
       ? { x: f.own.x, y: f.own.y, flags: f.own.flags, dashLeftMs: f.own.dashLeftMs }
       : null,
     season: s?.season ?? null,
-    arena: s ? { radius: s.arenaRadius, next: s.arenaNext } : null,
+    gameMode: s ? modeOf(s.mode) : null,
+    area: s?.area ?? null,
+    next: s?.next ?? null,
     teamScore: s ? [...s.teamScore] : null,
     halvings,
     // The clock's countdown as the server sent it, and whether it runs to the match end.

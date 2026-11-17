@@ -1,9 +1,9 @@
-// Seasonal Spirits — the match recap on the server: built from the core's result and awards,
+// Seasonal Sumo — the match recap on the server: built from the core's result and awards,
 // sent once to every client when the match ends, and to a client arriving during the result
 // pause; never while a match runs. A 1 s match keeps the real server test short.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, NO_AWARDS } from '@seasonal-spirits/game-core';
+import { DEFAULT_CONFIG, type PlayerResult } from '@seasonal-spirits/game-core';
 import { STATE_RESULT, parseServerMessage, type ServerRecap } from '@seasonal-spirits/protocol';
 import type WebSocket from 'ws';
 import { MatchHost } from './match-host.js';
@@ -32,31 +32,32 @@ function nextRecap(ws: WebSocket): Promise<ServerRecap> {
 }
 
 describe('match recap', () => {
-  const row = (id: number, knockouts: number, longestAliveMs: number) => ({
+  const row = (id: number, knockouts: number, longestAliveMs: number): PlayerResult => ({
     id,
-    team: 1 as const,
+    team: 1,
+    score: knockouts,
     knockouts,
     falls: 1,
     longestAliveMs,
+    scoreMs: 0,
+    bounces: 0,
+    passes: 0,
   });
 
-  it('carries the knockouts, the best pusher and the survivor', () => {
-    const result = { players: [row(3, 2, 40_000), row(4, 0, 90_400.5)], teams: [0, 2, 0, 0] };
-    const awards = { ...NO_AWARDS, bestPusher: { ghost: 3, knockouts: 2 } };
-    expect(recapOf(result, awards)).toEqual({
+  it("carries the scores and the mode's awards, in whole numbers", () => {
+    const players = [row(3, 2, 40_000), row(4, 0, 90_400.5)];
+    expect(recapOf({ mode: 'sumo', players, teams: [0, 2, 0, 0] })).toEqual({
       kind: 'recap',
       teams: [0, 2, 0, 0],
       players: [
-        { ghost: 3, team: 1, knockouts: 2 },
-        { ghost: 4, team: 1, knockouts: 0 },
+        { ghost: 3, team: 1, score: 2 },
+        { ghost: 4, team: 1, score: 0 },
       ],
-      awards: { bestPusher: { ghost: 3, knockouts: 2 }, survivor: { ghost: 4, ms: 90_401 } },
+      awards: [
+        { kind: 'best-pusher', ghost: 3, value: 2 },
+        { kind: 'survivor', ghost: 4, value: 90_401 },
+      ],
     });
-  });
-
-  it('leaves the best pusher out when nobody knocked anyone off', () => {
-    const result = { players: [row(3, 0, 300_000)], teams: [0, 0, 0, 0] };
-    expect(recapOf(result, NO_AWARDS).awards).toEqual({ survivor: { ghost: 3, ms: 300_000 } });
   });
 
   it('is offered once at the end, during the pause for latecomers, never while a match runs', () => {
@@ -78,7 +79,7 @@ describe('match recap', () => {
     const recap = await nextRecap(ws);
     expect(recap.players.length).toBe(4);
     expect(recap.teams.reduce((a, b) => a + b, 0)).toBe(
-      recap.players.reduce((a, p) => a + p.knockouts, 0),
+      recap.players.reduce((a, p) => a + p.score, 0),
     );
     const late = await connect(server);
     const latesRecap = nextRecap(late);

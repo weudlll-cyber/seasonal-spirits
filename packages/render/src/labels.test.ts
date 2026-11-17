@@ -1,5 +1,5 @@
 // Seasonal Sumo — name labels: every ghost on screen gets its name or at least its tag, no two
-// overlap, the own one always shows its full text on top, the one with more knockouts keeps its
+// overlap, the own one always shows its full text on top, the one with a higher score keeps its
 // name, nothing reaches under the top bar or past the screen edge; and the label's words.
 
 import { describe, expect, it } from 'vitest';
@@ -30,7 +30,7 @@ function at(id: number, x: number, y: number, over: Partial<LabelCandidate> = {}
     tag,
     tagWidth: tag.length * 8,
     own: false,
-    knockouts: 0,
+    score: 0,
     ...over,
   };
 }
@@ -56,7 +56,7 @@ describe('name labels', () => {
     const crowd = Array.from({ length: 10 }, (_, i) =>
       at(i + 1, 400 + (i % 4) * 6, 400 + Math.floor(i / 4) * 6, {
         full: `Bot ${i + 1} · 1`,
-        knockouts: 1,
+        score: 1,
       }),
     );
     const placed = placeLabels(crowd, AREA);
@@ -67,16 +67,16 @@ describe('name labels', () => {
   });
 
   it('keeps the own full label in a crowd and draws it last', () => {
-    const crowd = [1, 2, 3].map((id) => at(id, 300, 300, { knockouts: 5 }));
+    const crowd = [1, 2, 3].map((id) => at(id, 300, 300, { score: 5 }));
     const own = at(9, 302, 300, { full: 'You · 4', tag: 'You', own: true });
     const placed = placeLabels([...crowd, own], AREA);
     expect(placed.at(-1)).toMatchObject({ id: 9, text: 'You · 4', own: true, leader: null });
     expect(placed).toHaveLength(4);
   });
 
-  it('gives the ghost with more knockouts the best spot, above it, and still names the other', () => {
-    const poor = at(1, 300, 300, { full: 'Bot 1 · 2', knockouts: 2 });
-    const rich = at(2, 300, 300, { full: 'Bot 2 · 9', knockouts: 9 });
+  it('gives the ghost with a higher score the best spot, above it, and still names the other', () => {
+    const poor = at(1, 300, 300, { full: 'Bot 1 · 2', score: 2 });
+    const rich = at(2, 300, 300, { full: 'Bot 2 · 9', score: 9 });
     const placed = placeLabels([poor, rich], AREA);
     const richLabel = placed.find((p) => p.id === 2);
     expect(richLabel?.text).toBe('Bot 2 · 9');
@@ -86,7 +86,7 @@ describe('name labels', () => {
   });
 
   it('never puts a label under the top bar; the own one moves below its ghost', () => {
-    const near = at(1, 300, TOP + 10, { knockouts: 9 });
+    const near = at(1, 300, TOP + 10, { score: 9 });
     const own = at(2, 500, TOP + 10, { full: 'You', tag: 'You', own: true });
     const placed = placeLabels([near, own], AREA);
     expect(placed).toHaveLength(2);
@@ -95,8 +95,8 @@ describe('name labels', () => {
   });
 
   it('moves a name at the screen edge inside instead of cutting it off', () => {
-    const left = at(1, 3, 300, { full: 'Bot 1 · 4', knockouts: 4 });
-    const right = at(2, 798, 500, { full: 'Bot 2 · 4', knockouts: 4 });
+    const left = at(1, 3, 300, { full: 'Bot 1 · 4', score: 4 });
+    const right = at(2, 798, 500, { full: 'Bot 2 · 4', score: 4 });
     const own = at(3, 0, 600, { full: 'You · 2', tag: 'You', own: true });
     for (const p of placeLabels([left, right, own], AREA)) {
       expect(p.x - p.width / 2, p.text).toBeGreaterThanOrEqual(AREA.left);
@@ -134,17 +134,17 @@ describe('name labels at the screen edge', () => {
 });
 
 describe('label text', () => {
-  const ghost = { id: 3, flags: GHOST_BOT, knockouts: 0 };
+  const ghost = { id: 3, flags: GHOST_BOT, score: 0 };
 
-  it('names a ghost with its knockouts once it has some', () => {
-    expect(labelText({ ...ghost, knockouts: 9 }, false, false)).toEqual({
+  it('names a ghost with its score once it has some', () => {
+    expect(labelText({ ...ghost, score: 9 }, false, false)).toEqual({
       full: 'Bot 3 · 9',
       tag: '3',
     });
   });
 
-  it('calls the own ghost "You", with its knockouts', () => {
-    expect(labelText({ ...ghost, knockouts: 6 }, true, false)).toEqual({
+  it('calls the own ghost "You", with its score', () => {
+    expect(labelText({ ...ghost, score: 6 }, true, false)).toEqual({
       full: 'You · 6',
       tag: 'You',
     });
@@ -160,7 +160,7 @@ describe('label text', () => {
 describe('name labels keep clear of ghosts', () => {
   it('never puts a name on a neighbouring ghost', () => {
     // B stands right where A's name would go above A.
-    const a = at(1, 300, 300, { full: 'Bot 1 · 5', knockouts: 5 });
+    const a = at(1, 300, 300, { full: 'Bot 1 · 5', score: 5 });
     const b = at(2, 300, 262);
     const placed = placeLabels([a, b], AREA);
     const bodyOf = (c: LabelCandidate) => ({

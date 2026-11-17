@@ -1,18 +1,18 @@
-// Seasonal Sumo — the match server's game side: 32 slots, who steers each, match after match.
-// Every slot holds a ghost; a bot steers it until a player joins, and again when a player has
-// been gone for reconnectGraceMs. The game core decides everything; this file only routes
-// intents in (wire.ts turns the core's state into the wire state).
+// Seasonal Sumo — the match server's game side: 32 slots, who steers each, match after match,
+// and each match's game mode: the modes given take turns (development: sumo → hill → bomb →
+// sumo …). Every slot holds a ghost; a bot steers it until a player joins, and again when a
+// player has been gone for reconnectGraceMs. The game core decides everything; this file only
+// routes intents in (wire.ts turns the core's state into the wire state).
 
 import {
   Match,
-  NO_AWARDS,
   botRoster,
   botSeed,
   createBot,
-  noteAwards,
-  type Awards,
+  modeConfig,
   type Bot,
   type GameConfig,
+  type GameMode,
   type Intent,
   type MatchEvent,
   type Roster,
@@ -29,7 +29,10 @@ type Controller =
   | { kind: 'standing'; since: number }; // a player left; the ghost waits for the grace time
 
 export class MatchHost {
-  private readonly cfg: GameConfig;
+  private readonly base: GameConfig;
+  private readonly modes: readonly GameMode[];
+  private cfg: GameConfig; // of the running match: the base with its mode's times
+  private matchNumber = 0;
   private readonly roster: Roster[];
   private readonly control = new Map<number, Controller>();
   private match: Match;
@@ -37,14 +40,16 @@ export class MatchHost {
   private hostMs = 0;
   private resultUntil: number | null = null;
   private lastEvents: readonly MatchEvent[] = []; // of the tick just run
-  private awards: Awards = NO_AWARDS; // of the running match, folded tick by tick
   private recap: ServerRecap | null = null; // of the match just ended, during the result pause
 
-  constructor(cfg: GameConfig, slots: number, firstSeed: number) {
-    this.cfg = cfg;
+  // `modes` take turns match by match; the base config's own mode alone by default.
+  constructor(base: GameConfig, slots: number, firstSeed: number, modes?: readonly GameMode[]) {
+    this.base = base;
+    this.modes = modes && modes.length > 0 ? modes : [base.mode];
+    this.cfg = this.configFor(0);
     this.roster = botRoster(slots);
     this.seed = firstSeed;
-    this.match = new Match(cfg, this.seed, this.roster);
+    this.match = new Match(this.cfg, this.seed, this.roster);
     for (const r of this.roster) this.control.set(r.id, this.botFor(r.id));
   }
 
@@ -98,21 +103,36 @@ export class MatchHost {
         this.lastEvents = [];
         return this.wire(this.lastEvents, this.resultUntil - this.hostMs);
       }
-      // A new match: same slots and players, a fresh seed, everyone back at the shrines.
-      this.resultUntil = null;
-      this.recap = null;
-      this.awards = NO_AWARDS;
-      this.seed++;
-      this.match = new Match(this.cfg, this.seed, this.roster);
+      this.nextMatch();
     }
     const s = this.match.tick(dtMs, this.intents());
-    this.awards = noteAwards(this.awards, s);
     if (s.ended) {
       this.resultUntil = this.hostMs + this.cfg.resultPauseMs;
-      this.recap = recapOf(this.match.result(), this.awards);
+      this.recap = recapOf(this.match.result());
     }
     this.lastEvents = s.events;
     return this.wire(s.events, s.ended ? this.cfg.resultPauseMs : 0);
+  }
+
+  // A new match: the next mode, same slots and players, a fresh seed, everyone back at the
+  // start; the bots get the new mode's brain.
+  private nextMatch(): void {
+    this.resultUntil = null;
+    this.recap = null;
+    this.seed++;
+    this.matchNumber++;
+    this.cfg = this.configFor(this.matchNumber);
+    this.match = new Match(this.cfg, this.seed, this.roster);
+    for (const [ghost, c] of this.control) {
+      if (c.kind === 'bot') this.control.set(ghost, this.botFor(ghost));
+    }
+  }
+
+  // The base config as it is for its own mode (a test may have shortened it), else the base
+  // with the mode's own times.
+  private configFor(matchNumber: number): GameConfig {
+    const mode = this.modes[matchNumber % this.modes.length] ?? this.base.mode;
+    return mode === this.base.mode ? this.base : modeConfig(this.base, mode);
   }
 
   // The match recap for every client: `fresh` only in the tick the match ended (sent to all);

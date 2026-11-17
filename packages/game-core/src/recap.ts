@@ -1,35 +1,53 @@
-// Seasonal Sumo — the match recap's awards, as Seasonal Spirits' recap folded them from the
-// match events tick by tick. Pure and bounded: one running best and one count per ghost, no
-// event log. An award nobody earned stays null and is left out of the recap.
-// - "Best pusher": the most knockouts; the first to reach the top keeps it.
-// - "Survivor": the longest time on the arena without a fall, from the result at the end.
+// Seasonal Sumo — the match recap's awards, two per mode, from the result at the end. An award
+// nobody earned (a count of 0) is left out; of equal ones the lowest id gets it.
+// - sumo: "Best pusher" (most knockouts), "Survivor" (longest without a fall);
+// - hill: "King" (most seconds in the zone), "Bouncer" (most opponents pushed out of it);
+// - bomb: "Hot hands" (most passes), "Cool head" (most points at the end).
 
-import type { MatchResult, MatchState } from './types.js';
+import type { GameMode } from './config.js';
+import type { MatchResult, PlayerResult } from './types.js';
 
-export interface Awards {
-  bestPusher: { ghost: number; knockouts: number } | null;
-  knockoutsByGhost: Readonly<Record<number, number>>; // the running counts; bounded by the ghosts
+export const AWARD_KINDS = [
+  'best-pusher',
+  'survivor',
+  'king',
+  'bouncer',
+  'hot-hands',
+  'cool-head',
+] as const;
+export type AwardKind = (typeof AWARD_KINDS)[number];
+
+// value: knockouts, ms, seconds, bounces, passes or points, by kind.
+export interface Award {
+  kind: AwardKind;
+  ghost: number;
+  value: number;
 }
 
-export const NO_AWARDS: Awards = { bestPusher: null, knockoutsByGhost: {} };
+const MEASURES: Record<GameMode, [AwardKind, (p: PlayerResult) => number][]> = {
+  sumo: [
+    ['best-pusher', (p) => p.knockouts],
+    ['survivor', (p) => p.longestAliveMs],
+  ],
+  hill: [
+    ['king', (p) => Math.floor(p.scoreMs / 1000)],
+    ['bouncer', (p) => p.bounces],
+  ],
+  bomb: [
+    ['hot-hands', (p) => p.passes],
+    ['cool-head', (p) => Math.floor(p.scoreMs / 1000)],
+  ],
+};
 
-// The awards after one more tick: `s` is the state right after it (its events are that tick's).
-export function noteAwards(a: Readonly<Awards>, s: Readonly<MatchState>): Awards {
-  let { bestPusher, knockoutsByGhost } = a;
-  for (const e of s.events) {
-    if (e.type !== 'fall' || e.by === null) continue;
-    const n = (knockoutsByGhost[e.by] ?? 0) + 1;
-    knockoutsByGhost = { ...knockoutsByGhost, [e.by]: n };
-    if (!bestPusher || n > bestPusher.knockouts) bestPusher = { ghost: e.by, knockouts: n };
+export function awardsOf(r: MatchResult): Award[] {
+  const out: Award[] = [];
+  for (const [kind, measure] of MEASURES[r.mode]) {
+    let best: Award | null = null;
+    for (const p of r.players) {
+      const value = measure(p);
+      if (value > 0 && (!best || value > best.value)) best = { kind, ghost: p.id, value };
+    }
+    if (best) out.push(best);
   }
-  return { bestPusher, knockoutsByGhost };
-}
-
-// The ghost that stayed on the arena longest without a fall; the lowest id of equal ones.
-export function survivorOf(r: MatchResult): { ghost: number; ms: number } | null {
-  let best: { ghost: number; ms: number } | null = null;
-  for (const p of r.players) {
-    if (!best || p.longestAliveMs > best.ms) best = { ghost: p.id, ms: p.longestAliveMs };
-  }
-  return best;
+  return out;
 }

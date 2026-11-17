@@ -1,11 +1,12 @@
-// Seasonal Sumo — one full bot match in accelerated time, with its sanity list.
+// Seasonal Sumo — one full bot match of any mode in accelerated time, with its sanity list.
 // Used by `pnpm simulate`, the measurements and the tests; pure apart from the work it does.
 
 import { createBot, type Bot } from './bots/human.js';
 import type { GameConfig } from './config.js';
 import { Match, type Roster } from './match.js';
-import { seasonsInMatch } from './seasons.js';
-import type { Intent, MatchEvent, MatchResult, MatchState, Team } from './types.js';
+import { bombCount } from './modes/bomb.js';
+import { seasonsInMatch, type Season } from './seasons.js';
+import type { Intent, MatchResult, MatchState, Team } from './types.js';
 
 export const SIM_TICK_MS = 50; // the server's 20 Hz step
 
@@ -15,12 +16,18 @@ export interface SanityCheck {
   detail: string;
 }
 
-type HalvingEvent = Extract<MatchEvent, { type: 'halving' }>;
+// A halving as seen right after it: the size of what halves — sumo's arena (its target), the
+// hill's zone — or null in bomb.
+export interface HalvingNote {
+  atMs: number;
+  season: Season;
+  size: number | null;
+}
 
 export interface SimulationReport {
   seed: number;
   roster: Roster[];
-  halvings: HalvingEvent[];
+  halvings: HalvingNote[];
   falls: { credited: number; uncredited: number };
   result: MatchResult;
   sanity: SanityCheck[];
@@ -50,10 +57,12 @@ export function simulate(
   const bots = new Map<number, Bot>(
     roster.map((r) => [r.id, r.bot ?? createBot(cfg, botSeed(seed, r.id))]),
   );
-  const halvings: HalvingEvent[] = [];
+  const halvings: HalvingNote[] = [];
   const falls = { credited: 0, uncredited: 0 };
   let badNumber = false;
   let teamCredit = false;
+  let badBombs = false;
+  const bombs = cfg.mode === 'bomb' ? bombCount(cfg, roster.length) : 0;
   while (!match.state.ended) {
     const s = match.state;
     const intents = new Map<number, Intent>();
@@ -61,6 +70,7 @@ export function simulate(
     const next = match.tick(SIM_TICK_MS, intents);
     teamCredit = countEvents(next, halvings, falls) || teamCredit;
     badNumber ||= next.ghosts.some((g) => ![g.x, g.y, g.vx, g.vy].every(Number.isFinite));
+    badBombs ||= new Set(next.bombs.map((b) => b.carrier)).size !== bombs;
     afterTick?.(next);
   }
   const result = match.result();
@@ -70,7 +80,7 @@ export function simulate(
     halvings,
     falls,
     result,
-    sanity: sanityList(cfg, { halvings, falls, result, badNumber, teamCredit }),
+    sanity: sanityList(cfg, { halvings, falls, result, badNumber, teamCredit, badBombs }),
   };
 }
 
@@ -78,13 +88,13 @@ export function simulate(
 // teammate of the faller.
 function countEvents(
   s: Readonly<MatchState>,
-  halvings: HalvingEvent[],
+  halvings: HalvingNote[],
   falls: { credited: number; uncredited: number },
 ): boolean {
   let teamCredit = false;
   const team = (id: number | null): Team | undefined => s.ghosts.find((g) => g.id === id)?.team;
   for (const e of s.events) {
-    if (e.type === 'halving') halvings.push(e);
+    if (e.type === 'halving') halvings.push({ atMs: e.atMs, season: e.season, size: sizeOf(s) });
     if (e.type !== 'fall') continue;
     if (e.by === null) falls.uncredited++;
     else falls.credited++;
@@ -93,21 +103,22 @@ function countEvents(
   return teamCredit;
 }
 
-function sanityList(
-  cfg: GameConfig,
-  r: {
-    halvings: readonly HalvingEvent[];
-    falls: { credited: number; uncredited: number };
-    result: MatchResult;
-    badNumber: boolean;
-    teamCredit: boolean;
-  },
-): SanityCheck[] {
+function sizeOf(s: Readonly<MatchState>): number | null {
+  if (s.mode === 'sumo') return s.arena.target;
+  return s.zone?.r ?? null;
+}
+
+interface Seen {
+  halvings: readonly HalvingNote[];
+  falls: { credited: number; uncredited: number };
+  result: MatchResult;
+  badNumber: boolean;
+  teamCredit: boolean;
+  badBombs: boolean;
+}
+
+function sanityList(cfg: GameConfig, r: Seen): SanityCheck[] {
   const expected = seasonsInMatch(cfg) - 1;
-  const knockouts = r.result.teams.reduce((a, b) => a + b, 0);
-  const radii = r.halvings.map((h, k) =>
-    Math.abs(h.radius - cfg.arenaRadius * Math.SQRT1_2 ** (k + 1)),
-  );
   return [
     { name: 'positions and speeds finite', ok: !r.badNumber, detail: 'checked after every tick' },
     {
@@ -115,11 +126,39 @@ function sanityList(
       ok: r.halvings.length === expected,
       detail: `${r.halvings.length} seen, ${expected} expected`,
     },
-    {
-      name: 'the arena halves its area at each halving',
-      ok: radii.every((d) => d < 1e-6),
-      detail: r.halvings.map((h) => h.radius.toFixed(1)).join(' → '),
-    },
+    ...modeChecks(cfg, r),
+  ];
+}
+
+// What only one mode promises.
+function modeChecks(cfg: GameConfig, r: Seen): SanityCheck[] {
+  const fell = r.falls.credited + r.falls.uncredited;
+  if (cfg.mode === 'bomb') {
+    return [
+      { name: 'nobody falls inside the walls', ok: fell === 0, detail: `${fell} falls` },
+      {
+        name: 'always one bomb per 8 players, each with its own carrier',
+        ok: !r.badBombs,
+        detail: 'checked after every tick',
+      },
+    ];
+  }
+  const start = cfg.mode === 'sumo' ? cfg.arenaRadius : cfg.hill.zoneRadius;
+  const off = r.halvings.map((h, k) => Math.abs((h.size ?? 0) - start * Math.SQRT1_2 ** (k + 1)));
+  const halves = {
+    name: `the ${cfg.mode === 'sumo' ? 'arena' : 'zone'} halves its area at each halving`,
+    ok: off.every((d) => d < 1e-6),
+    detail: r.halvings.map((h) => (h.size ?? 0).toFixed(1)).join(' → '),
+  };
+  if (cfg.mode === 'hill') {
+    return [
+      halves,
+      { name: 'nobody falls inside the walls', ok: fell === 0, detail: `${fell} falls` },
+    ];
+  }
+  const knockouts = r.result.teams.reduce((a, b) => a + b, 0);
+  return [
+    halves,
     {
       name: 'every knockout is one credited fall, never by a teammate',
       ok: knockouts === r.falls.credited && !r.teamCredit,

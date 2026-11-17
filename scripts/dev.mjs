@@ -1,5 +1,5 @@
 // Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
-// The server's own bots fill all 32 slots. Starts all three as hidden background processes
+// The server's own bots fill all 32 slots; the game modes take turns. Starts all three as hidden background processes
 // (no windows on Windows, the same on Linux and macOS), logs to logs/dev-*.log (and
 // dev-*.err.log on Windows), records their PIDs in tmp/dev-pids.json, and stops exactly
 // those PIDs again. `pnpm dev --lan` (development only, never the default) also opens server
@@ -158,7 +158,8 @@ async function start(lan) {
     'server',
     'apps/server',
     ['--import', 'tsx', 'src/main.ts'],
-    { HOST: host },
+    // The modes take turns match by match (sumo → hill → bomb); GAME_MODE=sumo plays one.
+    { HOST: host, GAME_MODE: process.env.GAME_MODE ?? 'rotate' },
     SERVER_PORT,
   ]);
   await launch(['client', 'apps/client', vite, { CLIENT_HOST: host }, CLIENT_PORT]);

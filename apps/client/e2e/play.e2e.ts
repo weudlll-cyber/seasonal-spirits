@@ -63,14 +63,14 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   // The next halving: the announcement with the new season, and the arena halves.
   const announce = page.locator('#announce');
   const halving = /^HALVING — the arena halves · (Spring|Summer|Autumn|Winter) is in season$/;
-  const before = (await view(page)).arena?.radius ?? 0;
+  const before = (await view(page)).area?.r ?? 0;
   // Up to one season, or the rest of the last season, the result pause and one season.
   await expect(announce).toHaveText(halving, { timeout: 45_000 });
   const match = halving.exec((await announce.textContent()) ?? '');
   const season = SEASON_NAMES.indexOf(match?.[1] ?? '');
   await expect.poll(async () => (await view(page)).season).toBe(season);
   await expect
-    .poll(async () => (await view(page)).arena?.radius ?? 0, { timeout: 5000 })
+    .poll(async () => (await view(page)).area?.r ?? 0, { timeout: 5000 })
     .toBeLessThan(before * 0.75);
   await shot(page, info, 'halving');
 

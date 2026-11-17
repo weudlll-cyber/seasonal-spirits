@@ -8,63 +8,46 @@ import type { ServerRecap } from './messages.js';
 // 32 players with the result and the awards stay near 1.5 KB; this bounds anything bigger.
 export const MAX_RECAP_BYTES = 4096;
 const MAX_PLAYERS = 64;
-const MAX_COUNT = 65535; // knockouts per team or player
-const MAX_MS = 3_600_000;
+const MAX_AWARDS = 8; // two per mode today
+const MAX_COUNT = 65535; // a score per team or player
+const MAX_VALUE = 3_600_000; // an award's value: at most an hour in ms
+const KIND = /^[a-z-]{1,16}$/; // an award kind; the client shows the kinds it knows
 
 export function readRecap(fields: Record<string, unknown>): ServerRecap | null {
   const { teams, players, awards } = fields;
   if (!Array.isArray(teams) || teams.length !== 4 || !teams.every(isCount)) return null;
-  if (!Array.isArray(players) || players.length > MAX_PLAYERS) return null;
-  const read = players.map(readPlayer);
-  if (read.some((p) => p === null)) return null;
-  const a = readAwards(awards);
-  if (!a) return null;
-  return {
-    kind: 'recap',
-    teams: teams as ServerRecap['teams'],
-    players: read as ServerRecap['players'],
-    awards: a,
-  };
+  const read = list(players, MAX_PLAYERS, readPlayer);
+  const won = list(awards, MAX_AWARDS, readAward);
+  if (!read || !won) return null;
+  return { kind: 'recap', teams: teams as ServerRecap['teams'], players: read, awards: won };
 }
 
-function readPlayer(p: unknown): ServerRecap['players'][number] | null {
-  if (!isObject(p)) return null;
-  const { ghost, team, knockouts } = p;
-  if (!isIntIn(ghost, 0, 255) || !isIntIn(team, 0, 3) || !isCount(knockouts)) return null;
-  return { ghost, team, knockouts };
-}
-
-type Awards = ServerRecap['awards'];
-
-// Each award is optional; one that is present must be whole, or the recap is dropped.
-function readAwards(a: unknown): Awards | null {
-  if (!isObject(a)) return null;
-  const read = [optional(a.bestPusher, readPusher), optional(a.survivor, readSurvivor)] as const;
-  if (read.includes(null)) return null;
-  const [bestPusher, survivor] = read;
-  const out: Awards = {};
-  if (bestPusher) out.bestPusher = bestPusher;
-  if (survivor) out.survivor = survivor;
+// A bounded array whose every item reads; null if any does not.
+function list<T>(
+  v: unknown,
+  max: number,
+  read: (o: Record<string, unknown>) => T | null,
+): T[] | null {
+  if (!Array.isArray(v) || v.length > max) return null;
+  const out: T[] = [];
+  for (const item of v) {
+    const r = isObject(item) ? read(item) : null;
+    if (r === null) return null;
+    out.push(r);
+  }
   return out;
 }
 
-// undefined when absent, null when present but broken.
-function optional<T>(
-  v: unknown,
-  read: (o: Record<string, unknown>) => T | null,
-): T | null | undefined {
-  if (v === undefined) return undefined;
-  return isObject(v) ? read(v) : null;
+function readPlayer(p: Record<string, unknown>): ServerRecap['players'][number] | null {
+  const { ghost, team, score } = p;
+  if (!isIntIn(ghost, 0, 255) || !isIntIn(team, 0, 3) || !isCount(score)) return null;
+  return { ghost, team, score };
 }
 
-function readPusher(o: Record<string, unknown>): Awards['bestPusher'] | null {
-  const { ghost, knockouts } = o;
-  return isIntIn(ghost, 0, 255) && isIntIn(knockouts, 1, MAX_COUNT) ? { ghost, knockouts } : null;
-}
-
-function readSurvivor(o: Record<string, unknown>): Awards['survivor'] | null {
-  const { ghost, ms } = o;
-  return isIntIn(ghost, 0, 255) && isIntIn(ms, 0, MAX_MS) ? { ghost, ms } : null;
+function readAward(a: Record<string, unknown>): ServerRecap['awards'][number] | null {
+  const { kind, ghost, value } = a;
+  if (typeof kind !== 'string' || !KIND.test(kind)) return null;
+  return isIntIn(ghost, 0, 255) && isIntIn(value, 1, MAX_VALUE) ? { kind, ghost, value } : null;
 }
 
 function isCount(v: unknown): v is number {

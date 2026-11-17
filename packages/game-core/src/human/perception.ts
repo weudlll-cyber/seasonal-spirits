@@ -27,6 +27,8 @@ function snapshot(s: Readonly<MatchState>): MatchState {
     ...s,
     clock: { ...s.clock },
     arena: { ...s.arena, centre: { ...s.arena.centre } },
+    zone: s.zone && { ...s.zone },
+    bombs: s.bombs.map((b) => ({ ...b })),
     ghosts: s.ghosts.map((g) => ({ ...g, lastTouch: g.lastTouch && { ...g.lastTouch } })),
     events: [],
   };

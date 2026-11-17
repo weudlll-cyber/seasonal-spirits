@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  GHOST_BOMB,
   GHOST_BOT,
   GHOST_BYTES,
   GHOST_DASHING,
@@ -31,8 +32,9 @@ function sample(ghosts: number): ServerState {
     flags: STATE_HALVING_EVENT,
     nextMatchMs: 0,
     teamScore: [12, 0, 33, 7],
-    arenaRadius: 318.2,
-    arenaNext: 225,
+    mode: 1,
+    area: { x: 1350, y: 650, r: 212.1 },
+    next: { x: 1350, y: 1350, r: 150 },
     ghosts: Array.from({ length: ghosts }, (_, i) => ({
       id: i + 1,
       x: 100 + i,
@@ -40,7 +42,7 @@ function sample(ghosts: number): ServerState {
       vx: i * 30 - 400,
       vy: 900 - i * 25,
       team: i % 4,
-      knockouts: i,
+      score: i * 300,
       dashLeftMs: (i % 8) * 200,
       flags: i % 2 ? GHOST_DASHING : 0,
     })),
@@ -55,7 +57,7 @@ describe('state encoding', () => {
     expect(decodeState(buf)).toEqual(s);
   });
 
-  it('round-trips 32 ghosts with signed speeds, the arena, a countdown and the next-match time', () => {
+  it('round-trips 32 ghosts with signed speeds, the mode, the discs, a countdown and the next-match time', () => {
     const s = { ...sample(32), countdownMs: 9000, flags: 0, nextMatchMs: 12_000 };
     const buf = encodeState(s);
     expect(buf.byteLength).toBe(HEADER_BYTES + 32 * GHOST_BYTES);
@@ -63,7 +65,12 @@ describe('state encoding', () => {
   });
 
   it('stays well under 1 KB with 32 ghosts', () => {
-    expect(encodedSize(32)).toBe(452);
+    expect(encodedSize(32)).toBe(493);
+  });
+
+  it('sends a missing disc as none (bomb has no arena and no zone)', () => {
+    const s = { ...sample(1), mode: 2, area: null, next: null };
+    expect(decodeState(encodeState(s))).toMatchObject({ mode: 2, area: null, next: null });
   });
 
   it('clamps out-of-range numbers instead of wrapping them', () => {
@@ -73,10 +80,10 @@ describe('state encoding', () => {
       ghost.x = -5;
       ghost.vx = 1e6;
       ghost.vy = -1e6;
-      ghost.knockouts = 999;
+      ghost.score = 99_999;
     }
     const back = decodeState(encodeState(s));
-    expect(back.ghosts[0]).toMatchObject({ x: 0, vx: 32767, vy: -32768, knockouts: 255 });
+    expect(back.ghosts[0]).toMatchObject({ x: 0, vx: 32767, vy: -32768, score: 65535 });
   });
 
   it('rejects a corrupted length', () => {
@@ -88,7 +95,8 @@ describe('state encoding', () => {
 
 describe('state flags', () => {
   it('keeps every ghost flag through a round trip', () => {
-    const all = GHOST_BOT | GHOST_DASHING | GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED;
+    const all =
+      GHOST_BOT | GHOST_DASHING | GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED | GHOST_BOMB;
     const s = sample(2);
     const [a, b] = s.ghosts;
     if (a) a.flags = all;

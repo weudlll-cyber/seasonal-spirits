@@ -16,16 +16,21 @@ describe('halving', () => {
   it('happens at 1:15, 2:30 and 3:45 with the new season, and halves the arena each time', () => {
     const m = matchOf(cfg, one);
     const seen: MatchEvent[] = [];
-    while (!m.state.ended) seen.push(...m.tick(50, new Map()).events);
+    const targets: number[] = []; // the arena's target right after each halving
+    while (!m.state.ended) {
+      const s = m.tick(50, new Map());
+      seen.push(...s.events);
+      if (halvingsOf(s.events).length > 0) targets.push(s.arena.target);
+    }
     const r = cfg.arenaRadius;
     expect(halvingsOf(seen).map((e) => [e.atMs, e.season])).toEqual([
       [75_000, 'summer'],
       [150_000, 'autumn'],
       [225_000, 'winter'],
     ]);
-    halvingsOf(seen).forEach((e, k) => {
+    targets.forEach((t, k) => {
       // Area × ½ each time: radius × 1/√2.
-      expect(e.radius).toBeCloseTo(r * Math.SQRT1_2 ** (k + 1), 6);
+      expect(t).toBeCloseTo(r * Math.SQRT1_2 ** (k + 1), 6);
     });
   });
 

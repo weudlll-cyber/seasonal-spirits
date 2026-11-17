@@ -1,5 +1,5 @@
-// Seasonal Sumo — the result screen after a match: the awards of the match, knockouts per
-// team and per player, the own place, the time to the next match, and the bridge box of
+// Seasonal Sumo — the result screen after a match: the mode's awards, the mode's score
+// (knockouts or points) per team and per player, the own place, the time to the next match, and the bridge box of
 // CONCEPT.md §8 (on by default, switched off in config.ts). Result and awards come from the
 // server's recap message, the names and the time to the next match from the state.
 
@@ -9,7 +9,7 @@ import {
   type ServerRecap,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { mmss, seasonColour, seasonName } from '@seasonal-spirits/render';
+import { mmss, modeWords, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { BRIDGE_TEXT, CLIENT_CONFIG } from './config.js';
 import { el } from './hud.js';
 
@@ -56,10 +56,14 @@ export class ResultScreen {
     this.next.textContent = `Next match in ${mmss(s.nextMatchMs)}`;
     if (this.shown === recap) return;
     this.shown = recap;
-    this.fill(recap, (ghost) => nameIn(s, ghost, ownId), ownId);
+    this.fill(recap, (ghost) => nameIn(s, ghost, ownId), { ownId, unit: modeWords(s.mode).unit });
   }
 
-  private fill(r: ServerRecap, name: (ghost: number) => string, ownId: number | null): void {
+  private fill(
+    r: ServerRecap,
+    name: (ghost: number) => string,
+    me: { ownId: number | null; unit: string },
+  ): void {
     const lines = awardLines(r, name);
     this.awardsBox.hidden = lines.length === 0;
     this.awards.replaceChildren(...lines.map(([label, text]) => row(label, text)));
@@ -69,30 +73,38 @@ export class ResultScreen {
         row(`${i + 1}. ${seasonName(team)}`, String(r.teams[team] ?? 0), seasonColour(team)),
       ),
     );
-    const ranked = [...r.players].sort((a, b) => b.knockouts - a.knockouts || a.ghost - b.ghost);
+    const ranked = [...r.players].sort((a, b) => b.score - a.score || a.ghost - b.ghost);
     this.players.replaceChildren(
       ...ranked
         .slice(0, SHOWN_PLAYERS)
-        .map((p, i) =>
-          row(`${i + 1}. ${name(p.ghost)}`, String(p.knockouts), seasonColour(p.team)),
-        ),
+        .map((p, i) => row(`${i + 1}. ${name(p.ghost)}`, String(p.score), seasonColour(p.team))),
     );
-    const own = ranked.findIndex((p) => p.ghost === ownId);
+    const own = ranked.findIndex((p) => p.ghost === me.ownId);
     this.place.hidden = own === -1;
     if (own !== -1) {
       const p = ranked[own];
-      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${p?.knockouts ?? 0} knockouts`;
+      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${p?.score ?? 0} ${me.unit}`;
     }
   }
 }
 
+// Each award kind's title and how its value reads (game-core recap.ts); a kind this client
+// does not know is not shown.
+const AWARDS: Record<string, [string, (value: number) => string]> = {
+  'best-pusher': ['Best pusher', (v) => `${v} knockouts`],
+  survivor: ['Survivor', (v) => `${mmss(v)} without a fall`],
+  king: ['King', (v) => `${v} s in the zone`],
+  bouncer: ['Bouncer', (v) => `${v} pushed out of the zone`],
+  'hot-hands': ['Hot hands', (v) => `${v} bombs passed`],
+  'cool-head': ['Cool head', (v) => `${v} points`],
+};
+
 // The awards the match earned, short enough for a phone; none earned, none shown.
 function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
-  const { bestPusher: pusher, survivor } = r.awards;
   const lines: [string, string][] = [];
-  if (pusher) lines.push(['Best pusher', `${name(pusher.ghost)}, ${pusher.knockouts} knockouts`]);
-  if (survivor) {
-    lines.push(['Survivor', `${name(survivor.ghost)}, ${mmss(survivor.ms)} without a fall`]);
+  for (const a of r.awards) {
+    const known = AWARDS[a.kind];
+    if (known) lines.push([known[0], `${name(a.ghost)}, ${known[1](a.value)}`]);
   }
   return lines;
 }

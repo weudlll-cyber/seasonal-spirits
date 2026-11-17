@@ -2,13 +2,14 @@
 // overlay ("What you see") shows, next to drawings of the same marks.
 
 // Every mark the game draws (ghosts.ts, field.ts).
-export type LegendMarker = 'team' | 'own' | 'fast' | 'protected' | 'edge' | 'nextEdge';
+export type LegendMarker =
+  'team' | 'own' | 'fast' | 'protected' | 'edge' | 'nextEdge' | 'zone' | 'bomb';
 
 // In reading order.
 export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
   {
     marker: 'team',
-    text: 'Body colour: the ghost\'s team. Label: its name, or only its number in a crowd; "· 2": 2 knockouts.',
+    text: 'Body colour: the ghost\'s team. Label: its name, or only its number in a crowd; "· 2": its score (knockouts or points).',
   },
   { marker: 'own', text: 'Thick white ring, label "You": your ghost.' },
   { marker: 'fast', text: 'A trail behind a ghost: it dashed or was knocked flying.' },
@@ -18,4 +19,12 @@ export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
   },
   { marker: 'edge', text: "Glowing ring: the arena's edge. Past it you fall." },
   { marker: 'nextEdge', text: 'Dashed ring before a halving: where the edge will be after it.' },
+  {
+    marker: 'zone',
+    text: 'King of the Season: the glowing disc is the zone; a dashed one shows where it jumps.',
+  },
+  {
+    marker: 'bomb',
+    text: 'Halving Bomb: a ticking bomb above a ghost; its fuse is the time left.',
+  },
 ];

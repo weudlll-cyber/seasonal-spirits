@@ -6,7 +6,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { WebSocketServer, type RawData, type WebSocket } from 'ws';
-import type { GameConfig } from '@seasonal-spirits/game-core';
+import type { GameConfig, GameMode } from '@seasonal-spirits/game-core';
 import {
   MAX_CLIENT_MESSAGE_BYTES,
   encodeState,
@@ -24,7 +24,8 @@ export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
   host: string; // the address to listen on: loopback unless the LAN mode asks for more
   tickHz: number;
-  game: GameConfig;
+  game: GameConfig; // the base: its mode, and the times of its mode
+  modes?: readonly GameMode[]; // take turns match by match; the base mode alone when absent
   maxGhosts: number; // slots in a match; bots fill those without a player
   maxInputsPerSecond: number; // every message counts, valid or not
   maxConnectionsPerAddress: number;
@@ -71,7 +72,7 @@ export class GameServer {
 
   constructor(cfg: ServerConfig) {
     this.cfg = cfg;
-    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed);
+    this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed, cfg.modes);
   }
 
   async listen(): Promise<void> {

@@ -22,6 +22,7 @@ import {
   drawClock,
   drawField,
   drawGhosts,
+  fuseLeft,
   fitField,
 } from '@seasonal-spirits/render';
 
@@ -104,7 +105,7 @@ function frame(): void {
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);
 
-  // Ghosts are interpolated; the arena and the clock come from the newest state.
+  // Ghosts are interpolated; the field, the bombs' fuse and the clock come from the newest state.
   const latest = buffer.at(-1)?.state;
   trails.record(ghosts, now);
   drawField(fitField(ctx, CLOCK_HEIGHT), latest);
@@ -113,6 +114,7 @@ function frame(): void {
     trails,
     nowMs: now,
     labelAll: true,
+    fuse: latest ? fuseLeft(latest) : 1,
   });
   drawClock(ctx, latest);
 

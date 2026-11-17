@@ -5,23 +5,32 @@ driven by `tick(dtMs, intents)`; its time is the sum of the `dt` values and ever
 value comes from the seed (`mulberry32`), so the same seed and the same intents give the same
 match. On the branch `proto/sumo` (NIGHT 2026-11-17) the core plays **Seasonal Sumo**, a rough
 prototype the owner plays before anything is polished or merged; Seasonal Spirits is paused
-(its last merged state is on `master`, the V5 rules on the tag `v5-prototype`).
+(its last merged state is on `master`, the V5 rules on the tag `v5-prototype`). Since piece 5
+of that night a match has a **game mode** — "sumo", "hill" (King of the Season) or "bomb"
+(Halving Bomb) — over one shared core: physics, ghosts and bots, the halving's timing, the
+countdown, the end and the recap frame are built once; a mode only adds its own rules
+(`src/modes/`).
 
 ## Files
 
 | File                      | What it holds                                                                  |
 | ------------------------- | ------------------------------------------------------------------------------ |
-| `src/config.ts`           | Every number of the prototype (table below), all placeholders                  |
+| `src/config.ts`           | Every number (table below), the modes and their times (`modeConfig`), `walled` |
 | `src/seasons.ts`          | Season order and the season clock                                              |
 | `src/types.ts`            | Match state, ghosts and their phases, intents, events, result                  |
 | `src/match.ts`            | `Match`: one tick in a fixed order; `halt` for a ghost a player takes over     |
-| `src/geometry.ts`         | Distances, clamping, `stepGhost` (momentum) and `dashVelocity`                 |
-| `src/arena.ts`            | The arena disc, its halving and easing, start and respawn spots                |
+| `src/modes/rules.ts`      | What a mode adds (`ModeRules`: start, turn, after), `scoreOf`, `areaOf`        |
+| `src/modes/sumo.ts`       | Sumo: the arena halves at each halving; falls after the moves                  |
+| `src/modes/hill.ts`       | King of the Season: the zone, its points, its jump and halving, bounces        |
+| `src/modes/bomb.ts`       | Halving Bomb: points, the bombs, passing, the explosion                        |
+| `src/geometry.ts`         | Distances, `stepGhost` (momentum, the walls: `fieldBounds`), `dashVelocity`    |
+| `src/arena.ts`            | The arena disc, its halving and easing, start and respawn spots, quarters      |
 | `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash's knock, the in-season push, touch credit |
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
-| `src/halving.ts`          | The halving at a season turn                                                   |
-| `src/recap.ts`            | The recap's awards: "Best pusher", "Survivor"                                  |
-| `src/bots/bot.ts`         | The bot's brain (`botIntent`)                                                  |
+| `src/recap.ts`            | The recap's awards, two per mode (`awardsOf`)                                  |
+| `src/bots/bot.ts`         | The sumo brain (`botIntent`) and the helpers every brain shares                |
+| `src/bots/hill.ts`        | The hill brain: to the zone, push rivals out of it                             |
+| `src/bots/bomb.ts`        | The bomb brain: a carrier chases, the others flee                              |
 | `src/bots/human.ts`       | The human-like layer every bot plays through (`createBot`)                     |
 | `src/human/perception.ts` | What a bot sees: the "Near" view, a reaction time late                         |
 | `src/simulation.ts`       | One full bot match with the sanity list; `src/simulate.ts` is `pnpm simulate`  |
@@ -32,11 +41,42 @@ stand-in round (`pnpm human`) — no balance work tonight (owner's addendum, 202
 
 ## One tick
 
-In this order: time and season (a season turn is a halving), the arena's edge, falls ending
-and respawns, each ghost's intent and movement by id (a dash first), collisions, new falls,
-the end, the countdown.
+In this order: time and season (a season turn is a halving: the event, then the mode's
+`turn`), the arena's edge, falls ending and respawns, each ghost's intent and movement by id
+(a dash first), collisions, the mode's `after` (sumo: new falls; hill: the zone's points and
+bounces; bomb: points and passes), the end, the countdown.
 
-## The rules as built (all numbers placeholders)
+## Game modes (NIGHT 2026-11-17, piece 5)
+
+| Mode   | Field                         | Match / halving                   | Score                                 | Recap                 |
+| ------ | ----------------------------- | --------------------------------- | ------------------------------------- | --------------------- |
+| `sumo` | the disc; past its edge falls | 5:00, every 75 s the arena halves | knockouts                             | Best pusher, Survivor |
+| `hill` | walled square, nobody falls   | 3:00, every 45 s the zone jumps   | 1 point per second in the zone        | King, Bouncer         |
+| `bomb` | walled square, nobody falls   | 3:00, every 20 s the bombs go off | 1 point per second; a carrier's halve | Hot hands, Cool head  |
+
+- **Mode and times.** `cfg.mode` picks the rules; `modeConfig(base, mode)` gives the base with
+  the mode's own times (hill 180 s / 45 s; bomb 180 s / 20 s and a 5 s countdown — all
+  placeholders). The server chooses the mode per match (apps/server `match-host.ts`).
+- **Walls** (hill, bomb). A square of `wallHalf` around the middle; `stepGhost` keeps a ghost
+  inside it and takes the speed into a wall away (the speed along it stays). The arena there is
+  the disc inside the walls and never halves; nobody falls.
+- **King of the Season** (`modes/hill.ts`). A zone (`hill.zoneRadius` 300 at the start) sits in
+  the quarter of the season in season, half way to its corner. Every ghost in it earns 1 point
+  per second for itself and its team (`scoreMs`, whole ms, so the sum is exact). At each
+  halving it jumps to the new season's quarter and its area halves (300 → 212 → 150 → 106);
+  during the countdown the clients draw where it goes (`areaOf(...).next`). A ghost that leaves
+  the zone within `hill.bounceMs` (1 s) of an opponent's touch is a bounce for that opponent; a
+  jump is nobody's bounce.
+- **Halving Bomb** (`modes/bomb.ts`). Everyone earns 1 point per second. One bomb per
+  `bomb.playersPerBomb` (8) players, at least one, goes to distinct random players (the
+  match's seeded source). A carrier passes it by touching an opponent that holds none — never
+  a teammate, and not back to the one that just gave it before `bomb.passBackMs` (1 s); the
+  nearest such opponent takes it. At each halving all bombs go off: each carrier's points
+  halve, and new bombs go to random players.
+- **Scores.** `scoreOf`: sumo knockouts, else whole points; a team's score is its players'
+  scores summed; the wire carries both (u16).
+
+## The sumo rules as built (all numbers placeholders)
 
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
 - **Arena.** A disc in the middle of the field, `arenaRadius` 900 at the start. Each team
@@ -66,9 +106,12 @@ the end, the countdown.
 - **End.** The team with the most knockouts wins; `result()` gives knockouts and falls per
   player and team and each ghost's longest time on the arena without a fall. The end is
   staged like a halving (countdown, `match-end` event).
-- **Recap** (`src/recap.ts`): "Best pusher" — the most knockouts (folded from the `fall`
-  events; the first to reach the top keeps it); "Survivor" — the longest time without a fall
-  (from the result).
+- **Recap** (`src/recap.ts`, every mode): two awards per mode from the result at the end —
+  sumo "Best pusher" (most knockouts) and "Survivor" (longest without a fall), hill "King" (most
+  seconds in the zone) and "Bouncer" (most bounces), bomb "Hot hands" (most passes) and "Cool
+  head" (most points at the end). Of equal ones the lowest id gets it; a count of 0 earns
+  nothing. (Before piece 5 "Best pusher" went to the first to reach the top; one rule for all
+  six awards is simpler.)
 
 ## Bots
 
@@ -77,7 +120,12 @@ player takes a bot's seat in the team with the fewest players at once (the ghost
 `halt`), a leaving one stands for the reconnect grace, then a bot takes the seat again
 (apps/server `match-host.ts`). Teams stay equal at all times.
 
-**The brain** (`botIntent`): near the edge (`bots.edgeMargin`) back inward; otherwise to the
+**The brains**, one per mode behind the same human-like layer. Hill (`bots/hill.ts`): to the
+zone; inside it, at the nearest opponent in the zone, dashing when lined up close; with nobody
+to push, its own spot in the zone. Bomb (`bots/bomb.ts`): a carrier chases the nearest
+opponent that may take its bomb and dashes into it; the others flee from the nearest opposing
+carrier within two dash ranges, bending towards the middle so they do not pin themselves to a
+wall, and else walk to their wander point. Sumo (`botIntent`): near the edge (`bots.edgeMargin`) back inward; otherwise to the
 nearest opponent it can push, approaching a little from the side of its own wander point
 (an angle by id, moved on every `bots.wanderMs`, so bots do not all meet in one spot), and a
 dash when within `bots.dashRange`, lined up (`bots.dashAimCos`), not near the edge and the
@@ -102,20 +150,27 @@ Tests: `src/bots/bot.test.ts` (the brain), `src/bots/human.test.ts` (delay respe
 noise within the band, form within its band, same seed same match), `src/bots/packs.test.ts`
 (no group of more than 4 together longer than 15 s, nearly still less than 5 % of the time).
 
-## `pnpm simulate --seed <n>`
+## `pnpm simulate --seed <n> [--mode sumo|hill|bomb]`
 
-One full match, 32 bots, in 50 ms ticks as fast as the machine runs: the season timeline
-with the arena's radius at each halving, falls with and without credit, knockouts per team
-and per player, and the sanity list — positions and speeds finite, one halving per season
-turn, the arena halving its area each time, every knockout one credited fall and never by a
-teammate. It exits 1 if a check fails. Seed 1 on 2026-11-17: 519 falls in 5:00 (453
-credited), 95–123 knockouts per team.
+One full match, 32 bots, in 50 ms ticks as fast as the machine runs: the season timeline with
+what each halving did, falls with and without credit, the score per team and per player, and
+the sanity list — for every mode positions and speeds finite and one halving per season turn;
+sumo: the arena halving its area each time, every knockout one credited fall and never by a
+teammate; hill: the zone halving its area each time, nobody falling; bomb: nobody falling,
+always one bomb per 8 players on distinct carriers. It exits 1 if a check fails. Seed 1 on
+2026-11-17: sumo 519 falls in 5:00 (453 credited), 95–123 knockouts per team; hill 744–789
+points per team, bounces 42–65 per player for the first eight; bomb 999–1260 points per team,
+2–9 passes per player for the first ten.
 
 ## Configuration (`src/config.ts`) — every value a placeholder the owner decides
 
 | Key                                                          | Value                    | Meaning                                             |
 | ------------------------------------------------------------ | ------------------------ | --------------------------------------------------- |
 | `matchDurationMs` / `seasonDurationMs`                       | 300 000 / 75 000         | 5:00, four seasons                                  |
+| `mode`                                                       | `'sumo'`                 | the rules; `modeConfig` sets a mode and its times   |
+| `wallHalf`                                                   | 700                      | hill and bomb: the walled square, 1400 wide         |
+| `hill.zoneRadius` / `hill.bounceMs`                          | 300 / 1000               | the zone at the start; a bounce's window            |
+| `bomb.playersPerBomb` / `bomb.passBackMs`                    | 8 / 1000                 | bombs per players; no pass back before              |
 | `arenaRadius`                                                | 900                      | the start; × 1/√2 at each halving                   |
 | `arenaShrinkMs`                                              | 2000                     | the edge eases in                                   |
 | `ghostRadius`                                                | 16                       |                                                     |

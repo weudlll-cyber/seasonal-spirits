@@ -8,3 +8,5 @@ export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './l
 export { Trails, drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
 export { LEGEND, type LegendMarker } from './legend.js';
 export { CLOCK_HEIGHT, drawClock, mmss } from './clock.js';
+export { clientConfig, fuseLeft, modeOf, modeWords, type ModeWords } from './modes.js';
+export { drawBomb } from './bomb.js';

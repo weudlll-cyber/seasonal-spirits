@@ -17,9 +17,10 @@ function s(serverMs: number, x: number, y: number): BufferedState {
       flags: 0,
       nextMatchMs: 0,
       teamScore: [0, 0, 0, 0],
-      arenaRadius: 900,
-      arenaNext: 636.4,
-      ghosts: [{ id: 1, x, y, vx: 0, vy: 0, team: 0, knockouts: 0, dashLeftMs: 0, flags: 0 }],
+      mode: 0,
+      area: { x: 1000, y: 1000, r: 900 },
+      next: { x: 1000, y: 1000, r: 636.4 },
+      ghosts: [{ id: 1, x, y, vx: 0, vy: 0, team: 0, score: 0, dashLeftMs: 0, flags: 0 }],
     },
   };
 }

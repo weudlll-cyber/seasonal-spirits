@@ -7,9 +7,9 @@ Client URL: follows once the hand-over piece is done.
 | 1 Close Seasonal Spirits                | done    | tag `v5-prototype` (on `d635cf2`); merge `a09f803` "merge: Seasonal Spirits paused"; `feat/v5-rules` and `chore/pause` deleted          |
 | 2 The Sumo prototype                    | done    | `a8bfb32` on `proto/sumo`; CI 43981811562 and CodeQL 43981811448 green; human-like bots (addendum 2) folded in                         |
 | 3 Play and check smoothness             | done    | two full matches at both sizes; tick mean 0.096 ms, max 8.9 ms (in-process); see "Piece 3" below                                       |
-| 5 Modes                                 | open    |                                                                                                                                        |
-| 6 Mode "King of the Season" (hill)      | open    |                                                                                                                                        |
-| 7 Mode "Halving bomb" (bomb)            | open    |                                                                                                                                        |
+| 5 Modes                                 | done    | one shared core, a mode per match (`sumo`, `hill`, `bomb`); `pnpm dev` rotates; help, banner, recap per mode |
+| 6 Mode "King of the Season" (hill)      | done    | walls, zone in the season's quarter, 1 point/s inside, jump and halving every 45 s, "King", "Bouncer"           |
+| 7 Mode "Halving bomb" (bomb)            | done    | walls, 1 point/s, one bomb per 8, pass by touch, no pass back for 1 s, every 20 s it goes off, "Hot hands", "Cool head" |
 | 8 Hand over                             | open    |                                                                                                                                        |
 
 ## Needs the owner's word

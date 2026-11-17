@@ -1,13 +1,15 @@
 // Seasonal Sumo — where the client draws its own ghost (from Seasonal Spirits' session
 // 2026-11-16-RESPONSE): moved at once by the player's own direction and dash with the server's
 // movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity), pulled
-// smoothly towards what the server says, snapped to it when far off. Display only: the
-// server's position is the truth and nothing of this leaves the client (THREATS row 36).
+// smoothly towards what the server says, snapped to it when far off; inside the walls of hill
+// and bomb as the core keeps it (fieldBounds). Display only: the server's position is the
+// truth and nothing of this leaves the client (THREATS row 36).
 
 import {
   DEFAULT_CONFIG,
   clamp,
   dashVelocity,
+  fieldBounds,
   stepGhost,
   type GameConfig,
   type Motion,
@@ -37,12 +39,17 @@ const MAX_FRAME_MS = 100; // a stalled tab does not fling the ghost forward
 type Point = Motion & { at: number };
 
 export class OwnPrediction {
-  private readonly cfg: GameConfig;
+  private cfg: GameConfig;
   // The path the own inputs alone give, and the correction added to it for drawing.
   private path: Point[] = [];
   private offset = { x: 0, y: 0 };
 
   constructor(cfg: GameConfig = DEFAULT_CONFIG) {
+    this.cfg = cfg;
+  }
+
+  // The rules of the mode on screen (its walls); the server's rotation changes them.
+  useConfig(cfg: GameConfig): void {
     this.cfg = cfg;
   }
 
@@ -72,10 +79,10 @@ export class OwnPrediction {
       this.correct(server, dt);
     }
     const head = this.path.at(-1) ?? server;
-    const size = this.cfg.fieldSize;
+    const b = fieldBounds(this.cfg);
     return {
-      x: clamp(head.x + this.offset.x, 0, size),
-      y: clamp(head.y + this.offset.y, 0, size),
+      x: clamp(head.x + this.offset.x, b.lo, b.hi),
+      y: clamp(head.y + this.offset.y, b.lo, b.hi),
     };
   }
 

@@ -1,7 +1,8 @@
 // Seasonal Sumo — binary state encoding of a match, sent by the server every tick.
 // One encoding only: viewer, client and probe decode it, and everything a client shows comes
-// from it. Seasons travel as their index in the real order (0 Spring … 3 Winter); the arena's
-// radii in tenths of a field unit.
+// from it. Seasons travel as their index in the real order (0 Spring … 3 Winter), the game
+// mode as its index in game-core's GAME_MODES (0 sumo, 1 hill, 2 bomb); the discs (the arena,
+// the zone) in tenths of a field unit.
 
 export interface GhostState {
   id: number; // 0..255
@@ -10,7 +11,7 @@ export interface GhostState {
   vx: number; // units/s, −32768..32767: the own ghost's prediction starts from it
   vy: number;
   team: number; // 0..3
-  knockouts: number; // 0..255
+  score: number; // 0..65535: the mode's score (sumo knockouts, hill and bomb whole points)
   dashLeftMs: number; // until the next dash is allowed, in steps of 20 ms (the cooldown ring)
   flags: number; // GHOST_* bits
 }
@@ -20,6 +21,14 @@ export const GHOST_DASHING = 2; // a dash in progress: it knocks what it hits
 export const GHOST_FALLING = 4; // falling off the arena (the animation)
 export const GHOST_OUT = 8; // fallen, waiting to respawn: not drawn
 export const GHOST_PROTECTED = 16; // just respawned: nothing pushes it
+export const GHOST_BOMB = 32; // bomb mode: it carries a bomb
+
+// A disc on the field: sumo's arena, the hill's zone.
+export interface WireDisc {
+  x: number;
+  y: number;
+  r: number;
+}
 
 export interface ServerState {
   tick: number; // u32 since server start
@@ -33,9 +42,10 @@ export interface ServerState {
   countdownMs: number | null;
   flags: number; // STATE_* bits
   nextMatchMs: number; // during the result: ms until the next match starts; else 0
-  teamScore: [number, number, number, number]; // knockouts per team
-  arenaRadius: number; // the edge now
-  arenaNext: number; // the edge after the next halving: the dashed ring of its countdown
+  teamScore: [number, number, number, number]; // the mode's score per team
+  mode: number; // index in GAME_MODES
+  area: WireDisc | null; // drawn glowing: sumo's arena, the hill's zone; null in bomb
+  next: WireDisc | null; // after the next halving: the dashed outline of its countdown
   ghosts: GhostState[]; // up to 255
 }
 
@@ -50,11 +60,12 @@ export const STATE_MATCH_END_EVENT = 8;
 
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonNumber u8 ·
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
-// teamScore 4×u16 · arenaRadius u16 · arenaNext u16 (tenths) · ghost count u8.
-// Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 · knockouts u8 · dashLeft u8
+// teamScore 4×u16 · mode u8 · area x, y, r 3×u16 · next x, y, r 3×u16 (tenths; r 0 = none)
+// · ghost count u8.
+// Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 · score u16 · dashLeft u8
 // (20 ms steps) · flags u8. All little endian.
-export const HEADER_BYTES = 36;
-export const GHOST_BYTES = 13;
+export const HEADER_BYTES = 45;
+export const GHOST_BYTES = 14;
 const NO_COUNTDOWN = 0xffff;
 const DASH_STEP_MS = 20;
 
@@ -90,9 +101,23 @@ function writeHeader(v: DataView, s: ServerState): void {
   v.setUint8(20, s.flags & 0xff);
   v.setUint16(21, u16(s.nextMatchMs), true);
   for (let i = 0; i < 4; i++) v.setUint16(23 + 2 * i, u16(s.teamScore[i] ?? 0), true);
-  v.setUint16(31, tenths(s.arenaRadius), true);
-  v.setUint16(33, tenths(s.arenaNext), true);
-  v.setUint8(35, s.ghosts.length);
+  v.setUint8(31, s.mode & 0xff);
+  writeDisc(v, 32, s.area);
+  writeDisc(v, 38, s.next);
+  v.setUint8(44, s.ghosts.length);
+}
+
+// A missing disc travels as zeros; a radius of 0 reads back as none.
+function writeDisc(v: DataView, o: number, d: WireDisc | null): void {
+  v.setUint16(o, tenths(d?.x ?? 0), true);
+  v.setUint16(o + 2, tenths(d?.y ?? 0), true);
+  v.setUint16(o + 4, tenths(d?.r ?? 0), true);
+}
+
+function readDisc(v: DataView, o: number): WireDisc | null {
+  const at = (i: number): number => v.getUint16(o + 2 * i, true) / 10;
+  const r = at(2);
+  return r > 0 ? { x: at(0), y: at(1), r } : null;
 }
 
 function writeGhost(v: DataView, o: number, g: GhostState): number {
@@ -102,16 +127,16 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setInt16(o + 5, i16(g.vx), true);
   v.setInt16(o + 7, i16(g.vy), true);
   v.setUint8(o + 9, g.team & 0x03);
-  v.setUint8(o + 10, u8(g.knockouts));
-  v.setUint8(o + 11, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
-  v.setUint8(o + 12, g.flags & 0xff);
+  v.setUint16(o + 10, u16(g.score), true);
+  v.setUint8(o + 12, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
+  v.setUint8(o + 13, g.flags & 0xff);
   return o + GHOST_BYTES;
 }
 
 export function decodeState(buf: Uint8Array): ServerState {
   if (buf.byteLength < HEADER_BYTES) throw new Error('decodeState: buffer too short for header');
   const v = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  const count = v.getUint8(35);
+  const count = v.getUint8(44);
   const expected = encodedSize(count);
   if (buf.byteLength !== expected) {
     throw new Error(`decodeState: expected ${expected} bytes, got ${buf.byteLength}`);
@@ -135,8 +160,9 @@ function readHeader(v: DataView): Omit<ServerState, 'ghosts'> {
     flags: v.getUint8(20),
     nextMatchMs: v.getUint16(21, true),
     teamScore: [team(0), team(1), team(2), team(3)],
-    arenaRadius: v.getUint16(31, true) / 10,
-    arenaNext: v.getUint16(33, true) / 10,
+    mode: v.getUint8(31),
+    area: readDisc(v, 32),
+    next: readDisc(v, 38),
   };
 }
 
@@ -148,8 +174,8 @@ function readGhost(v: DataView, o: number): GhostState {
     vx: v.getInt16(o + 5, true),
     vy: v.getInt16(o + 7, true),
     team: v.getUint8(o + 9),
-    knockouts: v.getUint8(o + 10),
-    dashLeftMs: v.getUint8(o + 11) * DASH_STEP_MS,
-    flags: v.getUint8(o + 12),
+    score: v.getUint16(o + 10, true),
+    dashLeftMs: v.getUint8(o + 12) * DASH_STEP_MS,
+    flags: v.getUint8(o + 13),
   };
 }

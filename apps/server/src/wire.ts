@@ -1,12 +1,15 @@
 // Seasonal Sumo — the game core's match state as the wire state every client receives.
-// One place turns the core's numbers into what clients show: per ghost its position, speed,
-// knockouts, the time to its next dash and its phase, the arena's edge now and after the next
-// halving, and the knockouts per team.
+// One place turns the core's numbers into what clients show: the game mode, per ghost its
+// position, speed, score, the time to its next dash, its phase and its bomb, the disc that
+// halves (sumo's arena, the hill's zone) now and after the next halving, and the score per
+// team.
 
 import {
+  GAME_MODES,
   SEASONS,
+  areaOf,
   isLastSeason,
-  nextRadius,
+  scoreOf,
   type GameConfig,
   type Ghost,
   type MatchEvent,
@@ -14,6 +17,7 @@ import {
   type MatchState,
 } from '@seasonal-spirits/game-core';
 import {
+  GHOST_BOMB,
   GHOST_BOT,
   GHOST_DASHING,
   GHOST_FALLING,
@@ -39,6 +43,7 @@ export interface WireContext {
 
 export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
   const teams = ctx.result.teams;
+  const area = areaOf(ctx.cfg, s);
   return {
     matchMs: s.elapsedMs,
     season: SEASONS.indexOf(s.clock.current),
@@ -53,8 +58,9 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
       (ctx.events.some((e) => e.type === 'match-end') ? STATE_MATCH_END_EVENT : 0),
     nextMatchMs: ctx.nextMatchMs,
     teamScore: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
-    arenaRadius: s.arena.radius,
-    arenaNext: nextRadius(s.arena),
+    mode: GAME_MODES.indexOf(s.mode),
+    area: area.now,
+    next: area.next,
     ghosts: s.ghosts.map((g) => ghostOnWire(ctx, s, g)),
   };
 }
@@ -68,13 +74,14 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
     vx: g.vx,
     vy: g.vy,
     team: g.team,
-    knockouts: g.knockouts,
+    score: scoreOf(s.mode, g),
     dashLeftMs: Math.max(0, g.dashReadyMs - now),
     flags:
       (ctx.isBot(g.id) ? GHOST_BOT : 0) |
       (now < g.dashUntilMs ? GHOST_DASHING : 0) |
       (g.phase === 'falling' ? GHOST_FALLING : 0) |
       (g.phase === 'out' ? GHOST_OUT : 0) |
-      (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0),
+      (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0) |
+      (s.bombs.some((b) => b.carrier === g.id) ? GHOST_BOMB : 0),
   };
 }

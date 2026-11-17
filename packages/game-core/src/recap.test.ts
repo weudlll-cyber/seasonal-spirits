@@ -1,40 +1,66 @@
-// Seasonal Sumo — the recap's awards: "Best pusher" from the fall events tick by tick (none
-// without a credited fall), "Survivor" from the result.
+// Seasonal Sumo — the recap's awards per mode, from the result: the top count wins, the lowest
+// id of equal ones, nobody for a count of 0.
 
 import { describe, expect, it } from 'vitest';
-import { NO_AWARDS, noteAwards, survivorOf, type Awards } from './recap.js';
-import type { MatchEvent, MatchResult, MatchState } from './types.js';
+import type { GameMode } from './config.js';
+import { awardsOf } from './recap.js';
+import type { PlayerResult } from './types.js';
 
-function fold(ticks: MatchEvent[][]): Awards {
-  return ticks.reduce((a, events) => noteAwards(a, { events } as MatchState), NO_AWARDS);
-}
-
-const fall = (ghost: number, by: number | null): MatchEvent => ({
-  type: 'fall',
-  ghost,
-  by,
-  atMs: 0,
+const player = (id: number, counts: Partial<PlayerResult>): PlayerResult => ({
+  id,
+  team: 0,
+  score: 0,
+  knockouts: 0,
+  falls: 0,
+  longestAliveMs: 0,
+  scoreMs: 0,
+  bounces: 0,
+  passes: 0,
+  ...counts,
 });
 
+const awards = (mode: GameMode, players: PlayerResult[]) =>
+  awardsOf({ mode, players, teams: [0, 0, 0, 0] });
+
 describe('match recap awards', () => {
-  it('leaves the best pusher out when no fall was credited', () => {
-    expect(fold([[], [fall(3, null)], [{ type: 'dash', ghost: 1 }]]).bestPusher).toBeNull();
+  it('sumo: best pusher by knockouts, survivor by the longest time without a fall', () => {
+    const players = [
+      player(1, { knockouts: 3, longestAliveMs: 80_000 }),
+      player(2, { knockouts: 3, longestAliveMs: 300_000 }),
+      player(3, { knockouts: 1, longestAliveMs: 300_000 }),
+    ];
+    expect(awards('sumo', players)).toEqual([
+      { kind: 'best-pusher', ghost: 1, value: 3 },
+      { kind: 'survivor', ghost: 2, value: 300_000 },
+    ]);
   });
 
-  it('gives the best pusher to the most knockouts; the first to reach the top keeps it', () => {
-    const a = fold([[fall(9, 2)], [fall(8, 4), fall(7, 4)], [fall(6, 2)], [fall(5, 3)]]);
-    expect(a.bestPusher).toEqual({ ghost: 4, knockouts: 2 });
+  it('hill: king by whole seconds in the zone, bouncer by opponents pushed out', () => {
+    const players = [
+      player(1, { scoreMs: 41_900, bounces: 2 }),
+      player(2, { scoreMs: 12_000, bounces: 5 }),
+    ];
+    expect(awards('hill', players)).toEqual([
+      { kind: 'king', ghost: 1, value: 41 },
+      { kind: 'bouncer', ghost: 2, value: 5 },
+    ]);
   });
 
-  it('names the survivor: the longest stretch on the arena without a fall', () => {
-    const r: MatchResult = {
-      players: [
-        { id: 1, team: 0, knockouts: 3, falls: 2, longestAliveMs: 80_000 },
-        { id: 2, team: 1, knockouts: 0, falls: 0, longestAliveMs: 300_000 },
-        { id: 3, team: 2, knockouts: 1, falls: 0, longestAliveMs: 300_000 },
-      ],
-      teams: [3, 0, 1, 0],
-    };
-    expect(survivorOf(r)).toEqual({ ghost: 2, ms: 300_000 });
+  it('bomb: hot hands by passes, cool head by points at the end', () => {
+    const players = [
+      player(1, { scoreMs: 90_500, passes: 1 }),
+      player(2, { scoreMs: 60_000, passes: 7 }),
+    ];
+    expect(awards('bomb', players)).toEqual([
+      { kind: 'hot-hands', ghost: 2, value: 7 },
+      { kind: 'cool-head', ghost: 1, value: 90 },
+    ]);
+  });
+
+  it('leaves an award out that nobody earned', () => {
+    expect(awards('sumo', [player(1, { longestAliveMs: 5000 })])).toEqual([
+      { kind: 'survivor', ghost: 1, value: 5000 },
+    ]);
+    expect(awards('hill', [player(1, { scoreMs: 500 })])).toEqual([]);
   });
 });

@@ -1,9 +1,15 @@
-// Seasonal Spirits — the match host: bots fill slots, players replace them, matches follow.
+// Seasonal Sumo — the match host: bots fill slots, players replace them, matches and modes follow.
 // Time is the dt passed in; nothing here waits.
 
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type GameConfig } from '@seasonal-spirits/game-core';
 import {
+  DEFAULT_CONFIG,
+  GAME_MODES,
+  modeConfig,
+  type GameConfig,
+} from '@seasonal-spirits/game-core';
+import {
+  GHOST_BOMB,
   GHOST_BOT,
   STATE_HALVING_EVENT,
   STATE_MATCH_END_EVENT,
@@ -123,7 +129,7 @@ describe('match host state size', () => {
       }
       expect(halvings).toBe(3);
       expect(max).toBeLessThan(1024);
-      // The state has no variable part but the ghosts: 36 + 13 · 32.
+      // The state has no variable part but the ghosts: 45 + 14 · 32.
       expect(max).toBe(encodedSize(32));
     },
   );
@@ -154,6 +160,23 @@ describe('match host lifecycle', () => {
     expect(ends.map((s) => [s.matchMs, s.countdownMs, s.flags & STATE_RESULT])).toEqual([
       [300_000, null, STATE_RESULT],
     ]);
+  });
+
+  it('rotates the modes match by match when asked, each with its own rules and bots', () => {
+    const short = { ...DEFAULT_CONFIG, seasonDurationMs: 250, matchDurationMs: 1000 };
+    const host = new MatchHost({ ...short, resultPauseMs: 500 }, 8, 1, GAME_MODES);
+    const modes: number[] = [];
+    let carriers = new Set<number>();
+    const hill = modeConfig(DEFAULT_CONFIG, 'hill').matchDurationMs;
+    for (const s of runFor(host, 1000 + 500 + hill + 500 + 1000)) {
+      if (modes.at(-1) !== s.mode) modes.push(s.mode);
+      if (s.mode === 2)
+        carriers = new Set(s.ghosts.filter((g) => g.flags & GHOST_BOMB).map((g) => g.id));
+      // Sumo and hill draw a disc, bomb none.
+      expect(s.area === null, `mode ${s.mode}`).toBe(s.mode === 2);
+    }
+    expect(modes).toEqual([0, 1, 2]);
+    expect(carriers.size).toBe(1); // 8 players: one bomb
   });
 
   it('shows the result for the pause, then starts the next match with the same players', () => {

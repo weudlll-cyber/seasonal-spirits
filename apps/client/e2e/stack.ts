@@ -34,7 +34,9 @@ export interface ClientView {
   team: number | null;
   own: { x: number; y: number; flags: number; dashLeftMs: number } | null;
   season: number | null;
-  arena: { radius: number; next: number } | null;
+  gameMode: 'sumo' | 'hill' | 'bomb' | null;
+  area: { x: number; y: number; r: number } | null; // sumo's arena, the hill's zone
+  next: { x: number; y: number; r: number } | null;
   teamScore: number[] | null;
   halvings: number;
   countdown: { ms: number; toEnd: boolean } | null; // the clock's countdown (main.ts)

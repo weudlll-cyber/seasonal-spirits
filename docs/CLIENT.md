@@ -2,8 +2,10 @@
 
 Plain TypeScript, Canvas 2D and Vite, no game framework. It sends a direction and the one
 action, Dash; everything it shows comes from the server's state message (docs/SERVER.md).
-Development mode only: there is no sign-in yet. On `proto/sumo` it plays Seasonal Sumo
-(docs/GAME-CORE.md); Seasonal Spirits' client is on `master`.
+Development mode only: there is no sign-in yet. On `proto/sumo` it plays Seasonal Sumo and
+its sister modes, King of the Season and Halving Bomb (docs/GAME-CORE.md "Game modes"); the
+mode comes with every state, and field, clock, help, banner and result follow it. Seasonal
+Spirits' client is on `master`.
 
 ## Files
 
@@ -12,20 +14,20 @@ Development mode only: there is no sign-in yet. On `proto/sumo` it plays Seasona
 | `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook    |
 | `src/scene.ts`             | One canvas frame: arena, ghosts, labels below the bar, clock, the minimap        |
 | `src/view-mode.ts`         | "Near" / "Overview": the corner button and V, remembered                         |
-| `src/minimap.ts`           | The minimap in "Near", top right: arena edge, ghosts, the camera's frame         |
+| `src/minimap.ts`           | The minimap in "Near", top right: arena or walls and zone, ghosts, the camera    |
 | `src/storage.ts`           | Remembered choices (mute, view, help seen) in localStorage, safe when it throws  |
-| `src/help.ts`              | The help overlay: three rules with drawings made in code, "What you see", keys   |
-| `src/scores.ts`            | The team scores in the band: knockouts per team, the leader framed               |
+| `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys     |
+| `src/scores.ts`            | The team scores in the band: the mode's score per team, the leader framed        |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, the recap        |
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated    |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server |
 | `src/input.ts`             | Keyboard (WASD/arrows, Space to dash) and the touch joystick                     |
 | `src/hud.ts`               | The Dash button and its cooldown ring, announcements and flash, notices, mute    |
-| `src/result.ts`            | Result screen: awards, knockouts per team and player, the bridge box             |
+| `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box     |
 | `src/sound.ts`             | The halving tone (Web Audio)                                                     |
 | `src/config.ts`            | Bridge box on/off and its links, camera span                                     |
 | `e2e/`                     | Playwright config, helpers and the specs                                         |
-| `packages/render` (shared) | The Canvas drawing the client and the viewer share: arena, ghosts, clock         |
+| `packages/render` (shared) | The drawing client and viewer share: field per mode, ghosts, bomb, clock, words  |
 
 ## Joining and watching
 
@@ -45,35 +47,47 @@ hello and nothing more.
   twice the same.
 - **The own ghost answers at once**: it is drawn where the own input — with momentum, top
   speed and a dash — has already taken it, moved with the server's own rules (`stepGhost`,
-  `dashVelocity`), pulled smoothly towards the server's position and restarted from the
+  `dashVelocity`, the walls of the mode on screen), pulled smoothly towards the server's position and restarted from the
   server's position and speed when more than `SNAP_DISTANCE` off (a knock it could not see
   coming, a respawn). Display only (THREATS row 36). Every other ghost is drawn 100 ms behind
   the newest state, interpolated.
 
 ## Screen
 
-- **Top bar.** The season clock (the four seasons, the time left, the countdown in red), and
+- **Top bar.** The season clock (four seasons — a window that moves on through bomb's nine —,
+  the mode's name, the time left, the countdown in red), and
   under it the band: "You are Team <Season>" in the team colour, the corner buttons, and the
   team scores ("Spring 12 · Summer 9 …", the leader framed). The band is 68 px
   (`BAND_HEIGHT`).
-- **Arena.** A dark void around a disc in the season's ground colour with a glowing edge in
-  the season's colour; during the countdown before a halving a dashed ring shows the edge
-  after it; after the banner the edge eases in over 2 s.
+- **Field** (render `field.ts`). Sumo: a dark void around a disc in the season's ground colour
+  with a glowing edge in the season's colour; during the countdown before a halving a dashed
+  ring (in the next season's colour) shows the edge after it; after the banner the edge eases
+  in over 2 s. Hill and bomb: a walled square with glowing walls; in hill the zone glows in the
+  season's colour, and in the countdown a dashed ring shows where it jumps.
+- **Bomb** (render `bomb.ts`): a carrier has a ticking bomb drawn above it — black with a
+  pale rim, a fuse as long as the share of the time left before the bombs go off, and a
+  flickering spark; its label keeps clear of it.
 - **Ghosts** (look B of Seasonal Spirits): circles in their team colour, a thick white ring
   and "You" for the own one; a ghost faster than running (a dash, a knock) leaves a short
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
-  wears a pale dashed ring (protected). Labels: the name, "· 2" for 2 knockouts, the short tag
+  wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
+  points), the short tag
   in a crowd; never on another label, under the bar or past the screen edge.
 - **View modes**: "Near" follows the own ghost (about 1100 field units on the shorter side)
   with the minimap top right; "Overview" shows the whole field.
-- **Halving staging**: the clock counts the last 10 s down in red ("HALVING in 0:06 — the
-  arena halves, then Summer is in season"); at the halving a large "HALVING — the arena halves
-  · <Season> is in season" (3.5 s), a short flash and one tone. The match end the same way:
-  "LAST CHANCE — push them off", then "MATCH OVER".
-- **Help** (`src/help.ts`): shown once on the first visit, any time with "?": three rules with
-  drawings — push the other teams off; dash with Space or the button; at every halving the
-  arena halves —, "What you see" (render `LEGEND`, one drawing each), the controls.
-- **Result**: "Best pusher" and "Survivor", knockouts per team and the top eight players, the
+- **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
+  seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
+  zone jumps to Summer and halves", "— the bomb goes off"); at the halving a large "HALVING —
+  the arena halves · <Season> is in season" ("the zone halves · …", "the bomb goes off";
+  3.5 s), a short flash and one tone. The match end the same way: "LAST CHANCE — push them
+  off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
+- **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
+  rules with drawings (sumo: push them off, dash, the arena halves; hill: stand in the zone,
+  push them out, the zone jumps and halves; bomb: points every second, pass the bomb, it
+  goes off and halves the carrier's points), "What you see" (render `LEGEND`, one drawing
+  each), the controls. It follows the mode of the match on screen.
+- **Result**: the mode's two awards ("Best pusher"/"Survivor", "King"/"Bouncer", "Hot
+  hands"/"Cool head"), the score per team and the top eight players, the
   own place, the time to the next match, and the bridge box: "This is how Seasonal Tokens
   work: every halving cuts in half — here it cuts the arena.", "Start here", "Try the
   simulator", "No financial advice".

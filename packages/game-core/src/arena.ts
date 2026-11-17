@@ -1,16 +1,17 @@
 // Seasonal Sumo — the arena: a disc in the middle of the field. At every halving its area
 // halves (radius × 1/√2) and the edge eases in over arenaShrinkMs; a ghost whose centre is
 // outside the edge falls. Also where ghosts start and respawn: each team on its own quarter.
+// In the walled modes the arena is the disc inside the walls and never halves (no falls).
 
-import type { GameConfig } from './config.js';
+import { walled, type GameConfig } from './config.js';
 import { distance } from './geometry.js';
 import type { Arena, Ghost, MatchState, Team, Vec } from './types.js';
 
-const HALF_AREA = Math.SQRT1_2; // the radius factor that halves a disc's area
+export const HALF_AREA = Math.SQRT1_2; // the radius factor that halves a disc's area
 
 export function newArena(cfg: GameConfig): Arena {
   const c = cfg.fieldSize / 2;
-  const r = cfg.arenaRadius;
+  const r = walled(cfg) ? cfg.wallHalf : cfg.arenaRadius;
   return { centre: { x: c, y: c }, radius: r, from: r, target: r, shrinkFromMs: 0 };
 }
 
@@ -47,6 +48,12 @@ const at = (a: Readonly<Arena>, angle: number, r: number): Vec => ({
   x: a.centre.x + Math.cos(angle) * r,
   y: a.centre.y + Math.sin(angle) * r,
 });
+
+// The middle of a team's (or its season's) quarter of the walled square: on the diagonal, half
+// way to the corner — the hill's zone sits there.
+export function quarterCentre(cfg: GameConfig, a: Readonly<Arena>, team: Team): Vec {
+  return at(a, teamAngle(team), cfg.wallHalf * Math.SQRT2 * 0.5);
+}
 
 // The start: each team's ghosts spread over its quarter on a ring at startSpread of the
 // radius; `slot` places a ghost among its teammates (`index` of `of`).

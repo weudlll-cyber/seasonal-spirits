@@ -8,7 +8,7 @@ import {
   type GameAction,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { seasonName, type Rect } from '@seasonal-spirits/render';
+import { modeWords, seasonName, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
 // "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
@@ -46,13 +46,13 @@ export class Hud {
     this.dash.classList.toggle('ready', dashLeftMs === 0);
   }
 
-  // A large announcement and a short flash at every deadline — "HALVING — the arena halves ·
-  // <Season> is in season" at a halving, "MATCH OVER" at the match end.
+  // A large announcement and a short flash at every deadline — the mode's halving ("HALVING —
+  // the arena halves · <Season> is in season", "HALVING — the bomb goes off") or "MATCH OVER".
   deadline(s: ServerState): void {
     const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;
     this.announce.textContent = end
       ? 'MATCH OVER'
-      : `HALVING — the arena halves · ${seasonName(s.season)} is in season`;
+      : `HALVING — ${modeWords(s.mode).banner(seasonName(s.season))}`;
     this.announce.hidden = false;
     this.flash.classList.remove('go');
     this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation

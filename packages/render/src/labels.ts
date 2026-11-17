@@ -1,7 +1,7 @@
 // Seasonal Sumo — where the ghosts' name labels go (from Seasonal Spirits, owner's play tests
 // 2026-11-15 and 2026-11-16). Every ghost on screen carries a label or at least its short tag,
 // never two on top of each other, never on another ghost, never under the top bar or past the
-// screen edge. Also the label's words: name and knockouts. Pure: positions and widths in,
+// screen edge. Also the label's words: name and the mode's score. Pure: positions and widths in,
 // placements out, tested without a canvas.
 
 import { GHOST_BOT, ghostName, ghostTag, type GhostState } from '@seasonal-spirits/protocol';
@@ -22,12 +22,12 @@ export interface LabelCandidate {
   // 2026-11-16-LOOK-B: "You · 6  (5 half)" pushed in from the screen edge onto the own ring,
   // the ring hid its last letter).
   r: number;
-  full: string; // the name (with the knockouts once it has some)
+  full: string; // the name (with the score once it has some)
   fullWidth: number;
   tag: string; // the short tag: the bot's number, "P<n>" for a player, "You"
   tagWidth: number;
   own: boolean;
-  knockouts: number; // more knockouts, a better spot
+  score: number; // a higher score, a better spot
 }
 
 export interface PlacedLabel {
@@ -48,18 +48,18 @@ interface Spot {
   leader: boolean;
 }
 
-// A ghost's label: the own one "You", a ghost with knockouts its name and their count ("Bot 3 ·
+// A ghost's label: the own one "You", a ghost with a score its name and the score ("Bot 3 ·
 // 2"), the others their name when `labelAll` (spectators, the viewer), else their tag. The tag
 // is the fallback in a crowd.
 export function labelText(
-  g: Pick<GhostState, 'id' | 'flags' | 'knockouts'>,
+  g: Pick<GhostState, 'id' | 'flags' | 'score'>,
   own: boolean,
   labelAll: boolean,
 ): { full: string; tag: string } {
   const bot = (g.flags & GHOST_BOT) !== 0;
   const tag = own ? 'You' : ghostTag(g.id, bot);
   const name = own ? 'You' : ghostName(g.id, bot);
-  if (g.knockouts > 0) return { full: `${name} · ${g.knockouts}`, tag };
+  if (g.score > 0) return { full: `${name} · ${g.score}`, tag };
   return { full: own || labelAll ? name : tag, tag };
 }
 
@@ -149,7 +149,7 @@ export function placeLabels(
   avoid: readonly Rect[] = [],
 ): PlacedLabel[] {
   const order = [...candidates].sort(
-    (a, b) => Number(b.own) - Number(a.own) || b.knockouts - a.knockouts || a.id - b.id,
+    (a, b) => Number(b.own) - Number(a.own) || b.score - a.score || a.id - b.id,
   );
   const taken: Rect[] = [...avoid, ...candidates.map(bodyBox)];
   const placed = order.map((c) => {

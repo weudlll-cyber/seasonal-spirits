@@ -1,15 +1,18 @@
 // Seasonal Sumo — the ghosts in Seasonal Spirits' look B: the body in its team's colour,
 // players and bots alike, a thick white ring for "You". A fast ghost — dashing or knocked
 // flying — leaves a short trail in its team's colour; a ghost falling off the arena shrinks and
-// fades (fallMs); one out is not drawn; one just back (protected) wears a pale dashed ring.
+// fades (fallMs); one out is not drawn; one just back (protected) wears a pale dashed ring; a
+// bomb carrier has the ticking bomb above it (bomb.ts).
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
+  GHOST_BOMB,
   GHOST_FALLING,
   GHOST_OUT,
   GHOST_PROTECTED,
   type GhostState,
 } from '@seasonal-spirits/protocol';
+import { bombReach, drawBomb } from './bomb.js';
 import {
   LABEL_HEIGHT,
   labelText,
@@ -61,6 +64,7 @@ export interface GhostStyle {
   trails: Trails;
   nowMs: number; // drives the fall animation
   labelAll: boolean; // every ghost named (spectators, the viewer)
+  fuse: number; // the bombs' fuse: 1 full … 0 going off (fuseLeft in modes.ts)
 }
 
 export function ghostRadiusPx(v: View): number {
@@ -138,10 +142,11 @@ function drawBody(v: View, g: GhostState, style: GhostStyle): void {
     circle(v, g.x, g.y, r + OWN_RING);
     ctx.stroke();
   }
+  if (g.flags & GHOST_BOMB) drawBomb(v, { x: g.x, y: g.y, r }, style.fuse, style.nowMs);
 }
 
 // How far from the centre drawBody draws for a ghost of body radius `r` pixels: what its label
-// keeps clear of (LabelCandidate.r).
+// keeps clear of (LabelCandidate.r); a bomb above it counts in full.
 export function ghostReach(
   r: number,
   g: Pick<GhostState, 'id' | 'flags'>,
@@ -150,6 +155,7 @@ export function ghostReach(
   const outside = [
     g.id === ownId ? OWN_RING + 1.5 : 0,
     g.flags & GHOST_PROTECTED ? PROTECT_RING + 1 : 0,
+    g.flags & GHOST_BOMB ? bombReach(r) - r : 0,
   ];
   return r + Math.max(...outside);
 }
@@ -173,7 +179,7 @@ function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate 
     tag,
     tagWidth: ctx.measureText(tag).width,
     own,
-    knockouts: g.knockouts,
+    score: g.score,
   };
 }
 

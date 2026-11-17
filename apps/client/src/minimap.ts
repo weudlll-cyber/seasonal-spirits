@@ -1,11 +1,19 @@
 // Seasonal Sumo — the minimap in "Near" (owner's play test 2026-11-15: only part of the field
-// is visible): the whole field in the top right corner below the bar, with the arena's edge,
-// the ghosts as tiny dots in their team colours, the own ghost, and the part of the field the
-// camera shows.
+// is visible): the whole field in the top right corner below the bar, with the arena's edge
+// or the walls and the hill's zone, the ghosts as tiny dots in their team colours, the own
+// ghost, and the part of the field the camera shows.
 
-import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
+import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import { GHOST_OUT, type GhostState, type ServerState } from '@seasonal-spirits/protocol';
-import { FIELD, LINE, TEXT, seasonColour, type Rect, type View } from '@seasonal-spirits/render';
+import {
+  FIELD,
+  LINE,
+  TEXT,
+  clientConfig,
+  seasonColour,
+  type Rect,
+  type View,
+} from '@seasonal-spirits/render';
 
 const MARGIN = 10;
 
@@ -23,6 +31,31 @@ export interface MinimapInput {
   camera: View; // the main view, for the outline of what it shows
 }
 
+interface MapScale {
+  px: (x: number) => number;
+  py: (y: number) => number;
+  k: number; // map pixels per field unit
+  dot: (x: number, y: number, r: number) => void;
+}
+
+// The walls of hill and bomb, the disc of sumo's arena or the hill's zone (before the first
+// state: the arena as it starts).
+function drawGround(ctx: CanvasRenderingContext2D, s: ServerState | undefined, m: MapScale): void {
+  const c = DEFAULT_CONFIG.fieldSize / 2;
+  const cfg = clientConfig(s?.mode ?? 0);
+  ctx.strokeStyle = seasonColour(s?.season ?? 0);
+  ctx.lineWidth = 1.5;
+  if (walled(cfg)) {
+    const h = cfg.wallHalf;
+    ctx.strokeRect(m.px(c - h), m.py(c - h), 2 * h * m.k, 2 * h * m.k);
+  }
+  const area = s ? s.area : { x: c, y: c, r: DEFAULT_CONFIG.arenaRadius };
+  if (area) {
+    m.dot(area.x, area.y, area.r * m.k);
+    ctx.stroke();
+  }
+}
+
 export function drawMinimap(ctx: CanvasRenderingContext2D, at: Rect, m: MinimapInput): void {
   const size = at.right - at.left;
   const k = size / FIELD;
@@ -34,11 +67,7 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, at: Rect, m: MinimapI
   };
   ctx.fillStyle = 'rgba(5, 8, 11, 0.82)';
   ctx.fillRect(at.left, at.top, size, size);
-  const c = DEFAULT_CONFIG.fieldSize / 2;
-  dot(c, c, (m.state?.arenaRadius ?? DEFAULT_CONFIG.arenaRadius) * k);
-  ctx.strokeStyle = seasonColour(m.state?.season ?? 0);
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  drawGround(ctx, m.state, { px, py, k, dot });
   for (const g of m.ghosts) {
     if (g.id === m.ownId || g.flags & GHOST_OUT) continue;
     dot(g.x, g.y, 1.6);

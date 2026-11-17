@@ -1,5 +1,5 @@
 // Seasonal Sumo — the human-like layer over the bot's brain (owner requirement 2026-11-17: bots
-// fill seats and play like an average human). One layer for every mode:
+// fill seats and play like an average human). One layer over every mode's brain:
 // - it sees what a player's "Near" view shows, a reaction time late (human/perception.ts);
 // - each bot has its own reaction time from bots.reactionMs, varied per decision;
 // - its direction carries aim noise; a good dash chance is sometimes missed (too late), and now
@@ -13,12 +13,21 @@ import type { GameConfig } from '../config.js';
 import { clamp } from '../geometry.js';
 import { NEAR_VIEW, perceive } from '../human/perception.js';
 import { mulberry32 } from '../rng.js';
-import { IDLE, type Intent } from '../types.js';
+import { IDLE, type Ghost, type Intent, type MatchState } from '../types.js';
+import { bombIntent } from './bomb.js';
 import { botIntent, type Bot } from './bot.js';
+import { hillIntent } from './hill.js';
 
 export type { Bot } from './bot.js';
 
 const TICK_MS = 50; // reactions count in whole ticks, so perception keeps few past lists
+
+type Brain = (cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>) => Intent;
+const BRAINS: Record<GameConfig['mode'], Brain> = {
+  sumo: botIntent,
+  hill: hillIntent,
+  bomb: bombIntent,
+};
 
 // What a human-like bot is at this moment: for the tests.
 export interface Mind {
@@ -58,7 +67,7 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
     const sight = { view: NEAR_VIEW, reactionMs: Math.round(delay / TICK_MS) * TICK_MS };
     const seen = perceive(cfg.fieldSize, s, me.id, sight);
     if (!seen) return IDLE;
-    const intent = botIntent(tuned, seen.state, seen.me);
+    const intent = BRAINS[cfg.mode](tuned, seen.state, seen.me);
     // A weaker form aims worse: the noise grows from × form[0]… to × 1 / form.
     const noise = ((rng() * 2 - 1) * ((b.aimNoiseDeg * Math.PI) / 180)) / form;
     const dir = rotate(intent, noise);

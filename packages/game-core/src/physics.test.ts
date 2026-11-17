@@ -1,8 +1,9 @@
 // Seasonal Sumo — the physics: running with momentum and a top speed, the dash and its
 // cooldown (the core's, whatever a client sends), the knock of a dash, the team in season
-// pushing harder, the field's bounds and bad input.
+// pushing harder, the field's bounds, the walls of hill and bomb, and bad input.
 
 import { describe, expect, it } from 'vitest';
+import { modeConfig } from './config.js';
 import { stepGhost } from './geometry.js';
 import { act, cfg, ghost, matchOf, place, runTo } from './test-helpers.js';
 
@@ -13,7 +14,7 @@ const two = [
 
 describe('running', () => {
   it('speeds up with momentum to the top speed and never past it by running', () => {
-    let m = { x: 1000, y: 1000, vx: 0, vy: 0 };
+    let m = { x: 100, y: 1000, vx: 0, vy: 0 }; // room for 5 s at top speed
     m = stepGhost(cfg, m, { dx: 1, dy: 0 }, 50);
     expect(m.vx).toBeGreaterThan(0);
     expect(m.vx).toBeLessThan(cfg.maxSpeed / 2);
@@ -47,6 +48,15 @@ describe('running', () => {
     const m = stepGhost(cfg, { x: 1, y: 1999, vx: -5000, vy: 5000 }, { dx: 0, dy: 0 }, 1000);
     expect(m.x).toBe(0);
     expect(m.y).toBe(cfg.fieldSize);
+  });
+
+  it('stops at a wall in the walled modes, keeping its speed along the wall', () => {
+    const walls = modeConfig(cfg, 'hill');
+    const edge = cfg.fieldSize / 2 + walls.wallHalf - walls.ghostRadius;
+    const m = stepGhost(walls, { x: edge - 5, y: 1000, vx: 600, vy: 200 }, { dx: 1, dy: 0 }, 50);
+    expect(m.x).toBe(edge);
+    expect(m.vx).toBe(0);
+    expect(m.vy).toBeGreaterThan(0);
   });
 });
 

@@ -56,21 +56,21 @@ describe('parseServerMessage', () => {
   });
 });
 
-// The match recap: knockouts per team and player, and the awards.
+// The match recap: the mode's score per team and player, and the awards.
 describe('parseServerMessage: recap', () => {
   const players = Array.from({ length: 32 }, (_, i) => ({
     ghost: i + 1,
     team: i % 4,
-    knockouts: 4,
+    score: 4,
   }));
   const recap = {
     kind: 'recap',
     teams: [120, 99, 0, 33],
     players,
-    awards: {
-      bestPusher: { ghost: 2, knockouts: 9 },
-      survivor: { ghost: 11, ms: 182_000 },
-    },
+    awards: [
+      { kind: 'best-pusher', ghost: 2, value: 9 },
+      { kind: 'survivor', ghost: 11, value: 182_000 },
+    ],
   };
 
   it('reads a full recap of 32 players with its awards, under the size limit', () => {
@@ -79,10 +79,8 @@ describe('parseServerMessage: recap', () => {
   });
 
   it('reads a recap without the awards nobody earned', () => {
-    const text = JSON.stringify({ ...recap, awards: { survivor: { ghost: 3, ms: 1000 } } });
-    expect(parseServerMessage(text)).toMatchObject({
-      awards: { survivor: { ghost: 3, ms: 1000 } },
-    });
+    const text = JSON.stringify({ ...recap, awards: [] });
+    expect(parseServerMessage(text)).toMatchObject({ awards: [] });
   });
 
   it('drops a recap with any field out of type or range, or over the size limit', () => {
@@ -90,16 +88,18 @@ describe('parseServerMessage: recap', () => {
       { ...recap, teams: [1, 2, 3] },
       { ...recap, teams: [1, 2, 3, -1] },
       { ...recap, teams: [1, 2, 3, 0.25] },
-      { ...recap, players: [{ ghost: 300, team: 0, knockouts: 1 }] },
-      { ...recap, players: [{ ghost: 1, team: 4, knockouts: 1 }] },
-      { ...recap, players: [{ ghost: 1, team: 0, knockouts: 1.5 }] },
+      { ...recap, players: [{ ghost: 300, team: 0, score: 1 }] },
+      { ...recap, players: [{ ghost: 1, team: 4, score: 1 }] },
+      { ...recap, players: [{ ghost: 1, team: 0, score: 1.5 }] },
       { ...recap, players: 'all' },
       { ...recap, awards: null },
-      { ...recap, awards: { survivor: { ghost: 2, ms: -1 } } },
-      { ...recap, awards: { bestPusher: { ghost: 300, knockouts: 2 } } },
-      { ...recap, awards: { bestPusher: { ghost: 7, knockouts: 0 } } },
-      { ...recap, awards: { survivor: { ghost: 2, ms: 'long' } } },
-      { ...recap, players: [...players, ...players, { ghost: 1, team: 0, knockouts: 0 }] },
+      { ...recap, awards: [{ kind: 'survivor', ghost: 2, value: -1 }] },
+      { ...recap, awards: [{ kind: 'best-pusher', ghost: 300, value: 2 }] },
+      { ...recap, awards: [{ kind: 'best-pusher', ghost: 7, value: 0 }] },
+      { ...recap, awards: [{ kind: 'survivor', ghost: 2, value: 'long' }] },
+      { ...recap, awards: [{ kind: '<b>King</b>', ghost: 2, value: 3 }] },
+      { ...recap, awards: Array.from({ length: 9 }, () => recap.awards[0]) },
+      { ...recap, players: [...players, ...players, { ghost: 1, team: 0, score: 0 }] },
       { ...recap, pad: 'x'.repeat(4096) },
     ];
     for (const r of bad)
