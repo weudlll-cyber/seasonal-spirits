@@ -6,7 +6,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { WebSocketServer, type RawData, type WebSocket } from 'ws';
-import type { GameConfig, GameMode } from '@seasonal-spirits/game-core';
+import { tunedFields, type GameConfig, type GameMode } from '@seasonal-spirits/game-core';
 import {
   MAX_CLIENT_MESSAGE_BYTES,
   encodeState,
@@ -19,6 +19,7 @@ import {
 import { rawToText, withinRate, type ClientRecord } from './client-record.js';
 import { handleHttp } from './http-routes.js';
 import { MatchHost } from './match-host.js';
+import { TUNE_PATH, tuningRoute, tuningText, type TuningRoute } from './tuning-route.js';
 
 export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
@@ -32,6 +33,9 @@ export interface ServerConfig {
   helloTimeoutMs: number; // a connection that has not said hello by then is closed
   devCors: boolean; // CORS `*` on /metrics-lite, development only
   firstSeed: number;
+  // The owner's live tuning channel for these pages (the viewer; DEV_TUNING=1, development
+  // only); absent or null: no channel (tuning-route.ts).
+  tuningOrigins?: readonly string[] | null;
 }
 
 // WebSocket close code 1008: policy violation.
@@ -53,6 +57,7 @@ export interface ServerMetrics {
 export class GameServer {
   private readonly cfg: ServerConfig;
   private readonly host: MatchHost;
+  private readonly tuning: TuningRoute | null;
   private http!: http.Server;
   private wss!: WebSocketServer;
   private tickTimer: NodeJS.Timeout | null = null;
@@ -73,11 +78,18 @@ export class GameServer {
   constructor(cfg: ServerConfig) {
     this.cfg = cfg;
     this.host = new MatchHost(cfg.game, cfg.maxGhosts, cfg.firstSeed, cfg.modes);
+    this.tuning = tuningRoute(cfg.tuningOrigins, cfg.game, (t) => {
+      // The match and its bots take it at the next tick; every client hears it, so its own
+      // ghost's prediction keeps to the server's rules.
+      this.host.tune(tunedFields(t));
+      this.sendToAll(tuningText(t));
+    });
   }
 
   async listen(): Promise<void> {
     this.http = http.createServer((req, res) => {
-      handleHttp(req, res, () => this.metrics(), this.cfg.devCors);
+      if (this.tuning && req.url === TUNE_PATH) this.tuning.handle(req, res);
+      else handleHttp(req, res, () => this.metrics(), this.cfg.devCors);
     });
     // Frames above the bound are refused by ws itself (close code 1009) before we see them.
     this.wss = new WebSocketServer({ server: this.http, maxPayload: MAX_CLIENT_MESSAGE_BYTES });
@@ -243,6 +255,8 @@ export class GameServer {
         rec.ws.send(JSON.stringify(notice));
       }
     }
+    // With the live tuning on, the numbers in force (players predict with them).
+    if (this.tuning) rec.ws.send(tuningText(this.tuning.inForce()));
     // Arriving during the result pause: the recap of the match just ended.
     const recap = this.host.recapNow(false);
     if (recap) rec.ws.send(JSON.stringify(recap));

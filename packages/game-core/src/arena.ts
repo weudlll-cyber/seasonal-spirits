@@ -17,8 +17,14 @@ export function newArena(cfg: GameConfig): Arena {
 
 // The halving: the edge will ease from where it is now to half the area of the last target.
 export function halveArena(a: Arena, atMs: number): void {
+  scaleArena(a, HALF_AREA, atMs);
+}
+
+// The edge eases from where it is now to the last target times `factor`: the halving, and the
+// owner's live tuning of the starting size (Match.rescaleArena).
+export function scaleArena(a: Arena, factor: number, atMs: number): void {
   a.from = a.radius;
-  a.target = a.target * HALF_AREA;
+  a.target = a.target * factor;
   a.shrinkFromMs = atMs;
 }
 

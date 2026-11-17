@@ -25,7 +25,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/modes/bomb.ts`       | Halving Bomb: points, the bombs, passing, the explosion                        |
 | `src/geometry.ts`         | Distances, `stepGhost` (momentum, the walls: `fieldBounds`), `dashVelocity`    |
 | `src/arena.ts`            | The arena disc, its halving and easing, start and respawn spots, quarters      |
-| `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash's knock, the in-season push, touch credit |
+| `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash hit's throw, the in-season push, credit   |
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
 | `src/recap.ts`            | The recap's awards, two per mode (`awardsOf`)                                  |
 | `src/bots/bot.ts`         | The sumo brain (`botIntent`) and the helpers every brain shares                |
@@ -57,6 +57,9 @@ bounces; bomb: points and passes), the end, the countdown.
 - **Mode and times.** `cfg.mode` picks the rules; `modeConfig(base, mode)` gives the base with
   the mode's own times (hill 180 s / 45 s; bomb 180 s / 20 s and a 5 s countdown — all
   placeholders). The server chooses the mode per match (apps/server `match-host.ts`).
+- **Live tuning** (development only). `tunedFields(t)` gives the config fields the owner's four
+  sliders set — `arenaRadius`, `maxSpeed` (and `acceleration` with it), `dashSpeed`,
+  `knockSpeed` (apps/server, docs/SERVER.md "Live tuning").
 - **Walls** (hill, bomb). A square of `wallHalf` around the middle; `stepGhost` keeps a ghost
   inside it and takes the speed into a wall away (the speed along it stays). The arena there is
   the disc inside the walls and never halves; nobody falls.
@@ -79,7 +82,9 @@ bounces; bomb: points and passes), the end, the countdown.
 ## The sumo rules as built (all numbers placeholders)
 
 - **Match and seasons.** 5:00, four seasons of 75 s in the real order from `startSeason`.
-- **Arena.** A disc in the middle of the field, `arenaRadius` 900 at the start. Each team
+- **Arena.** A disc in the middle of the field, `arenaRadius` 400 at the start (25 ghost
+  diameters across; the owner's live tuning eases a running arena to a new size,
+  `Match.rescaleArena`, the same easing as a halving, `scaleArena`). Each team
   starts on its own quarter (Spring top left, Summer top right, Autumn bottom right, Winter
   bottom left), on a ring at `startSpread` of the radius.
 - **Movement with momentum** (`stepGhost`, also the client's prediction): the held direction
@@ -92,8 +97,11 @@ bounces; bomb: points and passes), the end, the countdown.
 - **Collisions** (`collideGhosts`, grown from Spirits' soft separation): two ghosts on the
   arena that overlap are moved apart and bounce (`restitution`), the overlap shared by their
   push factors; the team whose season is in season pushes `inSeasonPush` harder. A dashing
-  ghost adds `knockSpeed` (times the push ratio) to the one it hits. Each remembers the last
-  opponent that touched it; teammates give no credit.
+  ghost throws the one it hits off at `knockSpeed` (times the push ratio) at least — set, not
+  added, so a throw is about `knockSpeed / friction` long however many ticks the dash touches;
+  the thrown ghost counts `knockWeight` heavier for `dashMs`, so a crowd behind it gives way
+  instead of stopping it. Each remembers the last opponent that touched it; teammates give no
+  credit.
 - **Falling.** A ghost whose centre leaves the arena falls: +1 knockout for the last opponent
   that touched it within `creditMs`, and for its team; nobody scores without one. It falls
   for `fallMs` (the animation), is out until `outMs` after the fall, then respawns on its
@@ -172,12 +180,12 @@ points per team, bounces 42–65 per player for the first eight; bomb 999–1260
 | `wallHalf`                                                   | 700                      | hill and bomb: the walled square, 1400 wide         |
 | `hill.zoneRadius` / `hill.bounceMs`                          | 300 / 1000               | the zone at the start; a bounce's window            |
 | `bomb.playersPerBomb` / `bomb.passBackMs`                    | 8 / 1000                 | bombs per players; no pass back before              |
-| `arenaRadius`                                                | 900                      | the start; × 1/√2 at each halving                   |
+| `arenaRadius`                                                | 400                      | the start; × 1/√2 at each halving; live-tunable     |
 | `arenaShrinkMs`                                              | 2000                     | the edge eases in                                   |
 | `ghostRadius`                                                | 16                       |                                                     |
-| `acceleration` / `friction` / `maxSpeed`                     | 1200 / 2.5 / 320         | running                                             |
-| `dashSpeed` / `dashMs` / `dashCooldownMs`                    | 640 / 250 / 1500         | the dash: at most 4 ghost diameters past top speed  |
-| `knockSpeed` / `restitution`                                 | 700 / 0.6                | a dash's knock, the bounce                          |
+| `acceleration` / `friction` / `maxSpeed`                     | 900 / 2.5 / 240          | running; top speed live-tunable (and acceleration)  |
+| `dashSpeed` / `dashMs` / `dashCooldownMs`                    | 480 / 250 / 1500         | the dash: 3 ghost diameters past top speed          |
+| `knockSpeed` / `knockWeight` / `restitution`                 | 320 / 10 / 0             | a dash hit's throw, through a crowd; the bounce     |
 | `inSeasonPush`                                               | 1.25                     | the team in season pushes harder                    |
 | `fallMs` / `outMs` / `protectMs`                             | 600 / 3000 / 1000        | fall, out, protected                                |
 | `creditMs`                                                   | 3000                     | a fall counts for the last opponent touch within it |

@@ -32,11 +32,49 @@
       canvas {
         display: block;
       }
+      /* The owner's live tuning sliders (tuning-panel.ts), only with the server's DEV_TUNING. */
+      #tuning {
+        position: fixed;
+        top: 76px;
+        right: 12px;
+        width: 300px;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid #22303c;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      #tuning h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      #tuning label {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-bottom: 8px;
+      }
+      #tuning output {
+        color: #9fb3c8;
+      }
+      #tuning .line {
+        width: 100%;
+        box-sizing: border-box;
+        resize: none;
+        margin-top: 6px;
+        font:
+          12px ui-monospace,
+          monospace;
+      }
+      #tuning p {
+        margin: 4px 0 0;
+        color: #ff9b9b;
+      }
     </style>
   </head>
   <body>
     <canvas id="map"></canvas>
     <pre id="hud">connecting…</pre>
+    <section id="tuning" hidden></section>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

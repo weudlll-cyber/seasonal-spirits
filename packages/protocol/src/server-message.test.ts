@@ -1,5 +1,5 @@
-// Seasonal Spirits — server text message reader tests: welcome and spectating notice are read,
-// anything else is dropped.
+// Seasonal Spirits — server text message reader tests: welcome, spectating notice and live tuning
+// are read, anything else is dropped.
 
 import { describe, expect, it } from 'vitest';
 import { parseServerMessage } from './server-message.js';
@@ -26,7 +26,30 @@ describe('parseServerMessage', () => {
     const padded = `{"kind":"welcome","ghost":7,"team":3,"name":"a","pad":"${'x'.repeat(260)}"}`;
     expect(parseServerMessage(padded)).toBeNull();
   });
+});
 
+// TUNE 2026-11-17: the live tuning reaches the clients; a forged one is checked like any frame.
+describe('parseServerMessage: live tuning', () => {
+  it('reads the live tuning with exactly the four numbers, each whole and in range', () => {
+    const values = { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480, knockSpeed: 320 };
+    expect(parseServerMessage(JSON.stringify({ kind: 'tuning', values }))).toEqual({
+      kind: 'tuning',
+      values,
+    });
+    for (const bad of [
+      { ...values, arenaRadius: 5000 },
+      { ...values, maxSpeed: 0 },
+      { ...values, dashSpeed: 480.5 },
+      { ...values, extra: 1 },
+      { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480 },
+      null,
+    ]) {
+      expect(parseServerMessage(JSON.stringify({ kind: 'tuning', values: bad }))).toBeNull();
+    }
+  });
+});
+
+describe('parseServerMessage: removed and broken messages', () => {
   // Seasonal Spirits' steal notices and team signals do not exist any more.
   it('drops the removed steal notice and team signal', () => {
     for (const text of [

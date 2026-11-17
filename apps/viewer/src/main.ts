@@ -1,7 +1,8 @@
 // Seasonal Spirits — browser viewer: a spectator of the running match, as a debug view.
 // Connects through the artificial delay queue, interpolates the ghosts and draws the whole
 // match with the client's drawing (packages/render). The HUD shows the network numbers; they
-// are also exposed on window for Playwright checks.
+// are also exposed on window for Playwright checks. With the server's live tuning on (pnpm dev)
+// it carries the owner's sliders (tuning-panel.ts).
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
@@ -25,6 +26,7 @@ import {
   fuseLeft,
   fitField,
 } from '@seasonal-spirits/render';
+import { startTuningPanel } from './tuning-panel.js';
 
 declare const __SERVER_WS_URL__: string;
 declare const __SERVER_HTTP_URL__: string;
@@ -35,6 +37,7 @@ const LATENCY_MAX = 200;
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
+const tuningRoot = document.getElementById('tuning') as HTMLElement;
 const context = canvas.getContext('2d');
 if (context === null) throw new Error('viewer: 2D canvas context unavailable');
 const ctx = context;
@@ -52,9 +55,13 @@ const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const trails = new Trails();
-// The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump).
-const jumpDetector = new JumpDetector({
-  speedUnitsPerSecond: DEFAULT_CONFIG.dashSpeed + DEFAULT_CONFIG.knockSpeed,
+// The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump); with the
+// live tuning, as the sliders set them.
+const fastest = (t: { dashSpeed: number; knockSpeed: number }): JumpDetector =>
+  new JumpDetector({ speedUnitsPerSecond: t.dashSpeed + t.knockSpeed });
+let jumpDetector = fastest(DEFAULT_CONFIG);
+void startTuningPanel(`${__SERVER_HTTP_URL__}/dev/tune`, tuningRoot, (t) => {
+  jumpDetector = fastest(t);
 });
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 

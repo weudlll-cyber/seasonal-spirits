@@ -1,11 +1,13 @@
-// Seasonal Sumo — the match host: bots fill slots, players replace them, matches and modes follow.
-// Time is the dt passed in; nothing here waits.
+// Seasonal Sumo — the match host: bots fill slots, players replace them, matches and modes follow,
+// the owner's live tuning applies in the running match. Time is the dt passed in; nothing here
+// waits.
 
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CONFIG,
   GAME_MODES,
   modeConfig,
+  tunedFields,
   type GameConfig,
 } from '@seasonal-spirits/game-core';
 import {
@@ -190,5 +192,25 @@ describe('match host lifecycle', () => {
     expect(next?.flags ?? STATE_RESULT).toBe(0);
     expect(next?.matchMs).toBeLessThanOrEqual(150);
     expect(host.players()).toBe(1);
+  });
+});
+
+// TUNE 2026-11-17: the owner's sliders change the running match, not only the next one.
+describe('match host live tuning', () => {
+  it('eases the running arena to the new size and walks the ghosts at the new top speed', () => {
+    const startRadius = DEFAULT_CONFIG.arenaRadius;
+    const host = new MatchHost(DEFAULT_CONFIG, 4, 1);
+    const slot = host.join(1);
+    if (!slot) throw new Error('no slot');
+    host.tick(50);
+    host.tune(tunedFields({ arenaRadius: 600, maxSpeed: 400, dashSpeed: 800, knockSpeed: 500 }));
+    host.steer(1, 1, 0);
+    const states = runFor(host, 1000);
+    const own = states.at(-1)?.ghosts.find((g) => g.id === slot.ghost);
+    expect(own?.vx).toBeGreaterThan(DEFAULT_CONFIG.maxSpeed * 1.2);
+    expect(states[0]?.area?.r).toBeLessThan(500); // eases in, no jump
+    const settled = runFor(host, DEFAULT_CONFIG.arenaShrinkMs).at(-1);
+    expect(settled?.area?.r).toBeCloseTo(600);
+    expect(DEFAULT_CONFIG.arenaRadius).toBe(startRadius); // the host tuned its own copy
   });
 });

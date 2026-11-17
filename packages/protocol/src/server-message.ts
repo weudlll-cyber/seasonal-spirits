@@ -5,8 +5,9 @@
 import { isIntIn, isObject } from './checks.js';
 import type { ServerMessage, ServerWelcome } from './messages.js';
 import { MAX_RECAP_BYTES, readRecap } from './recap-message.js';
+import { readTuning } from './tuning.js';
 
-// Every message but the recap is a welcome or shorter, well under this.
+// Every message but the recap is a welcome, a tuning or shorter, well under this.
 const MAX_SERVER_TEXT_BYTES = 256;
 const MAX_NAME_LENGTH = 64;
 
@@ -24,6 +25,10 @@ export function parseServerMessage(text: string): ServerMessage | null {
   if (text.length > MAX_SERVER_TEXT_BYTES) return null;
   if (fields.kind === 'spectating') {
     return fields.reason === 'full' ? { kind: 'spectating', reason: 'full' } : null;
+  }
+  if (fields.kind === 'tuning') {
+    const values = readTuning(fields.values);
+    return values ? { kind: 'tuning', values } : null;
   }
   return fields.kind === 'welcome' ? readWelcome(fields) : null;
 }

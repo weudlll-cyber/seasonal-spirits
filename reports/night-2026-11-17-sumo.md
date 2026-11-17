@@ -1,5 +1,4 @@
-Client URL: http://localhost:5930 (viewer http://localhost:5931) — `pnpm dev` from `proto/sumo` is running.
-The modes take turns match by match: Seasonal Sumo (5:00) → King of the Season (3:00) → Halving Bomb (3:00) → Sumo …; whichever match is running when you open it comes first, each followed by 15 s of result.
+Client URL: http://localhost:5930 (viewer with the live tuning sliders: http://localhost:5931) — `pnpm dev` from `proto/sumo` is running, Sumo only (`GAME_MODE=sumo pnpm dev`; plain `pnpm dev` rotates the modes).
 
 # Night 2026-11-17 — Seasonal Sumo — morning sheet
 
@@ -17,7 +16,9 @@ The modes take turns match by match: Seasonal Sumo (5:00) → King of the Season
 
 - Play all three modes: which is fun, which makes you want another round. Nothing of
   `proto/sumo` is merged.
-- The placeholders: arena size, dash, push factor, respawn, the bots' reaction time and aim
+- The feel: set arena size, walking speed, dash and push with the viewer's sliders (see
+  "Tune") and send the copied line.
+- The other placeholders: respawn, the bots' reaction time and aim
   noise; the walls (1400 square), the zone (300 at the start), one bomb per 8 players, the
   times (hill 3:00 with a jump every 45 s, bomb 3:00 with a blast every 20 s).
 - Try the phone by hand: the scripted phone player did badly in every mode (see the notes);
@@ -168,6 +169,54 @@ down to 9 px). "You": in 73 frames of respawn protection on the live client the 
 was "You" every time; the owner probably saw it while out (not drawn for 3 s after a fall).
 Tests now guard both: the band text at 1918 × 945, 1280 × 800, 390 × 844 and 844 × 390, and
 "You" in every sampled frame and with the protection ring in a crowd.
+
+## Tune — smaller arena, slower walking, harder pushes, live sliders
+
+Owner's observation after fix 2: nobody falls off in the first season, clumps in the middle,
+too fast overall, a push does not carry far enough, the ghosts tiny. New starting values (all
+placeholders, the owner decides with the sliders): arena 25 ghost diameters across
+(`arenaRadius` 900 → 400), walking 25 % slower (`maxSpeed` 320 → 240, `acceleration`
+1200 → 900), dash twice the top speed (`dashSpeed` 640 → 480, carries 3 diameters), a dash hit
+throws at `knockSpeed` 320 — set, not added on top of the bounce, so the throw no longer grows
+with the number of ticks the dash touches — and the thrown ghost counts `knockWeight` 10
+heavier for the dash's 250 ms, so a crowd behind it gives way; no bounce (`restitution`
+0.6 → 0).
+
+Measured with 32-bot sumo matches, seeds 1–10 (scratch script on `game-core`; pushes in an
+empty match, the hit ghost standing and holding nothing, the dasher holding on for its dash):
+
+| Measure                                                   | Before (`d218cc8`)        | After                     |
+| --------------------------------------------------------- | ------------------------- | ------------------------- |
+| Falls per match in season 1 / 2 / 3 / 4                   | 4.8 / 19.8 / 64.4 / 172.5 | 73.4 / 126.0 / 204.8 / 126.3 |
+| Ghost-time in clumps (≥ 5 others within two diameters)    | 0.9 %                     | 32.9 %                    |
+| Arena across / crossing at top speed                      | 56 diameters / 5.6 s      | 25 diameters / 3.3 s      |
+| Dash hit throws a standing ghost                          | 15.8 diameters            | 4.8 diameters             |
+| Dash hit into a crowd of four behind it                   | 4.8 diameters (30 %)      | 3.9 diameters (81 %)      |
+| Plain bump at top speed                                   | 3.0 diameters             | 1.5 diameters             |
+
+- The first season now has falls (73 instead of 5 per match, about two per ghost).
+- The clump share rose with the smaller arena: 32 ghosts on a quarter of the old disc. The
+  bots seek the nearest opponent and the middle; their distances (`bots.edgeMargin` 140,
+  `bots.dashRange` 220) were set for the 900 arena and are not on the sliders — left as they
+  are, worth a look once the owner has chosen a size.
+- Crossing the arena takes 3.3 s now, under the 4 s of fix 2's rule; it follows from the
+  owner's two numbers (25 diameters, 25 % slower), and the sliders move it.
+- A bump moves a standing ghost 1.5 diameters, not 1: with no bounce at all the runner still
+  shares its speed with the one it hits; less would need a new rule. The push slider does not
+  change it (it is the dash hit's).
+- Dash carry 900 → 640 in fix 2 was the session's own measurement, not the owner's: the
+  comment at `dashSpeed` said "owner 2026-11-17" and now says what was measured.
+
+**Live sliders.** Two windows: the game on http://localhost:5930, the viewer on
+http://localhost:5931 with the panel "Live tuning" at the top right — arena size (shown in
+ghost diameters across), walking speed, dash strength, push strength. A change holds at once
+in the running match (the arena eases to its new size over 2 s, like a halving); the bots and
+the player's own prediction use the new numbers. Reset brings back the starting values; the
+line under the sliders holds the four numbers, Copy puts them on the clipboard — send that
+line and the session sets them as the new starting values. Checked live: the panel answers
+and shows the starting line; arena 400 → 560 and walking 240 → 360 reached the running match
+(the client's arena 560 after 3 s), Reset brought 400 back, a POST with a foreign `Origin` got
+403. Security: docs/SERVER.md "Live tuning", THREATS row 39.
 
 ## Notes
 

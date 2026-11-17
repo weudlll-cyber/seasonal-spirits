@@ -1,5 +1,6 @@
 // Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
-// The server's own bots fill all 32 slots; the game modes take turns (GAME_MODE=rotate).
+// The server's own bots fill all 32 slots; the game modes take turns (GAME_MODE=rotate); the
+// viewer carries the owner's live tuning sliders (DEV_TUNING=1).
 // Starts all three as hidden background processes (no windows on Windows, the same on Linux
 // and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
 // tmp/dev-pids.json, and stops exactly those PIDs again. `pnpm dev --lan` (development only,
@@ -160,7 +161,13 @@ async function start(lan) {
     'apps/server',
     ['--import', 'tsx', 'src/main.ts'],
     // The modes take turns match by match (sumo → hill → bomb); GAME_MODE=sumo plays one.
-    { HOST: host, GAME_MODE: process.env.GAME_MODE ?? 'rotate' },
+    // DEV_TUNING: the owner's live sliders in the viewer (docs/SERVER.md, "Live tuning").
+    {
+      HOST: host,
+      GAME_MODE: process.env.GAME_MODE ?? 'rotate',
+      DEV_TUNING: '1',
+      VIEWER_PORT: String(VIEWER_PORT),
+    },
     SERVER_PORT,
   ]);
   await launch(['client', 'apps/client', vite, { CLIENT_HOST: host }, CLIENT_PORT]);
@@ -173,7 +180,7 @@ async function start(lan) {
       `Phone (same Wi-Fi): ${address ? `http://${address}:${CLIENT_PORT}` : 'no LAN address found'}`,
     );
   console.log(
-    `Viewer (debug): http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`,
+    `Viewer (debug, tuning sliders): http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`,
   );
 }
 

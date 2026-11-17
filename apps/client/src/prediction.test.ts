@@ -2,7 +2,8 @@
 // the same inputs — momentum, top speed, a dash —, fades a small gap to the server's word,
 // snaps across a large one, and stands while the server holds the ghost still.
 
-import { DEFAULT_CONFIG, Match, type Intent } from '@seasonal-spirits/game-core';
+import { DEFAULT_CONFIG, Match, tunedFields, type Intent } from '@seasonal-spirits/game-core';
+import { clientConfig } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { OwnPrediction, PREDICTION_LAG_MS, SNAP_DISTANCE, type ServerOwn } from './prediction.js';
 
@@ -17,12 +18,20 @@ const at = (x: number, y: number, receivedAt: number, frozen = false): ServerOwn
   receivedAt,
 });
 
+// The owner's live tuning (TUNE 2026-11-17): the server tunes its config in place, the client
+// builds the same from the tuning message (render clientConfig).
+const TUNING = { arenaRadius: 600, maxSpeed: 400, dashSpeed: 900, knockSpeed: 500 };
+const SERVER_TUNED = { ...DEFAULT_CONFIG, ...tunedFields(TUNING) };
+
 describe('OwnPrediction against the server', () => {
-  it('moves exactly as the server does for the same inputs: momentum, top speed, a dash', () => {
-    const match = new Match(DEFAULT_CONFIG, 7, [{ id: 0, team: 0 }]);
+  it.each([
+    ['the starting values', DEFAULT_CONFIG, clientConfig(0)],
+    ['a live tuning', SERVER_TUNED, clientConfig(0, TUNING)],
+  ])('moves exactly as the server does with %s: momentum, top speed, a dash', (_, cfg, own) => {
+    const match = new Match(cfg, 7, [{ id: 0, team: 0 }]);
     const ghost = match.state.ghosts[0];
     if (!ghost) throw new Error('no ghost');
-    const p = new OwnPrediction(DEFAULT_CONFIG);
+    const p = new OwnPrediction(own);
     // Towards the middle of the arena, a dash downwards, then on down.
     const intents: Intent[] = [
       ...Array.from({ length: 20 }, () => ({ dx: 1, dy: 0 })),

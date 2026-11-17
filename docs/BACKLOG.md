@@ -13,10 +13,15 @@ Spirits wait.
 
 y. **Seasonal Sumo and its modes — the owner plays them** (NIGHT 2026-11-17, on
 `proto/sumo`, not merged). `pnpm dev` rotates the modes match by match: Seasonal Sumo (5:00),
-King of the Season (3:00), Halving Bomb (3:00). Done when: the owner has played all three and
-said which is fun and which makes him want another round, and decided the placeholders
-(arena size, dash — now 640 —, push factor, respawn, the bot layer's reaction, noise and dash
-gap of 3 s; the walls, the zone's size, the bomb count and the times of hill and bomb).
+King of the Season (3:00), Halving Bomb (3:00); `GAME_MODE=sumo pnpm dev` plays Sumo only.
+The feel of Sumo is tuned live with the viewer's sliders (TUNE 2026-11-17: arena size,
+walking speed, dash, push; starting values arena 25 ghost diameters, top speed 240, dash 480,
+push 320). Done when: the owner has played all three and said which is fun and which makes
+him want another round; has sent the slider line, set as the new starting values; and has
+decided the other placeholders (the bump with no bounce — 1.5 diameters, not 1 —, respawn,
+the bot layer's reaction, noise and dash gap of 3 s, the bots' distances `edgeMargin` and
+`dashRange`, set for the old 900 arena: 33 % of the time in clumps now; the walls, the
+zone's size, the bomb count and the times of hill and bomb).
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
@@ -580,6 +585,20 @@ Done when: the spec is green ten runs in a row.
   the dash carry, the band text at four sizes and "You" during protection — commit "fix: bots
   calm, dash shorter, other ghosts drawn closer to the present".
 
+- 2026-11-17 — **Tune: smaller arena, slower walking, harder pushes, live sliders** (owner's
+  observation after fix 2; numbers on the morning sheet, "Tune"): `arenaRadius` 900 → 400,
+  `maxSpeed` 320 → 240 and `acceleration` 1200 → 900, `dashSpeed` 640 → 480, a dash hit
+  throws at `knockSpeed` 320 (set, not added) and the thrown ghost counts `knockWeight` 10
+  heavier for `dashMs` (new `Ghost.knockedUntilMs`), `restitution` 0.6 → 0; the `dashSpeed`
+  comment no longer credits the session's measurement to the owner. Live tuning for the owner
+  (development only): `/dev/tune` on the server only with `DEV_TUNING=1` (`pnpm dev` sets it),
+  loopback and the viewer's origin only, the four numbers in their ranges (protocol
+  `tuning.ts`), THREATS row 39; `MatchHost.tune`, `Match.rescaleArena` (arena `scaleArena`,
+  which the halving now uses too), game-core `tunedFields`, the `tuning` server message, the
+  client predicting with it (render `clientConfig(mode, tuning)`), the viewer's panel
+  (`tuning-panel.ts`) — commit "feat: Sumo tuned smaller and slower, live sliders for the
+  owner".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -818,3 +837,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 35 files / 182 tests)                                                                                                          | working tree of fix 2                                                                                                                     | green after two typing fixes in the new tests                                                                                                                                                                                       | this commit                                                                                    |
 | 2026-11-17 | `pnpm e2e readability` (both sizes; band text at four sizes, "You" every frame)                                                                                                           | same tree                                                                                                                                 | 3 passed, 1 skipped (band sizes run once, desktop)                                                                                                                                                                                  | this commit                                                                                    |
 | 2026-11-17 | band and "You" on `pnpm dev` at 1918 × 945 (scratch script, 60 s Sumo with falls)                                                                                                         | same tree                                                                                                                                 | scroll offsets 0, team line at 12 px; 215 frames, 73 protected, "You" in all                                                                                                                                                        | the sheet, "Fix 2"                                                                             |
+| 2026-11-17 | CI and CodeQL on GitHub                                                                                                                                                                   | `d218cc8` on `proto/sumo`                                                                                                                 | success (CI 44062134214, CodeQL 44062134175)                                                                                                                                                                                        | `gh run list --branch proto/sumo`                                                              |
+| 2026-11-17 | seeded 32-bot Sumo matches, seeds 1–10 (scratch script): falls per season, clump share, crossing time; dash hit, crowd and bump distances                                                 | `d218cc8` and the tune tree                                                                                                               | falls S1 4.8 → 73.4 per match; clumps 0.9 → 32.9 %; crossing 5.6 → 3.3 s; dash hit 15.8 → 4.8 diam., into a crowd 4.8 → 3.9, bump 3.0 → 1.5                                                                                         | the sheet, "Tune"                                                                              |
+| 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 36 files / 196 tests)                                                                                                          | working tree of the tune                                                                                                                  | green after splitting long functions, moving the tuning wiring out of `server.ts` (max-lines) and a relative tolerance in the camera test (smaller arena)                                                                           | this commit                                                                                    |
+| 2026-11-17 | live tuning on `pnpm dev` (Sumo only, `DEV_TUNING=1`): viewer panel, sliders into the running match, Reset, a foreign origin (scratch Playwright script)                                  | same tree                                                                                                                                 | panel shown with the starting line; client arena 400 → 560 within 3 s; Reset back to 400; foreign `Origin` 403; copy line cut off → now two lines                                                                                   | this commit                                                                                    |

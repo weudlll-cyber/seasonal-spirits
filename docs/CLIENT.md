@@ -16,7 +16,7 @@ Spirits' client is on `master`.
 | `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws        |
 | `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys     |
 | `src/scores.ts`            | The team scores in the band: the mode's score per team, the leader framed        |
-| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, the recap        |
+| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, tuning    |
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated    |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server |
 | `src/input.ts`             | Keyboard (WASD/arrows, Space to dash) and the touch joystick                     |
@@ -34,6 +34,11 @@ fewest players (the ghost stops where the bot left it) and answers with a welcom
 every seat has a player, the client watches instead and says so. `?spectate=1` only watches:
 the whole field, every name, the clock and the halving staging, no controls; it sends its
 hello and nothing more.
+
+With the server's live tuning on (`pnpm dev`, [SERVER.md](SERVER.md) "Live tuning") the
+client hears the numbers in force (`{"kind":"tuning",…}`, checked by `parseServerMessage`)
+and predicts its own ghost with them (`clientConfig(mode, tuning)`), so it does not drift
+from the server after a change.
 
 ## Controls
 

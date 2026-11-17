@@ -55,7 +55,8 @@ export interface GameConfig {
   dashSpeed: number; // units/s at the start of a dash
   dashMs: number; // how long a dash counts as one (it knocks what it hits)
   dashCooldownMs: number; // between two dashes, enforced by the core
-  knockSpeed: number; // units/s a dashing ghost adds to the one it hits
+  knockSpeed: number; // units/s a dash hit throws the hit ghost off at (at least)
+  knockWeight: number; // a thrown ghost counts this much heavier while dashMs lasts
   restitution: number; // 0..1: how much two ghosts bounce off each other
   inSeasonPush: number; // ghosts of the team in season push this much harder
   fallMs: number; // the fall animation: falling, then out
@@ -78,22 +79,31 @@ export const DEFAULT_CONFIG: GameConfig = {
   startSeason: 'spring', // placeholder — the website's season clock later
   fieldSize: 2000,
   wallHalf: 700, // placeholder — owner decides (a 1400 square: hill and bomb)
-  // 32 ghosts of radius 16 fill about 1 % of a disc of 900: room at the start, and after three
-  // halvings (900 → 318) still a disc a few ghosts can fight on.
-  arenaRadius: 900, // placeholder — owner decides
+  // 25 ghost diameters across (TUNE 2026-11-17: at 56 nobody fell in the first season and the
+  // ghosts were drawn tiny); after three halvings (400 → 141) still 9 across. Placeholder —
+  // owner decides with the live sliders (docs/SERVER.md, "Live tuning").
+  arenaRadius: 400,
   arenaShrinkMs: 2000, // placeholder — owner decides
   ghostRadius: 16, // placeholder — owner decides
-  acceleration: 1200, // placeholder — owner decides
+  // Walking 25 % slower than the first prototype's 320 and 1200 (TUNE 2026-11-17); the
+  // tuning sliders scale the acceleration with the top speed. Placeholders — owner decides.
+  acceleration: 900,
   friction: 2.5, // placeholder — owner decides
-  maxSpeed: 320, // placeholder — owner decides
-  // A dash carries at most 4 ghost diameters before it is back at top speed:
-  // (dashSpeed − maxSpeed) / friction = 128 (owner 2026-11-17: at 900 it carried 7, the bots
-  // zipped around). Placeholder — owner decides.
-  dashSpeed: 640,
+  maxSpeed: 240,
+  // Twice the top speed: a dash carries (dashSpeed − maxSpeed) / friction = 96, 3 ghost
+  // diameters, before it is back at top speed (FIX 2026-11-17-2 measured 7 at 900 and found the
+  // bots zipping around; at most 4 since). Placeholder — owner decides.
+  dashSpeed: 480,
   dashMs: 250, // placeholder — owner decides
   dashCooldownMs: 1500, // placeholder — owner decides (owner's sketch: about 1.5 s)
-  knockSpeed: 700, // placeholder — owner decides
-  restitution: 0.6, // placeholder — owner decides
+  // A dash hit throws a standing ghost about 5 ghost diameters (knockSpeed / friction plus the
+  // dasher's follow-through); the crowd it flies into gives way (knockWeight). Placeholders —
+  // owner decides (TUNE 2026-11-17: 4–5 diameters, not cancelled by a crowd).
+  knockSpeed: 320,
+  knockWeight: 10,
+  // No bounce: a ghost running into a standing one at top speed moves it about 1.5 diameters
+  // (TUNE 2026-11-17 asked for about 1; at 0.6 it was 2.3). Placeholder — owner decides.
+  restitution: 0,
   inSeasonPush: 1.25, // placeholder — owner decides (owner's sketch: about 1.25)
   fallMs: 600, // placeholder — owner decides
   outMs: 3000, // placeholder — owner decides (owner's sketch: about 3 s)
@@ -145,6 +155,24 @@ const MODE_TIMES: Record<GameMode, Partial<GameConfig>> = {
 
 export function modeConfig(base: GameConfig, mode: GameMode): GameConfig {
   return { ...base, ...MODE_TIMES[mode], mode };
+}
+
+// The owner's live tuning (TUNE 2026-11-17, development only; the numbers and their ranges are
+// protocol's tuning.ts): the config fields four numbers set — the acceleration scales with the
+// top speed, so a ghost reaches it in the same time.
+export type Tunable = Pick<GameConfig, 'arenaRadius' | 'maxSpeed' | 'dashSpeed' | 'knockSpeed'>;
+export type TunedFields = Tunable & Pick<GameConfig, 'acceleration'>;
+const ACCELERATION_PER_SPEED = DEFAULT_CONFIG.acceleration / DEFAULT_CONFIG.maxSpeed;
+
+export function tunedFields(t: Tunable): TunedFields {
+  const { arenaRadius, maxSpeed, dashSpeed, knockSpeed } = t;
+  return {
+    arenaRadius,
+    maxSpeed,
+    dashSpeed,
+    knockSpeed,
+    acceleration: maxSpeed * ACCELERATION_PER_SPEED,
+  };
 }
 
 // Hill and bomb play inside walls (nobody falls); sumo on the disc.

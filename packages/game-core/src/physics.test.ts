@@ -1,6 +1,7 @@
 // Seasonal Sumo — the physics: running with momentum and a top speed, the dash and its
-// cooldown (the core's, whatever a client sends), the knock of a dash, the team in season
-// pushing harder, the field's bounds, the walls of hill and bomb, and bad input.
+// cooldown (the core's, whatever a client sends), the throw of a dash hit (also into a crowd),
+// a plain bump, the team in season pushing harder, the field's bounds, the walls of hill and
+// bomb, and bad input.
 
 import { describe, expect, it } from 'vitest';
 import { modeConfig } from './config.js';
@@ -11,6 +12,34 @@ const two = [
   { id: 1, team: 0 as const },
   { id: 2, team: 1 as const },
 ];
+
+const D = 2 * cfg.ghostRadius; // a ghost diameter
+
+// Ticks with nobody holding a direction until every ghost stands (at most 3 s).
+function standStill(m: ReturnType<typeof matchOf>): void {
+  const until = m.state.elapsedMs + 3000;
+  while (m.state.elapsedMs < until && m.state.ghosts.some((g) => Math.hypot(g.vx, g.vy) > 1))
+    m.tick(50, new Map());
+}
+
+// How far a dash hit throws a standing ghost, in ghost diameters: the dasher holds its direction
+// while its dash lasts, then lets go; `crowd`: four ghosts stand close behind the hit one.
+function thrown(crowd: boolean): number {
+  const behind = crowd ? [3, 4, 5, 6].map((id) => ({ id, team: 2 as const })) : [];
+  const m = matchOf(cfg, [...two, ...behind]);
+  place(m, 1, -2 * D, 0);
+  const hit = place(m, 2, 0, 0);
+  if (crowd) {
+    place(m, 3, D + 1, 0);
+    place(m, 4, D + 1, D);
+    place(m, 5, D + 1, -D);
+    place(m, 6, 2 * D + 2, 0);
+  }
+  act(m, 1, { dx: 1, dy: 0, action: 'dash' });
+  while (m.state.elapsedMs < cfg.dashMs) act(m, 1, { dx: 1, dy: 0 });
+  standStill(m);
+  return (hit.x - m.state.arena.centre.x) / D;
+}
 
 describe('running', () => {
   it('speeds up with momentum to the top speed and never past it by running', () => {
@@ -91,18 +120,28 @@ describe('dash', () => {
     act(m, 1, { dx: 1, dy: 0, action: 'dash' });
     expect(ghost(m, 1).dashReadyMs).toBeGreaterThan(m.state.elapsedMs);
   });
+});
 
-  it('knocks the ghost it hits away hard; a plain bump far less', () => {
-    const knock = (dash: boolean): number => {
-      const m = matchOf(cfg, two);
-      place(m, 1, -60, 0);
-      place(m, 2, 0, 0);
-      for (let i = 0; i < 6; i++)
-        act(m, 1, dash ? { dx: 1, dy: 0, action: 'dash' } : { dx: 1, dy: 0 });
-      return ghost(m, 2).vx;
-    };
-    expect(knock(true)).toBeGreaterThan(cfg.knockSpeed * 0.8);
-    expect(knock(true)).toBeGreaterThan(knock(false) * 2);
+// TUNE 2026-11-17: a dash hit throws the hit ghost about 4–5 ghost diameters, a plain bump about
+// 1, and a crowd behind the hit ghost must not cancel the throw.
+describe('dash hit and bump', () => {
+  it('throws a standing ghost it hits 4 to 5 ghost diameters', () => {
+    expect(thrown(false)).toBeGreaterThanOrEqual(4);
+    expect(thrown(false)).toBeLessThanOrEqual(5);
+  });
+
+  it('throws the hit ghost on through a crowd standing behind it', () => {
+    expect(thrown(true)).toBeGreaterThan(thrown(false) * 0.7);
+  });
+
+  it('moves a standing ghost far less by running into it at top speed than by a dash', () => {
+    const m = matchOf(cfg, two);
+    place(m, 1, -3 * D, 0).vx = cfg.maxSpeed;
+    const hit = place(m, 2, 0, 0);
+    while (hit.vx === 0) act(m, 1, { dx: 1, dy: 0 }); // runs in, then lets go
+    standStill(m);
+    expect(hit.x - m.state.arena.centre.x).toBeLessThanOrEqual(2 * D);
+    expect(hit.x - m.state.arena.centre.x).toBeLessThan(thrown(false) * D * 0.5);
   });
 
   it('pushes harder for the team in season (Spring in spring)', () => {

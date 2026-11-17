@@ -3,9 +3,9 @@
 // every random value comes from the seed, so the same seed and intents give the same match.
 // The shared physics live here once; the mode's own rules come from modes/rules.ts.
 
-import { newArena, startSpot, updateArena } from './arena.js';
+import { newArena, scaleArena, startSpot, updateArena } from './arena.js';
 import { collideGhosts } from './collisions.js';
-import type { GameConfig } from './config.js';
+import { walled, type GameConfig } from './config.js';
 import { advancePhases } from './falls.js';
 import { dashVelocity, stepGhost } from './geometry.js';
 import { rulesFor, scoreOf, type ModeRules } from './modes/rules.js';
@@ -98,7 +98,14 @@ export class Match {
   // momentum (the server calls this on a join).
   halt(id: number): void {
     const g = this.s.ghosts.find((x) => x.id === id);
-    if (g) Object.assign(g, { vx: 0, vy: 0, dashUntilMs: 0 });
+    if (g) Object.assign(g, { vx: 0, vy: 0, dashUntilMs: 0, knockedUntilMs: 0 });
+  }
+
+  // The owner's live tuning changed the arena's starting size (development only): the running
+  // arena eases to the same share of the new size; inside the walls of hill and bomb nothing
+  // changes.
+  rescaleArena(factor: number): void {
+    if (!walled(this.cfg)) scaleArena(this.s.arena, factor, this.s.elapsedMs);
   }
 
   // Each player's counts and its score in the mode, the scores summed per team; a ghost's
@@ -150,6 +157,7 @@ function newGhost(r: Roster, x: number, y: number): Ghost {
     phaseUntilMs: 0,
     protectedUntilMs: 0,
     dashUntilMs: 0,
+    knockedUntilMs: 0,
     dashReadyMs: 0,
     lastTouch: null,
     knockouts: 0,

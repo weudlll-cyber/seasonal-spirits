@@ -24,6 +24,11 @@ const game: GameConfig = {
   resultPauseMs: envInt(env, 'RESULT_SECONDS', 15, [3, 60]) * 1000,
 };
 
+// The owner's live tuning sliders in the viewer (TUNE 2026-11-17): only with DEV_TUNING=1, which
+// `pnpm dev` sets; the viewer's page on VIEWER_PORT is the one page allowed to call.
+const tuning = envChoice(env, 'DEV_TUNING', '0', ['0', '1'] as const) === '1';
+const viewerPort = envInt(env, 'VIEWER_PORT', 5931, [1, 65535]);
+
 const cfg: ServerConfig = {
   port: envInt(env, 'PORT', 3930, [1, 65535]),
   // Loopback only, unless `pnpm dev --lan` asks for the local network (a phone in the Wi-Fi).
@@ -39,6 +44,9 @@ const cfg: ServerConfig = {
   helloTimeoutMs: 10_000,
   devCors: true,
   firstSeed: envInt(env, 'SEED', 1, [0, 999_999_999]),
+  tuningOrigins: tuning
+    ? [`http://localhost:${viewerPort}`, `http://127.0.0.1:${viewerPort}`]
+    : null,
 };
 
 const server = new GameServer(cfg);
@@ -47,7 +55,8 @@ await server.listen();
 console.log(
   `Seasonal Spirits match server on ws://${cfg.host}:${server.port()} ` +
     `(tick ${cfg.tickHz} Hz, ${cfg.maxGhosts} slots, seed ${cfg.firstSeed}, ` +
-    `modes ${modes.join(' → ')}, sumo seasons of ${seasonMs / 1000} s)`,
+    `modes ${modes.join(' → ')}, sumo seasons of ${seasonMs / 1000} s` +
+    `${tuning ? ', live tuning for the viewer' : ''})`,
 );
 
 process.on('SIGINT', () => {

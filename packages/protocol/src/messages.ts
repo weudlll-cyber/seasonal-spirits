@@ -1,7 +1,9 @@
 // Seasonal Sumo — the text messages between client and server (state travels as binary).
 // Client → server: the hello, a direction, the one action. Server → client: the welcome or the
-// notice that the client watches instead, and the match recap. Shapes only; the readers check
-// them.
+// notice that the client watches instead, the match recap, the live tuning. Shapes only; the
+// readers check them.
+
+import type { Tuning } from './tuning.js';
 
 // A player sends a direction (each component in [-1, 1]; the server clamps the magnitude)
 // and the one action, Dash (the core keeps its cooldown). Spectators send nothing after the
@@ -52,7 +54,15 @@ export interface ServerRecap {
   awards: { kind: string; ghost: number; value: number }[];
 }
 
-export type ServerMessage = ServerWelcome | ServerSpectating | ServerRecap;
+// Server → every client, only when the server runs with the owner's live tuning (development
+// only): the numbers now in force, on the hello and after every change, so the own ghost's
+// prediction moves by the server's rules (tuning.ts).
+export interface ServerTuning {
+  kind: 'tuning';
+  values: Tuning;
+}
+
+export type ServerMessage = ServerWelcome | ServerSpectating | ServerRecap | ServerTuning;
 
 // The name shown for a ghost, the same on every client. Development mode has no sign-in, so a
 // player is "Player <ghost>" until the website provides names (CONCEPT.md §12, point 2).

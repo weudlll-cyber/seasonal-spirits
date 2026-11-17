@@ -33,6 +33,7 @@ export interface Ghost {
   phaseUntilMs: number; // when 'falling' turns 'out', 'out' turns 'in'; 0 while 'in'
   protectedUntilMs: number; // after a respawn: nothing pushes it before this match time
   dashUntilMs: number; // a dash in progress knocks what it hits until this match time
+  knockedUntilMs: number; // thrown by a dash hit: a crowd gives way to it until this match time
   dashReadyMs: number; // the next dash is allowed from this match time on
   // The last opponent that touched it and when: a fall within creditMs counts for that one.
   lastTouch: { by: number; atMs: number } | null;

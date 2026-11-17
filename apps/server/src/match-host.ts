@@ -16,6 +16,7 @@ import {
   type Intent,
   type MatchEvent,
   type Roster,
+  type TunedFields,
 } from '@seasonal-spirits/game-core';
 import type { GameAction, ServerRecap } from '@seasonal-spirits/protocol';
 import { recapOf } from './recap.js';
@@ -44,7 +45,7 @@ export class MatchHost {
 
   // `modes` take turns match by match; the base config's own mode alone by default.
   constructor(base: GameConfig, slots: number, firstSeed: number, modes?: readonly GameMode[]) {
-    this.base = base;
+    this.base = { ...base }; // its own copy: the live tuning changes it in place (tune)
     this.modes = modes && modes.length > 0 ? modes : [base.mode];
     this.cfg = this.configFor(0);
     this.roster = botRoster(slots);
@@ -85,6 +86,16 @@ export class MatchHost {
   act(clientId: number, action: GameAction): void {
     const c = this.playerControl(clientId);
     if (c) c.action = action;
+  }
+
+  // The owner's live tuning (development only; server.ts checks who asks): the base, the running
+  // match, its rules and its bots all read this one config object, so the change holds from the
+  // next tick on and for every later match; the running arena eases to its new size.
+  tune(fields: TunedFields): void {
+    const factor = fields.arenaRadius / this.base.arenaRadius;
+    Object.assign(this.base, fields);
+    if (this.cfg !== this.base) Object.assign(this.cfg, fields);
+    this.match.rescaleArena(factor);
   }
 
   players(): number {

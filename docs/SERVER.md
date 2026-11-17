@@ -7,14 +7,15 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 
 ## Files
 
-| File                 | What it holds                                                         |
-| -------------------- | --------------------------------------------------------------------- |
-| `src/main.ts`        | Reads and validates the environment, starts the server                |
-| `src/server.ts`      | The tick loop, the WebSocket handler, connection bounds, metrics      |
-| `src/match-host.ts`  | The seats (bot, player, standing ghost), the match lifecycle          |
-| `src/wire.ts`        | Game state → wire state: per-ghost values, the arena, the team scores |
-| `src/http-routes.ts` | `/metrics-lite` (loopback only), everything else 404                  |
-| `src/env.ts`         | `envInt`, `envChoice`, `refuseProduction` — shared with the probe     |
+| File                  | What it holds                                                         |
+| --------------------- | --------------------------------------------------------------------- |
+| `src/main.ts`         | Reads and validates the environment, starts the server                |
+| `src/server.ts`       | The tick loop, the WebSocket handler, connection bounds, metrics      |
+| `src/match-host.ts`   | The seats (bot, player, standing ghost), the match lifecycle          |
+| `src/wire.ts`         | Game state → wire state: per-ghost values, the arena, the team scores |
+| `src/http-routes.ts`  | `/metrics-lite` (loopback only), everything else 404                  |
+| `src/tuning-route.ts` | `/dev/tune`: the owner's live tuning sliders (only with `DEV_TUNING`) |
+| `src/env.ts`          | `envInt`, `envChoice`, `refuseProduction` — shared with the probe     |
 
 ## The loop
 
@@ -106,6 +107,8 @@ and in total (twice the slots). The full list, with the test for each, is
 | `GAME_MODE`                   | sumo      | `sumo`, `hill`, `bomb` or `rotate` (`pnpm dev`) |
 | `SEASON_SECONDS`              | 75        | 15–75 (sumo: four seasons; shorter for tests)   |
 | `RESULT_SECONDS`              | 15        | 3–60                                            |
+| `DEV_TUNING`                  | 0         | `0` or `1` (`pnpm dev`: the live tuning)        |
+| `VIEWER_PORT`                 | 5931      | 1–65535 (the page allowed to tune)              |
 
 Other game numbers are not environment variables: they live in
 `packages/game-core/src/config.ts`. The whole server is development only (it refuses
@@ -116,3 +119,31 @@ Other game numbers are not environment variables: they live in
 `GET` from a loopback address only: achieved Hz, max tick ms, CPU % of one core, clients,
 players, ghosts, last and largest state bytes, uptime. CORS `*` only in development, for the
 viewer on its own port.
+
+## Live tuning (development only)
+
+The owner tunes the feel with four sliders instead of guessing numbers round by round
+(TUNE 2026-11-17). `pnpm dev` starts the server with `DEV_TUNING=1`; the viewer
+(http://localhost:5931) then shows a panel: **arena size** (`arenaRadius`, the start; shown
+as ghost diameters across), **walking speed** (`maxSpeed`; `acceleration` scales with it),
+**dash strength** (`dashSpeed`) and **push strength** (`knockSpeed`, how fast a dash hit
+throws a ghost off). Each slider shows its number and moves within a wide band around the
+starting value (`TUNING_RANGES`, packages/protocol `tuning.ts`). A change holds at once in
+the running match: the match, its rules and its bots read the host's one config object
+(`MatchHost.tune`), the running arena eases to its new size like a halving
+(`Match.rescaleArena`), and every client gets the numbers as `{"kind":"tuning","values":…}`,
+so its own ghost's prediction keeps to the server's rules. **Reset** brings back the starting
+values; the line below the sliders holds all four numbers to copy (**Copy**).
+
+The channel (`tuning-route.ts`) is `GET` / `POST /dev/tune`:
+
+- absent (404 like any unknown path) without `DEV_TUNING=1`, and the route refuses to exist
+  with `NODE_ENV=production` (the whole server does too);
+- loopback callers only (anything else: 404), from the viewer's page only (the `Origin`
+  `http://localhost:5931` or `http://127.0.0.1:5931`, else 403), `content-type:
+application/json` only (415), so another page cannot reach it without the browser's
+  preflight, which only the viewer's origin passes;
+- a body of at most 256 bytes (413), exactly the four keys, each a whole number in its range
+  (400 otherwise, nothing applied); at most 20 changes a second (429);
+- never through the player message validator: `parseClientMessage` still takes a hello, a
+  direction and Dash only. [THREATS.md](THREATS.md) row 39.

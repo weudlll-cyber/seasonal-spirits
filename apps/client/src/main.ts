@@ -141,7 +141,7 @@ function ownServer(ownId: number | null): ServerOwn | null {
 // taken it (prediction.ts).
 function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
   const mode = conn.buffer.at(-1)?.state.mode;
-  if (mode !== undefined) prediction.useConfig(clientConfig(mode));
+  if (mode !== undefined) prediction.useConfig(clientConfig(mode, conn.tuning));
   const predicted = prediction.update(now, conn.direction, ownServer(ownId), dashPressed);
   dashPressed = false;
   const ghosts = target === null ? [] : interpolate(conn.buffer, target).ghosts;

@@ -66,8 +66,9 @@ describe('one camera for every mode', () => {
         const a = playArea(camera(ctx, s, zones), s);
         return a.right - a.left;
       });
-      // Within a few pixels: the room kept for a ghost on the edge grows as the arena shrinks.
-      for (const px of sizes) expect(Math.abs(px - (sizes[0] ?? 0))).toBeLessThan(40);
+      // Nearly as large: only the room kept for a ghost on the edge (a ghost radius) is a larger
+      // share of the smaller arena — of the 25-diameter start arena after three halvings, 7 %.
+      for (const px of sizes) expect(px).toBeGreaterThan((sizes[0] ?? 0) * 0.9);
     });
   }
 });

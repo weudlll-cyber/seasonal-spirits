@@ -7,9 +7,11 @@ import {
   GAME_MODES,
   modeConfig,
   seasonsInMatch,
+  tunedFields,
   type GameConfig,
   type GameMode,
 } from '@seasonal-spirits/game-core';
+import type { Tuning } from '@seasonal-spirits/protocol';
 
 export interface ModeWords {
   name: string;
@@ -53,9 +55,11 @@ export function modeWords(index: number): ModeWords {
 }
 
 // The mode's config as the clients know it (the server's is the truth; the clients need its
-// walls, its season count and its season length for drawing and their prediction).
-export function clientConfig(index: number): GameConfig {
-  return modeConfig(DEFAULT_CONFIG, modeOf(index));
+// walls, its season count and its season length for drawing and their prediction), with the
+// owner's live tuning when the server sent one (development only).
+export function clientConfig(index: number, tuning: Tuning | null = null): GameConfig {
+  const cfg = modeConfig(DEFAULT_CONFIG, modeOf(index));
+  return tuning ? { ...cfg, ...tunedFields(tuning) } : cfg;
 }
 
 export function seasonsOf(index: number): number {
