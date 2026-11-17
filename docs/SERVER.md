@@ -150,7 +150,8 @@ and its bots read the host's one config object (`MatchHost.tune`), the running a
 its new size like a halving (`Match.rescaleArena`); lives and the variant hold from the next
 match. Every client gets the values as `{"kind":"tuning","values":…}`, so its own ghost's
 prediction keeps to the server's rules. **Reset** brings back the starting values; the line
-below holds every value to copy, the choices by name (**Copy**).
+below holds every value to copy, the choices by name (**Copy**). The panel scrolls inside the
+window when it is taller (FIX 2026-11-17-5).
 
 The channel (`tuning-route.ts`) is `GET` / `POST /dev/tune`:
 

@@ -142,9 +142,9 @@ export async function startTuningPanel(
   let wanted: Tuning = first.current;
   let timer: ReturnType<typeof setTimeout> | null = null;
   const status = document.createElement('p');
-  const line = document.createElement('textarea'); // four lines: the whole line stays visible
+  const line = document.createElement('textarea'); // six lines: the whole line stays visible
   line.readOnly = true;
-  line.rows = 4;
+  line.rows = 6;
   line.className = 'line';
   const controls = new Map(TUNING_KEYS.map((k) => [k, control(k)] as const));
   const show = (t: Tuning): void => {

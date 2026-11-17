@@ -377,6 +377,39 @@ its short match always reaches the last countdown; it passed at both sizes local
 9 lives then showed nine hearts pushing "You are Team …" off the phone's band: past five lives
 the band now shows one heart and the number left ("♥ ×7").
 
+## Fix 5 — panel cut off; the last bots circling each other
+
+**Panel.** It no longer runs off the window: at most the window's height below the clock and its
+width, scrolling inside; the copy line got six rows (it was cut after "jump on"). Checked at
+1918 × 945 (no scrolling needed), 1280 × 720 and 390 × 844 (scrolls): the copy line reachable
+and whole at all three.
+
+**Cause of the circling.** With two or three left the bots hardly dashed at all — 4 dashes in
+the endgames of 10 matches: the check "never a dash that carries it past the edge" kept half a
+dash range (110) from the centre, which in the last halving's arena (141) left a dash only within
+31 of the middle. So they only ran at each other's seen — a reaction time old — position and
+went round in circles, a dash never coming.
+
+**Fix.** That check is now capped by the same share of the radius as the edge margin (0.35),
+and once no halving is coming and fewer than 8 are left the bots grow bolder: they aim up to
+0.3 s ahead of the target, their dash angle widens, and after 3 s without a dash (0.75 s with two
+left) they attack anyway. Reaction time, aim noise and form are unchanged; the edge margin too.
+Bold earlier (while halvings still came) ended every match before the third halving, so the
+boldness waits for the last season.
+
+Seeded 32-bot Last One Standing, "stop, no time limit", seeds 1–10:
+
+| | `5c500da` | now |
+| --- | --- | --- |
+| Dashes with 2–3 left (all 10 matches) | 4 | 40 |
+| Two left after the last halving, until the next fall: median / p90 / max | 2.0 / 42.1 / 138.1 s | 1.6 / 3.4 / 14.8 s |
+| Two left before it (waiting for the halving): median / p90 / max | 1.4 / 4.5 / 190.3 s | 29.8 / 47.0 / 49.1 s |
+| Match end: median / max | 4:29 / 7:54 | 3:49 / 4:02 |
+| Points, before the third halving | 4 of 10 | 0 of 10 |
+
+Every match now reaches the last season and ends within about 15 s of it: with no halving to
+come, the last few no longer wait each other out. The e2e play spec passed at both sizes.
+
 ## Notes
 
 - Addendum 1 (no team check, no stand-in) and addendum 2 (human-like bots, equal seats)

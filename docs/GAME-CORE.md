@@ -204,8 +204,12 @@ Last One Standing without a time limit did not end; 0.15 of the radius everywher
 match by elimination at 2–4 min) —; otherwise to the
 nearest opponent it can push, approaching a little from the side of its own wander point
 (an angle by id, moved on every `bots.wanderMs`, so bots do not all meet in one spot), and a
-dash when within `bots.dashRange`, lined up (`bots.dashAimCos`), not near the edge and the
-cooldown over; with nobody to push, to the wander point.
+dash when within `bots.dashRange`, lined up (`bots.dashAimCos`), not near the edge — half a dash
+range on from where it is stays inside, but at most `bots.edgeShare` of the radius, as the
+margin (FIX 2026-11-17-5: the full half range left the last halving's arena only 31 around the
+middle to dash from, and the last bots never dashed) — and the cooldown over; it aims at where
+the target will be `leadMs` on (`leadPoint`, 0 unless bold, see below); with nobody to push, to
+the wander point.
 
 **The human-like layer** (`createBot`, owner requirement 2026-11-17), the same for every bot:
 
@@ -217,11 +221,17 @@ cooldown over; with nobody to push, to the wander point.
 - it dashes only when its brain has a target lined up, takes such a chance only with
   `bots.dashChance` × form (0.6: else too late) and never sooner than `bots.dashGapMs` (3 s)
   after its last dash — a calm player's pace (owner 2026-11-17); it hesitates for
-  `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge share is
+  `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge margin is
   drawn from [`bots.edgeSlack`, 1] × `bots.edgeMargin` (some go too close to the edge);
 - a rival dashing at it within `bots.dashRange`, heading at it as well as a bot lines up a dash
   (`underAttack`), it jumps over with `bots.jumpChance` × form (0.5) — as it sees it, a reaction
   time late, one decision per dash, only when its jump is ready: never a perfect dodge;
+- once no halving is coming any more and fewer than `bots.boldAt` (8) ghosts are left it grows
+  bolder (`boldness`, 0 … 1 with two left; FIX 2026-11-17-5: the last two ran in circles for
+  minutes): it aims up to `bots.leadMs` (0.3 s) ahead of its target from its seen speed, its dash
+  angle widens towards `bots.boldAimCos` (0.5), and after `bots.commitMs` (3 s, a quarter of it
+  with two left) without a dash it attacks anyway, whatever its dash chance (`bolder`). Bold
+  while halvings were still to come, every match ended before the third;
 - its form drifts by up to ± `bots.formStep` every `bots.formEveryMs` within `bots.form`
   (0.85–1.15): sharper and steadier on a good run, sloppier in a weak spell;
 - all of it from the bot's own seeded source, `botSeed(match seed, seat)`: runs repeat.

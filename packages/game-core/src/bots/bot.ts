@@ -3,8 +3,9 @@
 // the same a player's client sees; the human-like layer (human.ts) hands it what a player
 // would see and blurs what it decides. Near the edge — a share of the arena's radius — it turns
 // back inward; otherwise it
-// heads for the nearest opponent it can push (in Last One Standing, once only its own team is
-// left, its teammates too — standing.ts rivals) and dashes when lined up close enough; with no
+// heads for where the nearest opponent it can push will be (in Last One Standing, once only its
+// own team is left, its teammates too — standing.ts rivals) and dashes when lined up close
+// enough and the dash would not carry it past the edge; with no
 // such opponent it walks to its own wander point. The wander point (by id, moved on every
 // bots.wanderMs) also offsets the approach, so bots do not all meet in one spot.
 
@@ -48,15 +49,22 @@ export function nearest(
   return best;
 }
 
-// A dash at `target` when it is within dashRange, the cooldown is over and the bot is lined up;
-// else running at it.
+// Where `g` will be bots.leadMs on at its seen speed: a bot aims there, not where it was seen
+// (FIX 2026-11-17-5: chasing the seen position, the last two bots ran in circles).
+export function leadPoint(cfg: GameConfig, g: Readonly<Ghost>): Vec {
+  const t = cfg.bots.leadMs / 1000;
+  return { x: g.x + g.vx * t, y: g.y + g.vy * t };
+}
+
+// A dash at where `target` will be when it is within dashRange, the cooldown is over and the bot
+// is lined up; else running there.
 export function strike(
   cfg: GameConfig,
   s: Readonly<MatchState>,
   me: Readonly<Ghost>,
   target: Readonly<Ghost>,
 ): Intent {
-  const aim = toward(me, target);
+  const aim = toward(me, leadPoint(cfg, target));
   const ready = s.elapsedMs >= me.dashReadyMs && distance(me, target) <= cfg.bots.dashRange;
   return ready && linedUp(cfg, me, aim) ? { ...aim, action: 'dash' } : aim;
 }
@@ -115,7 +123,11 @@ export function botIntent(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly
     const off = cfg.bots.dashRange * APPROACH_OFFSET;
     return toward(me, { x: target.x + side.dx * off, y: target.y + side.dy * off });
   }
-  // Never a dash that would carry it past the edge on its own.
-  const room = fromCentre + cfg.bots.dashRange / 2 < edge;
-  return room ? strike(cfg, s, me, target) : toward(me, target);
+  // Never a dash that would carry it past the edge on its own: half a dash range, but in a small
+  // arena at most bots.edgeShare of its radius, as the edge margin (FIX 2026-11-17-5: the full
+  // half range left the last halving's arena of 141 a dash only within 31 of the middle — the
+  // last bots never dashed).
+  const carry = Math.min(cfg.bots.dashRange / 2, edge * cfg.bots.edgeShare);
+  const room = fromCentre + carry < edge;
+  return room ? strike(cfg, s, me, target) : toward(me, leadPoint(cfg, target));
 }

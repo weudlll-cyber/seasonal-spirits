@@ -56,6 +56,14 @@ export interface BotConfig {
   edgeShare: number;
   dashRange: number; // a bot dashes at an opponent closer than this…
   dashAimCos: number; // …when its heading points at it at least this well (cosine)
+  // FIX 2026-11-17-5 (the last bots circled each other): once no halving is coming and fewer
+  // than boldAt ghosts are left a bot grows bolder — it aims up to leadMs ahead of its target
+  // from its seen speed, its dash angle widens towards boldAimCos and, after commitMs without a
+  // dash (a quarter of it with two left), it attacks anyway (bots/human.ts).
+  leadMs: number;
+  boldAt: number;
+  boldAimCos: number;
+  commitMs: number;
   wanderMs: number; // how often a bot's own offset around its target moves on
   // The human-like layer (bots/human.ts, owner requirement 2026-11-17):
   reactionMs: [number, number]; // each bot's reaction time is drawn from this range
@@ -170,6 +178,10 @@ export const DEFAULT_CONFIG: GameConfig = {
     edgeShare: 0.35,
     dashRange: 220, // placeholder — owner decides
     dashAimCos: 0.9, // placeholder — owner decides
+    leadMs: 300, // placeholder — owner decides
+    boldAt: 8, // placeholder — owner decides
+    boldAimCos: 0.5, // placeholder — owner decides
+    commitMs: 3000, // placeholder — owner decides (owner's sketch: about 3 s)
     wanderMs: 3000, // placeholder — owner decides
     reactionMs: [250, 450], // placeholder — owner decides (owner's sketch: 250–450 ms)
     reactionJitterMs: 50, // placeholder — owner decides
