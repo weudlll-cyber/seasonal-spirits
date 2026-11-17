@@ -1,7 +1,7 @@
 // Seasonal Sumo — the match state, the intents a ghost can send, and the match events, for
 // every game mode. Everything here is public: bots and clients see the same state.
 
-import type { GameMode } from './config.js';
+import type { GameMode, SumoVariant } from './config.js';
 import type { Season, SeasonClock } from './seasons.js';
 
 export type Team = 0 | 1 | 2 | 3;
@@ -39,6 +39,8 @@ export interface Ghost {
   lastTouch: { by: number; atMs: number } | null;
   knockouts: number; // sumo: opponents it pushed off
   falls: number;
+  lives: number; // left in this match; 0: out for the rest of it (LIVES 2026-11-17)
+  outAtMs: number | null; // when it lost its last life
   aliveSinceMs: number; // the start or the last respawn
   longestAliveMs: number; // the longest stretch without a fall so far
   // hill: ms in the zone; bomb: its points in ms, 1000 a second (halved when it goes off) —
@@ -94,9 +96,12 @@ export interface Arena {
 
 export interface MatchState {
   mode: GameMode;
+  variant: SumoVariant; // sumo's variant of this match; the walled modes play 'points'
+  livesAtStart: number; // every ghost's lives when the match began
   elapsedMs: number;
   tick: number;
   clock: SeasonClock;
+  lastHalvingMs: number; // when the arena last halved, 0 before: keep-halving's rhythm
   // Set during the last deadlineCountdownMs before the season's end: a halving, or in the
   // last season the match end; null otherwise and once the match has ended.
   countdownMs: number | null;
@@ -105,6 +110,10 @@ export interface MatchState {
   zone: Disc | null; // hill: the zone now; null in the other modes
   bombs: Bomb[]; // bomb: the bombs; empty in the other modes
   ghosts: Ghost[]; // sorted by id
+  knockedOut: Team[]; // teams whose last ghost lost its last life, in that order
+  // Set when the match ends (standing.ts): the winning team and, when one ghost was left, it.
+  winner: Team | null;
+  lastStanding: number | null;
   events: MatchEvent[]; // events of the last tick only
 }
 
@@ -114,6 +123,7 @@ export interface PlayerResult {
   score: number; // the mode's score: sumo knockouts, hill and bomb whole points
   knockouts: number;
   falls: number;
+  lives: number;
   longestAliveMs: number;
   scoreMs: number;
   bounces: number;
@@ -122,6 +132,11 @@ export interface PlayerResult {
 
 export interface MatchResult {
   mode: GameMode;
+  variant: SumoVariant;
   players: PlayerResult[];
   teams: number[]; // the players' scores summed per team, index = team
+  left: number[]; // ghosts with lives left per team, index = team
+  knockedOut: Team[];
+  winner: Team | null; // Last One Standing only; Points ranks by the scores
+  lastStanding: number | null;
 }

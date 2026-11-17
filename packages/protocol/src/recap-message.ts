@@ -10,16 +10,28 @@ export const MAX_RECAP_BYTES = 4096;
 const MAX_PLAYERS = 64;
 const MAX_AWARDS = 8; // two per mode today
 const MAX_COUNT = 65535; // a score per team or player
-const MAX_VALUE = 3_600_000; // an award's value: at most an hour in ms
+const MAX_VALUE = 3_600_000; // an award's value: at most an hour in ms; 0 lives left is one
 const KIND = /^[a-z-]{1,16}$/; // an award kind; the client shows the kinds it knows
 
 export function readRecap(fields: Record<string, unknown>): ServerRecap | null {
-  const { teams, players, awards } = fields;
-  if (!Array.isArray(teams) || teams.length !== 4 || !teams.every(isCount)) return null;
+  const { teams, left, knockedOut, winner, players, awards } = fields;
+  if (!isFour(teams) || !isFour(left)) return null;
+  // Each team at most once, in the order it went out.
+  const out = knockedOut;
+  if (!Array.isArray(out) || !out.every(isTeam) || new Set(out).size !== out.length) return null;
+  if (winner !== null && !isTeam(winner)) return null;
   const read = list(players, MAX_PLAYERS, readPlayer);
   const won = list(awards, MAX_AWARDS, readAward);
   if (!read || !won) return null;
-  return { kind: 'recap', teams: teams as ServerRecap['teams'], players: read, awards: won };
+  return { kind: 'recap', teams, left, knockedOut: out, winner, players: read, awards: won };
+}
+
+function isFour(v: unknown): v is [number, number, number, number] {
+  return Array.isArray(v) && v.length === 4 && v.every(isCount);
+}
+
+function isTeam(v: unknown): v is number {
+  return isIntIn(v, 0, 3);
 }
 
 // A bounded array whose every item reads; null if any does not.
@@ -47,7 +59,7 @@ function readPlayer(p: Record<string, unknown>): ServerRecap['players'][number] 
 function readAward(a: Record<string, unknown>): ServerRecap['awards'][number] | null {
   const { kind, ghost, value } = a;
   if (typeof kind !== 'string' || !KIND.test(kind)) return null;
-  return isIntIn(ghost, 0, 255) && isIntIn(value, 1, MAX_VALUE) ? { kind, ghost, value } : null;
+  return isIntIn(ghost, 0, 255) && isIntIn(value, 0, MAX_VALUE) ? { kind, ghost, value } : null;
 }
 
 function isCount(v: unknown): v is number {

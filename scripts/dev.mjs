@@ -1,6 +1,7 @@
 // Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
-// The server's own bots fill all 32 slots; the game modes take turns (GAME_MODE=rotate); the
-// viewer carries the owner's live tuning sliders (DEV_TUNING=1).
+// The server's own bots fill all 32 slots; Sumo only, Points and Last One Standing in turn
+// (SUMO_VARIANT=alternate; GAME_MODE=rotate brings in the other modes); the viewer carries the
+// owner's live tuning sliders (DEV_TUNING=1).
 // Starts all three as hidden background processes (no windows on Windows, the same on Linux
 // and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
 // tmp/dev-pids.json, and stops exactly those PIDs again. `pnpm dev --lan` (development only,
@@ -160,11 +161,13 @@ async function start(lan) {
     'server',
     'apps/server',
     ['--import', 'tsx', 'src/main.ts'],
-    // The modes take turns match by match (sumo → hill → bomb); GAME_MODE=sumo plays one.
-    // DEV_TUNING: the owner's live sliders in the viewer (docs/SERVER.md, "Live tuning").
+    // Sumo, its two variants in turn (LIVES 2026-11-17: the owner's dev default); GAME_MODE=rotate
+    // lets the modes take turns. DEV_TUNING: the owner's live sliders in the viewer
+    // (docs/SERVER.md, "Live tuning").
     {
       HOST: host,
-      GAME_MODE: process.env.GAME_MODE ?? 'rotate',
+      GAME_MODE: process.env.GAME_MODE ?? 'sumo',
+      SUMO_VARIANT: process.env.SUMO_VARIANT ?? 'alternate',
       DEV_TUNING: '1',
       VIEWER_PORT: String(VIEWER_PORT),
     },

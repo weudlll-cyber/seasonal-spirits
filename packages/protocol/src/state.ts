@@ -14,6 +14,7 @@ export interface GhostState {
   score: number; // 0..65535: the mode's score (sumo knockouts, hill and bomb whole points)
   dashLeftMs: number; // until the next dash is allowed, in steps of 20 ms (the cooldown ring)
   flags: number; // GHOST_* bits
+  lives: number; // 0..255 left in this match; 0: out for the rest of it
 }
 
 export const GHOST_BOT = 1;
@@ -44,6 +45,7 @@ export interface ServerState {
   nextMatchMs: number; // during the result: ms until the next match starts; else 0
   teamScore: [number, number, number, number]; // the mode's score per team
   mode: number; // index in GAME_MODES
+  livesAtStart: number; // 0..255: every ghost's lives when the match began (the hearts)
   area: WireDisc | null; // drawn glowing: sumo's arena, the hill's zone; null in bomb
   next: WireDisc | null; // after the next halving: the dashed outline of its countdown
   ghosts: GhostState[]; // up to 255
@@ -57,15 +59,20 @@ export const STATE_RESULT = 2; // the match is over; the result pause before the
 export const STATE_TO_END = 4;
 // The match ended in this tick: "MATCH OVER" (in exactly one state, like the halving).
 export const STATE_MATCH_END_EVENT = 8;
+// Sumo's variant Last One Standing (LIVES 2026-11-17); without it, Points.
+export const STATE_LAST_STANDING = 16;
+// No next deadline (Last One Standing, "stop-open", after the third halving): the band shows
+// the time played (matchMs) instead of a countdown.
+export const STATE_OPEN_END = 32;
 
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonNumber u8 ·
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
 // teamScore 4×u16 · mode u8 · area x, y, r 3×u16 · next x, y, r 3×u16 (tenths; r 0 = none)
-// · ghost count u8.
+// · ghost count u8 · livesAtStart u8.
 // Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 · score u16 · dashLeft u8
-// (20 ms steps) · flags u8. All little endian.
-export const HEADER_BYTES = 45;
-export const GHOST_BYTES = 14;
+// (20 ms steps) · flags u8 · lives u8. All little endian.
+export const HEADER_BYTES = 46;
+export const GHOST_BYTES = 15;
 const NO_COUNTDOWN = 0xffff;
 const DASH_STEP_MS = 20;
 
@@ -105,6 +112,7 @@ function writeHeader(v: DataView, s: ServerState): void {
   writeDisc(v, 32, s.area);
   writeDisc(v, 38, s.next);
   v.setUint8(44, s.ghosts.length);
+  v.setUint8(45, u8(s.livesAtStart));
 }
 
 // A missing disc travels as zeros; a radius of 0 reads back as none.
@@ -130,6 +138,7 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setUint16(o + 10, u16(g.score), true);
   v.setUint8(o + 12, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
   v.setUint8(o + 13, g.flags & 0xff);
+  v.setUint8(o + 14, u8(g.lives));
   return o + GHOST_BYTES;
 }
 
@@ -161,6 +170,7 @@ function readHeader(v: DataView): Omit<ServerState, 'ghosts'> {
     nextMatchMs: v.getUint16(21, true),
     teamScore: [team(0), team(1), team(2), team(3)],
     mode: v.getUint8(31),
+    livesAtStart: v.getUint8(45),
     area: readDisc(v, 32),
     next: readDisc(v, 38),
   };
@@ -177,5 +187,6 @@ function readGhost(v: DataView, o: number): GhostState {
     score: v.getUint16(o + 10, true),
     dashLeftMs: v.getUint8(o + 12) * DASH_STEP_MS,
     flags: v.getUint8(o + 13),
+    lives: v.getUint8(o + 14),
   };
 }

@@ -20,6 +20,26 @@ export interface BombConfig {
   passBackMs: number; // a bomb cannot go back to the ghost that just gave it before this
 }
 
+// Sumo's two variants (LIVES 2026-11-17): "points" — the most knockout points wins (the time
+// limit, or earlier when only one team has players left); "last-standing" — no points, the last
+// player still in the arena wins. The server picks one per match, or lets them take turns.
+export const SUMO_VARIANTS = ['points', 'last-standing'] as const;
+export type SumoVariant = (typeof SUMO_VARIANTS)[number];
+export const VARIANT_CHOICES = [...SUMO_VARIANTS, 'alternate'] as const;
+export type VariantChoice = (typeof VARIANT_CHOICES)[number];
+// Last One Standing after the third halving: "stop-time" — the arena keeps its size, the match
+// ends at its time limit; "keep-halving" — it halves every halvingEveryMs, no time limit;
+// "stop-open" — it keeps its size and there is no time limit.
+export const AFTER_LAST = ['stop-time', 'keep-halving', 'stop-open'] as const;
+export type AfterLast = (typeof AFTER_LAST)[number];
+
+export interface SumoConfig {
+  lives: number; // each ghost's lives in a match; a fall costs one, none left: out
+  variant: VariantChoice; // the server's choice; a match plays one SumoVariant
+  afterLast: AfterLast; // Last One Standing only; read every tick (the owner's slider)
+  halvingEveryMs: number; // "keep-halving": the interval after the third halving
+}
+
 export interface BotConfig {
   edgeMargin: number; // field units from the edge where a bot turns back inward
   dashRange: number; // a bot dashes at an opponent closer than this…
@@ -69,6 +89,7 @@ export interface GameConfig {
   resultPauseMs: number;
   hill: HillConfig;
   bomb: BombConfig;
+  sumo: SumoConfig;
   bots: BotConfig;
 }
 
@@ -121,6 +142,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     playersPerBomb: 8, // placeholder — owner decides (owner's sketch: one per 8 players)
     passBackMs: 1000, // owner's rule: not back to the giver for 1 s
   },
+  // Placeholders — owner decides with the live sliders (LIVES 2026-11-17).
+  sumo: { lives: 3, variant: 'points', afterLast: 'stop-time', halvingEveryMs: 75_000 },
   bots: {
     edgeMargin: 140, // placeholder — owner decides
     dashRange: 220, // placeholder — owner decides
@@ -157,11 +180,24 @@ export function modeConfig(base: GameConfig, mode: GameMode): GameConfig {
   return { ...base, ...MODE_TIMES[mode], mode };
 }
 
-// The owner's live tuning (TUNE 2026-11-17, development only; the numbers and their ranges are
-// protocol's tuning.ts): the config fields four numbers set — the acceleration scales with the
-// top speed, so a ghost reaches it in the same time.
-export type Tunable = Pick<GameConfig, 'arenaRadius' | 'maxSpeed' | 'dashSpeed' | 'knockSpeed'>;
-export type TunedFields = Tunable & Pick<GameConfig, 'acceleration'>;
+// The owner's live tuning (TUNE and LIVES 2026-11-17, development only; the numbers and their
+// ranges are protocol's tuning.ts): the config fields eight whole numbers set — the acceleration
+// scales with the top speed, so a ghost reaches it in the same time; variant and afterLast are
+// indices in VARIANT_CHOICES and AFTER_LAST, the halving interval is in seconds.
+export interface Tunable {
+  arenaRadius: number;
+  maxSpeed: number;
+  dashSpeed: number;
+  knockSpeed: number;
+  lives: number;
+  variant: number;
+  afterLast: number;
+  halvingEverySec: number;
+}
+export type TunedFields = Pick<
+  GameConfig,
+  'arenaRadius' | 'maxSpeed' | 'dashSpeed' | 'knockSpeed' | 'acceleration' | 'sumo'
+>;
 const ACCELERATION_PER_SPEED = DEFAULT_CONFIG.acceleration / DEFAULT_CONFIG.maxSpeed;
 
 export function tunedFields(t: Tunable): TunedFields {
@@ -172,6 +208,27 @@ export function tunedFields(t: Tunable): TunedFields {
     dashSpeed,
     knockSpeed,
     acceleration: maxSpeed * ACCELERATION_PER_SPEED,
+    sumo: {
+      lives: t.lives,
+      variant: VARIANT_CHOICES[t.variant] ?? 'points',
+      afterLast: AFTER_LAST[t.afterLast] ?? 'stop-time',
+      halvingEveryMs: t.halvingEverySec * 1000,
+    },
+  };
+}
+
+// The other way round: a config's numbers as the sliders show them (their starting values).
+export function tuningOf(cfg: GameConfig): Tunable {
+  const { arenaRadius, maxSpeed, dashSpeed, knockSpeed, sumo } = cfg;
+  return {
+    arenaRadius,
+    maxSpeed,
+    dashSpeed,
+    knockSpeed,
+    lives: sumo.lives,
+    variant: VARIANT_CHOICES.indexOf(sumo.variant),
+    afterLast: AFTER_LAST.indexOf(sumo.afterLast),
+    halvingEverySec: Math.round(sumo.halvingEveryMs / 1000),
   };
 }
 

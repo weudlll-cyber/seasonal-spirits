@@ -1,11 +1,19 @@
 // Seasonal Sumo — the help overlay (owner's observation 2026-11-15: the rules were not
 // understood): the mode's three short rules in plain words, each with a small drawing made in
-// code; "What you see": every mark on the field, as the game draws it (LEGEND); and the
-// controls. Shown once on the first visit, any time with "?" or the band's "?" button; one tap
-// or any key closes it. It follows the mode of the match on screen.
+// code; in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
+// mark on the field, as the game draws it (LEGEND); and the controls. Shown once on the first
+// visit, any time with "?" or the band's "?" button; one tap or any key closes it. It follows
+// the match on screen.
 
 import type { GameMode } from '@seasonal-spirits/game-core';
-import { LEGEND, SEASON_COLOURS, TEXT, type LegendMarker } from '@seasonal-spirits/render';
+import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
+import {
+  LEGEND,
+  SEASON_COLOURS,
+  TEXT,
+  variantName,
+  type LegendMarker,
+} from '@seasonal-spirits/render';
 import { readSetting, writeSetting } from './storage.js';
 
 const SEEN_KEY = 'seasonal-spirits.help-seen';
@@ -56,7 +64,7 @@ const DASH = {
 export const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
   sumo: [
     {
-      text: 'Push the other teams off the arena. Every ghost you push off scores a point for your team.',
+      text: 'Push the other teams off the arena. Every fall costs a life; with none left you watch until the next match.',
       drawing: svg(arc(26, SUMMER) + ghost(54, 30, 9, SPRING) + ghost(88, 30, 8, SUMMER)),
     },
     DASH,
@@ -132,18 +140,32 @@ const CONTROLS =
   '<p><b>Keyboard:</b> WASD or arrows to move, Space to dash, ? help.</p>' +
   '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Dash under the right thumb.</p>';
 
-const content = (mode: GameMode, name: string): string =>
-  `<div class="card"><h2>How to play: ${name}</h2><ol>` +
+// Sumo's variant in one sentence, with the match's lives (a whole number from the decoded
+// state); null in the walled modes.
+export function variantRule(s: {
+  mode: number;
+  flags: number;
+  livesAtStart: number;
+}): string | null {
+  if (variantName(s) === null) return null;
+  const lives = `you have ${String(s.livesAtStart)} ${s.livesAtStart === 1 ? 'life' : 'lives'}`;
+  return s.flags & STATE_LAST_STANDING
+    ? `Last One Standing — no points: ${lives}, and the last ghost still in the arena wins for its team.`
+    : `Points — every ghost you push off scores for your team; ${lives}, and the team with the most knockouts wins.`;
+}
+
+const content = (mode: GameMode, name: string, rule: string | null): string =>
+  `<div class="card"><h2>How to play: ${name}</h2>${rule ? `<p>${rule}</p>` : ''}<ol>` +
   RULES[mode].map((r) => `<li>${r.drawing}<span>${r.text}</span></li>`).join('') +
   `</ol>${SEEN}${CONTROLS}<p class="small">Tap anywhere or press any key to close.</p></div>`;
 
 export class Help {
   private readonly overlay: HTMLElement;
-  private mode: GameMode | null = null;
+  private shown: string | null = null; // the mode, name and rule on screen
 
   constructor(overlay: HTMLElement, button: HTMLButtonElement) {
     this.overlay = overlay;
-    this.show('sumo', 'Seasonal Sumo');
+    this.show('sumo', 'Seasonal Sumo', null);
     overlay.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.close();
@@ -166,11 +188,13 @@ export class Help {
     if (readSetting(SEEN_KEY) !== '1') this.open();
   }
 
-  // The rules of the mode on screen; rebuilt only when it changes (the server's rotation).
-  show(mode: GameMode, name: string): void {
-    if (mode === this.mode) return;
-    this.mode = mode;
-    this.overlay.innerHTML = content(mode, name);
+  // The rules of the match on screen; rebuilt only when they change (the server's rotation,
+  // sumo's variants in turn, the lives).
+  show(mode: GameMode, name: string, rule: string | null): void {
+    const key = `${mode}|${name}|${rule ?? ''}`;
+    if (key === this.shown) return;
+    this.shown = key;
+    this.overlay.innerHTML = content(mode, name, rule);
   }
 
   open(): void {

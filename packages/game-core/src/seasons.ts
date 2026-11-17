@@ -21,11 +21,6 @@ export function seasonsInMatch(cfg: GameConfig): number {
   return Math.ceil(cfg.matchDurationMs / cfg.seasonDurationMs);
 }
 
-// The last season ends with the match, not with a halving.
-export function isLastSeason(cfg: GameConfig, clock: SeasonClock): boolean {
-  return clock.index >= seasonsInMatch(cfg) - 1;
-}
-
 export function seasonClock(cfg: GameConfig, elapsedMs: number): SeasonClock {
   const index = Math.min(seasonsInMatch(cfg) - 1, Math.floor(elapsedMs / cfg.seasonDurationMs));
   let current = cfg.startSeason;

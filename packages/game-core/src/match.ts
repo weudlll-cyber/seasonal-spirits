@@ -1,16 +1,18 @@
 // Seasonal Sumo — one match of any game mode: the pure, deterministic core driven by tick(dt).
 // No clock and no randomness of its own: time is the sum of the dt values it is given and
 // every random value comes from the seed, so the same seed and intents give the same match.
-// The shared physics live here once; the mode's own rules come from modes/rules.ts.
+// The shared physics live here once; the mode's own rules come from modes/rules.ts, sumo's
+// variants — lives, the end, the winner — from standing.ts.
 
 import { followEdge, newArena, scaleArena, startSpot, updateArena } from './arena.js';
 import { collideGhosts } from './collisions.js';
-import { walled, type GameConfig } from './config.js';
+import { walled, type GameConfig, type SumoVariant } from './config.js';
 import { advancePhases } from './falls.js';
 import { dashVelocity, moveOnce, subSteps } from './geometry.js';
 import { rulesFor, scoreOf, type ModeRules } from './modes/rules.js';
 import { mulberry32 } from './rng.js';
 import { seasonClock } from './seasons.js';
+import { clockOf, decide, isOver, nextDeadline, noteKnockedOut, timed } from './standing.js';
 import {
   IDLE,
   TEAMS,
@@ -32,7 +34,13 @@ export class Match {
   private readonly rng: () => number;
   private readonly rules: ModeRules;
 
-  constructor(cfg: GameConfig, seed: number, roster: readonly Roster[]) {
+  // `variant`: sumo's for this match (the server's choice); the walled modes play "points".
+  constructor(
+    cfg: GameConfig,
+    seed: number,
+    roster: readonly Roster[],
+    variant: SumoVariant = 'points',
+  ) {
     this.cfg = cfg;
     // The match's one seeded random source: respawn spots (arena.ts respawnSpot), the bombs.
     this.rng = mulberry32(seed);
@@ -42,19 +50,25 @@ export class Match {
     const ghosts = sorted.map((r) => {
       const mates = sorted.filter((m) => m.team === r.team);
       const p = startSpot(cfg, arena, r.team, { index: mates.indexOf(r), of: mates.length });
-      return newGhost(r, p.x, p.y);
+      return newGhost(r, p, cfg.sumo.lives);
     });
     this.s = {
       mode: cfg.mode,
+      variant: cfg.mode === 'sumo' ? variant : 'points',
+      livesAtStart: cfg.sumo.lives,
       elapsedMs: 0,
       tick: 0,
       clock: seasonClock(cfg, 0),
+      lastHalvingMs: 0,
       countdownMs: null,
       ended: false,
       arena,
       zone: null,
       bombs: [],
       ghosts,
+      knockedOut: [],
+      winner: null,
+      lastStanding: null,
       events: [],
     };
     this.rules.start(this.s, this.rng);
@@ -66,20 +80,13 @@ export class Match {
 
   // One step. Order: time and season (a season turn is the mode's halving), the arena's edge,
   // falls ending and respawns, each ghost's dash (by id), movement and collisions in sub-steps,
-  // the mode's rules (sumo: new falls; hill: the zone's points; bomb: points and passes), the end, the
-  // countdown. Intents of unknown ids are ignored.
+  // the mode's rules (sumo: new falls; hill: the zone's points; bomb: points and passes), the
+  // teams knocked out, the end and its winner, the countdown. Intents of unknown ids are ignored.
   tick(dtMs: number, intents: ReadonlyMap<number, Intent>): Readonly<MatchState> {
     const s = this.s;
     s.events = [];
     if (s.ended || !(dtMs > 0)) return s;
-    const prevSeason = s.clock.index;
-    s.elapsedMs = Math.min(this.cfg.matchDurationMs, s.elapsedMs + dtMs);
-    s.tick++;
-    s.clock = seasonClock(this.cfg, s.elapsedMs);
-    if (s.clock.index !== prevSeason) {
-      s.events.push({ type: 'halving', atMs: s.elapsedMs, season: s.clock.current });
-      this.rules.turn(s, this.rng);
-    }
+    this.advanceTime(dtMs);
     const before = s.arena.radius;
     updateArena(this.cfg, s.arena, s.elapsedMs);
     followEdge(s, before);
@@ -93,13 +100,40 @@ export class Match {
       collideGhosts(this.cfg, s);
     }
     this.rules.after(s, dtMs);
-    s.ended = s.elapsedMs >= this.cfg.matchDurationMs;
-    if (s.ended) s.events.push({ type: 'match-end', atMs: s.elapsedMs });
-    // One countdown for every deadline: before each halving, and in the last season before
-    // the match end (the server tells the clients which one).
-    const left = s.clock.timeLeftMs;
-    s.countdownMs = !s.ended && left <= this.cfg.deadlineCountdownMs ? left : null;
+    this.finish();
     return s;
+  }
+
+  // Time runs on — up to the time limit when the match has one — and the season clock with it;
+  // a season turn is a halving (standing.ts clockOf: also keep-halving's after the last season).
+  private advanceTime(dtMs: number): void {
+    const s = this.s;
+    const before = s.clock.index;
+    const end = timed(this.cfg, s) ? this.cfg.matchDurationMs : Infinity;
+    s.elapsedMs = Math.max(s.elapsedMs, Math.min(end, s.elapsedMs + dtMs));
+    s.tick++;
+    s.clock = clockOf(this.cfg, s);
+    if (s.clock.index > before) {
+      s.lastHalvingMs = s.elapsedMs;
+      s.events.push({ type: 'halving', atMs: s.elapsedMs, season: s.clock.current });
+      this.rules.turn(s, this.rng);
+    }
+  }
+
+  // The teams knocked out, the end and its winner, and the countdown.
+  private finish(): void {
+    const s = this.s;
+    noteKnockedOut(s);
+    s.ended = isOver(this.cfg, s);
+    if (s.ended) {
+      Object.assign(s, decide(s));
+      s.events.push({ type: 'match-end', atMs: s.elapsedMs });
+    }
+    // One countdown for every deadline: before each halving, and in the last season before
+    // the match end (the server tells the clients which one); none without a deadline.
+    const left = s.clock.timeLeftMs;
+    const due = !s.ended && nextDeadline(this.cfg, s) !== null;
+    s.countdownMs = due && left <= this.cfg.deadlineCountdownMs ? left : null;
   }
 
   // A player takes over a ghost a bot steered: it starts from standing, not with the bot's
@@ -116,21 +150,26 @@ export class Match {
     if (!walled(this.cfg)) scaleArena(this.s.arena, factor, this.s.elapsedMs, true);
   }
 
-  // Each player's counts and its score in the mode, the scores summed per team; a ghost's
-  // longest stretch without a fall counts the one it is in at the end too.
+  // Each player's counts and its score in the mode, the scores and the ghosts still in summed
+  // per team, the teams knocked out and the winner; a ghost's longest stretch without a fall
+  // counts the one it is in at the end too.
   result(): MatchResult {
+    const s = this.s;
     const mode = this.cfg.mode;
     const teams = TEAMS.map(() => 0);
-    const now = this.s.elapsedMs;
-    const players = this.s.ghosts.map((g) => {
+    const left = TEAMS.map(() => 0);
+    const players = s.ghosts.map((g) => {
       const score = scoreOf(mode, g);
       teams[g.team] = (teams[g.team] ?? 0) + score;
-      const running = g.phase === 'in' ? now - g.aliveSinceMs : 0;
-      const { id, team, knockouts, falls, scoreMs, bounces, passes } = g;
+      if (g.lives > 0) left[g.team] = (left[g.team] ?? 0) + 1;
+      const running = g.phase === 'in' ? s.elapsedMs - g.aliveSinceMs : 0;
+      const { id, team, knockouts, falls, lives, scoreMs, bounces, passes } = g;
       const longestAliveMs = Math.max(g.longestAliveMs, running);
-      return { id, team, score, knockouts, falls, longestAliveMs, scoreMs, bounces, passes };
+      return { id, team, score, knockouts, falls, lives, longestAliveMs, scoreMs, bounces, passes };
     });
-    return { mode, players, teams };
+    const { variant, winner, lastStanding } = s;
+    const knockedOut = [...s.knockedOut];
+    return { mode, variant, players, teams, left, knockedOut, winner, lastStanding };
   }
 
   // A ghost on the arena may dash, once per tick (the cooldown is the core's: a dash before
@@ -155,12 +194,12 @@ export class Match {
   }
 }
 
-function newGhost(r: Roster, x: number, y: number): Ghost {
+function newGhost(r: Roster, p: { x: number; y: number }, lives: number): Ghost {
   return {
     id: r.id,
     team: r.team,
-    x,
-    y,
+    x: p.x,
+    y: p.y,
     vx: 0,
     vy: 0,
     phase: 'in',
@@ -172,6 +211,8 @@ function newGhost(r: Roster, x: number, y: number): Ghost {
     lastTouch: null,
     knockouts: 0,
     falls: 0,
+    lives,
+    outAtMs: null,
     aliveSinceMs: 0,
     longestAliveMs: 0,
     scoreMs: 0,

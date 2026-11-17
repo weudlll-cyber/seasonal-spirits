@@ -1,14 +1,14 @@
 // Seasonal Sumo — the game core's match state as the wire state every client receives.
 // One place turns the core's numbers into what clients show: the game mode, per ghost its
-// position, speed, score, the time to its next dash, its phase and its bomb, the disc that
-// halves (sumo's arena, the hill's zone) now and after the next halving, and the score per
-// team.
+// position, speed, score, lives, the time to its next dash, its phase and its bomb, the disc
+// that halves (sumo's arena, the hill's zone) now and after the next halving, the score per
+// team, sumo's variant and what the clock runs to (a halving, the end, or nothing).
 
 import {
   GAME_MODES,
   SEASONS,
   areaOf,
-  isLastSeason,
+  nextDeadline,
   scoreOf,
   type GameConfig,
   type Ghost,
@@ -24,7 +24,9 @@ import {
   GHOST_OUT,
   GHOST_PROTECTED,
   STATE_HALVING_EVENT,
+  STATE_LAST_STANDING,
   STATE_MATCH_END_EVENT,
+  STATE_OPEN_END,
   STATE_RESULT,
   STATE_TO_END,
   type GhostState,
@@ -44,21 +46,25 @@ export interface WireContext {
 export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
   const teams = ctx.result.teams;
   const area = areaOf(ctx.cfg, s);
+  const deadline = s.ended ? 'over' : nextDeadline(ctx.cfg, s);
   return {
     matchMs: s.elapsedMs,
     season: SEASONS.indexOf(s.clock.current),
     seasonNumber: s.clock.index,
     seasonLeftMs: s.clock.timeLeftMs,
     countdownMs: s.countdownMs,
-    // The server says which deadline is next: the match end in the last season, else a halving.
+    // The server says which deadline is next: the match end, a halving, or none at all.
     flags:
       (ctx.events.some((e) => e.type === 'halving') ? STATE_HALVING_EVENT : 0) |
       (s.ended ? STATE_RESULT : 0) |
-      (!s.ended && isLastSeason(ctx.cfg, s.clock) ? STATE_TO_END : 0) |
-      (ctx.events.some((e) => e.type === 'match-end') ? STATE_MATCH_END_EVENT : 0),
+      (deadline === 'end' ? STATE_TO_END : 0) |
+      (deadline === null ? STATE_OPEN_END : 0) |
+      (ctx.events.some((e) => e.type === 'match-end') ? STATE_MATCH_END_EVENT : 0) |
+      (s.variant === 'last-standing' ? STATE_LAST_STANDING : 0),
     nextMatchMs: ctx.nextMatchMs,
     teamScore: [teams[0] ?? 0, teams[1] ?? 0, teams[2] ?? 0, teams[3] ?? 0],
     mode: GAME_MODES.indexOf(s.mode),
+    livesAtStart: s.livesAtStart,
     area: area.now,
     next: area.next,
     ghosts: s.ghosts.map((g) => ghostOnWire(ctx, s, g)),
@@ -83,5 +89,6 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (g.phase === 'out' ? GHOST_OUT : 0) |
       (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0) |
       (s.bombs.some((b) => b.carrier === g.id) ? GHOST_BOMB : 0),
+    lives: g.lives,
   };
 }

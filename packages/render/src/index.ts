@@ -9,5 +9,13 @@ export { Trails, drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js'
 export { PULSE_MS, drawRespawnBand } from './own.js';
 export { LEGEND, type LegendMarker } from './legend.js';
 export { CLOCK_HEIGHT, drawClock, mmss } from './clock.js';
-export { clientConfig, fuseLeft, modeOf, modeWords, type ModeWords } from './modes.js';
+export {
+  clientConfig,
+  fuseLeft,
+  matchName,
+  modeOf,
+  modeWords,
+  variantName,
+  type ModeWords,
+} from './modes.js';
 export { drawBomb } from './bomb.js';

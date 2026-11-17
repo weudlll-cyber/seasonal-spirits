@@ -193,8 +193,8 @@
         gap: 8px;
         min-width: 0;
       }
-      /* The team scores: one chip per team, its knockouts; the leader framed (scores.ts). Four
-         chips fit a 390 px phone. */
+      /* The team scores: one chip per team, its knockouts and in sumo its ghosts still in; the
+         leader framed (scores.ts). Four chips fit a 390 px phone. */
       #scores {
         display: flex;
         gap: 6px;
@@ -214,7 +214,7 @@
         background: rgba(230, 237, 243, 0.08);
       }
       #team {
-        flex: 1;
+        flex: 0 1 auto;
         min-width: 0;
         white-space: nowrap;
         overflow: hidden;
@@ -222,6 +222,20 @@
         font-size: clamp(16px, 5vw, 22px);
         font-weight: 800;
         letter-spacing: 0.02em;
+      }
+      /* The own lives next to the team line (lives.ts): a lost heart fades out. */
+      #hearts {
+        display: flex;
+        gap: 2px;
+        flex: none;
+        font-size: clamp(14px, 4vw, 18px);
+        color: #ff6b81;
+      }
+      #hearts .heart {
+        transition: opacity 0.8s;
+      }
+      #hearts .heart.lost {
+        opacity: 0.18;
       }
       #notice {
         position: fixed;
@@ -236,7 +250,8 @@
         text-align: center;
       }
       @media (max-width: 480px) {
-        #team .lead {
+        #team .lead,
+        #scores .name {
           display: none;
         }
       }
@@ -315,12 +330,13 @@
     <div id="band">
       <div id="band-top">
         <div id="team" hidden></div>
+        <div id="hearts" hidden></div>
         <div id="corner">
           <button id="help-open" type="button" aria-label="How to play">?</button>
           <button id="mute" type="button" aria-pressed="false">Sound on</button>
         </div>
       </div>
-      <div id="scores" aria-label="Knockouts per team" hidden></div>
+      <div id="scores" aria-label="Per team" hidden></div>
     </div>
     <div id="help" role="dialog" aria-label="How to play" hidden></div>
     <div id="result" hidden>

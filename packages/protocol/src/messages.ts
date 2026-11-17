@@ -43,13 +43,18 @@ export interface ServerSpectating {
 }
 
 // Server → every client, once when a match ends (and to a client that arrives during the result
-// pause): the mode's score per team and player and the awards the match earned (game-core
-// recap.ts: kind, ghost, value — knockouts, ms, seconds, bounces, passes or points by kind).
+// pause): the mode's score per team and player, the ghosts still in per team, the teams knocked
+// out in order, Last One Standing's winning team (null in Points: the scores rank), and the
+// awards the match earned (game-core recap.ts: kind, ghost, value — lives left, knockouts, ms,
+// seconds, bounces, passes or points by kind).
 // An award nobody earned is left out; a client shows the kinds it knows. Names are the
 // client's (ghostName).
 export interface ServerRecap {
   kind: 'recap';
   teams: [number, number, number, number];
+  left: [number, number, number, number];
+  knockedOut: number[];
+  winner: number | null;
   players: { ghost: number; team: number; score: number }[];
   awards: { kind: string; ghost: number; value: number }[];
 }

@@ -3,7 +3,13 @@
 // snaps across a large one, stands while the server holds the ghost still, and stops at another
 // ghost instead of being drawn through it.
 
-import { DEFAULT_CONFIG, Match, tunedFields, type Intent } from '@seasonal-spirits/game-core';
+import {
+  DEFAULT_CONFIG,
+  Match,
+  tunedFields,
+  tuningOf,
+  type Intent,
+} from '@seasonal-spirits/game-core';
 import { clientConfig } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { OwnPrediction, PREDICTION_LAG_MS, SNAP_DISTANCE, type ServerOwn } from './prediction.js';
@@ -21,7 +27,13 @@ const at = (x: number, y: number, receivedAt: number, frozen = false): ServerOwn
 
 // The owner's live tuning (TUNE 2026-11-17): the server tunes its config in place, the client
 // builds the same from the tuning message (render clientConfig).
-const TUNING = { arenaRadius: 600, maxSpeed: 400, dashSpeed: 900, knockSpeed: 500 };
+const TUNING = {
+  ...tuningOf(DEFAULT_CONFIG),
+  arenaRadius: 600,
+  maxSpeed: 400,
+  dashSpeed: 900,
+  knockSpeed: 500,
+};
 const SERVER_TUNED = { ...DEFAULT_CONFIG, ...tunedFields(TUNING) };
 
 describe('OwnPrediction against the server', () => {

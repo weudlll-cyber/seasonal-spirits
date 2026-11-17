@@ -1,4 +1,4 @@
-Client URL: http://localhost:5930 (viewer with the live tuning sliders: http://localhost:5931) — `pnpm dev` from `proto/sumo` is running, Sumo only (`GAME_MODE=sumo pnpm dev`; plain `pnpm dev` rotates the modes).
+Client URL: http://localhost:5930 (viewer with the live tuning panel: http://localhost:5931) — `pnpm dev` from `proto/sumo` is running: Sumo only, Points and Last One Standing in turn (the dev default since LIVES; `GAME_MODE=rotate pnpm dev` brings in hill and bomb).
 
 # Night 2026-11-17 — Seasonal Sumo — morning sheet
 
@@ -18,6 +18,8 @@ Client URL: http://localhost:5930 (viewer with the live tuning sliders: http://l
   `proto/sumo` is merged.
 - The feel: set arena size, walking speed, dash and push with the viewer's sliders (see
   "Tune") and send the copied line.
+- Lives and the variants: the number of lives, Points or Last One Standing, and what Last One
+  Standing does after the last season — with the panel (see "Lives"); the copied line holds all.
 - The other placeholders: respawn, the bots' reaction time and aim
   noise; the walls (1400 square), the zone (300 at the start), one bomb per 8 players, the
   times (hill 3:00 with a jump every 45 s, bomb 3:00 with a blast every 20 s).
@@ -260,6 +262,51 @@ by a slider; the change still shows at once).
 **Checked live** (`pnpm dev`, Sumo, 15 s seasons for the check): 108 s, two match changes, 15
 falls, five slider changes 400 ↔ 300: the client owned its ghost in all 537 samples; the band
 line counted 3, 2, 1.
+
+## Lives — limited lives, two Sumo variants, more sliders
+
+Owner's decision after playing with the sliders: the smaller the arena, the more crowded and
+confusing it gets — fewer players should be left in the late phases.
+
+**What the owner sees.** Next to "You are Team …" the own lives as hearts (3); a lost one fades.
+After a fall the line counts "You fell — back in 3 / 2 / 1"; after the last life it reads "You
+are out — watching", the Dash button goes and the view stays on the whole arena; back in at the
+next match. The clock names the variant ("Seasonal Sumo · Points", "· Last One Standing"); each
+team chip shows its ghosts still in ("Spring 4 · 7 in" in Points, "Spring 7 in" in Last One
+Standing). The help's first line is the variant's rule in one sentence. Points ends at its time
+or once only one team has ghosts left, the most knockouts wins; Last One Standing has no points
+and the last ghost in wins for its team. Its result lists the winner, the teams still in at the
+time limit and the teams knocked out, last out first, with "Last one standing" and "Best pusher".
+
+**The panel.** Below the four sliders: lives (1–9, from the next match), the variant (Points /
+Last One Standing / alternate, from the next match), after the last season (stop, time limit /
+keep halving / stop, no time limit — at once) and keep halving every (30–120 s, at once). The
+copy line holds every value, the choices by name. `pnpm dev` alternates the variants.
+
+- "Stop, time limit" (default): no shrink after the third halving; at the time limit the team
+  with the most ghosts still in wins, ties by lives left, then team order.
+- "Keep halving": after the third halving the arena halves every interval until one is left;
+  no time limit.
+- "Stop, no time limit": the size stays, no time limit, the last one wins; the clock shows the
+  time played ("1:07 played").
+
+**Played** (`pnpm dev`, 15 s seasons for the check, a scripted player running off the edge now
+and then): one Points and one Last One Standing match, then the panel. Hearts 3 → 2 → 1 → 0,
+the countdown 3, 2, 1 between, "You are out — watching" after the last; the chips counted the
+ghosts down; the help switched sentence with the variant; Points' result as before, Last One
+Standing's "1. Winter winner, 2. Autumn 5 still in …". "Stop, no time limit" switched in a
+running match: past the 60 s limit the clock read "1:07 played"; "keep halving every 30 s":
+the arena halved on until one Summer ghost was left. A page on another origin: 403. Reset.
+
+**Odd, noted.** The copy line no longer fit two lines (now four). The Dash button stayed while
+out of lives (now hidden). In Last One Standing "Your place" on the result screen still ranks by
+knockouts. With "keep halving" the camera follows the tiny arena, so the last ghosts are drawn
+very large. In the 60 s check matches Last One Standing ended by the time limit with 2–5 ghosts
+per team still in. Seeded 32-bot matches (seeds 1–5, 3 lives): Points runs its 5:00 with 3–11
+of 32 left; "stop, time limit" the same, won by the team with the most left; "keep halving" is
+over at 5:10–5:17; "stop, no time limit" was over twice (18:39, 20:45) and three times not
+after 30:00 — at radius 141 the bots' edge margin of 140 keeps them in the middle (BACKLOG
+OPEN ac).
 
 ## Notes
 

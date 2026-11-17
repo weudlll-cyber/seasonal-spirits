@@ -1,7 +1,12 @@
 // Seasonal Spirits — server entry point. Reads environment, starts the match server.
 // Development only until the website sign-in is wired in; refuses NODE_ENV=production.
 
-import { DEFAULT_CONFIG, GAME_MODES, type GameConfig } from '@seasonal-spirits/game-core';
+import {
+  DEFAULT_CONFIG,
+  GAME_MODES,
+  VARIANT_CHOICES,
+  type GameConfig,
+} from '@seasonal-spirits/game-core';
 import { envChoice, envInt, refuseProduction } from './env.js';
 import { GameServer, type ServerConfig } from './server.js';
 
@@ -13,12 +18,17 @@ refuseProduction(env, 'The Seasonal Spirits dev server');
 const mode = envChoice(env, 'GAME_MODE', 'sumo', [...GAME_MODES, 'rotate'] as const);
 const modes = mode === 'rotate' ? GAME_MODES : [mode];
 
+// Sumo's variant: Points, Last One Standing, or both in turn (`pnpm dev`: "alternate";
+// LIVES 2026-11-17). The live tuning may change it from the next match on.
+const variant = envChoice(env, 'SUMO_VARIANT', 'points', VARIANT_CHOICES);
+
 // Shorter sumo matches for tests and trying things out (development only, like the whole
 // server): four seasons of SEASON_SECONDS, then RESULT_SECONDS of result screen. Hill and bomb
 // keep their own times (game-core modeConfig).
 const seasonMs = envInt(env, 'SEASON_SECONDS', 75, [15, 75]) * 1000;
 const game: GameConfig = {
   ...DEFAULT_CONFIG,
+  sumo: { ...DEFAULT_CONFIG.sumo, variant },
   seasonDurationMs: seasonMs,
   matchDurationMs: 4 * seasonMs,
   resultPauseMs: envInt(env, 'RESULT_SECONDS', 15, [3, 60]) * 1000,
@@ -55,7 +65,7 @@ await server.listen();
 console.log(
   `Seasonal Spirits match server on ws://${cfg.host}:${server.port()} ` +
     `(tick ${cfg.tickHz} Hz, ${cfg.maxGhosts} slots, seed ${cfg.firstSeed}, ` +
-    `modes ${modes.join(' → ')}, sumo seasons of ${seasonMs / 1000} s` +
+    `modes ${modes.join(' → ')}, sumo ${variant}, seasons of ${seasonMs / 1000} s` +
     `${tuning ? ', live tuning for the viewer' : ''})`,
 );
 

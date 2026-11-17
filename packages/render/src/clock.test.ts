@@ -1,9 +1,16 @@
-// Seasonal Sumo — the clock's status line per mode: its name, the halving countdown (the arena
-// halves, the zone jumps, the bomb goes off), the last chance before the match end (the
-// server's STATE_TO_END), and "match over".
+// Seasonal Sumo — the clock's status line per mode: its name (sumo's with its variant), the
+// halving countdown (the arena halves, the zone jumps, the bomb goes off), the last chance before
+// the match end (the server's STATE_TO_END), the time played without a deadline
+// (STATE_OPEN_END), and "match over".
 
 import { describe, expect, it } from 'vitest';
-import { STATE_RESULT, STATE_TO_END, type ServerState } from '@seasonal-spirits/protocol';
+import {
+  STATE_LAST_STANDING,
+  STATE_OPEN_END,
+  STATE_RESULT,
+  STATE_TO_END,
+  type ServerState,
+} from '@seasonal-spirits/protocol';
 import { lineFont, statusLine } from './clock.js';
 
 const state = (over: Partial<ServerState>): ServerState => ({
@@ -18,6 +25,7 @@ const state = (over: Partial<ServerState>): ServerState => ({
   nextMatchMs: 0,
   teamScore: [0, 0, 0, 0],
   mode: 0,
+  livesAtStart: 3,
   area: { x: 1000, y: 1000, r: 900 },
   next: { x: 1000, y: 1000, r: 636.4 },
   ghosts: [],
@@ -45,12 +53,23 @@ describe('clock status line', () => {
     expect(statusLine(state({ ...last, countdownMs: 4200, seasonLeftMs: 4200 }))).toBe(
       'LAST CHANCE — push them off · 0:05',
     );
-    expect(statusLine(state(last))).toBe('Seasonal Sumo · Winter · 0:40 to the end');
+    expect(statusLine(state(last))).toBe('Seasonal Sumo · Points · Winter · 0:40 to the end');
+  });
+
+  it("names sumo's variant, and without a deadline shows the time played", () => {
+    const open = { season: 3, seasonNumber: 3, matchMs: 412_000 };
+    const flags = STATE_LAST_STANDING | STATE_OPEN_END;
+    expect(statusLine(state({ ...open, flags }))).toBe(
+      'Seasonal Sumo · Last One Standing · Winter · 6:52 played',
+    );
+    expect(statusLine(state({ flags: STATE_LAST_STANDING }))).toBe(
+      'Seasonal Sumo · Last One Standing · Spring · 0:40 left · next: Summer',
+    );
   });
 
   it('says the match is over during the result', () => {
     expect(statusLine(state({ season: 3, seasonNumber: 3, flags: STATE_RESULT }))).toBe(
-      'Seasonal Sumo · match over',
+      'Seasonal Sumo · Points · match over',
     );
   });
 });

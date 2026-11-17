@@ -1,7 +1,8 @@
 // Seasonal Sumo — falling off and coming back. A ghost whose centre leaves the arena falls: the
 // fall counts +1 for the last opponent that touched it within creditMs (and its team), for
-// nobody without one. It falls for fallMs (the animation), is out until outMs after the fall,
-// then respawns on its team's quarter, protected for protectMs.
+// nobody without one. Every fall costs a life (LIVES 2026-11-17). It falls for fallMs (the
+// animation), is out until outMs after the fall, then respawns on its team's quarter,
+// protected for protectMs — with no life left it stays out for the rest of the match.
 
 import { outside, respawnSpot } from './arena.js';
 import type { GameConfig } from './config.js';
@@ -18,6 +19,8 @@ export function checkFalls(cfg: GameConfig, s: MatchState): void {
       if (scorer) scorer.knockouts++;
     }
     g.falls++;
+    g.lives = Math.max(0, g.lives - 1);
+    if (g.lives === 0) g.outAtMs = now;
     g.longestAliveMs = Math.max(g.longestAliveMs, now - g.aliveSinceMs);
     g.phase = 'falling';
     g.phaseUntilMs = now + cfg.fallMs;
@@ -26,7 +29,8 @@ export function checkFalls(cfg: GameConfig, s: MatchState): void {
   }
 }
 
-// Falling turns out after fallMs; out turns in at outMs after the fall, at a respawn spot.
+// Falling turns out after fallMs; out turns in at outMs after the fall, at a respawn spot —
+// unless that was its last life.
 export function advancePhases(cfg: GameConfig, s: MatchState, rng: () => number): void {
   const now = s.elapsedMs;
   for (const g of s.ghosts) {
@@ -36,7 +40,7 @@ export function advancePhases(cfg: GameConfig, s: MatchState, rng: () => number)
       g.phaseUntilMs = now - cfg.fallMs + cfg.outMs;
       continue;
     }
-    respawn(cfg, s, g, rng);
+    if (g.lives > 0) respawn(cfg, s, g, rng);
   }
 }
 

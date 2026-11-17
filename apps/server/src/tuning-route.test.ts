@@ -1,5 +1,5 @@
 // Seasonal Sumo — the owner's live tuning channel (THREATS row 39): absent without the flag and in
-// production, refused from another host or page, only the four numbers in range applied, rate
+// production, refused from another host or page, only the eight numbers in range applied, rate
 // bounded; a change reaches the running match and every client.
 
 import http from 'node:http';
@@ -11,8 +11,24 @@ import { connect, startServer } from './test-client.js';
 import { TUNE_PATH, TuningRoute, type TuneHead } from './tuning-route.js';
 
 const VIEWER = 'http://localhost:5931';
-const START: Tuning = { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480, knockSpeed: 320 };
-const VALID: Tuning = { arenaRadius: 500, maxSpeed: 300, dashSpeed: 600, knockSpeed: 400 };
+const RULES = { lives: 3, variant: 0, afterLast: 0, halvingEverySec: 75 };
+const START: Tuning = {
+  arenaRadius: 400,
+  maxSpeed: 240,
+  dashSpeed: 480,
+  knockSpeed: 320,
+  ...RULES,
+};
+const VALID: Tuning = {
+  arenaRadius: 500,
+  maxSpeed: 300,
+  dashSpeed: 600,
+  knockSpeed: 400,
+  lives: 5,
+  variant: 2,
+  afterLast: 1,
+  halvingEverySec: 30,
+};
 const POST: TuneHead = {
   method: 'POST',
   origin: VIEWER,
@@ -61,6 +77,16 @@ describe('tuning route refusals', () => {
       JSON.stringify({ ...VALID, knockSpeed: -1 }),
       JSON.stringify({ ...VALID, dashSpeed: 600.5 }),
       JSON.stringify({ ...VALID, dashSpeed: '600' }),
+      // LIVES 2026-11-17: lives 1–9, three variant choices, three ways after the last season,
+      // keep-halving every 30–120 s.
+      JSON.stringify({ ...VALID, lives: 0 }),
+      JSON.stringify({ ...VALID, lives: 10 }),
+      JSON.stringify({ ...VALID, variant: 3 }),
+      JSON.stringify({ ...VALID, variant: 'last-standing' }),
+      JSON.stringify({ ...VALID, afterLast: -1 }),
+      JSON.stringify({ ...VALID, afterLast: 3 }),
+      JSON.stringify({ ...VALID, halvingEverySec: 29 }),
+      JSON.stringify({ ...VALID, halvingEverySec: 121 }),
       JSON.stringify({ arenaRadius: 500, maxSpeed: 300, dashSpeed: 600 }),
       JSON.stringify({ ...VALID, friction: 1 }),
       '{"arenaRadius":',

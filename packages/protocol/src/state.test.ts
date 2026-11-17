@@ -33,6 +33,7 @@ function sample(ghosts: number): ServerState {
     nextMatchMs: 0,
     teamScore: [12, 0, 33, 7],
     mode: 1,
+    livesAtStart: 3,
     area: { x: 1350, y: 650, r: 212.1 },
     next: { x: 1350, y: 1350, r: 150 },
     ghosts: Array.from({ length: ghosts }, (_, i) => ({
@@ -45,6 +46,7 @@ function sample(ghosts: number): ServerState {
       score: i * 300,
       dashLeftMs: (i % 8) * 200,
       flags: i % 2 ? GHOST_DASHING : 0,
+      lives: i % 4,
     })),
   };
 }
@@ -65,7 +67,7 @@ describe('state encoding', () => {
   });
 
   it('stays well under 1 KB with 32 ghosts', () => {
-    expect(encodedSize(32)).toBe(493);
+    expect(encodedSize(32)).toBe(526);
   });
 
   it('sends a missing disc as none (bomb has no arena and no zone)', () => {

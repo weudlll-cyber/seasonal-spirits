@@ -48,17 +48,25 @@ is encoded once and sent to every client that has said hello.
 ## Match lifecycle
 
 Each match has a game mode (docs/GAME-CORE.md "Game modes"): `GAME_MODE` names one, or
-`rotate` lets them take turns match by match — sumo → hill → bomb → sumo … (`pnpm dev` asks
-for the rotation; development only, like the whole server). A sumo match runs 5:00, hill and
-bomb 3:00. At the end the state carries the `STATE_RESULT` flag (the final scores) for
+`rotate` lets them take turns match by match — sumo → hill → bomb → sumo … (development only,
+like the whole server). Each sumo match plays one variant (docs/GAME-CORE.md "Lives and the two
+variants"): `SUMO_VARIANT` names `points` or `last-standing`, or `alternate` takes them in turn,
+Points first (`pnpm dev`: Sumo only, alternating — the owner's dev default, LIVES 2026-11-17).
+Seats are filled with bots at the start only: a ghost out of lives stays out until the next
+match, and a joining player gets a bot's ghost with lives left while there is one. A sumo match
+runs 5:00 (Points; Last One Standing per its setting after the last season), hill and bomb
+3:00; Points ends earlier once only one team has ghosts left, Last One Standing once one ghost
+is. At the end the state carries the `STATE_RESULT` flag (the final scores) for
 `resultPauseMs` (15 s, placeholder); then the next match starts with the next mode and seed,
 the same players in the same seats, everyone back on the start ring, and every bot gets the
 new mode's brain. A server restart loses the running match (CONCEPT.md §7).
 
 **Match recap**: in the tick a match ends every client — players and spectators — gets one
-text message `{"kind":"recap","teams":[…4],"players":[{ghost,team,score},…],
-"awards":[{kind,ghost,value},…]}`: the core's result — the mode's score — and the mode's two
-awards (`awardsOf`, docs/GAME-CORE.md); an award nobody earned is left out, and a client
+text message `{"kind":"recap","teams":[…4],"left":[…4],"knockedOut":[team,…],"winner":team|null,
+"players":[{ghost,team,score},…],"awards":[{kind,ghost,value},…]}`: the core's result — the
+mode's score, the ghosts still in per team, the teams knocked out in order, Last One Standing's
+winning team (null in Points: the scores rank) — and the mode's two awards (`awardsOf`,
+docs/GAME-CORE.md); an award nobody earned is left out, and a client
 shows the kinds it knows. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
 field checked, at most 64 players and 8 awards, at most 4096 characters; THREATS row 33). Built in
@@ -68,21 +76,22 @@ field checked, at most 64 players and 8 awards, at most 4096 characters; THREATS
 
 One binary encoding, little endian:
 
-- **Header, 45 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
+- **Header, 46 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
   3 Winter; the next is +1), season number within the match u8, ms left in the season u32,
   countdown to the next deadline u16 (0xffff = none; the 10 s before every halving and the
   match end), flags u8 (a halving in this tick, result, the next deadline is the match end
-  `STATE_TO_END`, the match ended in this tick `STATE_MATCH_END_EVENT`), ms to the next match
+  `STATE_TO_END`, the match ended in this tick `STATE_MATCH_END_EVENT`, sumo's variant is Last
+  One Standing `STATE_LAST_STANDING`, no deadline at all `STATE_OPEN_END`), ms to the next match
   u16 (during the result), the mode's score per team 4×u16, the game mode u8 (its index in
   game-core's `GAME_MODES`), the disc that halves now — sumo's arena, the hill's zone — and
   after the next halving, each x, y, r u16 (tenths of a field unit; r 0 = none, as in bomb),
-  ghost count u8.
-- **Per ghost, 14 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
+  ghost count u8, every ghost's lives at the match start u8 (the hearts).
+- **Per ghost, 15 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
   prediction starts from it), team u8, the mode's score u16, ms to its next dash u8 (in 20 ms
   steps: the Dash button's ring), flags u8 (bot, dashing, falling, out, protected, carries a
-  bomb).
+  bomb), lives left u8 (0: out until the next match).
 
-At 32 ghosts: 493 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
+At 32 ghosts: 526 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
 gone; the probe runs of docs/PHASE0.md were measured with older layouts).
 
 ## Bounds and checks
@@ -104,7 +113,8 @@ and in total (twice the slots). The full list, with the test for each, is
 | `MAX_CONNECTIONS_PER_ADDRESS` | 40        | 1–1000                                          |
 | `SEED`                        | 1         | 0–999999999                                     |
 | `HOST`                        | 127.0.0.1 | `127.0.0.1` or `0.0.0.0` (`pnpm dev --lan`)     |
-| `GAME_MODE`                   | sumo      | `sumo`, `hill`, `bomb` or `rotate` (`pnpm dev`) |
+| `GAME_MODE`                   | sumo      | `sumo` (`pnpm dev`), `hill`, `bomb` or `rotate` |
+| `SUMO_VARIANT`                | points    | `points`, `last-standing` or `alternate` (dev)  |
 | `SEASON_SECONDS`              | 75        | 15–75 (sumo: four seasons; shorter for tests)   |
 | `RESULT_SECONDS`              | 15        | 3–60                                            |
 | `DEV_TUNING`                  | 0         | `0` or `1` (`pnpm dev`: the live tuning)        |
@@ -122,18 +132,21 @@ viewer on its own port.
 
 ## Live tuning (development only)
 
-The owner tunes the feel with four sliders instead of guessing numbers round by round
-(TUNE 2026-11-17). `pnpm dev` starts the server with `DEV_TUNING=1`; the viewer
-(http://localhost:5931) then shows a panel: **arena size** (`arenaRadius`, the start; shown
-as ghost diameters across), **walking speed** (`maxSpeed`; `acceleration` scales with it),
-**dash strength** (`dashSpeed`) and **push strength** (`knockSpeed`, how fast a dash hit
-throws a ghost off). Each slider shows its number and moves within a wide band around the
-starting value (`TUNING_RANGES`, packages/protocol `tuning.ts`). A change holds at once in
-the running match: the match, its rules and its bots read the host's one config object
-(`MatchHost.tune`), the running arena eases to its new size like a halving
-(`Match.rescaleArena`), and every client gets the numbers as `{"kind":"tuning","values":…}`,
-so its own ghost's prediction keeps to the server's rules. **Reset** brings back the starting
-values; the line below the sliders holds all four numbers to copy (**Copy**).
+The owner tunes the feel with a panel instead of guessing numbers round by round
+(TUNE and LIVES 2026-11-17). `pnpm dev` starts the server with `DEV_TUNING=1`; the viewer
+(http://localhost:5931) then shows: **arena size** (`arenaRadius`, the start; shown as ghost
+diameters across), **walking speed** (`maxSpeed`; `acceleration` scales with it), **dash
+strength** (`dashSpeed`), **push strength** (`knockSpeed`, how fast a dash hit throws a ghost
+off), **lives** (1–9), **sumo variant** (Points / Last One Standing / alternate), **after the
+last season** (stop, time limit / keep halving / stop, no time limit) and **keep halving every**
+(30–120 s). Each slider shows its number and moves within a wide band around the starting value
+(`TUNING_RANGES`, packages/protocol `tuning.ts`; the two choices travel as indices). The physics
+and the setting after the last season hold at once in the running match: the match, its rules
+and its bots read the host's one config object (`MatchHost.tune`), the running arena eases to
+its new size like a halving (`Match.rescaleArena`); lives and the variant hold from the next
+match. Every client gets the values as `{"kind":"tuning","values":…}`, so its own ghost's
+prediction keeps to the server's rules. **Reset** brings back the starting values; the line
+below holds every value to copy, the choices by name (**Copy**).
 
 The channel (`tuning-route.ts`) is `GET` / `POST /dev/tune`:
 
@@ -143,7 +156,7 @@ The channel (`tuning-route.ts`) is `GET` / `POST /dev/tune`:
   `http://localhost:5931` or `http://127.0.0.1:5931`, else 403), `content-type:
 application/json` only (415), so another page cannot reach it without the browser's
   preflight, which only the viewer's origin passes;
-- a body of at most 256 bytes (413), exactly the four keys, each a whole number in its range
+- a body of at most 256 bytes (413), exactly the eight keys, each a whole number in its range
   (400 otherwise, nothing applied); at most 20 changes a second (429);
 - never through the player message validator: `parseClientMessage` still takes a hello, a
   direction and Dash only. [THREATS.md](THREATS.md) row 39.

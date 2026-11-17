@@ -28,6 +28,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash hit's throw, the in-season push, credit   |
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
 | `src/recap.ts`            | The recap's awards, two per mode (`awardsOf`)                                  |
+| `src/standing.ts`         | Lives and sumo's variants: time limit, clock past the last season, end, winner |
 | `src/bots/bot.ts`         | The sumo brain (`botIntent`) and the helpers every brain shares                |
 | `src/bots/hill.ts`        | The hill brain: to the zone, push rivals out of it                             |
 | `src/bots/bomb.ts`        | The bomb brain: a carrier chases, the others flee                              |
@@ -44,22 +45,25 @@ stand-in round (`pnpm human`) — no balance work tonight (owner's addendum, 202
 In this order: time and season (a season turn is a halving: the event, then the mode's
 `turn`), the arena's edge, falls ending and respawns, each ghost's intent and movement by id
 (a dash first), collisions, the mode's `after` (sumo: new falls; hill: the zone's points and
-bounces; bomb: points and passes), the end, the countdown.
+bounces; bomb: points and passes), the teams knocked out, the end and its winner, the
+countdown.
 
 ## Game modes (NIGHT 2026-11-17, piece 5)
 
 | Mode   | Field                         | Match / halving                   | Score                                 | Recap                 |
 | ------ | ----------------------------- | --------------------------------- | ------------------------------------- | --------------------- |
-| `sumo` | the disc; past its edge falls | 5:00, every 75 s the arena halves | knockouts                             | Best pusher, Survivor |
+| `sumo` | the disc; past its edge falls | 5:00, every 75 s the arena halves | knockouts; none in Last One Standing  | Best pusher, Survivor |
 | `hill` | walled square, nobody falls   | 3:00, every 45 s the zone jumps   | 1 point per second in the zone        | King, Bouncer         |
 | `bomb` | walled square, nobody falls   | 3:00, every 20 s the bombs go off | 1 point per second; a carrier's halve | Hot hands, Cool head  |
 
 - **Mode and times.** `cfg.mode` picks the rules; `modeConfig(base, mode)` gives the base with
   the mode's own times (hill 180 s / 45 s; bomb 180 s / 20 s and a 5 s countdown — all
   placeholders). The server chooses the mode per match (apps/server `match-host.ts`).
-- **Live tuning** (development only). `tunedFields(t)` gives the config fields the owner's four
-  sliders set — `arenaRadius`, `maxSpeed` (and `acceleration` with it), `dashSpeed`,
-  `knockSpeed` (apps/server, docs/SERVER.md "Live tuning").
+- **Live tuning** (development only). `tunedFields(t)` gives the config fields the owner's eight
+  panel values set — `arenaRadius`, `maxSpeed` (and `acceleration` with it), `dashSpeed`,
+  `knockSpeed`, and `sumo`: `lives`, `variant` and `afterLast` (indices in `VARIANT_CHOICES` and
+  `AFTER_LAST`), `halvingEveryMs` (from seconds); `tuningOf(cfg)` the other way round, the
+  panel's starting values (apps/server, docs/SERVER.md "Live tuning").
 - **Walls** (hill, bomb). A square of `wallHalf` around the middle; `stepGhost` keeps a ghost
   inside it and takes the speed into a wall away (the speed along it stays). The arena there is
   the disc inside the walls and never halves; nobody falls.
@@ -118,15 +122,54 @@ bounces; bomb: points and passes), the end, the countdown.
   halves (radius × 1/√2: 400 → 283 → 200 → 141); the edge eases in over `arenaShrinkMs`
   (slow, fast, slow). A ghost the edge passes under falls. During the 10 s countdown the
   clients draw the edge after the halving (`nextRadius`) as a dashed ring.
-- **End.** The team with the most knockouts wins; `result()` gives knockouts and falls per
-  player and team and each ghost's longest time on the arena without a fall. The end is
-  staged like a halving (countdown, `match-end` event).
+- **End.** Points: the team with the most knockouts wins; Last One Standing: see "Lives and
+  the two variants". `result()` gives knockouts, falls and lives left per player, the scores and
+  the ghosts still in per team, the teams knocked out in order, the winner and the last one
+  standing, and each ghost's longest time on the arena without a fall. The end is staged like a
+  halving (countdown, `match-end` event).
 - **Recap** (`src/recap.ts`, every mode): two awards per mode from the result at the end —
-  sumo "Best pusher" (most knockouts) and "Survivor" (longest without a fall), hill "King" (most
+  sumo Points "Best pusher" (most knockouts) and "Survivor" (longest without a fall); sumo Last
+  One Standing "Last one standing" (the one ghost left, with its lives left; none when the time
+  limit left several) and "Best pusher"; hill "King" (most
   seconds in the zone) and "Bouncer" (most bounces), bomb "Hot hands" (most passes) and "Cool
   head" (most points at the end). Of equal ones the lowest id gets it; a count of 0 earns
   nothing. (Before piece 5 "Best pusher" went to the first to reach the top; one rule for all
   six awards is simpler.)
+
+## Lives and the two variants (LIVES 2026-11-17, `src/standing.ts`)
+
+The owner after playing with the sliders: the smaller the arena, the more crowded and confusing
+it gets — fewer players should be left in the late phases. All numbers are placeholders the owner
+sets with the live panel.
+
+- **Lives** (`sumo.lives`, 3). Every fall costs one (`checkFalls`); with lives left the ghost
+  respawns as before, with none it stays out for the rest of the match (`advancePhases` skips the
+  respawn; `outAtMs` holds when). Nobody takes its seat: the server fills seats with bots only
+  at the start. Lives are read when a match starts. Inside the walls of hill and bomb nobody
+  falls, so nobody loses one.
+- **Variant** (`variant` of the match: `new Match(cfg, seed, roster, variant)`; the walled modes
+  play `points`). The server picks it per match from `sumo.variant`: `points`, `last-standing`
+  or `alternate` (Points, then Last One Standing, sumo match by sumo match).
+- **Points.** Knockout points as before; the match ends at its time limit, or earlier once
+  somebody is out of lives and only one team has ghosts left (`isOver`). Most points wins.
+- **Last One Standing.** No points in the band; the last ghost with lives left wins, its team
+  is the winning team (`decide`). If the last ones lose their last lives in the same tick, the
+  lowest team order of them wins (then the lowest id). Bots push their teammates too once only
+  their own team is left (`rivals`), so the match can end. `sumo.afterLast`, read every tick
+  (the slider applies at once):
+  - `stop-time` (default): the arena stops shrinking after the third halving and the match ends
+    at its time limit; with several left the team with the most ghosts still in wins, ties by the
+    most lives left in total, then the lowest team order — and no single last one is named;
+  - `keep-halving`: after the third halving the arena halves every `sumo.halvingEveryMs` (75 s;
+    the season turns with each) until one ghost is left; no time limit;
+  - `stop-open`: the arena keeps its size after the third halving, no time limit, the last ghost
+    in wins however long it takes; the clock has no deadline (`nextDeadline` null, no countdown;
+    the band shows the time played).
+- **Clock** (`clockOf`). Within the first seasons `seasonClock`; from the last one on the season
+  never goes back (the setting may change mid-match): with a time limit it runs to the end,
+  `keep-halving` turns the season at the next halving, `stop-open` has none.
+- **Teams knocked out** (`noteKnockedOut`): a team whose every ghost is out of lives, in the
+  order they went (two in one tick by team order) — the recap's order.
 
 ## Bots
 

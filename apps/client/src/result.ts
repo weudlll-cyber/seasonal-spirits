@@ -1,7 +1,9 @@
 // Seasonal Sumo — the result screen after a match: the mode's awards, the mode's score
-// (knockouts or points) per team and per player, the own place, the time to the next match, and the bridge box of
-// CONCEPT.md §8 (on by default, switched off in config.ts). Result and awards come from the
-// server's recap message, the names and the time to the next match from the state.
+// (knockouts or points) per team — in Last One Standing the teams in their final order, the
+// winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player,
+// the own place, the time to the next match, and the bridge box of CONCEPT.md §8 (on by default,
+// switched off in config.ts). Result and awards come from the server's recap message, the names
+// and the time to the next match from the state.
 
 import {
   GHOST_BOT,
@@ -67,10 +69,9 @@ export class ResultScreen {
     const lines = awardLines(r, name);
     this.awardsBox.hidden = lines.length === 0;
     this.awards.replaceChildren(...lines.map(([label, text]) => row(label, text)));
-    const order = [0, 1, 2, 3].sort((a, b) => (r.teams[b] ?? 0) - (r.teams[a] ?? 0));
     this.teams.replaceChildren(
-      ...order.map((team, i) =>
-        row(`${i + 1}. ${seasonName(team)}`, String(r.teams[team] ?? 0), seasonColour(team)),
+      ...teamLines(r).map(([team, text], i) =>
+        row(`${i + 1}. ${seasonName(team)}`, text, seasonColour(team)),
       ),
     );
     const ranked = [...r.players].sort((a, b) => b.score - a.score || a.ghost - b.ghost);
@@ -88,9 +89,34 @@ export class ResultScreen {
   }
 }
 
+const ORDINALS = ['1st', '2nd', '3rd', '4th'];
+
+// The team table: by score (Points and the walled modes); in Last One Standing (a winner named)
+// the winner, the teams still in at the time limit by ghosts left, then the teams knocked out,
+// last out first, each with when it went out.
+export function teamLines(r: ServerRecap): [number, string][] {
+  const teams = [0, 1, 2, 3];
+  if (r.winner === null) {
+    const order = teams.sort((a, b) => (r.teams[b] ?? 0) - (r.teams[a] ?? 0));
+    return order.map((team) => [team, String(r.teams[team] ?? 0)]);
+  }
+  const winner = r.winner;
+  const out = r.knockedOut.filter((t) => t !== winner);
+  const stillIn = teams
+    .filter((t) => t !== winner && !out.includes(t))
+    .sort((a, b) => (r.left[b] ?? 0) - (r.left[a] ?? 0));
+  const outText = (t: number): string => `out ${ORDINALS[r.knockedOut.indexOf(t)] ?? ''}`;
+  return [
+    [winner, 'winner'],
+    ...stillIn.map((t): [number, string] => [t, `${String(r.left[t] ?? 0)} still in`]),
+    ...out.reverse().map((t): [number, string] => [t, outText(t)]),
+  ];
+}
+
 // Each award kind's title and how its value reads (game-core recap.ts); a kind this client
 // does not know is not shown.
 const AWARDS: Record<string, [string, (value: number) => string]> = {
+  'last-standing': ['Last one standing', (v) => `${counted(v, 'life', 'lives')} left`],
   'best-pusher': ['Best pusher', (v) => `${v} knockouts`],
   survivor: ['Survivor', (v) => `${mmss(v)} without a fall`],
   king: ['King', (v) => `${v} s in the zone`],
@@ -107,6 +133,10 @@ function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, s
     if (known) lines.push([known[0], `${name(a.ghost)}, ${known[1](a.value)}`]);
   }
   return lines;
+}
+
+function counted(n: number, one: string, many: string): string {
+  return `${String(n)} ${n === 1 ? one : many}`;
 }
 
 function row(label: string, amount: string, colour?: string): HTMLElement {

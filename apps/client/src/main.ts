@@ -24,15 +24,16 @@ import {
 import {
   Trails,
   clientConfig,
+  matchName,
   modeOf,
-  modeWords,
   seasonColour,
   seasonName,
 } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
-import { Help } from './help.js';
+import { Help, variantRule } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
+import { Hearts, OUT_LINE, heartsOf, ownOut } from './lives.js';
 import { OwnMarker, fellLine } from './own-marker.js';
 import { OwnPrediction, type ServerOwn } from './prediction.js';
 import { ResultScreen } from './result.js';
@@ -70,6 +71,7 @@ const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but
 const prediction = new OwnPrediction();
 const result = new ResultScreen();
 const scores = new ScoreBoard();
+const hearts = new Hearts();
 let dashPressed = false; // since the last frame: the own prediction dashes too
 let halvings = 0;
 let resultFrom = 0; // performance.now() from which the result screen may show
@@ -183,11 +185,12 @@ function snapshot(now: number): Frame {
 
 // "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
 // On a narrow phone "You are " is hidden (index.html), so the team's name is never cut off.
-// While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3).
-function showTeam(team: number | null, backInMs: number | null): void {
+// While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3);
+// out of lives, that it watches until the next match (LIVES 2026-11-17).
+function showTeam(team: number | null, backInMs: number | null, out: boolean): void {
   teamLine.hidden = team === null;
-  if (team !== null && backInMs !== null) {
-    teamLine.textContent = fellLine(backInMs);
+  if (team !== null && (out || backInMs !== null)) {
+    teamLine.textContent = out ? OUT_LINE : fellLine(backInMs ?? 0);
     teamLine.style.color = seasonColour(team);
     delete teamLine.dataset.team;
     return;
@@ -201,12 +204,22 @@ function showTeam(team: number | null, backInMs: number | null): void {
   teamLine.dataset.team = String(team);
 }
 
+// The own lives as the band shows them (hearts) and whether it is out until the next match;
+// nothing while watching.
+function livesOf(f: Frame): { hearts: boolean[] | null; out: boolean } {
+  const ownId = f.playing ? f.ownId : null;
+  return { hearts: heartsOf(f.latest, ownId), out: ownOut(f.latest, ownId) };
+}
+
 function draw(f: Frame): Drawn {
-  if (f.latest) help.show(modeOf(f.latest.mode), modeWords(f.latest.mode).name);
+  if (f.latest) help.show(modeOf(f.latest.mode), matchName(f.latest), variantRule(f.latest));
   const drawn = drawScene(ctx, f, trails);
-  showTeam(f.ownTeam, f.marks.backInMs);
+  const lives = livesOf(f);
+  showTeam(f.ownTeam, f.marks.backInMs, lives.out);
+  hearts.update(lives.hearts);
   const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
-  hud.showControls(f.playing && !f.over, own?.dashLeftMs ?? 0);
+  // Out of lives: nothing to steer until the next match, so no Dash button.
+  hud.showControls(f.playing && !f.over && !lives.out, own?.dashLeftMs ?? 0);
   scores.update(f.latest);
   result.update(f.latest, f.over && performance.now() >= resultFrom, f.ownId, recap);
   return drawn;
@@ -232,6 +245,7 @@ function expose(f: Frame, drawn: Drawn): void {
     area: s?.area ?? null,
     next: s?.next ?? null,
     teamScore: s ? [...s.teamScore] : null,
+    ...livesOf(f),
     halvings,
     // The clock's countdown as the server sent it, and whether it runs to the match end.
     countdown: countdownOf(f.latest),

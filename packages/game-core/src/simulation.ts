@@ -5,7 +5,7 @@ import { createBot, type Bot } from './bots/human.js';
 import type { GameConfig } from './config.js';
 import { Match, type Roster } from './match.js';
 import { bombCount } from './modes/bomb.js';
-import { seasonsInMatch, type Season } from './seasons.js';
+import type { Season } from './seasons.js';
 import type { Intent, MatchResult, MatchState, Team } from './types.js';
 
 export const SIM_TICK_MS = 50; // the server's 20 Hz step
@@ -80,7 +80,15 @@ export function simulate(
     halvings,
     falls,
     result,
-    sanity: sanityList(cfg, { halvings, falls, result, badNumber, teamCredit, badBombs }),
+    sanity: sanityList(cfg, {
+      halvings,
+      turns: match.state.clock.index,
+      falls,
+      result,
+      badNumber,
+      teamCredit,
+      badBombs,
+    }),
   };
 }
 
@@ -110,6 +118,8 @@ function sizeOf(s: Readonly<MatchState>): number | null {
 
 interface Seen {
   halvings: readonly HalvingNote[];
+  // Season turns up to the end: all of them, or fewer when lives ran out first (standing.ts).
+  turns: number;
   falls: { credited: number; uncredited: number };
   result: MatchResult;
   badNumber: boolean;
@@ -118,7 +128,7 @@ interface Seen {
 }
 
 function sanityList(cfg: GameConfig, r: Seen): SanityCheck[] {
-  const expected = seasonsInMatch(cfg) - 1;
+  const expected = r.turns;
   return [
     { name: 'positions and speeds finite', ok: !r.badNumber, detail: 'checked after every tick' },
     {

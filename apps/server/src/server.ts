@@ -6,7 +6,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { WebSocketServer, type RawData, type WebSocket } from 'ws';
-import { tunedFields, type GameConfig, type GameMode } from '@seasonal-spirits/game-core';
+import type { GameConfig, GameMode } from '@seasonal-spirits/game-core';
 import {
   MAX_CLIENT_MESSAGE_BYTES,
   encodeState,
@@ -81,7 +81,7 @@ export class GameServer {
     this.tuning = tuningRoute(cfg.tuningOrigins, cfg.game, (t) => {
       // The match and its bots take it at the next tick; every client hears it, so its own
       // ghost's prediction keeps to the server's rules.
-      this.host.tune(tunedFields(t));
+      this.host.tune(t);
       this.sendToAll(tuningText(t));
     });
   }

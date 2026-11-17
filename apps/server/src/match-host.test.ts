@@ -1,13 +1,13 @@
-// Seasonal Sumo — the match host: bots fill slots, players replace them, matches and modes follow,
-// the owner's live tuning applies in the running match. Time is the dt passed in; nothing here
-// waits.
+// Seasonal Sumo — the match host: bots fill slots, players replace them, matches, modes and
+// sumo's variants follow, the owner's live tuning applies in the running match (lives and the
+// variant from the next). Time is the dt passed in; nothing here waits.
 
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CONFIG,
   GAME_MODES,
   modeConfig,
-  tunedFields,
+  tuningOf,
   type GameConfig,
 } from '@seasonal-spirits/game-core';
 import {
@@ -15,6 +15,7 @@ import {
   GHOST_BOT,
   GHOST_FALLING,
   STATE_HALVING_EVENT,
+  STATE_LAST_STANDING,
   STATE_MATCH_END_EVENT,
   STATE_RESULT,
   STATE_TO_END,
@@ -132,7 +133,7 @@ describe('match host state size', () => {
       }
       expect(halvings).toBe(3);
       expect(max).toBeLessThan(1024);
-      // The state has no variable part but the ghosts: 45 + 14 · 32.
+      // The state has no variable part but the ghosts: 46 + 15 · 32.
       expect(max).toBe(encodedSize(32));
     },
   );
@@ -187,12 +188,61 @@ describe('match host lifecycle', () => {
     const host = new MatchHost(cfg, 8, 1);
     host.join(1);
     const states = runFor(host, cfg.matchDurationMs + cfg.resultPauseMs + 100);
-    const results = states.filter((s) => s.flags & STATE_RESULT);
-    expect(results.length).toBe(cfg.resultPauseMs / 50);
-    const next = states.at(-1);
+    // The match may end before its time limit (lives: one team left); the pause follows its end.
+    const end = states.findIndex((s) => s.flags & STATE_MATCH_END_EVENT);
+    const pause = cfg.resultPauseMs / 50;
+    const after = states.slice(end, end + pause + 1);
+    expect(after.slice(0, pause).every((s) => s.flags & STATE_RESULT)).toBe(true);
+    const next = after.at(-1);
     expect(next?.flags ?? STATE_RESULT).toBe(0);
-    expect(next?.matchMs).toBeLessThanOrEqual(150);
+    expect(next?.matchMs).toBe(50);
     expect(host.players()).toBe(1);
+  });
+});
+
+// LIVES 2026-11-17: Points and Last One Standing in turn; a ghost out of lives is not handed
+// to a joining player while one with lives is free.
+describe('match host sumo variants and lives', () => {
+  const short = { ...DEFAULT_CONFIG, seasonDurationMs: 250, matchDurationMs: 1000 };
+
+  it('alternates Points and Last One Standing match by match, Points first', () => {
+    const sumo = { ...short.sumo, variant: 'alternate' as const };
+    const host = new MatchHost({ ...short, sumo, resultPauseMs: 500 }, 8, 1);
+    const variants: number[] = [];
+    for (const s of runFor(host, 3 * 1500)) {
+      const v = s.flags & STATE_LAST_STANDING;
+      if (!(s.flags & STATE_RESULT) && variants.at(-1) !== v) variants.push(v);
+    }
+    expect(variants.slice(0, 3)).toEqual([0, STATE_LAST_STANDING, 0]);
+  });
+
+  it('takes lives and the variant from the next match on, the halving setting at once', () => {
+    const host = new MatchHost({ ...short, resultPauseMs: 500 }, 8, 1);
+    host.tick(50);
+    host.tune({ ...tuningOf(short), lives: 5, variant: 1, afterLast: 1 });
+    const running = host.tick(50);
+    expect(running.livesAtStart).toBe(3);
+    expect(running.flags & STATE_LAST_STANDING).toBe(0);
+    const next = runFor(host, 1500).at(-1);
+    expect(next?.livesAtStart).toBe(5);
+    expect(next?.ghosts.every((g) => g.lives === 5)).toBe(true);
+    expect((next?.flags ?? 0) & STATE_LAST_STANDING).toBe(STATE_LAST_STANDING);
+    // keep-halving holds already: no time limit, the countdown runs to a halving.
+    const later = runFor(host, 1200).at(-1);
+    expect(later?.matchMs).toBeGreaterThan(1000);
+    expect((later?.flags ?? 0) & STATE_TO_END).toBe(0);
+  });
+
+  it('gives a joining player a ghost with lives left while there is one', () => {
+    const one = { ...short, matchDurationMs: 600_000, sumo: { ...short.sumo, lives: 1 } };
+    const host = new MatchHost(one, 8, 1);
+    let s = host.tick(50);
+    while (!s.ghosts.some((g) => g.lives === 0) && s.matchMs < 600_000) s = host.tick(50);
+    const out = s.ghosts.filter((g) => g.lives === 0).map((g) => g.id);
+    expect(out.length).toBeGreaterThan(0);
+    const slot = host.join(1);
+    expect(out).not.toContain(slot?.ghost);
+    expect(host.tick(50).ghosts.find((g) => g.id === slot?.ghost)?.lives).toBe(1);
   });
 });
 
@@ -204,7 +254,8 @@ describe('match host live tuning', () => {
     const slot = host.join(1);
     if (!slot) throw new Error('no slot');
     host.tick(50);
-    host.tune(tunedFields({ arenaRadius: 600, maxSpeed: 400, dashSpeed: 800, knockSpeed: 500 }));
+    const t = { ...tuningOf(DEFAULT_CONFIG), arenaRadius: 600, maxSpeed: 400, dashSpeed: 800 };
+    host.tune({ ...t, knockSpeed: 500 });
     host.steer(1, 1, 0);
     const states = runFor(host, 1000);
     const own = states.at(-1)?.ghosts.find((g) => g.id === slot.ghost);
@@ -220,8 +271,7 @@ describe('match host live tuning', () => {
     const host = new MatchHost(DEFAULT_CONFIG, 32, 1);
     host.tick(50);
     const small = DEFAULT_CONFIG.arenaRadius / 2;
-    const { maxSpeed, dashSpeed, knockSpeed } = DEFAULT_CONFIG;
-    host.tune(tunedFields({ arenaRadius: small, maxSpeed, dashSpeed, knockSpeed }));
+    host.tune({ ...tuningOf(DEFAULT_CONFIG), arenaRadius: small });
     // Standing still (every seat a player holding nothing): only the edge moves them.
     for (let c = 1; c <= 32; c++) host.join(c);
     const states = runFor(host, DEFAULT_CONFIG.arenaShrinkMs + 500);

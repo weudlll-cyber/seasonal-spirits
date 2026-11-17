@@ -14,7 +14,9 @@ describe('simulated match', () => {
     expect(a.result).not.toEqual(c.result);
   });
 
-  it('passes every sanity check, and every team scores knockouts', () => {
+  // A whole 32-bot match: about 2 s alone, over 5 s beside the rest of the suite on a busy
+  // machine (as match-host.test.ts's whole match).
+  it('passes every sanity check, and every team scores knockouts', { timeout: 20_000 }, () => {
     const r = simulate(DEFAULT_CONFIG, 1);
     expect(r.sanity.filter((c) => !c.ok)).toEqual([]);
     expect(r.halvings.map((h) => [h.atMs, h.season])).toEqual([

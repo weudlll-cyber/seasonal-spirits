@@ -3,7 +3,7 @@
 // pause; never while a match runs. A 1 s match keeps the real server test short.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type PlayerResult } from '@seasonal-spirits/game-core';
+import { DEFAULT_CONFIG, type MatchResult, type PlayerResult } from '@seasonal-spirits/game-core';
 import { STATE_RESULT, parseServerMessage, type ServerRecap } from '@seasonal-spirits/protocol';
 import type WebSocket from 'ws';
 import { MatchHost } from './match-host.js';
@@ -31,24 +31,38 @@ function nextRecap(ws: WebSocket): Promise<ServerRecap> {
   });
 }
 
-describe('match recap', () => {
-  const row = (id: number, knockouts: number, longestAliveMs: number): PlayerResult => ({
-    id,
-    team: 1,
-    score: knockouts,
-    knockouts,
-    falls: 1,
-    longestAliveMs,
-    scoreMs: 0,
-    bounces: 0,
-    passes: 0,
-  });
+const row = (id: number, knockouts: number, longestAliveMs: number): PlayerResult => ({
+  id,
+  team: 1,
+  score: knockouts,
+  knockouts,
+  falls: 1,
+  lives: 2,
+  longestAliveMs,
+  scoreMs: 0,
+  bounces: 0,
+  passes: 0,
+});
 
+describe('match recap', () => {
   it("carries the scores and the mode's awards, in whole numbers", () => {
     const players = [row(3, 2, 40_000), row(4, 0, 90_400.5)];
-    expect(recapOf({ mode: 'sumo', players, teams: [0, 2, 0, 0] })).toEqual({
+    const result: MatchResult = {
+      mode: 'sumo',
+      variant: 'points',
+      players,
+      teams: [0, 2, 0, 0],
+      left: [0, 2, 0, 0],
+      knockedOut: [],
+      winner: null,
+      lastStanding: null,
+    };
+    expect(recapOf(result)).toEqual({
       kind: 'recap',
       teams: [0, 2, 0, 0],
+      left: [0, 2, 0, 0],
+      knockedOut: [],
+      winner: null,
       players: [
         { ghost: 3, team: 1, score: 2 },
         { ghost: 4, team: 1, score: 0 },

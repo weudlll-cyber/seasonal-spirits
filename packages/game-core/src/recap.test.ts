@@ -1,10 +1,10 @@
 // Seasonal Sumo — the recap's awards per mode, from the result: the top count wins, the lowest
-// id of equal ones, nobody for a count of 0.
+// id of equal ones, nobody for a count of 0; Last One Standing names the one ghost left.
 
 import { describe, expect, it } from 'vitest';
 import type { GameMode } from './config.js';
 import { awardsOf } from './recap.js';
-import type { PlayerResult } from './types.js';
+import type { MatchResult, PlayerResult } from './types.js';
 
 const player = (id: number, counts: Partial<PlayerResult>): PlayerResult => ({
   id,
@@ -12,6 +12,7 @@ const player = (id: number, counts: Partial<PlayerResult>): PlayerResult => ({
   score: 0,
   knockouts: 0,
   falls: 0,
+  lives: 1,
   longestAliveMs: 0,
   scoreMs: 0,
   bounces: 0,
@@ -19,8 +20,18 @@ const player = (id: number, counts: Partial<PlayerResult>): PlayerResult => ({
   ...counts,
 });
 
-const awards = (mode: GameMode, players: PlayerResult[]) =>
-  awardsOf({ mode, players, teams: [0, 0, 0, 0] });
+const awards = (mode: GameMode, players: PlayerResult[], more: Partial<MatchResult> = {}) =>
+  awardsOf({
+    mode,
+    variant: 'points',
+    players,
+    teams: [0, 0, 0, 0],
+    left: [0, 0, 0, 0],
+    knockedOut: [],
+    winner: null,
+    lastStanding: null,
+    ...more,
+  });
 
 describe('match recap awards', () => {
   it('sumo: best pusher by knockouts, survivor by the longest time without a fall', () => {
@@ -33,6 +44,18 @@ describe('match recap awards', () => {
       { kind: 'best-pusher', ghost: 1, value: 3 },
       { kind: 'survivor', ghost: 2, value: 300_000 },
     ]);
+  });
+
+  it('Last One Standing: the one ghost left with its lives, then the best pusher', () => {
+    const players = [player(1, { knockouts: 4 }), player(2, { knockouts: 1, lives: 2 })];
+    const standing = { variant: 'last-standing', winner: 1, lastStanding: 2 } as const;
+    expect(awards('sumo', players, standing)).toEqual([
+      { kind: 'last-standing', ghost: 2, value: 2 },
+      { kind: 'best-pusher', ghost: 1, value: 4 },
+    ]);
+    // At the time limit with several left: a winning team, no single last one.
+    const atTime = { ...standing, lastStanding: null };
+    expect(awards('sumo', players, atTime).map((a) => a.kind)).toEqual(['best-pusher']);
   });
 
   it('hill: king by whole seconds in the zone, bouncer by opponents pushed out', () => {

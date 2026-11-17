@@ -1,6 +1,7 @@
 // Seasonal Sumo — what the clients say about each game mode, in one place: its name in the
-// band, its halving in the countdown and the banner, its last-chance call, what a ghost's score
-// counts. The wire carries the mode as its index in game-core's GAME_MODES.
+// band (sumo's with its variant), its halving in the countdown and the banner, its last-chance
+// call, what a ghost's score counts. The wire carries the mode as its index in game-core's
+// GAME_MODES, sumo's variant as STATE_LAST_STANDING.
 
 import {
   DEFAULT_CONFIG,
@@ -11,7 +12,7 @@ import {
   type GameConfig,
   type GameMode,
 } from '@seasonal-spirits/game-core';
-import type { Tuning } from '@seasonal-spirits/protocol';
+import { STATE_LAST_STANDING, type Tuning } from '@seasonal-spirits/protocol';
 
 export interface ModeWords {
   name: string;
@@ -52,6 +53,18 @@ export function modeOf(index: number): GameMode {
 
 export function modeWords(index: number): ModeWords {
   return WORDS[modeOf(index)];
+}
+
+// Sumo's variant of the match on screen, by its name; null in the walled modes.
+export function variantName(s: { mode: number; flags: number }): string | null {
+  if (modeOf(s.mode) !== 'sumo') return null;
+  return s.flags & STATE_LAST_STANDING ? 'Last One Standing' : 'Points';
+}
+
+// The band's name of the match: the mode's, with sumo's variant ("Seasonal Sumo · Points").
+export function matchName(s: { mode: number; flags: number }): string {
+  const variant = variantName(s);
+  return variant ? `${modeWords(s.mode).name} · ${variant}` : modeWords(s.mode).name;
 }
 
 // The mode's config as the clients know it (the server's is the truth; the clients need its

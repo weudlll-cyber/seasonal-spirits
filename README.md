@@ -8,7 +8,9 @@ Concept: [CONCEPT.md](CONCEPT.md). **On this branch (`proto/sumo`)**: Seasonal S
 paused (owner decision 2026-11-16) and the repository plays a rough prototype, **Seasonal
 Sumo** — push the other teams off a round arena that halves at every season change; rules in
 [docs/GAME-CORE.md](docs/GAME-CORE.md) — and two sister modes, **King of the Season** (hold the
-zone) and **Halving Bomb** (pass the bomb); `pnpm dev` rotates them. Nothing of it is merged.
+zone) and **Halving Bomb** (pass the bomb). Sumo has limited lives and two variants, Points and
+Last One Standing; `pnpm dev` plays Sumo with the two in turn (`GAME_MODE=rotate` brings in the
+other modes). Nothing of it is merged.
 
 ## Status
 

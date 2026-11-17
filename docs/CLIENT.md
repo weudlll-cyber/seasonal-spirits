@@ -9,24 +9,25 @@ Spirits' client is on `master`.
 
 ## Files
 
-| File                       | What it holds                                                                    |
-| -------------------------- | -------------------------------------------------------------------------------- |
-| `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook    |
-| `src/scene.ts`             | One canvas frame: the camera on the whole playing area, ghosts, labels, clock    |
-| `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws        |
-| `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys     |
-| `src/scores.ts`            | The team scores in the band: the mode's score per team, the leader framed        |
-| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, tuning    |
-| `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated    |
-| `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server |
-| `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown              |
-| `src/input.ts`             | Keyboard (WASD/arrows, Space to dash) and the touch joystick                     |
-| `src/hud.ts`               | The Dash button and its cooldown ring, announcements and flash, notices, mute    |
-| `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box     |
-| `src/sound.ts`             | The halving tone (Web Audio)                                                     |
-| `src/config.ts`            | Bridge box on/off and its links                                                  |
-| `e2e/`                     | Playwright config, helpers and the specs                                         |
-| `packages/render` (shared) | The drawing client and viewer share: field per mode, ghosts, bomb, clock, words  |
+| File                       | What it holds                                                                     |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook     |
+| `src/scene.ts`             | One canvas frame: the camera on the whole playing area, ghosts, labels, clock     |
+| `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws         |
+| `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys      |
+| `src/scores.ts`            | The team chips in the band: score and ghosts still in per team, the leader framed |
+| `src/lives.ts`             | The own lives as hearts in the band; "You are out — watching"                     |
+| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, tuning     |
+| `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated     |
+| `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server  |
+| `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown               |
+| `src/input.ts`             | Keyboard (WASD/arrows, Space to dash) and the touch joystick                      |
+| `src/hud.ts`               | The Dash button and its cooldown ring, announcements and flash, notices, mute     |
+| `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box      |
+| `src/sound.ts`             | The halving tone (Web Audio)                                                      |
+| `src/config.ts`            | Bridge box on/off and its links                                                   |
+| `e2e/`                     | Playwright config, helpers and the specs                                          |
+| `packages/render` (shared) | The drawing client and viewer share: field per mode, ghosts, bomb, clock, words   |
 
 ## Joining and watching
 
@@ -62,10 +63,16 @@ from the server after a change.
 
 ## Screen
 
-- **Top bar.** The season clock (four seasons — a window that moves on through bomb's nine —,
-  the mode's name, the time left, the countdown in red), and
-  under it the band: "You are Team <Season>" in the team colour, the corner buttons, and the
-  team scores ("Spring 12 · Summer 9 …", the leader framed). The band is 68 px
+- **Top bar.** The season clock (four seasons — a window that moves on through bomb's nine
+  and sumo's keep-halving —, the mode's name with sumo's variant, "Seasonal Sumo · Points" or
+  "· Last One Standing", the time left, the countdown in red; with no deadline at all — Last One
+  Standing "stop, no time limit" after the third halving — the time played, "· 6:52 played"),
+  and under it the band: "You are Team <Season>" in the team colour with the own lives as
+  hearts beside it (sumo only; a lost one fades), the corner buttons, and a chip per team
+  (sumo Points "Spring 12 · 7 in": knockouts and ghosts still in; Last One Standing "Spring 7
+  in"; hill and bomb "Spring 12"; the leader framed; on a narrow phone the team's name is left
+  out, its colour names it). Out of lives the team line says "You are out — watching" until
+  the next match, without a Dash button; the view stays on the whole arena. The band is 68 px
   (`BAND_HEIGHT`).
 - **Field** (render `field.ts`). Sumo: a dark void around a disc in the season's ground colour
   with a glowing edge in the season's colour; during the countdown before a halving a dashed
@@ -80,7 +87,8 @@ from the server after a change.
   a small arrow pointing down at it and "You"; after a respawn, at every match start and on
   joining, a ring pulses three times (1.5 s). While it is out after a fall, the band's team
   line says "You fell — back in 3 … 1" (server time of the fall plus `outMs`) and its team's
-  respawn band is drawn faintly on the arena (`own-marker.ts`). A ghost faster than running (a dash, a knock) leaves a short
+  respawn band is drawn faintly on the arena (`own-marker.ts`; not after the last life). A
+  ghost faster than running (a dash, a knock) leaves a short
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
   points), the short tag
@@ -101,10 +109,14 @@ from the server after a change.
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
   rules with drawings (sumo: push them off, dash, the arena halves; hill: stand in the zone,
   push them out, the zone jumps and halves; bomb: points every second, pass the bomb, it
-  goes off and halves the carrier's points), "What you see" (render `LEGEND`, one drawing
-  each), the controls. It follows the mode of the match on screen.
-- **Result**: the mode's two awards ("Best pusher"/"Survivor", "King"/"Bouncer", "Hot
-  hands"/"Cool head"), the score per team and the top eight players, the
+  goes off and halves the carrier's points), in sumo the variant's rule in one sentence with the
+  match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
+  controls. It follows the match on screen.
+- **Result**: the mode's two awards ("Best pusher"/"Survivor", "Last one standing"/"Best
+  pusher", "King"/"Bouncer", "Hot hands"/"Cool head"), the score per team — in Last One
+  Standing the teams in their final order instead: the winner, the teams still in at the time
+  limit ("5 still in"), then those knocked out, last out first ("out 2nd") — and the top eight
+  players, the
   own place, the time to the next match, and the bridge box: "This is how Seasonal Tokens
   work: every halving cuts in half — here it cuts the arena.", "Start here", "Try the
   simulator", "No financial advice".

@@ -1,11 +1,17 @@
 // Seasonal Sumo — the season clock at the top: four seasons of the match in order (a window
-// that moves on when a mode has more, as bomb's nine), the current one highlighted, the mode's
-// name, the next season, the time left, and in the last seconds before a deadline its
-// countdown — the mode's halving, or the match end ("LAST CHANCE"). Which deadline is next the
-// server says (STATE_TO_END). The team scores sit in the band below (the client's scores.ts).
+// that moves on when a mode has more, as bomb's nine or sumo's keep-halving), the current one
+// highlighted, the mode's name (sumo's with its variant), the next season, the time left, and in
+// the last seconds before a deadline its countdown — the mode's halving, or the match end
+// ("LAST CHANCE"); with no deadline at all the time played. Which deadline is next the server
+// says (STATE_TO_END, STATE_OPEN_END). The team scores sit in the band below (scores.ts).
 
-import { STATE_RESULT, STATE_TO_END, type ServerState } from '@seasonal-spirits/protocol';
-import { modeWords, seasonsOf } from './modes.js';
+import {
+  STATE_OPEN_END,
+  STATE_RESULT,
+  STATE_TO_END,
+  type ServerState,
+} from '@seasonal-spirits/protocol';
+import { matchName, modeWords, seasonsOf } from './modes.js';
 import { TEXT, seasonColour, seasonName } from './palette.js';
 
 const CELLS = 4;
@@ -25,8 +31,10 @@ export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefi
   ctx.fillStyle = 'rgba(5, 8, 11, 0.92)';
   ctx.fillRect(0, 0, width, CLOCK_HEIGHT);
   if (!s) return;
-  // The window: the season before the current one first, as long as the match has more.
-  const first = Math.max(0, Math.min(s.seasonNumber - 1, seasonsOf(s.mode) - CELLS));
+  // The window: the season before the current one first, as long as the match has more (keep-
+  // halving goes on past the mode's count).
+  const seasons = Math.max(seasonsOf(s.mode), s.seasonNumber + 1);
+  const first = Math.max(0, Math.min(s.seasonNumber - 1, seasons - CELLS));
   const cell = Math.min(110, (width - 2 * EDGE) / CELLS);
   ctx.textBaseline = 'middle';
   for (let i = 0; i < CELLS; i++) {
@@ -67,12 +75,15 @@ export function statusLine(s: ServerState): string {
   const words = modeWords(s.mode);
   const next = seasonName(s.season + 1);
   const toEnd = (s.flags & STATE_TO_END) !== 0;
-  if (s.flags & STATE_RESULT) return `${words.name} · match over`;
+  const name = matchName(s);
+  if (s.flags & STATE_RESULT) return `${name} · match over`;
+  if (s.flags & STATE_OPEN_END)
+    return `${name} · ${seasonName(s.season)} · ${mmss(s.matchMs)} played`;
   if (s.countdownMs !== null) {
     return toEnd
       ? `LAST CHANCE — ${words.lastChance} · ${mmss(s.countdownMs)}`
       : `HALVING in ${mmss(s.countdownMs)} — ${words.countdown(next)}`;
   }
-  const now = `${words.name} · ${seasonName(s.season)} · ${mmss(s.seasonLeftMs)}`;
+  const now = `${name} · ${seasonName(s.season)} · ${mmss(s.seasonLeftMs)}`;
   return toEnd ? `${now} to the end` : `${now} left · next: ${next}`;
 }

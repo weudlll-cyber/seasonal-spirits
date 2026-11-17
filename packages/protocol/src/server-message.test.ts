@@ -30,8 +30,17 @@ describe('parseServerMessage', () => {
 
 // TUNE 2026-11-17: the live tuning reaches the clients; a forged one is checked like any frame.
 describe('parseServerMessage: live tuning', () => {
-  it('reads the live tuning with exactly the four numbers, each whole and in range', () => {
-    const values = { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480, knockSpeed: 320 };
+  it('reads the live tuning with exactly the eight numbers, each whole and in range', () => {
+    const values = {
+      arenaRadius: 400,
+      maxSpeed: 240,
+      dashSpeed: 480,
+      knockSpeed: 320,
+      lives: 3,
+      variant: 2,
+      afterLast: 1,
+      halvingEverySec: 75,
+    };
     expect(parseServerMessage(JSON.stringify({ kind: 'tuning', values }))).toEqual({
       kind: 'tuning',
       values,
@@ -40,6 +49,10 @@ describe('parseServerMessage: live tuning', () => {
       { ...values, arenaRadius: 5000 },
       { ...values, maxSpeed: 0 },
       { ...values, dashSpeed: 480.5 },
+      { ...values, lives: 10 },
+      { ...values, variant: 3 },
+      { ...values, afterLast: 'keep-halving' },
+      { ...values, halvingEverySec: 20 },
       { ...values, extra: 1 },
       { arenaRadius: 400, maxSpeed: 240, dashSpeed: 480 },
       null,
@@ -79,7 +92,8 @@ describe('parseServerMessage: removed and broken messages', () => {
   });
 });
 
-// The match recap: the mode's score per team and player, and the awards.
+// The match recap: the mode's score per team and player, the ghosts still in and the teams
+// knocked out, Last One Standing's winner, and the awards.
 describe('parseServerMessage: recap', () => {
   const players = Array.from({ length: 32 }, (_, i) => ({
     ghost: i + 1,
@@ -89,8 +103,12 @@ describe('parseServerMessage: recap', () => {
   const recap = {
     kind: 'recap',
     teams: [120, 99, 0, 33],
+    left: [3, 0, 1, 0],
+    knockedOut: [3, 1],
+    winner: 0,
     players,
     awards: [
+      { kind: 'last-standing', ghost: 4, value: 0 },
       { kind: 'best-pusher', ghost: 2, value: 9 },
       { kind: 'survivor', ghost: 11, value: 182_000 },
     ],
@@ -118,7 +136,12 @@ describe('parseServerMessage: recap', () => {
       { ...recap, awards: null },
       { ...recap, awards: [{ kind: 'survivor', ghost: 2, value: -1 }] },
       { ...recap, awards: [{ kind: 'best-pusher', ghost: 300, value: 2 }] },
-      { ...recap, awards: [{ kind: 'best-pusher', ghost: 7, value: 0 }] },
+      { ...recap, left: [1, 2, 3] },
+      { ...recap, knockedOut: [1, 1] },
+      { ...recap, knockedOut: [4] },
+      { ...recap, knockedOut: 'all' },
+      { ...recap, winner: 4 },
+      { ...recap, winner: undefined },
       { ...recap, awards: [{ kind: 'survivor', ghost: 2, value: 'long' }] },
       { ...recap, awards: [{ kind: '<b>King</b>', ghost: 2, value: 3 }] },
       { ...recap, awards: Array.from({ length: 9 }, () => recap.awards[0]) },

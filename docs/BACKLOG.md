@@ -12,16 +12,26 @@ On `proto/sumo` the rough prototype **Seasonal Sumo** is built; the topics below
 Spirits wait.
 
 y. **Seasonal Sumo and its modes — the owner plays them** (NIGHT 2026-11-17, on
-`proto/sumo`, not merged). `pnpm dev` rotates the modes match by match: Seasonal Sumo (5:00),
-King of the Season (3:00), Halving Bomb (3:00); `GAME_MODE=sumo pnpm dev` plays Sumo only.
-The feel of Sumo is tuned live with the viewer's sliders (TUNE 2026-11-17: arena size,
-walking speed, dash, push; starting values arena 25 ghost diameters, top speed 240, dash 480,
-push 320). Done when: the owner has played all three and said which is fun and which makes
-him want another round; has sent the slider line, set as the new starting values; and has
-decided the other placeholders (the bump with no bounce — 1.5 diameters, not 1 —, respawn,
-the bot layer's reaction, noise and dash gap of 3 s, the bots' distances `edgeMargin` and
-`dashRange`, set for the old 900 arena: 33 % of the time in clumps now; the walls, the
-zone's size, the bomb count and the times of hill and bomb).
+`proto/sumo`, not merged). `pnpm dev` plays Sumo only, its two variants in turn — Points and
+Last One Standing (LIVES 2026-11-17, 3 lives); `GAME_MODE=rotate pnpm dev` brings in King of
+the Season (3:00) and Halving Bomb (3:00). The feel and the rules of Sumo are tuned live with
+the viewer's panel (arena size, walking speed, dash, push; lives, variant, after the last
+season, keep-halving interval; starting values arena 25 ghost diameters, top speed 240, dash
+480, push 320, 3 lives, stop at the time limit, 75 s). Done when: the owner has played all
+three modes and both variants and said which is fun and which makes him want another round;
+has sent the panel's line, set as the new starting values; and has decided the other
+placeholders (the bump with no bounce — 1.5 diameters, not 1 —, respawn, the bot layer's
+reaction, noise and dash gap of 3 s, the bots' distances `edgeMargin` and `dashRange`, set for
+the old 900 arena: 33 % of the time in clumps now; the walls, the zone's size, the bomb count
+and the times of hill and bomb).
+
+ac. **Last One Standing "stop, no time limit" with bots can run very long** (LIVES
+2026-11-17, seeded 32-bot runs): in 3 of 5 runs it was not over after 30 minutes — after the
+third halving the arena's radius is 141 and the bots' `edgeMargin` is 140, so they keep to the
+middle and hardly push each other off. Also: its result's "Your place" still ranks by
+knockouts. Done when: the owner has played the option and decided whether the bots get a
+margin relative to the arena (OPEN y) or the option a different end, and how "Your place"
+reads in Last One Standing.
 
 ab. **`picomatch` advisory in the dependency scan** (CI 2026-11-17 on `9f3c65a`, new on
 GitHub that day): osv-scanner reports GHSA-fc5q-39xc-vjpf (High) for `picomatch` 4.0.7, with
@@ -617,6 +627,25 @@ Done when: the spec is green ten runs in a row.
   the edge (`followEdge`). Also: GAME-CORE.md still gave the 900 arena's halving radii — commit
   "fix: no passing through, the own ghost easy to find".
 
+- 2026-11-17 — **Lives and two Sumo variants** (owner decisions after playing with the
+  sliders: fewer players in the late phases): every ghost has `sumo.lives` (3), a fall costs
+  one, with none left it is out for the match (game-core `falls.ts`; no seat refill, a joining
+  player gets a ghost with lives left); Points ends at its time or when one team is left, Last
+  One Standing when one ghost is (`standing.ts`: `timed`, `clockOf`, `nextDeadline`,
+  `noteKnockedOut`, `isOver`, `decide`, `rivals` for the bots), with the setting after the last
+  season — stop at the time limit (winner by ghosts left, then lives, then team order), keep
+  halving every 30–120 s, or stop without a time limit (ADDENDUM: three options instead of
+  on/off); the server picks the variant per match (`SUMO_VARIANT`, `alternate` in `pnpm dev`,
+  which now plays Sumo only); the wire carries lives (ghost byte, header lives at the start),
+  `STATE_LAST_STANDING` and `STATE_OPEN_END`; the recap the ghosts still in, the teams knocked
+  out and the winner, the award "Last one standing"; the client the hearts, "You are out —
+  watching" (no Dash button then), the ghosts still in per team, the variant in the clock and
+  in the help, Last One Standing's result table; the panel lives, variant, after the last
+  season and its interval (protocol `tuning.ts`, eight values; game-core `tuningOf`). Removed:
+  game-core `isLastSeason` (now `nextDeadline`). Also: the copy line got four rows; the whole-
+  match simulation test got the whole-match timeout — commit "feat: Sumo lives and two variants,
+  more sliders".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -865,3 +894,9 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-17 | new tests against `9f3c65a`'s core and prediction (stashed fix)                                                                                                                           | `9f3c65a` + the new tests                                                                                                                 | contacts.test.ts: 3 of 3 fail; prediction "never draws the own ghost through another": fails                                                                                                                                        | this commit                                                                                    |
 | 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 38 files / 206 tests)                                                                                                          | working tree of fix 3                                                                                                                     | green after a complexity split in the prediction and a format fix; one run before: `simulation.test.ts` over 5 s under load (alone 1.9 s; the pair check now skips the root)                                                        | this commit                                                                                    |
 | 2026-11-17 | own ghost on `pnpm dev` (Sumo, 15 s seasons, browser 1918 × 945): owned over two matches, 15 falls, 5 arena-slider changes; band line; screenshots                                        | same tree                                                                                                                                 | 537 samples, own ghost in all; "back in 3, 2, 1" (and a "back in 0" at the end — now never below 1); ring, arrow, respawn band seen                                                                                                 | the sheet, "Fix 3"                                                                             |
+| 2026-11-17 | CI and CodeQL on GitHub                                                                                                                                                                   | `afcc6c8` on `proto/sumo`                                                                                                                 | verify, e2e, CodeQL success; `dependencies` failure: `picomatch` advisory (OPEN ab) (CI 44141292953, CodeQL 44141292963)                                                                                                            | `gh run list --branch proto/sumo`                                                              |
+| 2026-11-17 | `pnpm verify:changed` (format, lint, typecheck; all tests: 40 files / 232 tests)                                                                                                          | working tree of LIVES                                                                                                                     | green after three lint fixes (two long test blocks, `expose` complexity) and a whole-match timeout: `simulation.test.ts` over 5 s twice beside the suite with `pnpm dev` running, alone 1.9 s as before                             | this commit                                                                                    |
+| 2026-11-17 | `pnpm simulate --seed 1`                                                                                                                                                                  | same tree                                                                                                                                 | sanity green; Points ran 5:00, 86 credited falls (3 lives)                                                                                                                                                                          | docs/GAME-CORE.md                                                                              |
+| 2026-11-17 | seeded 32-bot Sumo matches, seeds 1–5, every variant and setting (scratch script)                                                                                                         | same tree                                                                                                                                 | Points 5:00, 3–11 of 32 left; Last One Standing stop-time 5:00, winner by ghosts left; keep-halving over at 5:10–5:17; stop-open: 2 over (18:39, 20:45), 3 not over at 30:00 (OPEN ac)                                              | the sheet, "Lives"                                                                             |
+| 2026-11-17 | one Points and one Last One Standing match played on `pnpm dev` (15 s seasons, browser 1280 × 860, a scripted player running off the edge)                                                | same tree                                                                                                                                 | hearts 3 → 0, "back in 3, 2, 1", "You are out — watching"; chips counted down; help sentence per variant; both results right; Dash button left while out → now hidden                                                               | the sheet, "Lives"                                                                             |
+| 2026-11-17 | the panel on `pnpm dev`: new values, "after the last season" switched in a running Last One Standing match, a foreign origin, Reset                                                       | same tree                                                                                                                                 | copy line with every value; "1:07 played" past the 60 s limit; keep halving 30 s until one left; foreign `Origin` 403; Reset; copy line cut off → now four rows                                                                     | the sheet, "Lives"                                                                             |

@@ -1,7 +1,8 @@
 // Seasonal Sumo — when the own ghost needs finding (FIX 2026-11-17-3), from the states the client
 // already has: a pulse after its respawn and at the start of every match (and when the player
 // joins), and after a fall how long until it is back — the server respawns it outMs after the
-// fall, so the countdown runs on the server's clock of the first state that showed it falling.
+// fall, so the countdown runs on the server's clock of the first state that showed it falling;
+// none after its last life (LIVES 2026-11-17: it is out until the next match).
 
 import {
   GHOST_FALLING,
@@ -33,7 +34,9 @@ export class OwnMarker {
     if (!this.seen || back || (this.wasOver && !over)) this.pulseFrom = now;
     if (!away) this.fellAtServerMs = null;
     this.backIn =
-      this.fellAtServerMs === null ? null : Math.max(0, outMs - (s.serverMs - this.fellAtServerMs));
+      this.fellAtServerMs === null || own.lives === 0
+        ? null
+        : Math.max(0, outMs - (s.serverMs - this.fellAtServerMs));
     this.seen = true;
     this.wasOver = over;
   }

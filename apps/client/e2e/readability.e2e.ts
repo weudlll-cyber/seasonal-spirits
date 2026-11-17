@@ -87,7 +87,8 @@ async function scoresReadable(page: Page): Promise<void> {
   await expect(chips).toHaveCount(4);
   const barBottom = (await view(page)).barBottom;
   for (const chip of await chips.all()) {
-    await expect(chip).toHaveText(/^(Spring|Summer|Autumn|Winter) \d+$/);
+    // Points: "Spring 3 · 7 in" (LIVES 2026-11-17: the ghosts still in); the name hidden on a phone.
+    await expect(chip).toHaveText(/^(Spring|Summer|Autumn|Winter) \d+( · \d+ in| in)?$/);
     const cut = await chip.evaluate((e) => e.scrollWidth > e.clientWidth);
     expect(cut, `score chip "${(await chip.textContent()) ?? ''}" cut off`).toBe(false);
     const box = await chip.boundingBox();
