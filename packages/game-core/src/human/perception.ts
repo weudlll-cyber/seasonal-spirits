@@ -1,25 +1,8 @@
-// Seasonal Sumo — what a human-like bot (bots/human.ts) perceives: the public match state cut
-// to a view around itself and seen a reaction time late, as a player at a screen sees it
-// (grown from Seasonal Spirits' human stand-in).
+// Seasonal Sumo — what a human-like bot (bots/human.ts) perceives: the public match state seen a
+// reaction time late, as a player at a screen sees it (grown from Seasonal Spirits' human
+// stand-in).
 
 import type { Ghost, MatchState } from '../types.js';
-
-// Half the width and half the height of a view in field units: the rectangle around a ghost,
-// kept inside the field like the client's camera.
-export interface ViewHalfSize {
-  x: number;
-  y: number;
-}
-
-// The client's "Near" view (apps/client: `cameraSpan` 1100 field units along the shorter side
-// of the screen below the bar; render `follow`): a desktop window shows the whole field width
-// and 1100 of its height.
-export const NEAR_VIEW: ViewHalfSize = { x: 1000, y: 550 };
-
-export interface Sight {
-  view: ViewHalfSize | null; // null: the whole field
-  reactionMs: number; // 0: now
-}
 
 // A copy of the state as it was in one tick: what a late look shows.
 function snapshot(s: Readonly<MatchState>): MatchState {
@@ -52,35 +35,14 @@ function seenAt(s: Readonly<MatchState>, reactionMs: number): Readonly<MatchStat
   return past[0] ?? s;
 }
 
-// The view rectangle around `me`, kept inside the field like the client's camera (a view
-// wider than the field shows all of it).
-export function viewRect(
-  fieldSize: number,
-  me: { x: number; y: number },
-  view: ViewHalfSize,
-): { left: number; right: number; top: number; bottom: number } {
-  const centre = (c: number, half: number): number =>
-    2 * half >= fieldSize ? fieldSize / 2 : Math.min(Math.max(c, half), fieldSize - half);
-  const cx = centre(me.x, view.x);
-  const cy = centre(me.y, view.y);
-  return { left: cx - view.x, right: cx + view.x, top: cy - view.y, bottom: cy + view.y };
-}
-
-// What `meId` perceives now: the state `sight.reactionMs` ago, cut to its view there. Its own
-// ghost is always in it (a player always sees itself).
+// What `meId` perceives now: the whole playing area as it was `reactionMs` ago — what every
+// player's screen shows (owner 2026-11-17: the whole arena always on screen).
 export function perceive(
-  fieldSize: number,
   s: Readonly<MatchState>,
   meId: number,
-  sight: Sight,
+  reactionMs: number,
 ): { state: Readonly<MatchState>; me: Readonly<Ghost> } | null {
-  const seen = seenAt(s, sight.reactionMs);
+  const seen = seenAt(s, reactionMs);
   const me = seen.ghosts.find((g) => g.id === meId);
-  if (!me) return null;
-  if (sight.view === null) return { state: seen, me };
-  const r = viewRect(fieldSize, me, sight.view);
-  const inside = (p: { x: number; y: number }): boolean =>
-    p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
-  const state = { ...seen, ghosts: seen.ghosts.filter((g) => g.id === meId || inside(g)) };
-  return { state, me };
+  return me ? { state: seen, me } : null;
 }

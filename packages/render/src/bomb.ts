@@ -7,7 +7,7 @@ import { sx, sy, type View } from './view.js';
 const LIFT = 8; // pixels between the ghost's body and the bomb
 const FUSE_PX = 14; // the full fuse's length
 
-// The bomb's radius for a ghost of body radius `r` pixels: readable even on a phone's Overview.
+// The bomb's radius for a ghost of body radius `r` pixels: readable even on a small phone.
 const bombRadius = (r: number): number => Math.max(6, r * 0.75);
 
 // How far above the ghost's centre the drawing reaches: its label keeps clear of it.

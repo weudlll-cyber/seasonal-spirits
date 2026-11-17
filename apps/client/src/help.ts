@@ -129,7 +129,7 @@ const SEEN =
   '</ol>';
 
 const CONTROLS =
-  '<p><b>Keyboard:</b> WASD or arrows to move, Space to dash, V view, ? help.</p>' +
+  '<p><b>Keyboard:</b> WASD or arrows to move, Space to dash, ? help.</p>' +
   '<p><b>Touch:</b> left thumb anywhere on the left half to steer; Dash under the right thumb.</p>';
 
 const content = (mode: GameMode, name: string): string =>

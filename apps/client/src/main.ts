@@ -37,7 +37,6 @@ import { ResultScreen } from './result.js';
 import { drawScene, type Drawn, type Frame } from './scene.js';
 import { ScoreBoard } from './scores.js';
 import { DeadlineTone } from './sound.js';
-import { ViewToggle } from './view-mode.js';
 
 const BUFFER_MS = 100; // render this far behind the newest state (docs/PHASE0.md)
 
@@ -60,9 +59,6 @@ document.body.classList.toggle('spectating', spectate);
 
 const tone = new DeadlineTone();
 bindMute(() => tone.toggleMute(), tone.muted);
-const viewButton = el('view', HTMLButtonElement);
-// A spectator by URL has no view choice (and its keys do nothing).
-const viewToggle = spectate ? null : new ViewToggle(viewButton);
 const teamLine = el('team');
 const trails = new Trails();
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
@@ -182,9 +178,8 @@ function showTeam(team: number | null): void {
 
 function draw(f: Frame): Drawn {
   if (f.latest) help.show(modeOf(f.latest.mode), modeWords(f.latest.mode).name);
-  const drawn = drawScene(ctx, f, viewToggle?.mode ?? 'overview', trails);
+  const drawn = drawScene(ctx, f, trails);
   showTeam(f.ownTeam);
-  viewButton.hidden = !f.playing;
   const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
   hud.showControls(f.playing && !f.over, own?.dashLeftMs ?? 0);
   scores.update(f.latest);

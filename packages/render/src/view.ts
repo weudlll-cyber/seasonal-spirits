@@ -1,5 +1,6 @@
-// Seasonal Spirits — where the field lands on the canvas: the whole field, or a camera on one
-// ghost. Every drawing function takes a View and maps field units to pixels through it.
+// Seasonal Sumo — where the field lands on the canvas: a square of it fitted below the bar (the
+// client's playing area, the viewer's whole field). Every drawing function takes a View and maps
+// field units to pixels through it.
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 
@@ -13,48 +14,68 @@ export interface View {
   top: number; // pixels reserved at the top for the season clock
 }
 
-// The whole field, centred below the season clock.
+// A square of the field the camera fits: its centre and half its side, in field units.
+export interface Box {
+  x: number;
+  y: number;
+  half: number;
+}
+
+// The whole field, centred below the season clock (the debug viewer).
 export function fitField(ctx: CanvasRenderingContext2D, top: number): View {
+  return fitBox(ctx, top, { x: FIELD / 2, y: FIELD / 2, half: FIELD / 2 });
+}
+
+// What the fitted box keeps away from: controls in the bottom corners (clearArea) and, by
+// `marginPx`, the edges.
+export interface Room {
+  keepOut: readonly Rect[];
+  marginPx: number;
+}
+
+// `box` as large as it goes into the canvas below the bar, centred in the part `room` leaves.
+export function fitBox(
+  ctx: CanvasRenderingContext2D,
+  top: number,
+  box: Box,
+  room: Room = { keepOut: [], marginPx: 0 },
+): View {
   const { width, height } = ctx.canvas;
-  const scale = Math.min(width, height - top) / FIELD;
+  const a = clearArea(width, height, top, room.keepOut);
+  const scale = Math.max(1, squareSide(a) - 2 * room.marginPx) / (2 * box.half);
   return {
     ctx,
     scale,
-    ox: (width - FIELD * scale) / 2,
-    oy: top + (height - top - FIELD * scale) / 2,
+    ox: (a.left + a.right) / 2 - box.x * scale,
+    oy: (a.top + a.bottom) / 2 - box.y * scale,
     top,
   };
 }
 
-export interface Lens {
-  span: number; // field units along the shorter side of the screen
-  // Pixels the camera may look past the field's bottom edge, so the bottom of the field can
-  // rise above controls that sit at the bottom of the screen (touch screens); 0 elsewhere.
-  bottomPad: number;
+// The part of the canvas below the bar clear of `keepOut` (rectangles at the bottom: the Dash
+// button right, the joystick's thumb zone left): everything above the highest of them, or the
+// strip between the left ones and the right ones — whichever holds the larger square. A
+// portrait phone gets the part above, a landscape phone and a desktop the strip between.
+export function clearArea(
+  width: number,
+  height: number,
+  top: number,
+  keepOut: readonly Rect[],
+): Rect {
+  const all = { left: 0, top, right: width, bottom: height };
+  if (keepOut.length === 0) return all;
+  const above = { ...all, bottom: Math.max(top, Math.min(...keepOut.map((r) => r.top))) };
+  const onLeft = (r: Rect): boolean => r.left + r.right < width;
+  const between = {
+    ...all,
+    left: Math.max(0, ...keepOut.filter(onLeft).map((r) => r.right)),
+    right: Math.min(width, ...keepOut.filter((r) => !onLeft(r)).map((r) => r.left)),
+  };
+  return squareSide(between) >= squareSide(above) ? between : above;
 }
 
-// A camera centred on `at` that shows about `lens.span` field units along the shorter side
-// and never looks past the field's edge (except `lens.bottomPad` at the bottom).
-export function follow(
-  ctx: CanvasRenderingContext2D,
-  top: number,
-  at: { x: number; y: number },
-  lens: Lens,
-): View {
-  const { width, height } = ctx.canvas;
-  const scale = Math.max(
-    Math.min(width, height - top) / lens.span,
-    Math.min(width, height - top) / FIELD,
-  );
-  const clampCentre = (c: number, pixels: number, past: number): number => {
-    const half = pixels / scale / 2;
-    return half * 2 >= FIELD + past
-      ? (FIELD + past) / 2
-      : Math.max(half, Math.min(FIELD + past - half, c));
-  };
-  const cx = clampCentre(at.x, width, 0);
-  const cy = clampCentre(at.y, height - top, lens.bottomPad / scale);
-  return { ctx, scale, ox: width / 2 - cx * scale, oy: top + (height - top) / 2 - cy * scale, top };
+function squareSide(r: Rect): number {
+  return Math.min(r.right - r.left, r.bottom - r.top);
 }
 
 export function sx(v: View, x: number): number {

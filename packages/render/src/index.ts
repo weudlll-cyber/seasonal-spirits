@@ -3,7 +3,7 @@
 
 export * from './palette.js';
 export * from './view.js';
-export { drawField } from './field.js';
+export { drawField, playBox } from './field.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 export { Trails, drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
 export { LEGEND, type LegendMarker } from './legend.js';

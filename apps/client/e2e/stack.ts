@@ -42,9 +42,8 @@ export interface ClientView {
   countdown: { ms: number; toEnd: boolean } | null; // the clock's countdown (main.ts)
   result: boolean;
   // What the frame drew (apps/client/src/scene.ts, Drawn).
-  view: 'near' | 'overview' | 'spectator';
   barBottom: number;
-  minimap: Rect | null;
+  playArea: Rect; // the playing area's square in pixels
   controls: Rect[];
   zones: Rect[];
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];

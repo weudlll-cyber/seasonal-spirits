@@ -1,4 +1,4 @@
-// Seasonal Sumo — the client's configuration: the bridge box and the camera.
+// Seasonal Sumo — the client's configuration: the bridge box.
 // The bridge box (CONCEPT.md §1 rule 3, §8) is on by default and switched off here.
 
 export interface ClientConfig {
@@ -7,7 +7,6 @@ export interface ClientConfig {
     startHereUrl: string; // the website's path for newcomers
     simulatorUrl: string;
   };
-  cameraSpan: number; // field units a player sees along the shorter side of the screen
 }
 
 export const CLIENT_CONFIG: ClientConfig = {
@@ -17,7 +16,6 @@ export const CLIENT_CONFIG: ClientConfig = {
     startHereUrl: 'https://stentertainment.net/start',
     simulatorUrl: 'https://seasonaltokens.org',
   },
-  cameraSpan: 1100, // placeholder — owner decides
 };
 
 // Word for word from the owner's sketch of Seasonal Sumo (NIGHT 2026-11-17).

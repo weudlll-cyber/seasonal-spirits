@@ -1,13 +1,12 @@
-// Seasonal Sumo — what the owner's play tests of 2026-11-15 asked for, at desktop and phone
-// size: "You are Team <Season>", the team scores readable in the band, in "Near" the minimap,
-// V or the corner button switching to "Overview" and the choice surviving a reload. In every
-// sampled frame: every ghost named, every name label wholly inside the view (not under the top
-// bar, not past a screen edge), none on another label; the corner buttons and the scores sit
-// in the band, not on the field. Screenshots: <size>-near.png and <size>-overview.png in
-// reports/screens/latest/.
+// Seasonal Sumo — what the owner's play tests of 2026-11-15 and 2026-11-17 asked for, at desktop
+// and phone size: "You are Team <Season>", the team scores readable in the band. In every
+// sampled frame: the whole playing area on screen below the band and clear of the controls,
+// every ghost named, every name label wholly inside the view (not under the top bar, not past a
+// screen edge), none on another label; the corner buttons and the scores sit in the band, not
+// on the field. Screenshot: <size>-field.png in reports/screens/latest/.
 
 import path from 'node:path';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { overlaps, type Rect } from '@seasonal-spirits/render';
 import {
   CENTRE,
@@ -58,12 +57,24 @@ function labelFaults(v: ClientView, screen: { width: number; height: number }): 
   return faults;
 }
 
+// The whole playing area on screen (owner's observation 2026-11-17: only its upper half showed
+// in the old "Near" view), below the band and under no control.
+function areaFaults(v: ClientView, screen: { width: number; height: number }): string[] {
+  const a = v.playArea;
+  const faults: string[] = [];
+  if (a.top < v.barBottom || a.left < 0 || a.right > screen.width || a.bottom > screen.height)
+    faults.push('playing area not wholly on screen');
+  if (v.zones.some((z) => overlaps(a, z))) faults.push('playing area under a control');
+  return faults;
+}
+
 async function frameFaults(page: Page): Promise<string[]> {
   const screen = await page.evaluate(() => ({
     width: window.innerWidth,
     height: window.innerHeight,
   }));
-  return labelFaults(await view(page), screen);
+  const v = await view(page);
+  return [...labelFaults(v, screen), ...areaFaults(v, screen)];
 }
 
 // The team scores: four chips, none cut off, inside the band.
@@ -80,16 +91,11 @@ async function scoresReadable(page: Page): Promise<void> {
   }
 }
 
-async function switchView(page: Page, info: TestInfo): Promise<void> {
-  if (info.project.name === 'phone') await page.locator('#view').tap();
-  else await page.keyboard.press('KeyV');
+async function steering(page: Page, phone: boolean): Promise<Steering> {
+  return phone ? joystick(page) : keyboard(page);
 }
 
-async function steering(page: Page, info: TestInfo): Promise<Steering> {
-  return info.project.name === 'phone' ? joystick(page) : keyboard(page);
-}
-
-test('team line, scores and minimap in Near, Overview remembered, labels never in the way', async ({
+test('team line, scores, the whole playing area on screen, labels never in the way', async ({
   page,
 }, info) => {
   const shot = (name: string): Promise<Buffer> =>
@@ -103,42 +109,19 @@ test('team line, scores and minimap in Near, Overview remembered, labels never i
   expect(cut, 'the team line is not cut off').toBe(false);
   await scoresReadable(page);
   const start = await view(page);
-  expect(start.view).toBe('near');
-  expect(start.minimap).not.toBeNull();
-  for (const id of ['#view', '#mute']) {
+  for (const id of ['#help-open', '#mute']) {
     const box = await page.locator(id).boundingBox();
     expect(box && box.y + box.height, `${id} sits in the band`).toBeLessThanOrEqual(
       start.barBottom,
     );
   }
   // Walk into the middle of the arena for a few seconds, checking every sampled frame.
-  const steer = await steering(page, info);
+  const steer = await steering(page, info.project.name === 'phone');
   const until = Date.now() + 5000;
   await steerTo(page, steer, CENTRE, async () => {
     for (const f of await frameFaults(page)) faults.add(f);
     return Date.now() > until;
   });
-  await shot('near');
-  await overviewSurvivesReload(page, info, () => shot('overview'));
+  await shot('field');
   expect([...faults]).toEqual([]);
 });
-
-// Overview: the whole field, no minimap; the choice survives a reload, and back to Near.
-async function overviewSurvivesReload(
-  page: Page,
-  info: TestInfo,
-  shot: () => Promise<unknown>,
-): Promise<void> {
-  await switchView(page, info);
-  await expect.poll(async () => (await view(page)).view).toBe('overview');
-  expect((await view(page)).minimap).toBeNull();
-  expect(await frameFaults(page)).toEqual([]);
-  await shot();
-  await page.reload();
-  await joined(page);
-  await expect.poll(async () => (await view(page)).view).toBe('overview');
-  await expect(page.locator('#view')).toHaveText('View: Overview');
-  await switchView(page, info);
-  await expect.poll(async () => (await view(page)).view).toBe('near');
-  await expect(page.locator('#view')).toHaveText('View: Near');
-}

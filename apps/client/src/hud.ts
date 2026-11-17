@@ -84,12 +84,21 @@ export function bindMute(toggle: () => boolean, muted: boolean): void {
   });
 }
 
-// What of the HUD lies on the field (session 2026-11-15-B). Controls: the visible Dash
-// button (bottom right); shrine labels move away from them. Thumb zones: the
-// controls plus, on touch screens, where the left thumb rests on the joystick (bottom
-// left); the shrine arrow keeps out of all of them, and the camera may look past the
-// field's bottom edge by their height so the field rises above them.
+// What of the HUD lies over the canvas (session 2026-11-15-B). Controls: the visible Dash
+// button (bottom right). Thumb zones: the controls plus, on touch screens, where the left thumb
+// rests on the joystick (bottom left); the camera fits the playing area clear of all of them
+// (scene.ts).
 const STICK_ZONE = { width: 220, height: 260 }; // pixels, at most half the screen wide
+
+// The joystick's thumb zone on a `width` × `height` touch screen.
+export function stickZone(width: number, height: number): Rect {
+  return {
+    left: 0,
+    top: height - STICK_ZONE.height,
+    right: Math.min(width / 2, STICK_ZONE.width),
+    bottom: height,
+  };
+}
 
 export interface HudOnField {
   controls: Rect[];
@@ -104,13 +113,7 @@ export function hudOnField(): HudOnField {
   const zones = [...controls];
   const body = document.body.classList;
   if (body.contains('touch') && !body.contains('spectating')) {
-    const { innerWidth: w, innerHeight: h } = window;
-    zones.push({
-      left: 0,
-      top: h - STICK_ZONE.height,
-      right: Math.min(w / 2, STICK_ZONE.width),
-      bottom: h,
-    });
+    zones.push(stickZone(window.innerWidth, window.innerHeight));
   }
   return { controls, zones };
 }

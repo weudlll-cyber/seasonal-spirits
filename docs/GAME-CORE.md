@@ -32,7 +32,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/bots/hill.ts`        | The hill brain: to the zone, push rivals out of it                             |
 | `src/bots/bomb.ts`        | The bomb brain: a carrier chases, the others flee                              |
 | `src/bots/human.ts`       | The human-like layer every bot plays through (`createBot`)                     |
-| `src/human/perception.ts` | What a bot sees: the "Near" view, a reaction time late                         |
+| `src/human/perception.ts` | What a bot sees: the whole playing area, a reaction time late                  |
 | `src/simulation.ts`       | One full bot match with the sanity list; `src/simulate.ts` is `pnpm simulate`  |
 
 Removed on this branch, because Sumo does not use them: coins, prices, shrines, securing,
@@ -133,8 +133,8 @@ cooldown over; with nobody to push, to the wander point.
 
 **The human-like layer** (`createBot`, owner requirement 2026-11-17), the same for every bot:
 
-- it sees what a player's "Near" view shows around it (`NEAR_VIEW`, 2000 × 1100 field units),
-  a reaction time late (`perceive` in `src/human/perception.ts`);
+- it sees what a player's screen shows — the whole playing area (owner 2026-11-17) — a
+  reaction time late (`perceive` in `src/human/perception.ts`);
 - each bot's reaction time is drawn from `bots.reactionMs` (250–450 ms) and varies by
   ± `bots.reactionJitterMs` (50) per decision, in whole ticks;
 - its direction carries aim noise of ± `bots.aimNoiseDeg` (6°) at average form;

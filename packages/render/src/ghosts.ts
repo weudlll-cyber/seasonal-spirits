@@ -68,7 +68,7 @@ export interface GhostStyle {
 }
 
 export function ghostRadiusPx(v: View): number {
-  // The game core's size; at least 4 px, so a ghost stays visible in a phone's Overview.
+  // The game core's size; at least 4 px, so a ghost stays visible on a small phone.
   return Math.max(4, DEFAULT_CONFIG.ghostRadius * v.scale);
 }
 

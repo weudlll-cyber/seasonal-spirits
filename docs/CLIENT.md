@@ -12,10 +12,8 @@ Spirits' client is on `master`.
 | File                       | What it holds                                                                    |
 | -------------------------- | -------------------------------------------------------------------------------- |
 | `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook    |
-| `src/scene.ts`             | One canvas frame: arena, ghosts, labels below the bar, clock, the minimap        |
-| `src/view-mode.ts`         | "Near" / "Overview": the corner button and V, remembered                         |
-| `src/minimap.ts`           | The minimap in "Near", top right: arena or walls and zone, ghosts, the camera    |
-| `src/storage.ts`           | Remembered choices (mute, view, help seen) in localStorage, safe when it throws  |
+| `src/scene.ts`             | One canvas frame: the camera on the whole playing area, ghosts, labels, clock    |
+| `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws        |
 | `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys     |
 | `src/scores.ts`            | The team scores in the band: the mode's score per team, the leader framed        |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, the recap        |
@@ -25,7 +23,7 @@ Spirits' client is on `master`.
 | `src/hud.ts`               | The Dash button and its cooldown ring, announcements and flash, notices, mute    |
 | `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box     |
 | `src/sound.ts`             | The halving tone (Web Audio)                                                     |
-| `src/config.ts`            | Bridge box on/off and its links, camera span                                     |
+| `src/config.ts`            | Bridge box on/off and its links                                                  |
 | `e2e/`                     | Playwright config, helpers and the specs                                         |
 | `packages/render` (shared) | The drawing client and viewer share: field per mode, ghosts, bomb, clock, words  |
 
@@ -39,7 +37,7 @@ hello and nothing more.
 
 ## Controls
 
-- Keyboard: WASD or arrows to move, **Space to dash**, V switches the view, ? the help.
+- Keyboard: WASD or arrows to move, **Space to dash**, ? the help.
 - Touch: a joystick where the left thumb touches the left half; the round **Dash** button
   under the right thumb. Its ring fills while the server's cooldown runs (`dashLeftMs` in the
   state) and it glows when a dash is ready.
@@ -73,8 +71,13 @@ hello and nothing more.
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
   points), the short tag
   in a crowd; never on another label, under the bar or past the screen edge.
-- **View modes**: "Near" follows the own ghost (about 1100 field units on the shorter side)
-  with the minimap top right; "Overview" shows the whole field.
+- **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
+  sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
+  below the band with a ghost's radius and 8 px to spare (`scene.ts` `camera`, render
+  `fitBox`). It keeps clear of the Dash button and, on touch screens, the joystick's thumb zone
+  (render `clearArea`: above them on a portrait phone, between them on a landscape phone or a
+  desktop). In sumo it follows the arena's edge as the server eases it in after a halving, so
+  the smaller arena stays as large on screen. There is no view choice and no minimap.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving a large "HALVING —
@@ -99,8 +102,9 @@ at desktop size (keyboard) and phone size (Pixel 7, touch):
 
 - `e2e/play.e2e.ts`: join, move, dash (the cooldown starts), a halving with the arena
   halving, the last chance, "MATCH OVER", the result with the awards and the bridge box;
-- `e2e/readability.e2e.ts`: the team line, the scores readable in the band, the minimap in
-  "Near", every sampled frame's labels in view and apart, "Overview" surviving a reload;
+- `e2e/readability.e2e.ts`: the team line, the scores readable in the band, every sampled
+  frame's playing area wholly on screen and clear of the controls, its labels in view and
+  apart;
 - `e2e/help.e2e.ts`: the help on the first visit with its rules and drawings;
 - `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello.
 

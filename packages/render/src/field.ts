@@ -8,13 +8,23 @@ import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import { STATE_TO_END, type ServerState, type WireDisc } from '@seasonal-spirits/protocol';
 import { clientConfig } from './modes.js';
 import { LINE, ground, seasonColour } from './palette.js';
-import { FIELD, circle, sx, sy, type View } from './view.js';
+import { FIELD, circle, sx, sy, type Box, type View } from './view.js';
 
 const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
 const GRID = 250; // field units between the faint ground lines
 const VOID = '#020305';
 // Before the first state: sumo's arena as it starts.
 const START: WireDisc = { x: CENTRE, y: CENTRE, r: DEFAULT_CONFIG.arenaRadius };
+
+// The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
+// always on screen): the walled square, or sumo's arena as it is now — the server eases its edge
+// in after a halving, so the camera follows it in.
+export function playBox(s: ServerState | undefined): Box {
+  const cfg = clientConfig(s?.mode ?? 0);
+  if (walled(cfg)) return { x: CENTRE, y: CENTRE, half: cfg.wallHalf };
+  const a = s?.area ?? START;
+  return { x: a.x, y: a.y, half: a.r };
+}
 
 export function drawField(v: View, s: ServerState | undefined): void {
   const { ctx } = v;
@@ -24,15 +34,15 @@ export function drawField(v: View, s: ServerState | undefined): void {
   const colour = seasonColour(season);
   const cfg = clientConfig(s?.mode ?? 0);
   // The ground — the disc or the square — with the faint lines clipped to it.
+  const box = playBox(s);
   const shape = (): void => {
-    if (walled(cfg)) {
-      const h = cfg.wallHalf * v.scale;
-      ctx.beginPath();
-      ctx.rect(sx(v, CENTRE) - h, sy(v, CENTRE) - h, 2 * h, 2 * h);
+    const h = box.half * v.scale;
+    if (!walled(cfg)) {
+      circle(v, box.x, box.y, h);
       return;
     }
-    const a = s ? s.area : START;
-    circle(v, a?.x ?? CENTRE, a?.y ?? CENTRE, (a?.r ?? 0) * v.scale);
+    ctx.beginPath();
+    ctx.rect(sx(v, box.x) - h, sy(v, box.y) - h, 2 * h, 2 * h);
   };
   ctx.save();
   shape();

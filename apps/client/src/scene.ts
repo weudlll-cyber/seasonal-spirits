@@ -1,6 +1,7 @@
-// Seasonal Sumo — one frame of the canvas: the arena, ghosts and labels below the top bar, the
-// season clock, and in "Near" the minimap. Returns what it drew, for the browser specs.
+// Seasonal Sumo — one frame of the canvas: the whole playing area fitted below the band, its
+// ghosts and labels, and the season clock. Returns what it drew, for the browser specs.
 
+import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import {
   GHOST_FALLING,
   GHOST_OUT,
@@ -13,10 +14,10 @@ import {
   drawClock,
   drawField,
   drawGhosts,
+  fitBox,
   fuseLeft,
-  fitField,
-  follow,
   ghostRadiusPx,
+  playBox,
   sx,
   sy,
   visibleArea,
@@ -25,14 +26,12 @@ import {
   type Trails,
   type View,
 } from '@seasonal-spirits/render';
-import { CLIENT_CONFIG } from './config.js';
 import type { HudOnField } from './hud.js';
-import { drawMinimap, minimapRect } from './minimap.js';
-import type { ViewMode } from './view-mode.js';
 
 // Pixels of the band under the season clock: the team line, the corner buttons and the team
 // scores (index.html #band). Every client has it, so no control sits on the field.
 export const BAND_HEIGHT = 68;
+const MARGIN_PX = 8; // between the playing area (and a ghost on its edge) and the screen's edge
 
 export interface Frame {
   ghosts: GhostState[];
@@ -46,9 +45,8 @@ export interface Frame {
 }
 
 export interface Drawn {
-  view: ViewMode | 'spectator';
   barBottom: number; // pixels: nothing of the field is drawn above this line
-  minimap: Rect | null; // where the minimap was drawn; null outside "Near"
+  playArea: Rect; // the playing area's square (sumo: around the arena) in pixels
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
@@ -64,24 +62,33 @@ export interface GhostOnScreen {
   r: number; // the drawn radius
 }
 
-// "Near" follows the own ghost; a spectator, "Overview" and a player not yet placed see all.
-function camera(ctx: CanvasRenderingContext2D, f: Frame, mode: ViewMode): View {
-  const top = CLOCK_HEIGHT + BAND_HEIGHT;
-  const followed = f.playing && mode === 'near' ? f.own : undefined;
-  if (!followed) return fitField(ctx, top);
-  // The field may rise above the controls at the bottom of the screen (thumb zones).
-  const bottomPad = Math.max(0, ...f.hud.zones.map((z) => ctx.canvas.height - z.top));
-  return follow(ctx, top, followed, { span: CLIENT_CONFIG.cameraSpan, bottomPad });
+// One camera for every mode and every client (owner 2026-11-17: only half the arena showed in
+// the old "Near" view): the whole playing area below the band, clear of the Dash button and the
+// joystick's thumb zone, with room for a ghost standing on its edge. In sumo it follows the
+// arena's edge in after a halving, so the smaller arena stays large on screen.
+export function camera(
+  ctx: CanvasRenderingContext2D,
+  s: ServerState | undefined,
+  zones: readonly Rect[],
+): View {
+  const box = playBox(s);
+  const fitted = { ...box, half: box.half + DEFAULT_CONFIG.ghostRadius };
+  return fitBox(ctx, CLOCK_HEIGHT + BAND_HEIGHT, fitted, { keepOut: zones, marginPx: MARGIN_PX });
 }
 
-export function drawScene(
-  ctx: CanvasRenderingContext2D,
-  f: Frame,
-  mode: ViewMode,
-  trails: Trails,
-): Drawn {
-  const view = camera(ctx, f, mode);
-  const near = f.playing && mode === 'near' && f.own !== undefined;
+// The playing area's square on screen.
+export function playArea(view: View, s: ServerState | undefined): Rect {
+  const b = playBox(s);
+  return {
+    left: sx(view, b.x - b.half),
+    top: sy(view, b.y - b.half),
+    right: sx(view, b.x + b.half),
+    bottom: sy(view, b.y + b.half),
+  };
+}
+
+export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trails): Drawn {
+  const view = camera(ctx, f.latest, f.hud.zones);
   const now = performance.now();
   ctx.fillStyle = '#05080b';
   ctx.fillRect(0, 0, ctx.canvas.width, view.top);
@@ -98,15 +105,9 @@ export function drawScene(
     });
   });
   drawClock(ctx, f.latest);
-  let map: Rect | null = null;
-  if (near) {
-    map = minimapRect(ctx.canvas.width, ctx.canvas.height, view.top);
-    drawMinimap(ctx, map, { state: f.latest, ghosts: f.ghosts, ownId: f.ownId, camera: view });
-  }
   return {
-    view: f.playing ? mode : 'spectator',
     barBottom: view.top,
-    minimap: map,
+    playArea: playArea(view, f.latest),
     controls: f.hud.controls,
     zones: f.hud.zones,
     labels,

@@ -107,6 +107,16 @@ screenshots, not a human hand.
   like hesitant humans: they overshoot, sometimes dash at nothing, and in hill they crowd the
   zone as people would.
 
+## Fix — the whole arena always on screen
+
+Owner's observation (1918 × 945, "Near"): only the upper half of the arena showed. Now one
+camera for all three modes fits the whole playing area below the band, clear of the Dash
+button and the joystick; in sumo it follows the shrinking edge, so the arena stays as large
+on screen (783 → 770 px wide on desktop over three halvings). The view toggle, key V and the
+minimap are gone; the bots see the whole playing area too. One sumo match played at 1918 ×
+945 and on a Pixel 7: no fault. Screenshots:
+`reports/screens/latest/sumo-{desktop,phone}-{start,last-halving}.png`.
+
 ## Notes
 
 - Addendum 1 (no team check, no stand-in) and addendum 2 (human-like bots, equal seats)

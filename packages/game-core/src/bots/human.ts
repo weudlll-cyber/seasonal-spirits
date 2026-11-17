@@ -1,6 +1,7 @@
 // Seasonal Sumo — the human-like layer over the bot's brain (owner requirement 2026-11-17: bots
 // fill seats and play like an average human). One layer over every mode's brain:
-// - it sees what a player's "Near" view shows, a reaction time late (human/perception.ts);
+// - it sees what a player's screen shows — the whole playing area — a reaction time late
+//   (human/perception.ts);
 // - each bot has its own reaction time from bots.reactionMs, varied per decision;
 // - its direction carries aim noise; a good dash chance is sometimes missed (too late), and now
 //   and then it dashes at nothing (too early); it hesitates now and then; its own edge margin
@@ -11,7 +12,7 @@
 
 import type { GameConfig } from '../config.js';
 import { clamp } from '../geometry.js';
-import { NEAR_VIEW, perceive } from '../human/perception.js';
+import { perceive } from '../human/perception.js';
 import { mulberry32 } from '../rng.js';
 import { IDLE, type Ghost, type Intent, type MatchState } from '../types.js';
 import { bombIntent } from './bomb.js';
@@ -64,8 +65,7 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
       return IDLE;
     }
     const delay = reactionMs + (rng() * 2 - 1) * b.reactionJitterMs;
-    const sight = { view: NEAR_VIEW, reactionMs: Math.round(delay / TICK_MS) * TICK_MS };
-    const seen = perceive(cfg.fieldSize, s, me.id, sight);
+    const seen = perceive(s, me.id, Math.round(delay / TICK_MS) * TICK_MS);
     if (!seen) return IDLE;
     const intent = BRAINS[cfg.mode](tuned, seen.state, seen.me);
     // A weaker form aims worse: the noise grows from × form[0]… to × 1 / form.
