@@ -9,6 +9,9 @@ import { modeWords, seasonsOf } from './modes.js';
 import { TEXT, seasonColour, seasonName } from './palette.js';
 
 const CELLS = 4;
+const EDGE = 12; // pixels between the clock's text and the screen's left and right edge
+const LINE_PX = 13; // the status line's font size, as long as it fits
+const MIN_LINE_PX = 9;
 
 export const CLOCK_HEIGHT = 64;
 
@@ -24,12 +27,12 @@ export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefi
   if (!s) return;
   // The window: the season before the current one first, as long as the match has more.
   const first = Math.max(0, Math.min(s.seasonNumber - 1, seasonsOf(s.mode) - CELLS));
-  const cell = Math.min(110, (width - 24) / CELLS);
+  const cell = Math.min(110, (width - 2 * EDGE) / CELLS);
   ctx.textBaseline = 'middle';
   for (let i = 0; i < CELLS; i++) {
     const k = first + i; // the season number within the match
     const season = (((s.season + k - s.seasonNumber) % 4) + 4) % 4;
-    const x = 12 + i * cell;
+    const x = EDGE + i * cell;
     const current = k === s.seasonNumber;
     ctx.globalAlpha = current ? 1 : k < s.seasonNumber ? 0.35 : 0.7;
     ctx.fillStyle = seasonColour(season);
@@ -39,10 +42,25 @@ export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefi
     ctx.fillText(seasonName(season), x + 6, current ? 23 : 19);
   }
   ctx.globalAlpha = 1;
-  ctx.font = '13px system-ui, sans-serif';
+  const line = statusLine(s);
+  ctx.font = lineFont(ctx, line, width - 2 * EDGE);
   ctx.fillStyle = s.countdownMs === null ? TEXT : '#ff6b6b';
-  ctx.fillText(statusLine(s), 12, 50);
+  ctx.fillText(line, EDGE, 50);
   ctx.textBaseline = 'alphabetic';
+}
+
+// The status line's font: 13 px, smaller until the whole line fits `room` pixels (FIX
+// 2026-11-17-2: the band text never cut off — "HALVING in 0:06 — the arena halves, then
+// Summer is in season" ran past a 390 px phone's edge). Leaves the font set on `ctx`.
+export function lineFont(ctx: CanvasRenderingContext2D, line: string, room: number): string {
+  let px = LINE_PX;
+  const font = (): string => `${String(px)}px system-ui, sans-serif`;
+  ctx.font = font();
+  while (px > MIN_LINE_PX && ctx.measureText(line).width > room) {
+    px -= 0.5;
+    ctx.font = font();
+  }
+  return font();
 }
 
 export function statusLine(s: ServerState): string {

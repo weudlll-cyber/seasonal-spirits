@@ -30,7 +30,7 @@ export interface BotConfig {
   reactionJitterMs: number; // ± per decision
   aimNoiseDeg: number; // direction noise at average form, ± degrees
   dashChance: number; // share of good dash chances taken at average form (else too late)
-  earlyDashChance: number; // per decision: a dash at nothing in particular (too early)
+  dashGapMs: number; // the least time between two of a bot's dashes (a calm player's pace)
   hesitateChance: number; // per decision: a short pause
   hesitateMs: number;
   edgeSlack: number; // a bot's own edge margin is drawn from [edgeSlack, 1] × edgeMargin
@@ -86,7 +86,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   acceleration: 1200, // placeholder — owner decides
   friction: 2.5, // placeholder — owner decides
   maxSpeed: 320, // placeholder — owner decides
-  dashSpeed: 900, // placeholder — owner decides
+  // A dash carries at most 4 ghost diameters before it is back at top speed:
+  // (dashSpeed − maxSpeed) / friction = 128 (owner 2026-11-17: at 900 it carried 7, the bots
+  // zipped around). Placeholder — owner decides.
+  dashSpeed: 640,
   dashMs: 250, // placeholder — owner decides
   dashCooldownMs: 1500, // placeholder — owner decides (owner's sketch: about 1.5 s)
   knockSpeed: 700, // placeholder — owner decides
@@ -117,7 +120,9 @@ export const DEFAULT_CONFIG: GameConfig = {
     reactionJitterMs: 50, // placeholder — owner decides
     aimNoiseDeg: 6, // placeholder — owner decides (owner's sketch: a few degrees)
     dashChance: 0.6, // placeholder — owner decides
-    earlyDashChance: 0.004, // placeholder — owner decides
+    // At most one dash per 3 s, as a calm player (owner 2026-11-17: the bots zipped around at
+    // ~23 dashes a minute). Placeholder — owner decides.
+    dashGapMs: 3000,
     hesitateChance: 0.002, // placeholder — owner decides
     hesitateMs: 400, // placeholder — owner decides
     edgeSlack: 0.6, // placeholder — owner decides

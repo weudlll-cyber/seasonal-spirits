@@ -138,8 +138,9 @@ cooldown over; with nobody to push, to the wander point.
 - each bot's reaction time is drawn from `bots.reactionMs` (250–450 ms) and varies by
   ± `bots.reactionJitterMs` (50) per decision, in whole ticks;
 - its direction carries aim noise of ± `bots.aimNoiseDeg` (6°) at average form;
-- it takes a good dash chance only with `bots.dashChance` × form (0.6: else too late), dashes
-  at nothing now and then (`bots.earlyDashChance`, too early), hesitates for
+- it dashes only when its brain has a target lined up, takes such a chance only with
+  `bots.dashChance` × form (0.6: else too late) and never sooner than `bots.dashGapMs` (3 s)
+  after its last dash — a calm player's pace (owner 2026-11-17); it hesitates for
   `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge margin is
   drawn from [`bots.edgeSlack`, 1] × `bots.edgeMargin` (some go too close to the edge);
 - its form drifts by up to ± `bots.formStep` every `bots.formEveryMs` within `bots.form`
@@ -175,7 +176,7 @@ points per team, bounces 42–65 per player for the first eight; bomb 999–1260
 | `arenaShrinkMs`                                              | 2000                     | the edge eases in                                   |
 | `ghostRadius`                                                | 16                       |                                                     |
 | `acceleration` / `friction` / `maxSpeed`                     | 1200 / 2.5 / 320         | running                                             |
-| `dashSpeed` / `dashMs` / `dashCooldownMs`                    | 900 / 250 / 1500         | the dash                                            |
+| `dashSpeed` / `dashMs` / `dashCooldownMs`                    | 640 / 250 / 1500         | the dash: at most 4 ghost diameters past top speed  |
 | `knockSpeed` / `restitution`                                 | 700 / 0.6                | a dash's knock, the bounce                          |
 | `inSeasonPush`                                               | 1.25                     | the team in season pushes harder                    |
 | `fallMs` / `outMs` / `protectMs`                             | 600 / 3000 / 1000        | fall, out, protected                                |

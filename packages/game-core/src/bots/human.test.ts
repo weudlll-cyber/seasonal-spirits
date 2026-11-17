@@ -1,6 +1,6 @@
-// Seasonal Sumo — the human-like bot layer: it acts on what it saw a reaction time ago, its aim
-// stays within the noise band, its form within its band, and the same seed gives the same
-// behaviour.
+// Seasonal Sumo — the human-like bot layer: it acts on what it saw a reaction time ago, dashes
+// no more often than a calm player and only at a target, its aim stays within the noise band,
+// its form within its band, and the same seed gives the same behaviour.
 
 import { describe, expect, it } from 'vitest';
 import { simulate } from '../simulation.js';
@@ -11,7 +11,7 @@ import { createBot, type Mind } from './human.js';
 
 const steady = {
   ...cfg,
-  bots: { ...cfg.bots, hesitateChance: 0, earlyDashChance: 0, dashChance: 1 },
+  bots: { ...cfg.bots, hesitateChance: 0, dashChance: 1 },
 };
 
 const angleOf = (i: Intent): number => Math.atan2(i.dy, i.dx);
@@ -43,6 +43,40 @@ describe('human-like bot', () => {
       bot(m.state, ghost(m, 1));
     }
     expect(bot(m.state, ghost(m, 1)).dx).toBeLessThan(0); // now it has
+  });
+});
+
+describe('human-like bot: dash rate (owner 2026-11-17: the bots zipped around)', () => {
+  const instant = { ...steady, bots: { ...steady.bots, reactionMs: [0, 0] as [number, number] } };
+  const dashesIn = (
+    ms: number,
+    bot: ReturnType<typeof createBot>,
+    m: ReturnType<typeof matchOf>,
+  ): number => {
+    let dashes = 0;
+    while (m.state.elapsedMs < ms) {
+      m.tick(50, new Map()); // nobody moves: the target stays lined up and in reach
+      if (bot(m.state, ghost(m, 1)).action === 'dash') dashes++;
+    }
+    return dashes;
+  };
+
+  it('dashes at most once per dashGapMs even with a target lined up all the time', () => {
+    const m = matchOf(instant, [
+      { id: 1, team: 0 },
+      { id: 2, team: 1 },
+    ]);
+    place(m, 1, 0, 0);
+    place(m, 2, 100, 0);
+    const dashes = dashesIn(30_000, createBot(instant, 5), m);
+    expect(dashes).toBeLessThanOrEqual(30_000 / instant.bots.dashGapMs);
+    expect(dashes).toBeGreaterThan(0);
+  });
+
+  it('never dashes without a target lined up: with nobody in reach it walks', () => {
+    const m = matchOf(instant, [{ id: 1, team: 0 }]);
+    place(m, 1, 0, 0);
+    expect(dashesIn(60_000, createBot(instant, 5), m)).toBe(0);
   });
 });
 

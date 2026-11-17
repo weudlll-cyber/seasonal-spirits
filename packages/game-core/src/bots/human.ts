@@ -3,9 +3,10 @@
 // - it sees what a player's screen shows — the whole playing area — a reaction time late
 //   (human/perception.ts);
 // - each bot has its own reaction time from bots.reactionMs, varied per decision;
-// - its direction carries aim noise; a good dash chance is sometimes missed (too late), and now
-//   and then it dashes at nothing (too early); it hesitates now and then; its own edge margin
-//   may be too small;
+// - its direction carries aim noise; it dashes only when its brain has a target lined up, a
+//   good chance is sometimes missed (too late), and never sooner than bots.dashGapMs after its
+//   last dash — a calm player's pace (owner 2026-11-17); it hesitates now and then; its own
+//   edge margin may be too small;
 // - its form drifts slowly within bots.form (a seeded random walk): sharper and steadier on a
 //   good run, sloppier in a weak spell.
 // All randomness comes from `seed` (derived from the match's seed), so runs are reproducible.
@@ -52,6 +53,7 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
   let form = 1;
   let nextFormMs = 0;
   let hesitateUntilMs = -1;
+  let nextDashMs = 0;
   return (s, me) => {
     const now = s.elapsedMs;
     if (now >= nextFormMs) {
@@ -71,9 +73,10 @@ export function createBot(cfg: GameConfig, seed: number, mind?: (m: Mind) => voi
     // A weaker form aims worse: the noise grows from × form[0]… to × 1 / form.
     const noise = ((rng() * 2 - 1) * ((b.aimNoiseDeg * Math.PI) / 180)) / form;
     const dir = rotate(intent, noise);
-    const moving = intent.dx !== 0 || intent.dy !== 0;
-    const take = intent.action === 'dash' && rng() < b.dashChance * form;
-    const early = !intent.action && moving && rng() < b.earlyDashChance;
-    return take || early ? { ...dir, action: 'dash' } : dir;
+    // The dash rate limit: a bot's dashes lie at least dashGapMs apart, whatever its brain asks.
+    const take = intent.action === 'dash' && now >= nextDashMs && rng() < b.dashChance * form;
+    if (!take) return dir;
+    nextDashMs = now + b.dashGapMs;
+    return { ...dir, action: 'dash' };
   };
 }

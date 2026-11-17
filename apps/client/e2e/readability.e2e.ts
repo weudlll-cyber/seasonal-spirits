@@ -1,7 +1,7 @@
 // Seasonal Sumo — what the owner's play tests of 2026-11-15 and 2026-11-17 asked for, at desktop
 // and phone size: "You are Team <Season>", the team scores readable in the band. In every
 // sampled frame: the whole playing area on screen below the band and clear of the controls,
-// every ghost named, every name label wholly inside the view (not under the top bar, not past a
+// every ghost named, the own one "You", every name label wholly inside the view (not under the top bar, not past a
 // screen edge), none on another label; the corner buttons and the scores sit in the band, not
 // on the field. Screenshot: <size>-field.png in reports/screens/latest/.
 
@@ -45,6 +45,10 @@ function labelFaults(v: ClientView, screen: { width: number; height: number }): 
   for (const g of v.ghostsShown) {
     if (!named.has(g.id)) faults.push(`ghost ${g.id} without a label`);
   }
+  // The own ghost is always "You", also in its respawn protection (owner 2026-11-17).
+  const own = v.labels.find((l) => l.id === v.ghost);
+  if (v.ghostsShown.some((g) => g.id === v.ghost) && !own?.text.startsWith('You'))
+    faults.push(`own ghost labelled "${own?.text ?? ''}", not "You"`);
   v.labels.forEach((l, i) => {
     const b = labelBox(l);
     if (b.top < v.barBottom) faults.push(`label "${l.text}" under the bar`);
@@ -124,4 +128,35 @@ test('team line, scores, the whole playing area on screen, labels never in the w
   });
   await shot('field');
   expect([...faults]).toEqual([]);
+});
+
+// The band's text whole at the owner's desktop size and at laptop and phone sizes, upright and
+// sideways (owner 2026-11-17: "easonal Sumo", "ou are Team Spring" cut at the left edge): every
+// text inside the screen, a margin from its edges, none cut short.
+test('the band text is never cut off, at any of four screen sizes', async ({ page }, info) => {
+  test.skip(info.project.name === 'phone', 'the sizes are set here; one browser is enough');
+  await page.goto('/');
+  await joined(page);
+  for (const size of [
+    { width: 1918, height: 945 },
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.waitForTimeout(200);
+    const cut = await page.evaluate((w) => {
+      const texts = [
+        ...document.querySelectorAll<HTMLElement>('#team, #scores .score, #corner button'),
+      ];
+      return texts
+        .filter((e) => e.offsetParent !== null)
+        .filter((e) => {
+          const b = e.getBoundingClientRect();
+          return b.left < 8 || b.right > w - 8 || e.scrollWidth > e.clientWidth;
+        })
+        .map((e) => e.id || e.textContent || '?');
+    }, size.width);
+    expect(cut, `${String(size.width)}×${String(size.height)}`).toEqual([]);
+  }
 });

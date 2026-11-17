@@ -66,8 +66,14 @@ describe('dash', () => {
     place(m, 1, 0, 0);
     act(m, 1, { dx: 0, dy: -1, action: 'dash' });
     const g = ghost(m, 1);
-    expect(-g.vy).toBeGreaterThan(cfg.maxSpeed * 2);
+    expect(-g.vy).toBeGreaterThan(cfg.maxSpeed * 1.5);
     expect(m.state.events).toContainEqual({ type: 'dash', ghost: 1 });
+  });
+
+  it('carries a ghost at most 4 ghost diameters before it is back at top speed', () => {
+    let m = { x: 1000, y: 1000, vx: cfg.dashSpeed, vy: 0 };
+    while (m.vx > cfg.maxSpeed) m = stepGhost(cfg, m, { dx: 1, dy: 0 }, 50);
+    expect(m.x - 1000).toBeLessThanOrEqual(4 * 2 * cfg.ghostRadius);
   });
 
   it('waits for the cooldown, however often a client asks', () => {

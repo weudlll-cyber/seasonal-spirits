@@ -38,7 +38,10 @@ import { drawScene, type Drawn, type Frame } from './scene.js';
 import { ScoreBoard } from './scores.js';
 import { DeadlineTone } from './sound.js';
 
-const BUFFER_MS = 100; // render this far behind the newest state (docs/PHASE0.md)
+// Render this far behind the newest state: one server tick, so other ghosts are drawn about a
+// ghost radius from where they are (FIX 2026-11-17-2: at 100 ms they lagged 2.7 radii at a
+// dash hit) and are extrapolated briefly when a state is late (docs/CLIENT.md).
+const BUFFER_MS = 50;
 
 const canvas = el('map', HTMLCanvasElement);
 const context = canvas.getContext('2d');

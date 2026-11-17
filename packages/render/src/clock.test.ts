@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { STATE_RESULT, STATE_TO_END, type ServerState } from '@seasonal-spirits/protocol';
-import { statusLine } from './clock.js';
+import { lineFont, statusLine } from './clock.js';
 
 const state = (over: Partial<ServerState>): ServerState => ({
   tick: 0,
@@ -51,6 +51,28 @@ describe('clock status line', () => {
   it('says the match is over during the result', () => {
     expect(statusLine(state({ season: 3, seasonNumber: 3, flags: STATE_RESULT }))).toBe(
       'Seasonal Sumo · match over',
+    );
+  });
+});
+
+describe('clock status line on a narrow screen (owner 2026-11-17: band text cut off)', () => {
+  // A canvas whose text is 0.55 em wide per character, as system-ui is about.
+  const fake = { font: '13px system-ui, sans-serif' };
+  const ctx = Object.assign(fake, {
+    measureText: (t: string) => ({ width: t.length * 0.55 * Number.parseFloat(fake.font) }),
+  }) as unknown as CanvasRenderingContext2D;
+
+  it('shrinks the longest line of every mode until it fits a 390 px phone', () => {
+    for (const mode of [0, 1, 2]) {
+      const line = statusLine(state({ mode, countdownMs: 6000 }));
+      lineFont(ctx, line, 390 - 24);
+      expect(ctx.measureText(line).width, line).toBeLessThanOrEqual(390 - 24);
+    }
+  });
+
+  it('keeps 13 px where the line fits', () => {
+    expect(lineFont(ctx, 'Seasonal Sumo · Spring · 1:15 left', 1894)).toBe(
+      '13px system-ui, sans-serif',
     );
   });
 });

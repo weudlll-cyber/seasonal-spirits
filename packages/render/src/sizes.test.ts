@@ -8,7 +8,7 @@ import { GHOST_PROTECTED } from '@seasonal-spirits/protocol';
 import { ghostRadiusPx, ghostReach } from './ghosts.js';
 import { fitField, type View } from './view.js';
 
-// A desktop "Near" camera: about 0.63 px per field unit.
+// A desktop camera: about 0.63 px per field unit.
 const NEAR: View = {
   ...fitField({ canvas: { width: 1280, height: 800 } } as CanvasRenderingContext2D, 132),
   scale: 0.63,

@@ -117,6 +117,58 @@ minimap are gone; the bots see the whole playing area too. One sumo match played
 945 and on a Pixel 7: no fault. Screenshots:
 `reports/screens/latest/sumo-{desktop,phone}-{start,last-halving}.png`.
 
+## Fix 2 — bots zip around and are almost impossible to hit
+
+Owner's observation (desktop, Sumo): the bots zip around very fast, there is practically no
+chance to hit them; the band text cut at the left; no ghost shows "You".
+
+**Measured** (bots: `simulate`, seeds 1–3, 96 bot-matches; live: a Node client drawing as the
+browser does, 60 s of Sumo on `pnpm dev`, pixels at 1918 × 945, r = ghost radius 16; D = arena
+diameter 1800):
+
+| What                                          | Before                     | After                      |
+| --------------------------------------------- | -------------------------- | -------------------------- |
+| bot dashes per minute (median / max)          | 22.6 / 26.1                | 15.3 / 17.0                |
+| bot time at or above top speed (median)       | 22 %                       | 14 %                       |
+| bot speed median / p90 (u/s)                  | 253 / 546 (0.14 / 0.30 D/s) | 233 / 361 (0.13 / 0.20 D/s) |
+| a bot's dash carries (median / p90)           | 5.5 / 7.0 diameters        | 3.1 / 4.6 diameters        |
+| scripted player: dashes per minute on arena   | 49.5                       | 48.2                       |
+| scripted player: at or above top speed        | 29 %                       | 17 %                       |
+| scripted player: speed median / p90 (u/s)     | 260 / 580                  | 238 / 360                  |
+| other ghost behind, at a dash hit (median / p90) | 64 u = 28 px = 4.0 r / 6.5 r | 29 u = 13 px = 1.8 r / 3.1 r |
+| other ghost behind, every frame (median / p90) | 2.6 r / 5.0 r              | 1.1 r / 1.5 r              |
+| own ghost ahead of the server (median / p90)  | 1.4 r / 3.2 r              | 1.3 r / 2.5 r              |
+| drawn path jerk p99 (units per frame²)        | 10.3                       | 7.9                        |
+| crossing the arena at top speed               | 5.6 s                      | 5.6 s (unchanged)          |
+
+**Cause.** The bots dashed about 23 times a minute, nearly whenever the 1.5 s cooldown let
+them, and each dash flung them 5–7 ghost diameters at up to 900 u/s — a fifth of their time
+faster than anyone can run. On top, the client drew every other ghost 100 ms behind the
+newest state: at the moment of a dash hit 4 ghost radii (p90 6.5) behind where it really
+was, while the own ghost is drawn about 1.4 radii ahead — so a player aimed at a ghost that
+had already gone.
+
+**Changed.** Bots dash at most once per 3 s (`bots.dashGapMs`, placeholder) and only when
+their brain has a target lined up; the dash at nothing (`bots.earlyDashChance`) is gone.
+Their speed and dash are the players' own (one physics). The dash is lowered from 900 to
+640 u/s (−29 %, placeholder), so it carries at most 4 ghost diameters before it is back at
+top speed (7.3 before); top speed stays (crossing 5.6 s). Other ghosts are drawn 50 ms (one
+tick) behind instead of 100 ms, extrapolated briefly when a state is late: tried 100, 60,
+50, 30 ms and full extrapolation — 50 ms gives the same hit lag as 30 ms (1.8 r) with less jerk;
+full extrapolation gets to 1.1 r but doubles the jerk. The remaining ~1.8 r at a hit is the
+knock itself, which no client can foresee.
+
+**Band and "You".** Not reproduced in Chromium at 1918 × 945: the page never scrolled
+(scroll offsets 0 throughout), the team line starts 12 px from the edge; a cut at the left
+of both the canvas line and the band points at something covering the window's left edge
+(a browser side panel, a window partly off screen) — worth a look on the owner's machine.
+What was really cut: on a 390 px phone the countdown line ("HALVING in 0:06 — the arena
+halves, then Summer is in season") ran past the right edge; it now shrinks to fit (13 px
+down to 9 px). "You": in 73 frames of respawn protection on the live client the own ghost
+was "You" every time; the owner probably saw it while out (not drawn for 3 s after a fall).
+Tests now guard both: the band text at 1918 × 945, 1280 × 800, 390 × 844 and 844 × 390, and
+"You" in every sampled frame and with the protection ring in a crowd.
+
 ## Notes
 
 - Addendum 1 (no team check, no stand-in) and addendum 2 (human-like bots, equal seats)

@@ -47,8 +47,10 @@ hello and nothing more.
   speed and a dash — has already taken it, moved with the server's own rules (`stepGhost`,
   `dashVelocity`, the walls of the mode on screen), pulled smoothly towards the server's position and restarted from the
   server's position and speed when more than `SNAP_DISTANCE` off (a knock it could not see
-  coming, a respawn). Display only (THREATS row 36). Every other ghost is drawn 100 ms behind
-  the newest state, interpolated.
+  coming, a respawn). Display only (THREATS row 36). Every other ghost is drawn 50 ms (one
+  tick) behind the newest state, interpolated, and extrapolated from its last two states
+  when the next one is late (FIX 2026-11-17-2: at 100 ms another ghost was drawn 2.7 ghost
+  radii behind where a dash hit it, at 50 ms 1.8 radii; the drawn path stays smooth).
 
 ## Screen
 
