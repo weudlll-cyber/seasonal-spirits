@@ -556,6 +556,11 @@ Done when: the spec is green ten runs in a row.
   client's field, bomb, clock window, banner, help and result per mode; `pnpm simulate
 --mode` — commit "feat: Sumo game modes — King of the Season and Halving Bomb".
 
+- 2026-11-17 — **Seasonal Sumo, piece 8: handed over**: `pnpm dev` from `proto/sumo` running
+  with the mode rotation; one full hill and one full bomb match played at both sizes; the
+  client URL and the per-mode notes on the morning sheet — commits "docs: Sumo piece 8,
+  handed over" and this one.
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
