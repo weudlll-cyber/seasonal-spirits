@@ -373,7 +373,9 @@ Seeded 32-bot matches, seeds 1–10, default settings (3 lives, jump on):
 0.35 is the smallest share that keeps the full arena as before and the one at which every
 "stop, no time limit" match ended; the share trades full-length matches against that ending
 (BACKLOG OPEN ad). The play spec now pins its server to Points with 9 lives (`SUMO_LIVES`), so
-its short match always reaches the last countdown; it passed at both sizes locally.
+its short match always reaches the last countdown; it passed at both sizes locally. In CI the
+9 lives then showed nine hearts pushing "You are Team …" off the phone's band: past five lives
+the band now shows one heart and the number left ("♥ ×7").
 
 ## Notes
 

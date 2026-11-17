@@ -71,7 +71,8 @@ from the server after a change.
   "· Last One Standing", the time left, the countdown in red; with no deadline at all — Last One
   Standing "stop, no time limit" after the third halving — the time played, "· 6:52 played"),
   and under it the band: "You are Team <Season>" in the team colour with the own lives as
-  hearts beside it (sumo only; a lost one fades), the corner buttons, and a chip per team
+  hearts beside it (sumo only; a lost one fades; past five lives one heart and the number left,
+  "♥ ×7", so the team line keeps its room on a phone), the corner buttons, and a chip per team
   (sumo Points "Spring 12 · 7 in": knockouts and ghosts still in; Last One Standing "Spring 7
   in"; hill and bomb "Spring 12"; the leader framed; on a narrow phone the team's name is left
   out, its colour names it). Out of lives the team line says "You are out — watching" until

@@ -10,7 +10,7 @@ import {
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import { variantRule } from './help.js';
-import { heartsOf, ownOut } from './lives.js';
+import { heartsOf, heartsShown, ownOut } from './lives.js';
 import { OwnMarker } from './own-marker.js';
 import { teamLines } from './result.js';
 import { chipOf } from './scores.js';
@@ -35,6 +35,14 @@ describe('the own lives in the band', () => {
   it('shows a heart per life the match began with, the lost ones faded, for the own ghost', () => {
     expect(heartsOf(s, 1)).toEqual([true, true, false]);
     expect(ownOut(s, 1)).toBe(false);
+  });
+
+  // FIX 2026-11-17-4: nine hearts pushed "You are Team …" off a phone's band.
+  it('shows one heart each up to five lives, past that one heart and the number left', () => {
+    expect(heartsShown([true, true, false])).toEqual({ each: [true, true, false], count: null });
+    const nine = Array.from({ length: 9 }, (_, i) => i < 7);
+    expect(heartsShown(nine)).toEqual({ each: [true], count: 7 });
+    expect(heartsShown(nine.map(() => false))).toEqual({ each: [false], count: 0 });
   });
 
   it('says out — watching only when the own ghost has no life left', () => {
