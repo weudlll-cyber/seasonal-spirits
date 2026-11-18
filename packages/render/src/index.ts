@@ -14,6 +14,8 @@ export { shape, useShape } from './shape.js';
 export { PULSE_MS, drawRespawnBand } from './own.js';
 export { LEGEND, type LegendMarker } from './legend.js';
 export { CLOCK_HEIGHT, drawClock, mmss } from './clock.js';
+export { bindLookSwitch } from './look-switch.js';
+export { readSetting, writeSetting } from './storage.js';
 export {
   clientConfig,
   fuseLeft,

@@ -11,7 +11,7 @@ import {
   STATE_TO_END,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { lineFont, statusLine } from './clock.js';
+import { clockWidth, lineFont, statusLine } from './clock.js';
 
 const state = (over: Partial<ServerState>): ServerState => ({
   tick: 0,
@@ -81,8 +81,8 @@ describe('clock status line on a narrow screen (owner 2026-11-17: band text cut 
   const ctx = Object.assign(fake, {
     measureText: (t: string) => ({ width: t.length * 0.55 * px() }),
   }) as unknown as CanvasRenderingContext2D;
-  // The clock's box on a 390 px phone: 6 px to each screen edge, 8 px inside.
-  const room = 390 - 2 * 6 - 2 * 8;
+  // The clock's box on a 390 px phone, clear of the look switch, 8 px inside.
+  const room = clockWidth(390) - 2 * 8;
 
   it('shrinks the longest line of every mode until it fits a 390 px phone', () => {
     for (const mode of [0, 1, 2]) {

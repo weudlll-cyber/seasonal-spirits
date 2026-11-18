@@ -24,6 +24,14 @@ const LINE_PX = 13; // the status line's font size, as long as it fits
 const MIN_LINE_PX = 9;
 
 export const CLOCK_HEIGHT = 64;
+// Pixels kept free at the top right for the Light/Dark switch (look-switch.ts, index.html #look).
+const SWITCH_ROOM = 64;
+
+// The clock box's width on a canvas `width` px wide: its cells at most MAX_CELL each, clear of
+// the switch.
+export function clockWidth(width: number): number {
+  return Math.min(width - 2 * MARGIN - SWITCH_ROOM, CELLS * MAX_CELL + 2 * PAD);
+}
 
 export function mmss(ms: number): string {
   const sec = Math.max(0, Math.ceil(ms / 1000));
@@ -32,7 +40,7 @@ export function mmss(ms: number): string {
 
 export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefined): void {
   const l = look();
-  const width = Math.min(ctx.canvas.width - 2 * MARGIN, CELLS * MAX_CELL + 2 * PAD);
+  const width = clockWidth(ctx.canvas.width);
   pillBox(ctx, { left: MARGIN, top: MARGIN, width, height: CLOCK_HEIGHT - 2 * MARGIN }, 12);
   if (!s) return;
   // The window: the season before the current one first, as long as the match has more (keep-
@@ -48,16 +56,18 @@ export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefi
     const season = (((s.season + k - s.seasonNumber) % 4) + 4) % 4;
     const x = MARGIN + PAD + i * cell;
     const current = k === s.seasonNumber;
-    ctx.globalAlpha = current ? 1 : k < s.seasonNumber ? 0.35 : 0.7;
+    // A past season only outlined in its colour, the others filled with it; the text never
+    // faded, so it reads in both looks.
+    const past = k < s.seasonNumber;
     roundBox(ctx, { left: x, top: 12, width: cell - 6, height: current ? 22 : 16 }, 6);
-    ctx.fillStyle = seasonColour(season);
+    ctx.fillStyle = past ? l.panel : seasonColour(season);
     ctx.fill();
+    ctx.strokeStyle = past ? seasonColour(season) : l.ink;
     ctx.stroke();
-    ctx.fillStyle = l.ink;
+    ctx.fillStyle = past ? l.panelText : l.ink;
     ctx.font = `${current ? '600' : '500'} 12px Fredoka, system-ui, sans-serif`;
     ctx.fillText(seasonName(season), x + 6, current ? 23 : 20);
   }
-  ctx.globalAlpha = 1;
   const line = statusLine(s);
   ctx.font = lineFont(ctx, line, width - 2 * PAD);
   ctx.fillStyle = s.countdownMs === null ? l.panelText : l.alertText;

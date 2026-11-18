@@ -28,6 +28,7 @@ import {
 import {
   BreakOff,
   Trails,
+  bindLookSwitch,
   clientConfig,
   matchName,
   modeOf,
@@ -69,6 +70,7 @@ document.body.classList.toggle('touch', matchMedia('(pointer: coarse)').matches)
 const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
+bindLookSwitch(el('look', HTMLButtonElement));
 const tone = new DeadlineTone();
 bindMute(() => tone.toggleMute(), tone.muted);
 const teamLine = el('team');

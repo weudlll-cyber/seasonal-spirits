@@ -11,10 +11,11 @@ import {
   LEGEND,
   LIGHT,
   SEASON_COLOURS,
+  readSetting,
   variantName,
+  writeSetting,
   type LegendMarker,
 } from '@seasonal-spirits/render';
-import { readSetting, writeSetting } from './storage.js';
 
 const SEEN_KEY = 'seasonal-spirits.help-seen';
 const [SPRING, SUMMER, AUTUMN, WINTER] = SEASON_COLOURS;

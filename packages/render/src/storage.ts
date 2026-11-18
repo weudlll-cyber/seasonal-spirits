@@ -1,4 +1,5 @@
-// Seasonal Spirits — the player's few remembered choices (mute, view mode) in localStorage.
+// Seasonal Spirits — the player's few remembered choices (mute, the help seen, light or dark) in
+// localStorage, for the client and the viewer (moved here from the client for the look switch).
 // Storage can throw (private mode, blocked site data); then nothing is remembered.
 
 export function readSetting(key: string): string | null {

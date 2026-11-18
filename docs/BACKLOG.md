@@ -57,13 +57,12 @@ steering and the bots' jump chance (placeholders), or dropped it.
 
 ag. **The Sky Island look** (owner's choice 2026-11-18, on `proto/sumo`; render and client
 only, no rule, setting, protocol or bot change): a floating island above the sea, round toy-like
-characters with season hats, bright by default with a dark mode the player can switch. Piece 1,
-the world (the slanted view, sky, sea, the island with its decor and crack line, the platform
-of the walled modes, the halving's break-off): done. Piece 2, the characters and effects (their
-cached drawing, own marker, dash puffs, jump, falling off with a splash, the restyled marks)
-and the HUD in Fredoka: done. Piece 3, dark mode: open — done when a Light/Dark switch in the client and the
-viewer (remembered, Light by default) switches every colour, with text contrast at least
-4.5:1 in both. Done when: all three pieces landed and the owner has played the look.
+characters with season hats, bright by default with a dark mode the player can switch. All
+three pieces landed (CLOSED): the world, the characters with their effects and the HUD in
+Fredoka, the Light/Dark switch. Open for the owner's word: the banner's white text on #FF5A6E
+(about 3:1 by itself, read through its ink edge), the own character drawn in its depth order with
+only its marks on top, the island's rock reaching over the sea band. Done when: the owner has
+played the look on desktop and phone and said what stays.
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
@@ -851,6 +850,17 @@ Done when: the spec is green ten runs in a row.
   Autumn too alike) is answered by the owner's new team colours — commit "feat: the Sky Island
   characters and HUD".
 
+- 2026-11-18 — **Sky Island look, piece 3: Light and Dark** (OPEN ag). A small pill switch at
+  the top right of the client and the viewer (render `look-switch.ts`), Light by default, the
+  choice remembered (render `storage.ts`, moved from the client so the viewer uses the same);
+  Dark swaps every colour (render `palette.ts` `DARK`, the pages' variables under `body.dark`):
+  stars and a crescent moon instead of the sun, dimmer island colours, three lanterns with a warm
+  halo, the crack glowing; the team colours stay. The clock leaves room for the switch and no
+  longer fades the text of past seasons (they are outlined instead), so every text keeps 4.5:1
+  in both looks (`palette.test.ts`); the switch's default, memory and a throwing storage are
+  tested (`look-switch.test.ts`). Removed: the unused `ALERT` colour from piece 2 — commit "feat:
+  the Sky Island dark mode".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1167,3 +1177,8 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | frame cost (client frame callback, headless Chromium 1280×800, 60 s straight runs, Sumo)                                                                                                  | same tree                                                                                                                                 | p50 1.1 ms, p95 2.1 ms, 1 of 3636 over 12 ms (N 3636); machine load 33–62 %                                                                                                                                                         | the sheet, "Sky Island look"                                                                   |
 | 2026-11-18 | `pnpm verify:changed` (toolchain changed: everything)                                                                                                                                     | same tree                                                                                                                                 | 47 files, 290 tests passed; format, lint, typecheck green                                                                                                                                                                           | this commit                                                                                    |
 | 2026-11-18 | screenshots on `pnpm dev`: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844                                                                                           | label pills 5 px                                                                                                                          | characters, hats, puffs, own ring and triangle, pills, clock box, banner, buttons seen at both sizes                                                                                                                                | `reports/screens/latest/p2-*.png` (git-ignored)                                                |
+| 2026-11-18 | `vitest run` render and client tests with the switch and contrast tests                                                                                                                   | working tree of look piece 3                                                                                                              | 14 files, 78 tests passed                                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-18 | frame cost in Dark (client frame callback, headless Chromium 1280×800, 60 s straight runs, Sumo)                                                                                          | same tree                                                                                                                                 | p50 1.3 ms, p95 2.5 ms, 2 of 3621 over 12 ms (N 3621); machine load 0–71 % (uneven)                                                                                                                                                 | the sheet, "Sky Island look"                                                                   |
+| 2026-11-18 | `pnpm e2e play` (desktop and phone)                                                                                                                                                       | same tree                                                                                                                                 | 2 passed                                                                                                                                                                                                                            | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-18 | screenshots on `pnpm dev` in Dark and Light: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844                                                                         | same tree                                                                                                                                 | stars, moon, lanterns, glowing crack, dark pills and panels, the switch at both sizes                                                                                                                                               | `reports/screens/latest/p3-*.png` (git-ignored)                                                |
+| 2026-11-18 | `pnpm verify:changed`                                                                                                                                                                     | same tree                                                                                                                                 | 296 tests passed; format, lint, typecheck green                                                                                                                                                                                     | this commit                                                                                    |

@@ -105,12 +105,16 @@ function drawZone(v: View, z: WireDisc, colour: string): void {
 }
 
 // Where the next halving breaks the island: a dashed crack with small ticks across it; in the
-// countdown (`pulseMs` the time) it pulses.
+// countdown (`pulseMs` the time) it pulses; at night it glows.
 function drawCrack(v: View, next: WireDisc, pulseMs: number | null): void {
   const { ctx } = v;
   const beat = pulseMs === null ? 0 : 0.5 + 0.5 * Math.sin(pulseMs / 120);
+  const l = look();
   ctx.globalAlpha = pulseMs === null ? 0.85 : 0.6 + 0.4 * beat;
-  ctx.strokeStyle = look().crack;
+  ctx.strokeStyle = l.crack;
+  // At night the crack glows.
+  ctx.shadowColor = l.crack;
+  ctx.shadowBlur = l.night ? 10 + 6 * beat : 0;
   ctx.lineCap = 'round';
   ctx.lineWidth = 4 + 2 * beat;
   groundCircle(v, next.x, next.y, next.r);
@@ -129,4 +133,5 @@ function drawCrack(v: View, next: WireDisc, pulseMs: number | null): void {
   }
   ctx.stroke();
   ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
 }

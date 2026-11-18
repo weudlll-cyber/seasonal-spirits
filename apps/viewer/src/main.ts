@@ -25,6 +25,7 @@ import {
   BreakOff,
   CLOCK_HEIGHT,
   Trails,
+  bindLookSwitch,
   drawClock,
   drawField,
   drawSky,
@@ -48,6 +49,7 @@ const LATENCY_MAX = 200;
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
+bindLookSwitch(document.getElementById('look') as HTMLButtonElement);
 const tuningRoot = document.getElementById('tuning') as HTMLElement;
 const context = canvas.getContext('2d');
 if (context === null) throw new Error('viewer: 2D canvas context unavailable');

@@ -23,6 +23,18 @@
         --jump: #4cc2ff;
         --veil: rgba(43, 33, 64, 0.45);
         --drop: 4px 4px 0 var(--ink);
+        --rest: #ffffff; /* the Dash and Jump buttons' part still charging */
+      }
+      /* Dark (the switch): the same look at night; every colour above is swapped here. */
+      body.dark {
+        color-scheme: dark;
+        --ink: #120e22;
+        --panel: #2b2550;
+        --panel-text: #f3f0ff;
+        --muted: #c9c3ff;
+        --sky: #1d1b3f;
+        --veil: rgba(10, 8, 25, 0.6);
+        --rest: #d9d4ff;
       }
       html,
       body {
@@ -54,6 +66,38 @@
       button:disabled {
         opacity: 0.45;
         cursor: default;
+      }
+      /* The Light/Dark switch (render look-switch.ts): a small pill at the top right, its knob
+         left with a sun in Light, right with a moon in Dark. The clock keeps clear of it
+         (render clock.ts SWITCH_ROOM). */
+      #look {
+        position: fixed;
+        top: 16px;
+        right: 8px;
+        width: 54px;
+        height: 30px;
+        padding: 0;
+        border-radius: 999px;
+      }
+      #look::after {
+        content: '\2600';
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        font-size: 14px;
+        border-radius: 50%;
+        background: #ffe073;
+        color: #2b2140;
+        border: 1.5px solid var(--ink);
+        transition: left 0.2s;
+      }
+      body.dark #look::after {
+        content: '\263E';
+        left: 25px;
+        background: #fff3c4;
       }
       /* Jump left of Dash, both at the bottom right (JUMP 2026-11-17). */
       #actions {
@@ -105,7 +149,7 @@
         border: 3px solid var(--ink);
         box-shadow: var(--drop);
         color: #2b2140;
-        background: conic-gradient(var(--fill) calc(var(--ready, 1) * 360deg), #ffffff 0);
+        background: conic-gradient(var(--fill) calc(var(--ready, 1) * 360deg), var(--rest) 0);
         opacity: 0.75;
       }
       #dash {
@@ -394,6 +438,7 @@
   </head>
   <body>
     <canvas id="map"></canvas>
+    <button id="look" type="button" aria-label="Dark mode" aria-pressed="false"></button>
     <div id="stick"><div id="knob"></div></div>
     <div id="actions">
       <button id="jump" type="button" hidden>Jump <span class="key">(Shift)</span></button>

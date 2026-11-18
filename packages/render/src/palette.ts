@@ -1,5 +1,6 @@
-// Seasonal Spirits — colours and names of the four seasons and the Sky Island look's palette
-// (owner's choice 2026-11-18): the one list both apps draw with; index = season = team.
+// Seasonal Spirits — colours and names of the four seasons and the Sky Island look's palettes
+// (owner's choice 2026-11-18), light and dark (the player's switch, look-switch.ts): the one
+// list both apps draw with; index = season = team.
 
 // The team colours of the Sky Island look (they replace the website's tokens in this game; the
 // owner's question of 2026-11-16 — Summer and Autumn too alike — answered with them).
@@ -8,6 +9,7 @@ export const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'] as const;
 
 // Every colour of the world around the ghosts: the sky, the sea, the island and what grows on it.
 export interface Look {
+  night: boolean; // dark: stars and a moon instead of the sun, lanterns, a glowing crack
   ink: string; // every outline
   sky: string;
   cloud: string;
@@ -15,7 +17,7 @@ export interface Look {
   wave: string;
   farTop: string; // the small far islands
   farUnder: string;
-  sun: string;
+  sun: string; // the moon at night
   sunRing: string;
   grass: string;
   dirt: string;
@@ -36,6 +38,7 @@ export interface Look {
 }
 
 export const LIGHT: Look = {
+  night: false,
   ink: '#2b2140',
   sky: '#9EDCF5',
   cloud: '#ffffff',
@@ -63,11 +66,47 @@ export const LIGHT: Look = {
   alertText: '#c2183a',
 };
 
-// Announcements, the countdown and lives: one red for both looks.
-export const ALERT = '#FF5A6E';
+export const DARK: Look = {
+  night: true,
+  ink: '#120e22',
+  sky: '#1d1b3f',
+  cloud: '#3a3768',
+  sea: '#15305a',
+  wave: '#2f5a8e',
+  farTop: '#3e5a52',
+  farUnder: '#3b2f45',
+  sun: '#fff3c4',
+  sunRing: '#fff3c4',
+  grass: '#4f8f5a',
+  dirt: '#5a4058',
+  rock: '#5b4a6e',
+  strata: '#463a59',
+  roots: '#3a2b3e',
+  tuft: '#3c7a4a',
+  flowers: ['#c9708f', '#d9d4ff', '#d6b14a'],
+  crowns: ['#3f7d55', '#c97b3a'],
+  pebble: '#6d6480',
+  crack: '#ffcf6e',
+  feet: ['#6f9a3c', '#c25a1c', '#c98c1a', '#1f86c0'],
+  marker: '#ffe27a',
+  puff: '#c9c3ff',
+  panel: '#2b2550',
+  panelText: '#f3f0ff',
+  alertText: '#ff8a9a',
+};
 
+// The lanterns on the island at night.
+export const LANTERN = '#ffd98a';
+
+let current: Look = LIGHT;
+
+// The look in force: Light unless the player switched to Dark (look-switch.ts).
 export function look(): Look {
-  return LIGHT;
+  return current;
+}
+
+export function useLook(dark: boolean): void {
+  current = dark ? DARK : LIGHT;
 }
 
 export function seasonColour(i: number): string {

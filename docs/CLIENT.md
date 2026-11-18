@@ -13,7 +13,6 @@ Spirits' client is on `master`.
 | -------------------------- | --------------------------------------------------------------------------------- |
 | `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook     |
 | `src/scene.ts`             | One canvas frame: sky, the camera on the whole island, ghosts, labels, clock      |
-| `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws         |
 | `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys      |
 | `src/scores.ts`            | The team pills in the band: score and ghosts still in per team, the leader ringed |
 | `src/lives.ts`             | The own lives as red circles in the band; "You are out — watching"                |
@@ -27,7 +26,7 @@ Spirits' client is on `master`.
 | `src/sound.ts`             | The halving tone (Web Audio)                                                      |
 | `src/config.ts`            | Bridge box on/off and its links                                                   |
 | `e2e/`                     | Playwright config, helpers and the specs                                          |
-| `packages/render` (shared) | The drawing client and viewer share: field per mode, ghosts, bomb, clock, words   |
+| `packages/render` (shared) | What client and viewer share: island, characters, clock, words, the look switch   |
 
 ## Joining and watching
 
@@ -106,6 +105,13 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,
   and the carrier's body pulsing in a hot halo, quicker as the fuse burns down; its label keeps
   clear of it.
+- **Light and Dark** (Sky Island look, piece 3): a small pill switch at the top right of the
+  client and the viewer (render `look-switch.ts`), Light by default, the choice remembered in
+  localStorage (`seasonal-spirits.look`; render `storage.ts`, which also keeps the mute and the
+  help seen). Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
+  `body.dark`): a night sky with stars and a crescent moon, dimmer island colours, three small
+  lanterns on the island, the crack glowing; the team colours stay. Text keeps a contrast of at
+  least 4.5:1 in both (tested in `palette.test.ts`); the clock box leaves room for the switch.
 - **Ghosts** (Sky Island look 2026-11-18): round toy-like characters (render `character.ts`)
   in their team colour — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
   with feet in a darker shade, short arms, a light belly, big eyes, pink cheeks, a smile and the

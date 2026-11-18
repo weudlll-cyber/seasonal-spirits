@@ -14,6 +14,52 @@
         --panel: #ffffff;
         --panel-text: #2b2140;
       }
+      body.dark {
+        --ink: #120e22;
+        --panel: #2b2550;
+        --panel-text: #f3f0ff;
+        background: #1d1b3f;
+      }
+      #look {
+        font: inherit;
+        cursor: pointer;
+        color: var(--panel-text);
+        background: var(--panel);
+        border: 2.5px solid var(--ink);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      /* The Light/Dark switch (render look-switch.ts): a small pill at the top right, its knob
+         left with a sun in Light, right with a moon in Dark. The clock keeps clear of it
+         (render clock.ts SWITCH_ROOM). */
+      #look {
+        position: fixed;
+        top: 16px;
+        right: 8px;
+        width: 54px;
+        height: 30px;
+        padding: 0;
+        border-radius: 999px;
+      }
+      #look::after {
+        content: '\2600';
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        font-size: 14px;
+        border-radius: 50%;
+        background: #ffe073;
+        color: #2b2140;
+        border: 1.5px solid var(--ink);
+        transition: left 0.2s;
+      }
+      body.dark #look::after {
+        content: '\263E';
+        left: 25px;
+        background: #fff3c4;
+      }
       html,
       body {
         margin: 0;
@@ -139,6 +185,7 @@
   </head>
   <body>
     <canvas id="map"></canvas>
+    <button id="look" type="button" aria-label="Dark mode" aria-pressed="false"></button>
     <pre id="hud">connecting…</pre>
     <section id="tuning" hidden></section>
     <script type="module" src="/src/main.ts"></script>

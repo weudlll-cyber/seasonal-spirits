@@ -1,7 +1,8 @@
 // Seasonal Sumo — the sky around the island (Sky Island look, 2026-11-18): the sky, a sun top
-// right, soft clouds far behind, two or three small far islands, the sea band at the bottom with
-// its waves, and two big clouds low in front. Drawn once per canvas size into offscreen canvases
-// (the frame only copies them), so the backdrop costs nothing per frame.
+// right (at night a crescent moon and stars), soft clouds far behind, two or three small far
+// islands, the sea band at the bottom with its waves, and two big clouds low in front. Drawn once
+// per canvas size and look into offscreen canvases (the frame only copies them), so the backdrop
+// costs nothing per frame.
 
 import { look, type Look } from './palette.js';
 
@@ -66,24 +67,52 @@ function farIsland(ctx: Ctx, [x, y, s]: readonly [number, number, number], l: Lo
   ctx.stroke();
 }
 
+// The night sky: small white stars at fixed places and a crescent moon where the sun stands.
+function night(
+  ctx: Ctx,
+  { w, h, u }: { w: number; h: number; u: number },
+  moon: { x: number; y: number; r: number },
+  l: Look,
+): void {
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 70; i++) {
+    // A fixed scatter (golden-ratio steps), the same on every size.
+    const x = ((i * 0.618034) % 1) * w;
+    const y = ((i * 0.381966 * 1.7) % 1) * seaTop(h) * 0.9;
+    ctx.globalAlpha = 0.45 + 0.5 * ((i * 0.7548) % 1);
+    ctx.beginPath();
+    ctx.arc(x, y, (i % 3 === 0 ? 1.8 : 1.1) * Math.max(1, u), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.arc(moon.x, moon.y, moon.r, 0, Math.PI * 2);
+  ctx.arc(moon.x + moon.r * 0.45, moon.y - moon.r * 0.2, moon.r * 0.82, 0, Math.PI * 2, true);
+  ctx.fillStyle = l.sun;
+  ctx.fill('evenodd');
+}
+
 function drawBack(ctx: Ctx, w: number, h: number, l: Look): void {
   const u = Math.min(w, h) / 800; // the backdrop's unit: 1 on an 800 px screen
   ctx.fillStyle = l.sky;
   ctx.fillRect(0, 0, w, h);
-  // The sun, top right below the bar.
-  const sun = { x: w - 90 * u - 20, y: 190 * u };
-  ctx.lineWidth = 10 * u;
-  ctx.strokeStyle = l.sunRing;
-  ctx.beginPath();
-  ctx.arc(sun.x, sun.y, 52 * u, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = l.sun;
-  ctx.lineWidth = OUTLINE;
-  ctx.strokeStyle = l.ink;
-  ctx.beginPath();
-  ctx.arc(sun.x, sun.y, 38 * u, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+  // The sun (at night the moon and the stars), top right below the bar.
+  const sun = { x: w - 90 * u - 20, y: 190 * u, r: 38 * u };
+  if (l.night) night(ctx, { w, h, u }, sun, l);
+  else {
+    ctx.lineWidth = 10 * u;
+    ctx.strokeStyle = l.sunRing;
+    ctx.beginPath();
+    ctx.arc(sun.x, sun.y, sun.r + 14 * u, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = l.sun;
+    ctx.lineWidth = OUTLINE;
+    ctx.strokeStyle = l.ink;
+    ctx.beginPath();
+    ctx.arc(sun.x, sun.y, sun.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
   for (const [fx, fy, fs] of [
     [0.1, 0.3, 70],
     [0.42, 0.22, 52],
