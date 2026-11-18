@@ -43,6 +43,7 @@ const ghost = (id: number, x: number, flags: number, score = 0): GhostState => (
   score,
   lives: 3,
   jumpLeftMs: 0,
+  windUp: null,
 });
 
 describe('own label', () => {

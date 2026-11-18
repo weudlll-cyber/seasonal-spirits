@@ -14,6 +14,7 @@ import { rulesFor, scoreOf, type ModeRules } from './modes/rules.js';
 import { mulberry32 } from './rng.js';
 import { seasonClock } from './seasons.js';
 import { clockOf, decide, isOver, nextDeadline, noteKnockedOut, timed } from './standing.js';
+import { released, windUp, windingUp } from './windup.js';
 import {
   IDLE,
   TEAMS,
@@ -141,13 +142,13 @@ export class Match {
 
   // A player takes over a ghost a bot steered: it starts from standing, not with the bot's
   // momentum, and with dash and jump ready as a new ghost's — not the cooldown of a bot that
-  // just dashed or jumped to dodge; place, lives, score and team stay (the server calls this
+  // just dashed or jumped to dodge, nor its wind-up; place, lives, score and team stay (the server calls this
   // on a join).
   halt(id: number): void {
     const g = this.s.ghosts.find((x) => x.id === id);
     if (!g) return;
     Object.assign(g, { vx: 0, vy: 0, dashUntilMs: 0, knockedUntilMs: 0 });
-    Object.assign(g, { dashReadyMs: 0, jumpReadyMs: 0 });
+    Object.assign(g, { dashReadyMs: 0, jumpReadyMs: 0, windUntilMs: 0 });
   }
 
   // The owner's live tuning changed the arena's starting size (development only): the running
@@ -183,9 +184,13 @@ export class Match {
 
   // A ghost's one action of the tick. A jump: in the air for jump.airMs (jump.ts canJump: the
   // switch, the ground, the cooldown). A dash: on the arena and on the ground (nothing steers
-  // in the air); the cooldown is the core's, a dash before dashReadyMs does nothing.
+  // in the air); the cooldown is the core's, a dash before dashReadyMs does nothing. With the
+  // wind-up on, the press holds the ghost and the dash goes at its end (windup.ts); a wind-up
+  // whose time is up is released first.
   private act(g: Ghost, intent: Intent): void {
     const now = this.s.elapsedMs;
+    const due = released(g, now, !inAir(g, now));
+    if (due) this.dash(g, due, now);
     if (intent.action === 'jump') {
       if (!canJump(this.cfg, g, now)) return;
       g.airUntilMs = now + this.cfg.jump.airMs;
@@ -195,13 +200,18 @@ export class Match {
       return;
     }
     if (g.phase !== 'in' || intent.action !== 'dash' || now < g.dashReadyMs) return;
-    if (inAir(g, now)) return;
+    if (inAir(g, now) || windingUp(g, now)) return;
     const v = dashVelocity(this.cfg, g, intent);
     if (!v) return;
+    g.dashReadyMs = now + this.cfg.dashCooldownMs;
+    if (this.cfg.dashWindUpMs > 0) windUp(this.cfg, g, v, now);
+    else this.dash(g, v, now);
+  }
+
+  private dash(g: Ghost, v: { x: number; y: number }, now: number): void {
     g.vx = v.x;
     g.vy = v.y;
     g.dashUntilMs = now + this.cfg.dashMs;
-    g.dashReadyMs = now + this.cfg.dashCooldownMs;
     this.s.events.push({ type: 'dash', ghost: g.id });
   }
 
@@ -209,7 +219,8 @@ export class Match {
   // drifts without control; an out ghost waits.
   private move(g: Ghost, intent: Intent, dtMs: number): void {
     if (g.phase === 'out') return;
-    const held = g.phase === 'in' ? intent : IDLE;
+    // Winding up, it holds: no steering until the dash goes.
+    const held = g.phase === 'in' && !windingUp(g, this.s.elapsedMs) ? intent : IDLE;
     const dir = inAir(g, this.s.elapsedMs) ? airSteer(this.cfg, held) : held;
     Object.assign(g, moveOnce(this.cfg, g, dir, dtMs));
   }
@@ -229,6 +240,9 @@ function newGhost(r: Roster, p: { x: number; y: number }, lives: number): Ghost 
     dashUntilMs: 0,
     knockedUntilMs: 0,
     dashReadyMs: 0,
+    windUntilMs: 0,
+    windVx: 0,
+    windVy: 0,
     airUntilMs: 0,
     jumpReadyMs: 0,
     dodged: false,

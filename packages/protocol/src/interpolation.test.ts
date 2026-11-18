@@ -34,6 +34,7 @@ function s(serverMs: number, x: number, y: number): BufferedState {
           flags: 0,
           lives: 3,
           jumpLeftMs: 0,
+          windUp: null,
         },
       ],
     },

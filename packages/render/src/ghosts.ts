@@ -5,7 +5,8 @@
 // pale dashed ring; one in the air after a jump rises on an arc over its shadow, its label and
 // marks with it, with a ground ring at take-off and landing and "Dodged!" when a dash passed
 // under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts); in
-// Halving Bomb only the top three and the own ghost show a score (scoreTop). What the drawing
+// Halving Bomb only the top three and the own ghost show a score (scoreTop); a dash winding up
+// glows with its line (windup.ts). What the drawing
 // remembers between frames is trails.ts.
 
 import {
@@ -38,6 +39,7 @@ import { MUTED, TEXT, seasonColour } from './palette.js';
 import { shape } from './shape.js';
 import type { Trails } from './trails.js';
 import { circle, sx, sy, visibleArea, type View } from './view.js';
+import { drawWindUp } from './windup.js';
 
 // A ghost faster than running can make it leaves a trail: a dash or a knock.
 const trailSpeed = (): number => shape().maxSpeed * 1.1;
@@ -141,6 +143,8 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): void {
   const carrier = fall === 0 && (g.flags & GHOST_BOMB) !== 0;
   const at = { x: g.x, y: g.y, r: size };
   const r = carrier ? drawCarrier(v, at, style.fuse, style.nowMs) : size;
+  // A dash winding up: its glow behind the body and its line (windup.ts).
+  if (fall === 0 && g.windUp !== null) drawWindUp(v, { x: g.x, y: g.y, r }, g.windUp);
   ctx.globalAlpha = 1 - 0.8 * fall;
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);

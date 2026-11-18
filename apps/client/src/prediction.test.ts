@@ -137,3 +137,29 @@ describe('OwnPrediction against other ghosts', () => {
     }
   });
 });
+
+// NIGHT 2026-11-18, piece 6: with the dash's wind-up on, the own ghost holds as the core holds it,
+// then dashes — not ahead of the server.
+describe('OwnPrediction with the dash wind-up', () => {
+  const run = (windUp: 0 | 1) => {
+    const c = configFrom({ ...DEFAULT_SETTINGS, dashWindUp: windUp }, 'sumo');
+    const p = new OwnPrediction(c);
+    const right = { dx: 1, dy: 0 };
+    p.update(0, { dx: 0, dy: 0 }, at(500, 500, 0));
+    const x: Record<number, number> = {};
+    for (let t = 16; t <= 320; t += 16) {
+      x[t] = p.update(t, right, at(500, 500, t), { dash: t === 16 })?.x ?? NaN;
+    }
+    return x;
+  };
+
+  it('holds still through the wind-up, then dashes', () => {
+    const wind = run(1);
+    expect((wind[112] ?? NaN) - 500).toBeLessThan(2); // 96 ms after the press: still held
+    expect((wind[320] ?? NaN) - 500).toBeGreaterThan(30); // the dash went at 136 ms
+  });
+
+  it('dashes at once with the wind-up off', () => {
+    expect((run(0)[112] ?? NaN) - 500).toBeGreaterThan(30);
+  });
+});

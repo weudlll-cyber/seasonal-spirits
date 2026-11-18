@@ -51,6 +51,7 @@ function sample(ghosts: number): ServerState {
       flags: i === 3 ? GHOST_AIRBORNE | GHOST_DODGED : i % 2 ? GHOST_DASHING : 0,
       lives: i % 4,
       jumpLeftMs: (i % 4) * 1000,
+      windUp: null,
     })),
   };
 }
@@ -115,5 +116,26 @@ describe('state flags', () => {
     const flags = STATE_HALVING_EVENT | STATE_RESULT | STATE_TO_END | STATE_MATCH_END_EVENT;
     const s = { ...sample(1), countdownMs: 7000, flags };
     expect(decodeState(encodeState(s))).toMatchObject({ countdownMs: 7000, flags });
+  });
+});
+
+// NIGHT 2026-11-18, piece 6: the dash's wind-up shares the team byte, so a ghost stays 16 bytes.
+describe('a wind-up on the wire', () => {
+  it('keeps the team and the direction to the nearest of 32 steps, and none as none', () => {
+    const s = sample(4);
+    const angles = [0, Math.PI / 2 + 0.05, -Math.PI * 0.75, null];
+    s.ghosts.forEach((g, i) => (g.windUp = angles[i] ?? null));
+    const back = decodeState(encodeState(s)).ghosts;
+    expect(back.map((g) => g.team)).toEqual([0, 1, 2, 3]);
+    const step = (2 * Math.PI) / 32;
+    back.slice(0, 3).forEach((g, i) => {
+      const want = angles[i] ?? 0;
+      const diff = Math.atan2(
+        Math.sin((g.windUp ?? NaN) - want),
+        Math.cos((g.windUp ?? NaN) - want),
+      );
+      expect(Math.abs(diff)).toBeLessThanOrEqual(step / 2 + 1e-9);
+    });
+    expect(back[3]?.windUp).toBeNull();
   });
 });

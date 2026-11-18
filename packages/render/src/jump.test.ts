@@ -48,6 +48,7 @@ const ghost = (flags: number): GhostState => ({
   score: 0,
   lives: 3,
   jumpLeftMs: 0,
+  windUp: null,
 });
 
 // The frame `atMs` after a take-off at 0: the body's circle (the largest drawn at the body's x).

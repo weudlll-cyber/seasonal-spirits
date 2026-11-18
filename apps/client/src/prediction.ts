@@ -4,12 +4,13 @@
 // smoothly towards what the server says, snapped to it when far off; inside the walls of hill
 // and bomb as the core keeps it (fieldBounds); stopped at another ghost it touches, never drawn
 // through it (FIX 2026-11-17-3), until the server's answer moves it on; in the air after a jump
-// barely steered and touching nobody, as the core (jump.ts airSteer; JUMP 2026-11-17). Display
-// only: the
+// barely steered and touching nobody, as the core (jump.ts airSteer; JUMP 2026-11-17); with the
+// dash's wind-up on, held still until the dash goes (game-core windup.ts). Display only: the
 // server's position is the truth and nothing of this leaves the client (THREATS row 36).
 
 import {
   DEFAULT_CONFIG,
+  IDLE,
   airSteer,
   clamp,
   dashVelocity,
@@ -102,6 +103,9 @@ export class OwnPrediction {
   private offset = { x: 0, y: 0 };
   private shown: { x: number; y: number } | null = null; // drawn in the last frame
   private airUntil = 0; // client time a jump the player pressed ends
+  // A dash pressed with the wind-up on (game-core windup.ts): held until `until`, then this
+  // velocity — as the core does, so the own ghost does not run ahead of the server.
+  private wind: { until: number; v: { x: number; y: number } } | null = null;
   private air = false; // in the air in the last frame
 
   constructor(cfg: GameConfig = DEFAULT_CONFIG) {
@@ -134,6 +138,7 @@ export class OwnPrediction {
     if (!last || server.frozen) {
       this.path = [{ at: now, x: server.x, y: server.y, vx: server.vx, vy: server.vy }];
       this.offset = { x: 0, y: 0 };
+      this.wind = null; // a fall ends a wind-up on the server too
     } else {
       this.advance(last, { now, dir, dash: input.dash === true, air }, server, others);
     }
@@ -180,13 +185,32 @@ export class OwnPrediction {
     const { now, dir, dash, air } = frame;
     const dt = Math.min(MAX_FRAME_MS, Math.max(0, now - last.at));
     const ready = dash && !air && server.dashLeftMs === 0;
-    const v = ready ? dashVelocity(this.cfg, last, dir) : null;
-    const from = v ? { ...last, vx: v.x, vy: v.y } : last;
-    const steer = air ? airSteer(this.cfg, dir) : dir;
+    const v = this.dashNow(now, air, ready ? dashVelocity(this.cfg, last, dir) : null);
+    const holding = this.wind !== null;
+    const from = v ? { ...last, vx: v.x, vy: v.y } : holding ? { ...last, vx: 0, vy: 0 } : last;
+    const steer = holding ? IDLE : air ? airSteer(this.cfg, dir) : dir;
     const to = stopAt(stepGhost(this.cfg, from, steer, dt), others, 2 * this.cfg.ghostRadius);
     this.path.push({ at: now, ...to });
     while ((this.path[0]?.at ?? now) < now - HISTORY_MS) this.path.shift();
     this.correct(server, dt);
+  }
+
+  // The dash that goes in this frame: a press at once, or with the wind-up on held until its
+  // end (none if the ghost went up meanwhile); a press during a wind-up does nothing.
+  private dashNow(
+    now: number,
+    air: boolean,
+    pressed: { x: number; y: number } | null,
+  ): { x: number; y: number } | null {
+    if (this.wind) {
+      if (now < this.wind.until) return null;
+      const { v } = this.wind;
+      this.wind = null;
+      return air ? null : v;
+    }
+    if (!pressed || this.cfg.dashWindUpMs === 0) return pressed;
+    this.wind = { until: now + this.cfg.dashWindUpMs, v: pressed };
+    return null;
   }
 
   // The server's position is where the own path was PREDICTION_LAG_MS before the state

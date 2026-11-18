@@ -15,6 +15,8 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | `dashSpeed`      | Dash strength                        | 160–1200 u/s (step 10)    | 480     | sumo, hill, bomb | now        |
 | `dashTime`       | Dash: knocks for                     | 0.05–0.6 s (step 0.05)    | 0.25    | sumo, hill, bomb | now        |
 | `dashCooldown`   | Dash: cooldown                       | 0.3–5 s (step 0.1)        | 1.5     | sumo, hill, bomb | now        |
+| `dashWindUp`     | Dash: wind-up                        | off / on                  | off     | sumo, hill, bomb | now        |
+| `dashWindUpTime` | Dash: wind-up length                 | 0–0.4 s (step 0.01)       | 0.12    | sumo, hill, bomb | now        |
 | `knockSpeed`     | Push strength (a dash hit)           | 0–960 u/s (step 10)       | 320     | sumo, hill, bomb | now        |
 | `knockWeight`    | Thrown ghost weight                  | 1–20 × (step 1)           | 10      | sumo, hill, bomb | now        |
 | `restitution`    | Bounce                               | 0–1 share (step 0.05)     | 0       | sumo, hill, bomb | now        |

@@ -10,6 +10,7 @@ export { QUARTER, teamAngle } from './arena.js';
 export * from './settings.js';
 export { nextDeadline } from './standing.js';
 export { airSteer, inAir } from './jump.js';
+export { windAngle } from './windup.js';
 export { mulberry32 } from './rng.js';
 export { clamp, dashVelocity, fieldBounds, stepGhost, type Motion } from './geometry.js';
 export { areaOf, scoreOf } from './modes/rules.js';

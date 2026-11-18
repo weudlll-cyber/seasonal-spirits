@@ -16,6 +16,9 @@ export interface GhostState {
   flags: number; // GHOST_* bits
   lives: number; // 0..255 left in this match; 0: out for the rest of it
   jumpLeftMs: number; // until the next jump is allowed, in steps of 20 ms (the Jump ring)
+  // A dash's wind-up in progress (game-core windup.ts): its direction in radians, in 32 steps;
+  // null: none. Everyone sees it — the glow and the line — and may dodge.
+  windUp: number | null;
 }
 
 export const GHOST_BOT = 1;
@@ -74,12 +77,26 @@ export const STATE_OPEN_END = 32;
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
 // teamScore 4×u16 · mode u8 · area x, y, r 3×u16 · next x, y, r 3×u16 (tenths; r 0 = none)
 // · ghost count u8 · livesAtStart u8.
-// Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 · score u16 · dashLeft u8
-// (20 ms steps) · flags u8 · lives u8 · jumpLeft u8 (20 ms steps). All little endian.
+// Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 (bits 0–1 the team, bit 2 a
+// wind-up, bits 3–7 its direction in 32 steps) · score u16 · dashLeft u8 (20 ms steps) · flags
+// u8 · lives u8 · jumpLeft u8 (20 ms steps). All little endian.
 export const HEADER_BYTES = 46;
 export const GHOST_BYTES = 16;
 const NO_COUNTDOWN = 0xffff;
 const DASH_STEP_MS = 20;
+const WIND_UP = 4; // the team byte's wind-up bit; its direction above it
+const WIND_STEPS = 32;
+
+// The team byte: the team, and a wind-up's direction rounded to one of 32 steps.
+function teamByte(team: number, windUp: number | null): number {
+  if (windUp === null) return team & 0x03;
+  const turn = windUp / (2 * Math.PI);
+  const step = Math.round((turn - Math.floor(turn)) * WIND_STEPS) % WIND_STEPS;
+  return (team & 0x03) | WIND_UP | (step << 3);
+}
+
+const windOf = (b: number): number | null =>
+  b & WIND_UP ? ((b >> 3) * 2 * Math.PI) / WIND_STEPS : null;
 
 export function encodedSize(ghosts: number): number {
   return HEADER_BYTES + GHOST_BYTES * ghosts;
@@ -139,7 +156,7 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setUint16(o + 3, u16(g.y), true);
   v.setInt16(o + 5, i16(g.vx), true);
   v.setInt16(o + 7, i16(g.vy), true);
-  v.setUint8(o + 9, g.team & 0x03);
+  v.setUint8(o + 9, teamByte(g.team, g.windUp));
   v.setUint16(o + 10, u16(g.score), true);
   v.setUint8(o + 12, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
   v.setUint8(o + 13, g.flags & 0xff);
@@ -189,11 +206,12 @@ function readGhost(v: DataView, o: number): GhostState {
     y: v.getUint16(o + 3, true),
     vx: v.getInt16(o + 5, true),
     vy: v.getInt16(o + 7, true),
-    team: v.getUint8(o + 9),
+    team: v.getUint8(o + 9) & 0x03,
     score: v.getUint16(o + 10, true),
     dashLeftMs: v.getUint8(o + 12) * DASH_STEP_MS,
     flags: v.getUint8(o + 13),
     lives: v.getUint8(o + 14),
     jumpLeftMs: v.getUint8(o + 15) * DASH_STEP_MS,
+    windUp: windOf(v.getUint8(o + 9)),
   };
 }

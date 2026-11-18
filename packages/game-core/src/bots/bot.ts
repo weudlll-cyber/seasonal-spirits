@@ -14,6 +14,7 @@ import { distance } from '../geometry.js';
 import { canJump } from '../jump.js';
 import { rivals } from '../standing.js';
 import { IDLE, type Ghost, type Intent, type MatchState, type Vec } from '../types.js';
+import { windingUp } from '../windup.js';
 
 export type Bot = (s: Readonly<MatchState>, me: Readonly<Ghost>) => Intent;
 
@@ -84,9 +85,10 @@ export function edgeMargin(cfg: GameConfig, edge: number): number {
   return Math.max(cfg.ghostRadius, Math.min(b.edgeMargin, edge * b.edgeShare));
 }
 
-// A rival dashing at it within dashRange, heading at it at least as well as a bot lines up a
-// dash (dashAimCos), while its own jump is ready: the moment to jump (JUMP 2026-11-17). The
-// human-like layer decides whether it does (bots/human.ts).
+// A rival dashing at it within dashRange — or winding up a dash at it, its glow and line on
+// screen (windup.ts) — heading at it at least as well as a bot lines up a dash (dashAimCos),
+// while its own jump is ready: the moment to jump (JUMP 2026-11-17). `s` is what the bot
+// perceives, a reaction time late (bots/human.ts decides whether it does).
 export function underAttack(
   cfg: GameConfig,
   s: Readonly<MatchState>,
@@ -95,14 +97,22 @@ export function underAttack(
   const now = s.elapsedMs;
   if (!canJump(cfg, me, now)) return false;
   return s.ghosts.some((g) => {
-    if (g.id === me.id || g.phase !== 'in' || now >= g.dashUntilMs || !rivals(s, me, g)) {
-      return false;
-    }
+    if (g.id === me.id || g.phase !== 'in' || !rivals(s, me, g)) return false;
+    const heading = attackHeading(g, now);
+    if (!heading) return false;
     const d = distance(me, g);
-    const speed = Math.hypot(g.vx, g.vy);
+    const speed = Math.hypot(heading.x, heading.y);
     if (d > cfg.bots.dashRange || d === 0 || speed === 0) return false;
-    return (g.vx * (me.x - g.x) + g.vy * (me.y - g.y)) / (speed * d) >= cfg.bots.dashAimCos;
+    return (
+      (heading.x * (me.x - g.x) + heading.y * (me.y - g.y)) / (speed * d) >= cfg.bots.dashAimCos
+    );
   });
+}
+
+// Where a rival's attack points: its dash's motion, or a wind-up's stored dash; null: none.
+function attackHeading(g: Readonly<Ghost>, now: number): { x: number; y: number } | null {
+  if (now < g.dashUntilMs) return { x: g.vx, y: g.vy };
+  return windingUp(g, now) ? { x: g.windVx, y: g.windVy } : null;
 }
 
 export function botIntent(cfg: GameConfig, s: Readonly<MatchState>, me: Readonly<Ghost>): Intent {

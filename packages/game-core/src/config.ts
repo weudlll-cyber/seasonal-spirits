@@ -106,6 +106,9 @@ export interface GameConfig {
   dashSpeed: number; // units/s at the start of a dash
   dashMs: number; // how long a dash counts as one (it knocks what it hits)
   dashCooldownMs: number; // between two dashes, enforced by the core
+  // The dash's wind-up (owner's option, default off): the ghost holds this long, glowing and
+  // showing its line, before it dashes; 0: the dash goes at the press (windup.ts).
+  dashWindUpMs: number;
   knockSpeed: number; // units/s a dash hit throws the hit ghost off at (at least)
   knockWeight: number; // a thrown ghost counts this much heavier while dashMs lasts
   restitution: number; // 0..1: how much two ghosts bounce off each other
@@ -158,6 +161,7 @@ export function configFrom(s: Settings, mode: GameMode): GameConfig {
     dashSpeed: s.dashSpeed,
     dashMs: ms(s.dashTime),
     dashCooldownMs: ms(s.dashCooldown),
+    dashWindUpMs: s.dashWindUp === 1 ? ms(s.dashWindUpTime) : 0,
     knockSpeed: s.knockSpeed,
     knockWeight: s.knockWeight,
     restitution: s.restitution,

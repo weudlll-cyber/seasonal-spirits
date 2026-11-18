@@ -12,6 +12,7 @@ import {
   inAir,
   nextDeadline,
   scoreOf,
+  windAngle,
   type GameConfig,
   type Ghost,
   type MatchEvent,
@@ -97,5 +98,6 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (ctx.events.some((e) => e.type === 'dodge' && e.ghost === g.id) ? GHOST_DODGED : 0),
     lives: g.lives,
     jumpLeftMs: Math.max(0, g.jumpReadyMs - now),
+    windUp: windAngle(g, now),
   };
 }

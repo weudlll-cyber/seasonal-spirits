@@ -49,11 +49,6 @@ before the third halving, all "stop, no time limit" end (longest 7:54); 0.45: no
 over at 30:00; 140 alone: none early, 7 not over. Done when: the owner has played it and set
 the share and the lives so that the late phases are reached as he wants.
 
-ag. **The dash wind-up** (NIGHT 2026-11-18, piece 6, dropped for time; its first half, Halving
-Bomb up to date, is closed): an optional dash wind-up (a setting, default off) with its glow and
-line, enforced on the server, matched by the prediction and the bots, measured with seeded
-runs. Done when: built, the wind-up's dodge numbers in a sheet.
-
 ae. **The jump as a dodge** (JUMP 2026-11-17): built with the owner's switch; with a player's
 reaction (~250 ms) a dash from 150 away arrives first, so a reactive jump rarely helps — it
 works when it anticipates; the bots jump at every dash they see (about 320 jumps a match).
@@ -771,6 +766,15 @@ Done when: the spec is green ten runs in a row.
   wait that a new match could fall into (now read in the countdown to a halving) — commit "fix:
   a taken-over seat starts with dash and jump ready".
 
+- 2026-11-18 — **ag, second half: the optional dash wind-up**: settings "Dash: wind-up" (off by
+  default) and its length (0.12 s, 0–0.4 s); the core holds the ghost and dashes on the first
+  tick past it, the cooldown from the press, no dash after a jump or a fall meanwhile (game-core
+  `windup.ts`, `Match.act`); on the wire in the team byte's spare bits (a ghost stays 16 bytes);
+  the prediction holds the own ghost alike; the bots see a rival's wind-up as an attack through
+  their reaction-late perception (`underAttack`); drawn as a white glow and a line (render
+  `windup.ts`). Measured, 10 seeded 32-bot Sumo matches each (the sheet) — commit "feat: the
+  optional dash wind-up, enforced by the core, seen by all".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1066,3 +1070,5 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | `pnpm verify:changed` (format, lint, typecheck; all tests: 45 files / 270 tests)                                                                                                          | working tree of the fresh cooldowns                                                                                                       | green (a first run: lint max-lines in the host test, fixed; packs and simulation timed out under load, green on the rerun)                                                                                                          | this commit                                                                                    |
 | 2026-11-18 | `playwright test` play and mode specs, both sizes (local)                                                                                                                                 | same tree, before the Sumo spec fixes                                                                                                     | 4 passed; desktop Sumo: the ghost fell on its way ("You fell"), no jump; desktop Bomb: no recap within 10 s after MATCH OVER                                                                                                        | this commit                                                                                    |
 | 2026-11-18 | `playwright test` Sumo play spec, both sizes (local)                                                                                                                                      | same tree, with the Sumo spec fixes                                                                                                       | 2 passed in 2.3 min                                                                                                                                                                                                                 | this commit                                                                                    |
+| 2026-11-18 | wind-up measurement: 10 seeded 32-bot Sumo matches (seeds 1–10) with the wind-up off and on at 120 ms (scratch script over `simulate`)                                                    | working tree of the wind-up                                                                                                               | off: 7539 aimed dashes, hit 62.2 %, jump-dodged 3.4 %, neither 34.4 %; on: 8883, 60.6 / 4.1 / 35.3 %, 254 wind-ups dropped                                                                                                          | the sheet, piece 3                                                                             |
+| 2026-11-18 | `pnpm verify:changed` (format, lint, typecheck; all tests: 46 files / 278 tests)                                                                                                          | working tree of the wind-up                                                                                                               | green but `packs.test` (timed out at 20 s beside the suite; alone green, 15.9 s with the wind-up, 15.0 s without it on the same machine: load, not the change)                                                                      | this commit                                                                                    |

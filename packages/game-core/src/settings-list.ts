@@ -70,6 +70,8 @@ export const SETTINGS = [
     n('dashSpeed', 'Dash strength', ['u/s', 160, 1200, 10, 480]),
     n('dashTime', 'Dash: knocks for', ['s', 0.05, 0.6, 0.05, 0.25]),
     n('dashCooldown', 'Dash: cooldown', ['s', 0.3, 5, 0.1, 1.5]),
+    choice('dashWindUp', 'Dash: wind-up', SWITCH),
+    n('dashWindUpTime', 'Dash: wind-up length', ['s', 0, 0.4, 0.01, 0.12]),
     n('knockSpeed', 'Push strength (a dash hit)', ['u/s', 0, 960, 10, 320]),
     n('knockWeight', 'Thrown ghost weight', ['×', 1, 20, 1, 10]),
     n('restitution', 'Bounce', ['share', 0, 1, 0.05, 0]),

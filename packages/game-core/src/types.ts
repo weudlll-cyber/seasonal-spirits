@@ -35,6 +35,10 @@ export interface Ghost {
   dashUntilMs: number; // a dash in progress knocks what it hits until this match time
   knockedUntilMs: number; // thrown by a dash hit: a crowd gives way to it until this match time
   dashReadyMs: number; // the next dash is allowed from this match time on
+  // A wind-up (windup.ts): it dashes at windUntilMs with (windVx, windVy); 0: none.
+  windUntilMs: number;
+  windVx: number;
+  windVy: number;
   airUntilMs: number; // a jump: in the air until this match time (jump.ts)
   jumpReadyMs: number; // the next jump is allowed from this match time on
   dodged: boolean; // this jump has let a dash pass underneath (one "Dodged!" per jump)

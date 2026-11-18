@@ -32,6 +32,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
 | `src/recap.ts`            | The recap's awards, two per mode (`awardsOf`)                                  |
 | `src/jump.ts`             | The jump: in the air, its steering, when a ghost may jump                      |
+| `src/windup.ts`           | The dash's optional wind-up: hold, release, its direction for the wire         |
 | `src/standing.ts`         | Lives and sumo's variants: time limit, clock past the last season, end, winner |
 | `src/bots/bot.ts`         | The sumo brain (`botIntent`) and the helpers every brain shares                |
 | `src/bots/hill.ts`        | The hill brain: to the zone, push rivals out of it                             |
@@ -109,7 +110,12 @@ countdown.
   client's prediction moves exactly as a ghost that touches nothing.
 - **Dash** (an action): the speed becomes `dashSpeed` towards the held direction (or
   along the motion); for `dashMs` the ghost knocks what it hits; the next dash only after
-  `dashCooldownMs` — the core's rule, whatever a client sends. Not in the air.
+  `dashCooldownMs` — the core's rule, whatever a client sends. Not in the air. With the
+  owner's wind-up on (`dashWindUpMs`, settings "Dash: wind-up" and its length, off by default;
+  `src/windup.ts`, NIGHT 2026-11-18 piece 6) the press holds the ghost still, its direction
+  fixed and on the wire for everyone (the glow and the line), and the dash goes on the first
+  tick past the wind-up — not when the ghost has jumped or fallen meanwhile; the cooldown runs
+  from the press.
 - **Jump** (the other action, owner's idea, JUMP 2026-11-17, `src/jump.ts`; every mode): for
   `jump.airMs` (0.5 s) the ghost is in the air — it takes part in no collision, so no dash hits
   it and it pushes nobody, and it neither passes nor takes a bomb; it steers with `jump.steer`
@@ -231,8 +237,8 @@ the wander point.
   after its last dash — a calm player's pace (owner 2026-11-17); it hesitates for
   `bots.hesitateMs` now and then (`bots.hesitateChance` ÷ form), and its own edge margin is
   drawn from [`bots.edgeSlack`, 1] × `bots.edgeMargin` (some go too close to the edge);
-- a rival dashing at it within `bots.dashRange`, heading at it as well as a bot lines up a dash
-  (`underAttack`), it jumps over with `bots.jumpChance` × form (0.5) — as it sees it, a reaction
+- a rival dashing at it within `bots.dashRange` — or winding a dash up at it, the glow a player
+  sees — heading at it as well as a bot lines up a dash (`underAttack`), it jumps over with `bots.jumpChance` × form (0.5) — as it sees it, a reaction
   time late, one decision per dash, only when its jump is ready: never a perfect dodge;
 - once no halving is coming any more and fewer than `bots.boldAt` (8) ghosts are left it grows
   bolder (`boldness`, 0 … 1 with two left; FIX 2026-11-17-5: the last two ran in circles for

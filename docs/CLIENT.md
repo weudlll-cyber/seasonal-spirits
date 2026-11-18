@@ -101,7 +101,8 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   smaller and darker the higher it is; a short ring spreads on the ground at the take-off and the
   landing; "Dodged!" shows above it for a second when the server flags a dash passing under
   (`GHOST_DODGED`). The own one jumps from the press on (the prediction), not from the server's
-  echo. What the drawing remembers between frames is render `trails.ts`. A
+  echo. A dash winding up (the owner's option, render `windup.ts`) glows white with a line in
+  its direction; the own ghost holds through its wind-up from the press on (the prediction). What the drawing remembers between frames is render `trails.ts`. A
   ghost faster than running (a dash, a knock) leaves a short
   trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
