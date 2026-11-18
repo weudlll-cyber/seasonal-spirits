@@ -3,7 +3,12 @@
 // own ghost wears the ring, the arrow and the pulse (FIX 2026-11-17-3).
 
 import { describe, expect, it } from 'vitest';
-import { GHOST_BOT, GHOST_PROTECTED, type GhostState } from '@seasonal-spirits/protocol';
+import {
+  GHOST_BOMB,
+  GHOST_BOT,
+  GHOST_PROTECTED,
+  type GhostState,
+} from '@seasonal-spirits/protocol';
 import { drawGhosts, ghostRadiusPx } from './ghosts.js';
 import { Trails } from './trails.js';
 import { fitField, sx, sy } from './view.js';
@@ -76,6 +81,33 @@ describe('labels in the hill zone', () => {
   });
 });
 
+// NIGHT 2026-11-18, piece 5: Halving Bomb's labels are names; scores only for the top three and
+// the own ghost.
+describe('labels in Halving Bomb', () => {
+  it('names every ghost, with a score only for the top three and the own ghost', () => {
+    const scores = [5, 9, 7, 3, 8];
+    const others = scores.map((s, i) => ghost(10 + i, 400 + 300 * i, GHOST_BOT, s));
+    const own = ghost(3, 1950, 0, 1);
+    const labels = drawGhosts(fitField(ctx, 132), [...others, own], {
+      ownId: 3,
+      trails: new Trails(),
+      nowMs: 0,
+      labelAll: false,
+      fuse: 1,
+      scoreTop: 3,
+    });
+    const text = (id: number) => labels.find((l) => l.id === id)?.text;
+    expect([10, 11, 12, 13, 14].map(text)).toEqual([
+      'Bot 10',
+      'Bot 11 · 9',
+      'Bot 12 · 7',
+      'Bot 13',
+      'Bot 14 · 8',
+    ]);
+    expect(text(3)).toBe('You · 1');
+  });
+});
+
 // A canvas that records its arcs (centre and radius in px) and the paths it closes (arrows).
 function recorder() {
   const arcs: { x: number; y: number; r: number }[] = [];
@@ -141,5 +173,43 @@ describe('own marks', () => {
     const { r, around } = draw(null, 250);
     expect(around(1000)).toEqual([]);
     expect(r.arrows).toEqual([]);
+  });
+});
+
+// NIGHT 2026-11-18, piece 5: the carrier unmistakable at any size — a bomb at least the body's
+// size above it, and the body pulsing in a halo; nobody else wears either.
+describe('the bomb carrier', () => {
+  const draw = (nowMs: number) => {
+    const r = recorder();
+    const v = fitField(r.rec, 132);
+    drawGhosts(v, [ghost(3, 1000, GHOST_BOMB), ghost(5, 1300, 0)], {
+      ownId: null,
+      trails: new Trails(),
+      nowMs,
+      labelAll: false,
+      fuse: 0.5,
+    });
+    const body = ghostRadiusPx(v);
+    const centre = (x: number) => r.arcs.filter((a) => a.x === sx(v, x) && a.y === sy(v, 1000));
+    const above = r.arcs.filter((a) => a.x >= sx(v, 1000) && a.y < sy(v, 1000) - body);
+    return { body, centre, above };
+  };
+
+  it('carries a bomb no smaller than its body above it, and only it', () => {
+    const { body, centre, above } = draw(0);
+    expect(Math.max(...above.map((a) => a.r))).toBeGreaterThanOrEqual(body);
+    expect(centre(1300).map((a) => a.r)).toEqual([body]);
+  });
+
+  it('pulses: its halo and body grow and shrink over time', () => {
+    const sizes = [0, 150, 300, 450, 600].map((t) =>
+      Math.max(
+        ...draw(t)
+          .centre(1000)
+          .map((a) => a.r),
+      ),
+    );
+    expect(Math.max(...sizes) - Math.min(...sizes)).toBeGreaterThan(1);
+    expect(Math.min(...sizes)).toBeGreaterThan(draw(0).body);
   });
 });

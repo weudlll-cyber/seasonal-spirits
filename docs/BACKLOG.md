@@ -49,12 +49,10 @@ before the third halving, all "stop, no time limit" end (longest 7:54); 0.45: no
 over at 30:00; 140 alone: none early, 7 not over. Done when: the owner has played it and set
 the share and the lives so that the late phases are reached as he wants.
 
-ag. **Halving Bomb up to date and the dash wind-up** (NIGHT 2026-11-18, pieces 5 and 6, dropped
-for time): the carrier unmistakable (a larger bomb, a clear fuse and spark, the carrier's body
-pulsing); labels with the name only, the score for the top three and the own ghost; an optional
-dash wind-up (a setting, default off) with its glow and line, enforced on the server, matched by
-the prediction and the bots, measured with seeded runs and a 250 ms scripted player. Done when:
-built, played at both sizes, the wind-up's dodge numbers in a sheet.
+ag. **The dash wind-up** (NIGHT 2026-11-18, piece 6, dropped for time; its first half, Halving
+Bomb up to date, is closed): an optional dash wind-up (a setting, default off) with its glow and
+line, enforced on the server, matched by the prediction and the bots, measured with seeded
+runs. Done when: built, the wind-up's dodge numbers in a sheet.
 
 ae. **The jump as a dodge** (JUMP 2026-11-17): built with the owner's switch; with a player's
 reaction (~250 ms) a dash from 150 away arrives first, so a reactive jump rarely helps — it
@@ -755,6 +753,14 @@ Done when: the spec is green ten runs in a row.
   scanner version unchanged. Review at the expiry date or as soon as a fixed `picomatch` is out —
   commit "chore: accept the picomatch advisory until 2027-01-18".
 
+- 2026-11-18 — **ag, first half: Halving Bomb up to date**: the carrier unmistakable at both
+  sizes (a bomb at least the body's size, a thick fuse burning down, a glowing spark, the body
+  pulsing in a hot halo; render `bomb.ts` `drawCarrier`, the one drawing path); Bomb's labels
+  the name, the score only for the top three and the own ghost (`labelText`'s `scored`,
+  `GhostStyle.scoreTop`, `scoreTopOf`); screenshots `desktop-bomb-carrier.png`,
+  `phone-bomb-carrier.png` — commit "feat: Halving Bomb's carrier unmistakable, scores for the
+  top three".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1044,3 +1050,5 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | `playwright test` play and mode specs, both sizes (local, background load)                                                                                                                | working tree of the Sumo jump fix                                                                                                         | the jump step passed in all six; 3 failed elsewhere: Bomb no recap in 10 s (desktop), no dash (phone), Sumo halving radius in 5 s (desktop)                                                                                         | this commit; CI decides                                                                        |
 | 2026-11-18 | CI and CodeQL on GitHub                                                                                                                                                                   | `52803f3` on `proto/sumo`                                                                                                                 | verify, e2e, CodeQL success; `dependencies` picomatch (OPEN ab)                                                                                                                                                                     | CI 44206865717                                                                                 |
 | 2026-11-18 | osv-scanner as in `ci.yml` (docker, the pinned `OSV_SCANNER_IMAGE`, `--config=osv-scanner.toml --lockfile=pnpm-lock.yaml`)                                                                | working tree of the picomatch entry                                                                                                       | 212 packages; GHSA-fc5q-39xc-vjpf filtered by the entry; "No issues found", exit 0                                                                                                                                                  | this commit                                                                                    |
+| 2026-11-18 | render tests (`vitest run` in packages/render: 6 files / 36 tests)                                                                                                                        | working tree of ag, first half                                                                                                            | green; new: Bomb labels, the carrier's bomb and pulse                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-18 | `playwright test` Bomb play spec, desktop and phone                                                                                                                                       | same tree                                                                                                                                 | 2 passed in 2.4 min; screenshots of the carriers                                                                                                                                                                                    | this commit                                                                                    |

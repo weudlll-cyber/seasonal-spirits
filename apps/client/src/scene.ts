@@ -18,6 +18,7 @@ import {
   drawGhosts,
   fitBox,
   fuseLeft,
+  scoreTopOf,
   shape,
   zoneOf,
   ghostRadiusPx,
@@ -120,6 +121,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trail
       fuse: f.latest ? fuseLeft(f.latest) : 1,
       ownPulseMs: f.marks.pulseMs,
       zone: zoneOf(f.latest),
+      scoreTop: scoreTopOf(f.latest),
     });
   });
   drawClock(ctx, f.latest);

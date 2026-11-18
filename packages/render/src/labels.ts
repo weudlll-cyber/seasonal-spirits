@@ -49,17 +49,18 @@ interface Spot {
 }
 
 // A ghost's label: the own one "You", a ghost with a score its name and the score ("Bot 3 ·
-// 2"), the others their name when `labelAll` (spectators, the viewer), else their tag. The tag
-// is the fallback in a crowd.
+// 2") unless `scored` is false (a mode that shows only some scores), the others their name
+// when `labelAll` (spectators, the viewer), else their tag. The tag is the fallback in a crowd.
 export function labelText(
   g: Pick<GhostState, 'id' | 'flags' | 'score'>,
   own: boolean,
   labelAll: boolean,
+  scored = true,
 ): { full: string; tag: string } {
   const bot = (g.flags & GHOST_BOT) !== 0;
   const tag = own ? 'You' : ghostTag(g.id, bot);
   const name = own ? 'You' : ghostName(g.id, bot);
-  if (g.score > 0) return { full: `${name} · ${g.score}`, tag };
+  if (g.score > 0 && scored) return { full: `${name} · ${g.score}`, tag };
   return { full: own || labelAll ? name : tag, tag };
 }
 

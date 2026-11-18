@@ -27,6 +27,7 @@ import {
   clientConfig,
   fuseLeft,
   fitField,
+  scoreTopOf,
   useShape,
   zoneOf,
 } from '@seasonal-spirits/render';
@@ -130,6 +131,7 @@ function frame(): void {
     labelAll: true,
     fuse: latest ? fuseLeft(latest) : 1,
     zone: zoneOf(latest),
+    scoreTop: scoreTopOf(latest),
   });
   drawClock(ctx, latest);
 

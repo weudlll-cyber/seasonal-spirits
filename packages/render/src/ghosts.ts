@@ -4,7 +4,8 @@
 // the arena shrinks and fades (fallMs); one out is not drawn; one just back (protected) wears a
 // pale dashed ring; one in the air after a jump rises on an arc over its shadow, its label and
 // marks with it, with a ground ring at take-off and landing and "Dodged!" when a dash passed
-// under it (jump.ts); a bomb carrier has the ticking bomb above it (bomb.ts). What the drawing
+// under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts); in
+// Halving Bomb only the top three and the own ghost show a score (scoreTop). What the drawing
 // remembers between frames is trails.ts.
 
 import {
@@ -15,7 +16,7 @@ import {
   GHOST_PROTECTED,
   type GhostState,
 } from '@seasonal-spirits/protocol';
-import { bombReach, drawBomb } from './bomb.js';
+import { bombReach, drawBomb, drawCarrier } from './bomb.js';
 import {
   LABEL_HEIGHT,
   labelText,
@@ -51,6 +52,9 @@ export interface GhostStyle {
   // King of the Season's zone: inside it the crowd is labelled by its short tags only (NIGHT
   // 2026-11-18: full names piled up there), full names outside; the own ghost stays "You".
   zone?: { x: number; y: number; r: number } | null;
+  // Only the top N scorers and the own ghost show a score, every ghost its name (Halving Bomb:
+  // 3, scoreTopOf in modes.ts); null: every score shows.
+  scoreTop?: number | null;
 }
 
 export function ghostRadiusPx(v: View): number {
@@ -132,7 +136,11 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): void {
   const { ctx } = v;
   const { g } = d;
   const fall = g.flags & GHOST_FALLING ? style.trails.fall(g.id, style.nowMs) : 0;
-  const r = ghostRadiusPx(v) * (1 - 0.8 * fall) * airScale(d.h);
+  const size = ghostRadiusPx(v) * (1 - 0.8 * fall) * airScale(d.h);
+  // A carrier pulses in its halo; the bomb above keeps to the body's own size.
+  const carrier = fall === 0 && (g.flags & GHOST_BOMB) !== 0;
+  const at = { x: g.x, y: g.y, r: size };
+  const r = carrier ? drawCarrier(v, at, style.fuse, style.nowMs) : size;
   ctx.globalAlpha = 1 - 0.8 * fall;
   ctx.fillStyle = seasonColour(g.team);
   circle(v, g.x, g.y, r);
@@ -148,7 +156,7 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): void {
     ctx.setLineDash([]);
   }
   if (g.id === style.ownId) drawOwnMarks(v, { x: g.x, y: g.y, r }, style.ownPulseMs ?? null);
-  if (g.flags & GHOST_BOMB) drawBomb(v, { x: g.x, y: g.y, r }, style.fuse, style.nowMs);
+  if (carrier) drawBomb(v, at, style.fuse, style.nowMs);
 }
 
 // How far from the centre drawBody draws for a ghost of body radius `r` pixels: what its label
@@ -171,10 +179,17 @@ const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui
 
 // Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots), with its tag
 // as the fallback in a crowd (labelText, placeLabels: labels.ts).
-function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate {
+function candidateOf(
+  v: View,
+  g: GhostState,
+  style: GhostStyle,
+  scored: ReadonlySet<number> | null,
+): LabelCandidate {
   const { ctx } = v;
   const own = g.id === style.ownId;
-  const text = labelText(g, own, style.labelAll);
+  const text = scored
+    ? labelText(g, own, true, own || scored.has(g.id))
+    : labelText(g, own, style.labelAll);
   const z = style.zone;
   const crowded = !own && z && Math.hypot(g.x - z.x, g.y - z.y) <= z.r;
   const { tag } = text;
@@ -194,12 +209,19 @@ function candidateOf(v: View, g: GhostState, style: GhostStyle): LabelCandidate 
   };
 }
 
+// The ids of the `n` highest scores above 0; a tie goes to the lower id, so the set holds still.
+function topScorers(ghosts: readonly GhostState[], n: number): Set<number> {
+  const ranked = ghosts.filter((g) => g.score > 0).sort((a, b) => b.score - a.score || a.id - b.id);
+  return new Set(ranked.slice(0, n).map((g) => g.id));
+}
+
 function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): PlacedLabel[] {
   const { ctx } = v;
   const area = visibleArea(v);
   const shown = (c: LabelCandidate): boolean =>
     c.x >= area.left && c.x <= area.right && c.y >= area.top && c.y <= area.bottom;
-  const candidates = ghosts.map((g) => candidateOf(v, g, style)).filter(shown);
+  const scored = style.scoreTop ? topScorers(ghosts, style.scoreTop) : null;
+  const candidates = ghosts.map((g) => candidateOf(v, g, style, scored)).filter(shown);
   const placed = placeLabels(candidates, area);
   ctx.strokeStyle = MUTED;
   ctx.lineWidth = 1;

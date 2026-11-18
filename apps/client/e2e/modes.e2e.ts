@@ -1,7 +1,8 @@
 // Seasonal Sumo — King of the Season and Halving Bomb in the player client, at desktop and phone
 // size (NIGHT 2026-11-18, piece 7), each on its own short-match stack: join, move, dash, jump
-// (the own ghost in the air), live to "MATCH OVER" and see the result with the mode's awards and
-// the bridge box. Screenshots go to reports/screens/latest/ (git-ignored).
+// (the own ghost in the air), in Bomb the carriers and the labels' score rule, live to "MATCH
+// OVER" and see the result with the mode's awards and the bridge box. Screenshots go to
+// reports/screens/latest/ (git-ignored).
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -45,6 +46,13 @@ for (const mode of ['hill', 'bomb'] as const) {
       .poll(async () => ((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE, { timeout: 2000 })
       .toBe(GHOST_AIRBORNE);
     await shot('jump');
+    // Halving Bomb (NIGHT 2026-11-18, piece 5): bombs are out all match, their carriers
+    // unmistakable; scores only for the top three and the own ghost.
+    if (mode === 'bomb') {
+      await shot('carrier');
+      const scored = (await view(page)).labels.filter((l) => !l.own && l.text.includes(' · '));
+      expect(scored.length).toBeLessThanOrEqual(3);
+    }
     await steer.hold(0, 0);
     await expect(page.locator('#announce')).toHaveText('MATCH OVER', { timeout: 75_000 });
     await expect(page.locator('#result')).toBeVisible({ timeout: 10_000 });

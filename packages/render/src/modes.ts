@@ -60,6 +60,12 @@ export function zoneOf(s: { mode: number; area: WireDisc | null } | undefined): 
   return s && modeOf(s.mode) === 'hill' ? s.area : null;
 }
 
+// How many top scorers show their score (GhostStyle.scoreTop): Halving Bomb's labels are names,
+// with the score only for the top three and the own ghost; null in the other modes (all scores).
+export function scoreTopOf(s: { mode: number } | undefined): number | null {
+  return s && modeOf(s.mode) === 'bomb' ? 3 : null;
+}
+
 // Sumo's variant of the match on screen, by its name; null in the walled modes.
 export function variantName(s: { mode: number; flags: number }): string | null {
   if (modeOf(s.mode) !== 'sumo') return null;

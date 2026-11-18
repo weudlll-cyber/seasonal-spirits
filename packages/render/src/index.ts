@@ -17,6 +17,7 @@ export {
   matchName,
   modeOf,
   modeWords,
+  scoreTopOf,
   variantName,
   zoneOf,
   type ModeWords,

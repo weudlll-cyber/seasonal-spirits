@@ -84,9 +84,11 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   ring (in the next season's colour) shows the edge after it; after the banner the edge eases
   in over 2 s. Hill and bomb: a walled square with glowing walls; in hill the zone glows in the
   season's colour, and in the countdown a dashed ring shows where it jumps.
-- **Bomb** (render `bomb.ts`): a carrier has a ticking bomb drawn above it — black with a
-  pale rim, a fuse as long as the share of the time left before the bombs go off, and a
-  flickering spark; its label keeps clear of it.
+- **Bomb** (render `bomb.ts`, NIGHT 2026-11-18 piece 5): a carrier is unmistakable at any
+  size — a large bomb above it (at least the body's size), black with a pale rim, a thick fuse
+  as long as the share of the time left before the bombs go off, a glowing spark at its tip,
+  and the carrier's body pulsing in a hot halo, quicker as the fuse burns down; its label keeps
+  clear of it.
 - **Ghosts** (look B of Seasonal Spirits): circles in their team colour. The own one (render
   `own.ts`, FIX 2026-11-17-3) is drawn on top of all, with a thick white ring on a dark edge,
   a small arrow pointing down at it and "You"; after a respawn, at every match start and on
@@ -105,8 +107,9 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
   points), the short tag
   in a crowd — in King of the Season's zone always the short tag (NIGHT 2026-11-18: full
-  names piled up there), "You" stays; never on another label, under the bar or past the screen
-  edge.
+  names piled up there); in Halving Bomb every ghost its name, the score only for the top three
+  and the own ghost (render `scoreTopOf`, `GhostStyle.scoreTop`); "You" stays; never on another
+  label, under the bar or past the screen edge.
 - **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
   sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
   below the band with a ghost's radius and 8 px to spare (`scene.ts` `camera`, render
@@ -148,7 +151,8 @@ touch):
   halving with the arena halving, the last chance, "MATCH OVER", the result with the awards and
   the bridge box;
 - `e2e/modes.e2e.ts`: King of the Season and Halving Bomb each — join, move, dash, jump, "MATCH
-  OVER", the result with the mode's awards and the bridge box;
+  OVER", the result with the mode's awards and the bridge box; in Bomb the carriers' screenshot
+  and at most three scores besides the own;
 - `e2e/panel.e2e.ts` (desktop): a setting changes play (the jump off: the Jump button goes), a
   preset saves and loads, the starting settings back at the end;
 - `e2e/readability.e2e.ts`: the team line, the scores readable in the band, every sampled
