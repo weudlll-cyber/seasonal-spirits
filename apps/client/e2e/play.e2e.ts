@@ -47,27 +47,30 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   await expect(page.locator('#result')).toBeHidden({ timeout: 20_000 });
   const steer = await steering(page, info);
 
-  // Move towards the middle of the arena, then dash: the server's cooldown starts.
+  // Move towards the middle of the arena and stop there.
   const start = (await view(page)).own ?? { x: 0, y: 0 };
   const moved = await steerTo(page, steer, CENTRE, async () => {
     const now = (await view(page)).own;
     return now !== null && Math.hypot(now.x - start.x, now.y - start.y) > 100;
   });
   expect(moved, 'the own ghost moves').toBe(true);
+  await steer.hold(0, 0);
+  // The jump (NIGHT 2026-11-18), standing in the middle — after a dash the shrinking arena's
+  // edge may be passed, and a falling ghost cannot jump: Shift or the Jump button, in the air at
+  // once. The seat was a bot's, which may have just jumped to dodge: its cooldown comes along.
+  const airborne = async () => ((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE;
+  await expect(page.locator('#jump')).toHaveClass(/\bready\b/, { timeout: 5000 });
+  if (info.project.name === 'phone') await page.locator('#jump').tap();
+  else await page.keyboard.press('Shift');
+  await expect.poll(airborne, { timeout: 2000 }).toBe(GHOST_AIRBORNE);
+  await shot(page, info, 'match');
+  await expect.poll(airborne, { timeout: 3000 }).toBe(0); // landed: a dash needs the ground
+  // Then the dash: the server's cooldown starts.
   await steer.hold(1, 0);
   await expect(page.locator('#dash')).toBeVisible();
   await dash(page, info);
   await expect.poll(async () => (await view(page)).own?.dashLeftMs ?? 0).toBeGreaterThan(0);
-  // The jump (NIGHT 2026-11-18): Shift or the Jump button; the own ghost is in the air at once.
-  // The seat was a bot's, which may have just jumped to dodge: its cooldown comes along.
-  await expect(page.locator('#jump')).toHaveClass(/\bready\b/, { timeout: 5000 });
-  if (info.project.name === 'phone') await page.locator('#jump').tap();
-  else await page.keyboard.press('Shift');
-  await expect
-    .poll(async () => ((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE, { timeout: 2000 })
-    .toBe(GHOST_AIRBORNE);
   await steer.hold(0, 0);
-  await shot(page, info, 'match');
 
   // The next halving: the announcement with the new season, and the arena halves.
   const announce = page.locator('#announce');
