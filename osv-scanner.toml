@@ -2,9 +2,12 @@
 # The CI job "dependencies" fails on any known vulnerability in pnpm-lock.yaml that has no
 # entry here; every entry expires so it is reviewed again (docs/SECURITY.md).
 #
-# No entry now. Format of an accepted, dated exception:
-#
-# [[IgnoredVulns]]
-# id = "GHSA-xxxx-xxxx-xxxx"
-# ignoreUntil = 2027-01-31
-# reason = "Why it is not exploitable here; who accepted it and when."
+# One entry now: picomatch (BACKLOG "ab", closed 2026-11-18).
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+ignoreUntil = 2027-01-18
+reason = """picomatch 4.0.7 has no fixed release; it comes only through development tools \
+(tinyglobby under vite, vitest and typescript-eslint), matches only the repository's own \
+globs and never player input, and nothing of it ships in the game; accepted by the owner on \
+2026-11-18; review it at the expiry date or as soon as a fixed picomatch is out."""

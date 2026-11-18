@@ -62,14 +62,6 @@ works when it anticipates; the bots jump at every dash they see (about 320 jumps
 Done when: the owner has compared with and without, and decided the jump's time, cooldown,
 steering and the bots' jump chance (placeholders), or dropped it.
 
-ab. **`picomatch` advisory in the dependency scan** (CI 2026-11-17 on `9f3c65a`, new on
-GitHub that day): osv-scanner reports GHSA-fc5q-39xc-vjpf (High) for `picomatch` 4.0.7, with
-no fixed version yet; it comes only through development tools (`tinyglobby` under vite,
-vitest and typescript-eslint), nothing of it ships in the game. The `dependencies` job stays
-red until a fix exists; the check is not relaxed. Done when: a fixed `picomatch` is out and
-pinned (Renovate or by hand) and the job is green, or the owner decides on an ignore entry
-with its reason.
-
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
@@ -757,6 +749,12 @@ Done when: the spec is green ten runs in a row.
   landing, then dashes (`play.e2e.ts`) — commit "test: the Sumo spec jumps in the middle before
   its dash".
 
+- 2026-11-18 — **ab. `picomatch` advisory in the dependency scan**: accepted by the owner with
+  an expiring ignore entry in `osv-scanner.toml` (GHSA-fc5q-39xc-vjpf, `ignoreUntil = 2027-01-18`:
+  dev tools only, the repository's own globs, nothing ships); the CI job, its threshold and the
+  scanner version unchanged. Review at the expiry date or as soon as a fixed `picomatch` is out —
+  commit "chore: accept the picomatch advisory until 2027-01-18".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1045,3 +1043,4 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | CI on GitHub                                                                                                                                                                              | `d279e13` on `proto/sumo`                                                                                                                 | verify success; e2e: King fixed, desktop Sumo still not in the air after the jump (pressed after a dash towards the edge of the shrinking arena); picomatch (OPEN ab)                                                               | CI 44204980927; fixed in this commit                                                           |
 | 2026-11-18 | `playwright test` play and mode specs, both sizes (local, background load)                                                                                                                | working tree of the Sumo jump fix                                                                                                         | the jump step passed in all six; 3 failed elsewhere: Bomb no recap in 10 s (desktop), no dash (phone), Sumo halving radius in 5 s (desktop)                                                                                         | this commit; CI decides                                                                        |
 | 2026-11-18 | CI and CodeQL on GitHub                                                                                                                                                                   | `52803f3` on `proto/sumo`                                                                                                                 | verify, e2e, CodeQL success; `dependencies` picomatch (OPEN ab)                                                                                                                                                                     | CI 44206865717                                                                                 |
+| 2026-11-18 | osv-scanner as in `ci.yml` (docker, the pinned `OSV_SCANNER_IMAGE`, `--config=osv-scanner.toml --lockfile=pnpm-lock.yaml`)                                                                | working tree of the picomatch entry                                                                                                       | 212 packages; GHSA-fc5q-39xc-vjpf filtered by the entry; "No issues found", exit 0                                                                                                                                                  | this commit                                                                                    |

@@ -16,7 +16,8 @@ cheating or broken client can try, and the test for each answer, is in
 | pnpm install policies | Releases younger than one day are refused; install scripts run only for packages allowed in `pnpm-workspace.yaml`           | Every `pnpm install`, locally and in CI                                   | The install step's log                                                                          |
 
 An exception in `osv-scanner.toml` carries the advisory id, an `ignoreUntil` date and the
-reason; it expires and is reviewed again. Transitive fixes are forced in
+reason; it expires and is reviewed again (now one: `picomatch`, GHSA-fc5q-39xc-vjpf, until
+2027-01-18, BACKLOG "ab"). Transitive fixes are forced in
 `pnpm-workspace.yaml` under `overrides`, each with its advisory, and removed once the parent
 ships the fix.
 
