@@ -75,23 +75,26 @@ describe('clock status line', () => {
 });
 
 describe('clock status line on a narrow screen (owner 2026-11-17: band text cut off)', () => {
-  // A canvas whose text is 0.55 em wide per character, as system-ui is about.
-  const fake = { font: '13px system-ui, sans-serif' };
+  // A canvas whose text is 0.55 em wide per character, as Fredoka is about.
+  const fake = { font: '500 13px Fredoka, system-ui, sans-serif' };
+  const px = (): number => Number(/([\d.]+)px/.exec(fake.font)?.[1]);
   const ctx = Object.assign(fake, {
-    measureText: (t: string) => ({ width: t.length * 0.55 * Number.parseFloat(fake.font) }),
+    measureText: (t: string) => ({ width: t.length * 0.55 * px() }),
   }) as unknown as CanvasRenderingContext2D;
+  // The clock's box on a 390 px phone: 6 px to each screen edge, 8 px inside.
+  const room = 390 - 2 * 6 - 2 * 8;
 
   it('shrinks the longest line of every mode until it fits a 390 px phone', () => {
     for (const mode of [0, 1, 2]) {
       const line = statusLine(state({ mode, countdownMs: 6000 }));
-      lineFont(ctx, line, 390 - 24);
-      expect(ctx.measureText(line).width, line).toBeLessThanOrEqual(390 - 24);
+      lineFont(ctx, line, room);
+      expect(ctx.measureText(line).width, line).toBeLessThanOrEqual(room);
     }
   });
 
   it('keeps 13 px where the line fits', () => {
     expect(lineFont(ctx, 'Seasonal Sumo · Spring · 1:15 left', 1894)).toBe(
-      '13px system-ui, sans-serif',
+      '500 13px Fredoka, system-ui, sans-serif',
     );
   });
 });

@@ -5,16 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Seasonal Spirits — Phase 0 viewer</title>
     <style>
+      /* Sky Island look (owner's choice 2026-11-18): the network numbers in a white panel with an
+         ink outline and drop shadow, Fredoka (bundled) for the canvas; the admin panel keeps its
+         own dark style. */
       :root {
-        color-scheme: dark;
+        color-scheme: light;
+        --ink: #2b2140;
+        --panel: #ffffff;
+        --panel-text: #2b2140;
       }
       html,
       body {
         margin: 0;
         padding: 0;
-        background: #0b0f14;
+        background: #9edcf5;
         color: #e6edf3;
-        font-family: system-ui, sans-serif;
+        font-family: Fredoka, system-ui, sans-serif;
         overflow: hidden;
       }
       #hud {
@@ -22,9 +28,11 @@
         top: 76px;
         left: 12px;
         padding: 8px 12px;
-        background: rgba(0, 0, 0, 0.45);
-        border: 1px solid #22303c;
-        border-radius: 6px;
+        color: var(--panel-text);
+        background: var(--panel);
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        box-shadow: 4px 4px 0 var(--ink);
         font-size: 13px;
         line-height: 1.4;
         white-space: pre;

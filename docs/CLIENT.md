@@ -15,8 +15,8 @@ Spirits' client is on `master`.
 | `src/scene.ts`             | One canvas frame: sky, the camera on the whole island, ghosts, labels, clock      |
 | `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws         |
 | `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys      |
-| `src/scores.ts`            | The team chips in the band: score and ghosts still in per team, the leader framed |
-| `src/lives.ts`             | The own lives as hearts in the band; "You are out — watching"                     |
+| `src/scores.ts`            | The team pills in the band: score and ghosts still in per team, the leader ringed |
+| `src/lives.ts`             | The own lives as red circles in the band; "You are out — watching"                |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, settings   |
 | `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated     |
 | `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server  |
@@ -40,18 +40,19 @@ hello and nothing more.
 The client hears the settings in force (`{"kind":"tuning",…}`, every setting, checked against
 the schema by `parseServerMessage`; [SERVER.md](SERVER.md) "Settings and presets") on its hello,
 after a change and at every match, and predicts its own ghost and draws with them
-(`clientConfig(mode, settings)`, render `useShape`: the ghosts' size, the trail, the fall, the
+(`clientConfig(mode, settings)`, render `useShape`: the ghosts' size, the puffs, the fall, the
 jump's arc, the respawn band), so it does not drift from the server after a change.
 
 ## Controls
 
 - Keyboard: WASD or arrows to move, **Space to dash**, **Shift to jump**, ? the help.
-- Buttons at the bottom right: **Jump** (smaller) left of **Dash**, both round with a ring that
-  fills while the server's cooldown runs; Jump hidden while the owner's switch has the jump off
+- Buttons at the bottom right: **Jump** (smaller, blue) left of **Dash** (larger, yellow), both
+  big and round with an ink outline and drop shadow, their colour filling round them while the
+  server's cooldown runs; Jump hidden while the owner's switch has the jump off
   (the settings). The camera keeps the arena clear of both.
 - Touch: a joystick where the left thumb touches the left half; the round **Dash** button
-  under the right thumb. Its ring fills while the server's cooldown runs (`dashLeftMs` in the
-  state) and it glows when a dash is ready.
+  under the right thumb. Its colour fills round it while the server's cooldown runs
+  (`dashLeftMs` in the state) and it is fully lit when a dash is ready.
 - The direction goes out at once when it changes, at most every 60 ms (`SEND_GAP_MS`), never
   twice the same.
 - **The own ghost answers at once**: it is drawn where the own input — with momentum, top
@@ -71,16 +72,19 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
 
 ## Screen
 
-- **Top bar.** The season clock (four seasons — a window that moves on through bomb's nine
+- **Top bar** (Sky Island look: white panels with an ink outline and drop shadow, Fredoka
+  bundled with `@fontsource/fredoka`, no request to a font service). The season clock in a
+  white rounded box at the top left (four seasons — a window that moves on through bomb's nine
   and sumo's keep-halving —, the mode's name with sumo's variant, "Seasonal Sumo · Points" or
   "· Last One Standing", the time left, the countdown in red; with no deadline at all — Last One
   Standing "stop, no time limit" after the third halving — the time played, "· 6:52 played"),
-  and under it the band: "You are Team <Season>" in the team colour with the own lives as
-  hearts beside it (sumo only; a lost one fades; past five lives one heart and the number left,
-  "♥ ×7", so the team line keeps its room on a phone), the corner buttons, and a chip per team
-  (sumo Points "Spring 12 · 7 in": knockouts and ghosts still in; Last One Standing "Spring 7
-  in"; hill and bomb "Spring 12"; the leader framed; on a narrow phone the team's name is left
-  out, its colour names it). Out of lives the team line says "You are out — watching" until
+  and under it the band: "You are Team <Season>" in a white pill behind the team's colour dot,
+  the own lives as red circles beside it (sumo only; a lost one white; past five lives one and
+  the number left, "×7", so the team line keeps its room on a phone), the corner buttons, and a
+  white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
+  still in; Last One Standing "Spring 7 in"; hill and bomb "Spring 12"; the leader outlined in
+  its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the
+  team line says "You are out — watching" until
   the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 68 px
   (`BAND_HEIGHT`).
 - **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
@@ -102,28 +106,38 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,
   and the carrier's body pulsing in a hot halo, quicker as the fuse burns down; its label keeps
   clear of it.
-- **Ghosts** (look B of Seasonal Spirits): circles in their team colour. The own one (render
-  `own.ts`, FIX 2026-11-17-3) has its marks drawn over all others, a thick white ring on a dark edge,
-  a small arrow pointing down at it and "You"; after a respawn, at every match start and on
-  joining, a ring pulses three times (1.5 s). While it is out after a fall, the band's team
-  line says "You fell — back in 3 … 1" (server time of the fall plus `outMs`) and its team's
-  respawn band is drawn faintly on the arena (`own-marker.ts`; not after the last life). A
-  ghost in the air after a jump (render `jump.ts`, NIGHT 2026-11-18) rises on a smooth arc over
-  its time in the air — up to 1.5× its size and one ghost diameter up at the top, its label (and
-  for the own one its ring and arrow) with it — over a shadow on the ground at its real position,
-  smaller and darker the higher it is; a short ring spreads on the ground at the take-off and the
-  landing; "Dodged!" shows above it for a second when the server flags a dash passing under
-  (`GHOST_DODGED`). The own one jumps from the press on (the prediction), not from the server's
-  echo. A dash winding up (the owner's option, render `windup.ts`) glows white with a line in
-  its direction; the own ghost holds through its wind-up from the press on (the prediction). What the drawing remembers between frames is render `trails.ts`. A
-  ghost faster than running (a dash, a knock) leaves a short
-  trail; one falling off shrinks and fades for `fallMs`; one out is not drawn; one just back
-  wears a pale dashed ring (protected). Labels: the name, "· 2" for a score of 2 (knockouts or
-  points), the short tag
-  in a crowd — in King of the Season's zone always the short tag (NIGHT 2026-11-18: full
+- **Ghosts** (Sky Island look 2026-11-18): round toy-like characters (render `character.ts`)
+  in their team colour — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
+  with feet in a darker shade, short arms, a light belly, big eyes, pink cheeks, a smile and the
+  season's hat (spring a crown of flowers, summer a straw hat and sunglasses, autumn a beanie
+  with a leaf, winter a wool hat with a pompom), each over a soft shadow, facing the side it last
+  walked to, bobbing with stepping feet while it moves. Each team's character in each pose is
+  painted once per size into offscreen canvases and copied every frame (render `sprites.ts`).
+  The own one (render `own.ts`, FIX 2026-11-17-3) has a white ring on the ground under it and a
+  white triangle with an ink outline above it, over all others, and "You"; after a respawn, at
+  every match start and on joining, the ring pulses outwards three times (1.5 s). While it is
+  out after a fall, the band's team line says "You fell — back in 3 … 1" (server time of the
+  fall plus `outMs`) and its team's respawn band is drawn faintly on the arena
+  (`own-marker.ts`; not after the last life). A character in the air after a jump (render
+  `jump.ts`, NIGHT 2026-11-18) rises on a smooth arc over its time in the air — up to 1.5× its
+  size and one ghost diameter up on screen at the top, its label and triangle with it — while
+  its shadow stays on the ground at its real position, smaller and darker the higher it is; a
+  short ring spreads on the ground at the take-off and the landing; "Dodged!" shows in a pill
+  above it for a second when the server flags a dash passing under (`GHOST_DODGED`). The own one
+  jumps from the press on (the prediction), not from the server's echo. A dash winding up (the
+  owner's option, render `windup.ts`) glows white with an ink-edged line on the ground in its
+  direction; the own ghost holds through its wind-up from the press on (the prediction). What
+  the drawing remembers between frames is render `trails.ts`. A character faster than running
+  (a dash, a knock) leaves three white puffs; one falling off (render `fall.ts`) tips over the
+  edge, turns head-down with an open mouth and drops, shrinking, to the sea with three white
+  streaks and an "Aaah!" bubble, and splashes there, all within `fallMs`; one out is not drawn;
+  one just back wears a white dashed ring (protected). Labels (render `ghost-labels.ts`): white
+  pills with an ink outline — the name, "· 2" for a score of 2 (knockouts or points), the short
+  tag in a crowd — in King of the Season's zone always the short tag (NIGHT 2026-11-18: full
   names piled up there); in Halving Bomb every ghost its name, the score only for the top three
   and the own ghost (render `scoreTopOf`, `GhostStyle.scoreTop`); "You" stays; never on another
-  label, under the bar or past the screen edge.
+  label, under the bar or past the screen edge; they keep clear of the hat, a bomb, the rings
+  and the triangle (render `reach.ts`).
 - **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
   sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
   below the band with a ghost's radius and 8 px to spare, squashed by the view's tilt and with
@@ -134,9 +148,9 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena
-  halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; 3.5 s) in a slim
-  strip right under the band, at the top edge of the play area — never over its middle (NIGHT
-  2026-11-18) — with a short flash and one tone. The match end the same way: "LAST CHANCE — push them
+  halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; 3.5 s) on a red
+  banner, slightly tilted, white text with an ink edge, right under the band at the top edge of
+  the play area — never over its middle (NIGHT 2026-11-18) — with a short flash and one tone. The match end the same way: "LAST CHANCE — push them
   off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
   rules with drawings (sumo: push them off, dash, the arena halves; hill: stand in the zone,

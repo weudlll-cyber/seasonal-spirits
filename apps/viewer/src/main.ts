@@ -4,6 +4,9 @@
 // are also exposed on window for Playwright checks. With the server's admin settings endpoint on
 // (pnpm dev) it carries the admin panel (admin-panel.ts); it draws with the settings in force.
 
+import '@fontsource/fredoka/latin-500.css';
+import '@fontsource/fredoka/latin-600.css';
+import '@fontsource/fredoka/latin-700.css';
 import { DEFAULT_SETTINGS, type Settings } from '@seasonal-spirits/game-core';
 import {
   ADMIN_SETTINGS_PATH,

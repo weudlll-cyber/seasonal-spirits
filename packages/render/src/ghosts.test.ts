@@ -1,6 +1,7 @@
 // Seasonal Sumo — the own ghost is always labelled "You": also with the respawn protection's
 // dashed ring around it and in a crowd (owner 2026-11-17: no ghost showed "You"); and only the
-// own ghost wears the ring, the arrow and the pulse (FIX 2026-11-17-3).
+// own character wears the ground ring, the triangle and the pulse (FIX 2026-11-17-3; Sky Island
+// look 2026-11-18).
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -9,27 +10,13 @@ import {
   GHOST_PROTECTED,
   type GhostState,
 } from '@seasonal-spirits/protocol';
-import { drawGhosts, ghostRadiusPx } from './ghosts.js';
+import { bodies, recorder } from './canvas-recorder.js';
+import { drawGhosts } from './ghosts.js';
+import { ghostRadiusPx } from './reach.js';
 import { Trails } from './trails.js';
 import { fitField, sx, sy } from './view.js';
 
-// A canvas that draws nothing and measures text at 6 px per character.
-const canvas = { width: 1280, height: 800 };
-const ctx = new Proxy<Record<string | symbol, unknown>>(
-  { canvas },
-  {
-    get: (o, k) =>
-      k in o
-        ? o[k]
-        : k === 'measureText'
-          ? (t: string) => ({ width: 6 * t.length })
-          : () => undefined,
-    set: (o, k, v) => {
-      if (k !== 'canvas') o[k] = v;
-      return true;
-    },
-  },
-) as unknown as CanvasRenderingContext2D;
+const ctx = recorder().ctx;
 
 const ghost = (id: number, x: number, flags: number, score = 0): GhostState => ({
   id,
@@ -109,35 +96,10 @@ describe('labels in Halving Bomb', () => {
   });
 });
 
-// A canvas that records its arcs (centre and radius in px) and the paths it closes (arrows).
-function recorder() {
-  const arcs: { x: number; y: number; r: number }[] = [];
-  const arrows: { x: number; y: number }[] = [];
-  let start = { x: 0, y: 0 };
-  const calls: Record<string, (...a: number[]) => unknown> = {
-    arc: (x, y, r) => arcs.push({ x, y, r }),
-    moveTo: (x, y) => (start = { x, y }),
-    closePath: () => arrows.push(start),
-    measureText: () => ({ width: 30 }),
-  };
-  const rec = new Proxy<Record<string | symbol, unknown>>(
-    { canvas },
-    {
-      get: (o, k) =>
-        k in o ? o[k] : typeof k === 'string' && k in calls ? calls[k] : () => undefined,
-      set: (o, k, v) => {
-        if (k !== 'canvas') o[k] = v;
-        return true;
-      },
-    },
-  ) as unknown as CanvasRenderingContext2D;
-  return { rec, arcs, arrows };
-}
-
 describe('own marks', () => {
   const draw = (ownId: number | null, ownPulseMs: number | null) => {
     const r = recorder();
-    const v = fitField(r.rec, 132);
+    const v = fitField(r.ctx, 132);
     drawGhosts(v, [ghost(3, 1000, 0), ghost(5, 1300, 0)], {
       ownId,
       trails: new Trails(),
@@ -148,41 +110,63 @@ describe('own marks', () => {
     });
     const body = ghostRadiusPx(v);
     const at = (x: number) => ({ x: sx(v, x), y: sy(v, 1000) });
-    const around = (x: number) =>
-      r.arcs.filter((a) => a.x === at(x).x && a.y === at(x).y && a.r > body + 0.5).map((a) => a.r);
-    return { r, body, at, around };
+    // The rings on the ground under a character, wider than its shadow.
+    const rings = (x: number) =>
+      r.ellipses
+        .filter((e) => e.x === at(x).x && e.y > at(x).y && e.rx > body * 1.2)
+        .map((e) => e.rx);
+    const pointers = r.closed.filter((c) => c.x === at(1000).x || c.x === at(1300).x);
+    return { at, rings, pointers };
   };
 
-  it('rings the own ghost and points an arrow down at it, and no other', () => {
-    const { r, at, around } = draw(3, null);
-    expect(around(1000).length).toBeGreaterThan(0);
-    expect(around(1300)).toEqual([]);
-    expect(r.arrows).toHaveLength(1);
-    expect(r.arrows[0]?.x).toBe(at(1000).x);
-    expect(r.arrows[0]?.y).toBeLessThan(at(1000).y);
+  it('rings the own character on the ground and points a triangle down at it, and no other', () => {
+    const { at, rings, pointers } = draw(3, null);
+    expect(rings(1000).length).toBeGreaterThan(0);
+    expect(rings(1300)).toEqual([]);
+    expect(pointers).toHaveLength(1);
+    expect(pointers[0]?.x).toBe(at(1000).x);
+    expect(pointers[0]?.y).toBeLessThan(at(1000).y);
   });
 
-  it('pulses a growing ring round the own ghost only, while the pulse runs', () => {
-    const still = draw(3, null).around(1000);
+  it('pulses a growing ring round the own character only, while the pulse runs', () => {
+    const still = draw(3, null).rings(1000);
     const pulsing = draw(3, 250);
-    expect(Math.max(...pulsing.around(1000))).toBeGreaterThan(Math.max(...still));
-    expect(pulsing.around(1300)).toEqual([]);
-    expect(draw(3, 5000).around(1000)).toEqual(still); // over after 1.5 s
+    expect(Math.max(...pulsing.rings(1000))).toBeGreaterThan(Math.max(...still));
+    expect(pulsing.rings(1300)).toEqual([]);
+    expect(draw(3, 5000).rings(1000)).toEqual(still); // over after 1.5 s
   });
 
   it('marks nothing when the client watches', () => {
-    const { r, around } = draw(null, 250);
-    expect(around(1000)).toEqual([]);
-    expect(r.arrows).toEqual([]);
+    const { rings, pointers } = draw(null, 250);
+    expect(rings(1000)).toEqual([]);
+    expect(pointers).toEqual([]);
+  });
+});
+
+// Sky Island look 2026-11-18: every character a body in its place, drawn back to front.
+describe('characters', () => {
+  it('draws each one at its place, the one further down the field over the one behind', () => {
+    const r = recorder();
+    const v = fitField(r.ctx, 132);
+    const front = { ...ghost(5, 1000, 0), y: 1100 };
+    drawGhosts(v, [front, ghost(6, 1010, 0)], {
+      ownId: null,
+      trails: new Trails(),
+      nowMs: 0,
+      labelAll: false,
+      fuse: 1,
+    });
+    expect(bodies(r).map((b) => b.y)).toEqual([sy(v, 1000), sy(v, 1100)]);
+    expect(bodies(r)[0]?.r).toBeCloseTo(ghostRadiusPx(v));
   });
 });
 
 // NIGHT 2026-11-18, piece 5: the carrier unmistakable at any size — a bomb at least the body's
-// size above it, and the body pulsing in a halo; nobody else wears either.
+// size above it, and the carrier pulsing in a halo; nobody else wears either.
 describe('the bomb carrier', () => {
   const draw = (nowMs: number) => {
     const r = recorder();
-    const v = fitField(r.rec, 132);
+    const v = fitField(r.ctx, 132);
     drawGhosts(v, [ghost(3, 1000, GHOST_BOMB), ghost(5, 1300, 0)], {
       ownId: null,
       trails: new Trails(),
@@ -196,13 +180,14 @@ describe('the bomb carrier', () => {
     return { body, centre, above };
   };
 
-  it('carries a bomb no smaller than its body above it, and only it', () => {
+  it('carries a bomb no smaller than its body above it, and only it wears the halo', () => {
     const { body, centre, above } = draw(0);
     expect(Math.max(...above.map((a) => a.r))).toBeGreaterThanOrEqual(body);
-    expect(centre(1300).map((a) => a.r)).toEqual([body]);
+    expect(centre(1000).length).toBeGreaterThan(0);
+    expect(centre(1300)).toEqual([]);
   });
 
-  it('pulses: its halo and body grow and shrink over time', () => {
+  it('pulses: its halo grows and shrinks over time', () => {
     const sizes = [0, 150, 300, 450, 600].map((t) =>
       Math.max(
         ...draw(t)

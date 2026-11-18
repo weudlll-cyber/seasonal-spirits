@@ -144,7 +144,10 @@ function row(label: string, amount: string, colour?: string): HTMLElement {
   const li = document.createElement('li');
   const name = document.createElement('span');
   name.textContent = label;
-  if (colour) name.style.color = colour;
+  if (colour) {
+    name.className = 'dot';
+    name.style.setProperty('--team', colour);
+  }
   const v = document.createElement('span');
   v.textContent = amount;
   li.append(name, v);

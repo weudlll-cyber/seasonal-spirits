@@ -1,7 +1,8 @@
 // Seasonal Sumo — the team scores in the band (the price board's place in Seasonal Spirits):
-// the four teams in their order, each in its colour with its score — in sumo also its ghosts
-// still in, and in Last One Standing only those (no points; LIVES 2026-11-17) — the leader
-// framed. On a narrow phone the team's name is hidden (index.html): its colour names it.
+// the four teams in their order, each a pill with its colour dot and its score — in sumo also
+// its ghosts still in, and in Last One Standing only those (no points; LIVES 2026-11-17) — the
+// leader outlined in its colour. On a narrow phone the team's name is hidden (index.html): its
+// dot names it.
 
 import { STATE_LAST_STANDING, type ServerState } from '@seasonal-spirits/protocol';
 import { SEASON_NAMES, modeOf, seasonColour } from '@seasonal-spirits/render';
@@ -25,8 +26,8 @@ export class ScoreBoard {
   constructor() {
     this.chips = SEASON_NAMES.map((_, team) => {
       const chip = document.createElement('span');
-      chip.className = 'score';
-      chip.style.color = seasonColour(team);
+      chip.className = 'score dot';
+      chip.style.setProperty('--team', seasonColour(team));
       return chip;
     });
     this.root.append(...this.chips);

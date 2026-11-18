@@ -8,20 +8,29 @@
     />
     <title>Seasonal Sumo</title>
     <style>
+      /* Sky Island look (owner's choice 2026-11-18): white panels with an ink outline and an ink
+         drop shadow over the sky, Fredoka (bundled, @fontsource/fredoka). Every colour is a
+         variable here, so the dark mode only swaps them. */
       :root {
-        color-scheme: dark;
-        --text: #e6edf3;
-        --muted: #8b98a5;
-        --panel: rgba(5, 8, 11, 0.86);
-        --line: #22303c;
+        color-scheme: light;
+        --ink: #2b2140;
+        --panel: #ffffff;
+        --panel-text: #2b2140;
+        --muted: #5b5270;
+        --sky: #9edcf5;
+        --alert: #ff5a6e;
+        --dash: #ffc23c;
+        --jump: #4cc2ff;
+        --veil: rgba(43, 33, 64, 0.45);
+        --drop: 4px 4px 0 var(--ink);
       }
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #05080b;
-        color: var(--text);
-        font-family: system-ui, sans-serif;
+        background: var(--sky);
+        color: var(--panel-text);
+        font-family: Fredoka, system-ui, sans-serif;
         overflow: hidden;
         touch-action: none;
         user-select: none;
@@ -32,11 +41,13 @@
       button,
       .link {
         font: inherit;
-        color: var(--text);
-        background: #17222c;
-        border: 1px solid #3a4b5a;
-        border-radius: 10px;
-        padding: 12px 16px;
+        font-weight: 600;
+        color: var(--panel-text);
+        background: var(--panel);
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: 3px 3px 0 var(--ink);
+        padding: 10px 16px;
         text-decoration: none;
         cursor: pointer;
       }
@@ -59,7 +70,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(5, 8, 11, 0.8);
+        background: var(--veil);
         overflow: auto;
       }
       #help ol {
@@ -80,34 +91,41 @@
       body.touch #actions {
         max-width: calc(50vw - 24px);
       }
-      /* Dash and Jump: round buttons whose ring fills while the cooldown runs (--ready 0 … 1);
-         Jump a little smaller, so both fit a phone's right half. */
+      /* Dash and Jump: big round buttons in their colours; the colour fills round them while the
+         cooldown runs (--ready 0 … 1); Jump smaller, so both fit a phone's right half. Their
+         text stays dark on both colours and on white. */
       #dash,
       #jump {
         -webkit-tap-highlight-color: transparent;
         width: 96px;
         height: 96px;
+        padding: 0;
         border-radius: 50%;
-        font-weight: bold;
-        border: 3px solid transparent;
-        background:
-          linear-gradient(var(--panel), var(--panel)) padding-box,
-          conic-gradient(#ffd54f calc(var(--ready, 1) * 360deg), var(--line) 0) border-box;
-        opacity: 0.6;
+        font-size: 18px;
+        border: 3px solid var(--ink);
+        box-shadow: var(--drop);
+        color: #2b2140;
+        background: conic-gradient(var(--fill) calc(var(--ready, 1) * 360deg), #ffffff 0);
+        opacity: 0.75;
+      }
+      #dash {
+        --fill: var(--dash);
+      }
+      #jump {
+        --fill: var(--jump);
+        width: 68px;
+        height: 68px;
+        font-size: 14px;
       }
       #dash.ready,
       #jump.ready {
         opacity: 1;
-        box-shadow: 0 0 16px rgba(255, 213, 79, 0.5);
-      }
-      #jump {
-        width: 64px;
-        height: 64px;
-        font-size: 13px;
       }
       .key {
-        color: var(--muted);
-        font-weight: normal;
+        color: #4a4060;
+        font-weight: 500;
+        font-size: 12px;
+        display: block;
       }
       body.touch .key {
         display: none;
@@ -144,26 +162,40 @@
         top: calc(var(--oy, 80%) - 60px);
         width: 120px;
         height: 120px;
-        border: 2px solid rgba(230, 237, 243, 0.25);
+        border: 3px solid rgba(43, 33, 64, 0.35);
+        background: rgba(255, 255, 255, 0.2);
       }
       #knob {
-        background: rgba(230, 237, 243, 0.35);
+        background: rgba(255, 255, 255, 0.75);
+        border: 3px solid var(--ink);
+        box-sizing: border-box;
       }
-      /* The halving, the bombs' blast and the match end (hud.ts): a slim strip at the top edge of
-         the play area, right under the band — never over the middle of the field (NIGHT
-         2026-11-18); with the flash and the tone, the clock's countdown stays above it. */
+      /* The halving, the bombs' blast and the match end (hud.ts): a red banner, slightly tilted,
+         at the top edge of the play area right under the band — never over the middle of the
+         field (NIGHT 2026-11-18); with the flash and the tone, the clock's countdown stays above
+         it. White text with an ink edge, so it reads on the red. */
       #announce {
         position: fixed;
-        top: 132px;
-        left: 0;
-        right: 0;
-        padding: 5px 12px;
+        top: 140px;
+        left: 50%;
+        width: max-content;
+        max-width: 90vw;
+        transform: translateX(-50%) rotate(-2deg);
+        padding: 6px 18px;
         text-align: center;
         font-size: clamp(15px, 4vw, 22px);
-        font-weight: 800;
-        letter-spacing: 0.03em;
-        background: rgba(5, 8, 11, 0.85);
-        border-bottom: 2px solid #ffd54f;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #ffffff;
+        text-shadow:
+          -1.5px -1.5px 0 #2b2140,
+          1.5px -1.5px 0 #2b2140,
+          -1.5px 1.5px 0 #2b2140,
+          1.5px 1.5px 0 #2b2140;
+        background: var(--alert);
+        border: 3px solid var(--ink);
+        border-radius: 14px;
+        box-shadow: var(--drop);
         pointer-events: none;
       }
       #flash {
@@ -197,9 +229,8 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 4px;
-        padding: 0 12px;
-        background: rgba(5, 8, 11, 0.92);
+        gap: 6px;
+        padding: 0 10px;
       }
       #band-top {
         display: flex;
@@ -207,25 +238,39 @@
         gap: 8px;
         min-width: 0;
       }
-      /* The team scores: one chip per team, its knockouts and in sumo its ghosts still in; the
-         leader framed (scores.ts). Four chips fit a 390 px phone. */
+      /* A team's colour dot before its name (the team line, the score chips). */
+      .dot::before {
+        content: '';
+        display: inline-block;
+        width: 0.7em;
+        height: 0.7em;
+        margin-right: 0.35em;
+        border-radius: 50%;
+        background: var(--team);
+        border: 2px solid var(--ink);
+        vertical-align: -0.05em;
+      }
+      /* The team scores: one white pill per team with its colour dot, name and score, in sumo its
+         ghosts still in; the leader outlined in its colour (scores.ts). Four fit a 390 px
+         phone. */
       #scores {
         display: flex;
         gap: 6px;
         font-size: 13px;
+        font-weight: 600;
       }
       #scores .score {
         flex: 1;
         text-align: center;
-        padding: 2px 4px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
+        padding: 1px 4px;
+        background: var(--panel);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: var(--drop);
         white-space: nowrap;
       }
       #scores .score.lead {
-        font-weight: 800;
-        border-color: currentColor;
-        background: rgba(230, 237, 243, 0.08);
+        outline: 4px solid var(--team);
       }
       #team {
         flex: 0 1 auto;
@@ -233,32 +278,44 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: clamp(16px, 5vw, 22px);
-        font-weight: 800;
-        letter-spacing: 0.02em;
+        font-size: clamp(15px, 4.6vw, 20px);
+        font-weight: 700;
+        padding: 1px 12px;
+        background: var(--panel);
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: var(--drop);
       }
-      /* The own lives next to the team line (lives.ts): a lost heart fades out. */
+      /* The own lives next to the team line (lives.ts): red circles, a lost one white. */
       #hearts {
         display: flex;
-        gap: 2px;
+        align-items: center;
+        gap: 3px;
         flex: none;
-        font-size: clamp(14px, 4vw, 18px);
-        color: #ff6b81;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--panel-text);
       }
       #hearts .heart {
-        transition: opacity 0.8s;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--alert);
+        border: 2px solid var(--ink);
+        transition: background-color 0.8s;
       }
       #hearts .heart.lost {
-        opacity: 0.18;
+        background: #ffffff;
       }
       #notice {
         position: fixed;
-        top: 186px; /* below the banner strip (#announce) */
+        top: 196px; /* below the banner (#announce) */
         left: 50%;
         transform: translateX(-50%);
         background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 8px;
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        box-shadow: var(--drop);
         padding: 8px 14px;
         max-width: 90vw;
         text-align: center;
@@ -276,8 +333,8 @@
         flex-shrink: 0;
       }
       #corner button {
-        padding: 4px 8px;
-        font-size: 12px;
+        padding: 3px 10px;
+        font-size: 13px;
       }
       #result {
         position: fixed;
@@ -285,7 +342,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(5, 8, 11, 0.7);
+        background: var(--veil);
         overflow: auto;
       }
       #result[hidden],
@@ -294,11 +351,14 @@
       }
       .card {
         background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 14px;
+        color: var(--panel-text);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        box-shadow: var(--drop);
         padding: 18px 20px;
         width: min(440px, 92vw);
         max-height: 92vh;
+        box-sizing: border-box;
         overflow: auto;
       }
       .card h2,
@@ -316,7 +376,7 @@
         padding: 2px 0;
       }
       #bridge {
-        border-top: 1px solid var(--line);
+        border-top: 2px solid var(--ink);
         margin-top: 12px;
         padding-top: 12px;
       }
@@ -344,7 +404,7 @@
     <div id="notice" role="status" hidden></div>
     <div id="band">
       <div id="band-top">
-        <div id="team" hidden></div>
+        <div id="team" class="dot" hidden></div>
         <div id="hearts" hidden></div>
         <div id="corner">
           <button id="help-open" type="button" aria-label="How to play">?</button>

@@ -1,7 +1,7 @@
-// Seasonal Sumo — the own lives in the band (LIVES 2026-11-17): a heart per life the match began
-// with, a lost one fading out — more than MAX_HEARTS as one heart and the number left, so the
-// team line keeps its room on a phone (FIX 2026-11-17-4) — and the line for a player whose ghost
-// is out of lives. Only the own ghost's, and only in sumo: inside the walls of hill and bomb
+// Seasonal Sumo — the own lives in the band (LIVES 2026-11-17): a red circle (index.html, Sky
+// Island look) per life the match began with, a lost one white — more than MAX_HEARTS as one
+// and the number left, so the team line keeps its room on a phone (FIX 2026-11-17-4) — and the
+// line for a player whose ghost is out of lives. Only the own ghost's, and only in sumo: inside the walls of hill and bomb
 // nobody falls.
 
 import type { ServerState } from '@seasonal-spirits/protocol';
@@ -9,7 +9,7 @@ import { modeOf } from '@seasonal-spirits/render';
 import { el } from './hud.js';
 
 export const OUT_LINE = 'You are out — watching';
-const MAX_HEARTS = 5; // up to this many lives one heart each; more: "♥ ×7"
+const MAX_HEARTS = 5; // up to this many lives one each; more: one and "×7"
 
 // The band's hearts: one per life, a lost one false — or, past MAX_HEARTS, one heart (false
 // when none is left) and the count left.
@@ -48,7 +48,6 @@ export class Hearts {
       this.hearts = each.map(() => {
         const heart = document.createElement('span');
         heart.className = 'heart';
-        heart.textContent = '♥';
         return heart;
       });
       this.root.replaceChildren(...this.hearts, this.count);

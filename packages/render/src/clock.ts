@@ -3,7 +3,8 @@
 // highlighted, the mode's name (sumo's with its variant), the next season, the time left, and in
 // the last seconds before a deadline its countdown — the mode's halving, or the match end
 // ("LAST CHANCE"); with no deadline at all the time played. Which deadline is next the server
-// says (STATE_TO_END, STATE_OPEN_END). The team scores sit in the band below (scores.ts).
+// says (STATE_TO_END, STATE_OPEN_END). A white rounded box at the top left (Sky Island look,
+// 2026-11-18). The team scores sit in the band below (scores.ts).
 
 import {
   STATE_OPEN_END,
@@ -12,10 +13,13 @@ import {
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import { matchName, modeWords, seasonsOf } from './modes.js';
-import { TEXT, seasonColour, seasonName } from './palette.js';
+import { look, seasonColour, seasonName } from './palette.js';
+import { pillBox, roundBox } from './pill.js';
 
 const CELLS = 4;
-const EDGE = 12; // pixels between the clock's text and the screen's left and right edge
+const MARGIN = 6; // pixels between the clock's box and the screen's edges
+const PAD = 8; // pixels between the box's edge and what it holds
+const MAX_CELL = 110;
 const LINE_PX = 13; // the status line's font size, as long as it fits
 const MIN_LINE_PX = 9;
 
@@ -27,33 +31,37 @@ export function mmss(ms: number): string {
 }
 
 export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefined): void {
-  const width = ctx.canvas.width;
-  ctx.fillStyle = 'rgba(5, 8, 11, 0.92)';
-  ctx.fillRect(0, 0, width, CLOCK_HEIGHT);
+  const l = look();
+  const width = Math.min(ctx.canvas.width - 2 * MARGIN, CELLS * MAX_CELL + 2 * PAD);
+  pillBox(ctx, { left: MARGIN, top: MARGIN, width, height: CLOCK_HEIGHT - 2 * MARGIN }, 12);
   if (!s) return;
   // The window: the season before the current one first, as long as the match has more (keep-
   // halving goes on past the mode's count).
   const seasons = Math.max(seasonsOf(s.mode), s.seasonNumber + 1);
   const first = Math.max(0, Math.min(s.seasonNumber - 1, seasons - CELLS));
-  const cell = Math.min(110, (width - 2 * EDGE) / CELLS);
+  const cell = (width - 2 * PAD) / CELLS;
   ctx.textBaseline = 'middle';
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = l.ink;
   for (let i = 0; i < CELLS; i++) {
     const k = first + i; // the season number within the match
     const season = (((s.season + k - s.seasonNumber) % 4) + 4) % 4;
-    const x = EDGE + i * cell;
+    const x = MARGIN + PAD + i * cell;
     const current = k === s.seasonNumber;
     ctx.globalAlpha = current ? 1 : k < s.seasonNumber ? 0.35 : 0.7;
+    roundBox(ctx, { left: x, top: 12, width: cell - 6, height: current ? 22 : 16 }, 6);
     ctx.fillStyle = seasonColour(season);
-    ctx.fillRect(x, 10, cell - 6, current ? 26 : 18);
-    ctx.fillStyle = '#05080b';
-    ctx.font = `${current ? 'bold ' : ''}12px system-ui, sans-serif`;
-    ctx.fillText(seasonName(season), x + 6, current ? 23 : 19);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = l.ink;
+    ctx.font = `${current ? '600' : '500'} 12px Fredoka, system-ui, sans-serif`;
+    ctx.fillText(seasonName(season), x + 6, current ? 23 : 20);
   }
   ctx.globalAlpha = 1;
   const line = statusLine(s);
-  ctx.font = lineFont(ctx, line, width - 2 * EDGE);
-  ctx.fillStyle = s.countdownMs === null ? TEXT : '#ff6b6b';
-  ctx.fillText(line, EDGE, 50);
+  ctx.font = lineFont(ctx, line, width - 2 * PAD);
+  ctx.fillStyle = s.countdownMs === null ? l.panelText : l.alertText;
+  ctx.fillText(line, MARGIN + PAD, 46);
   ctx.textBaseline = 'alphabetic';
 }
 
@@ -62,7 +70,7 @@ export function drawClock(ctx: CanvasRenderingContext2D, s: ServerState | undefi
 // Summer is in season" ran past a 390 px phone's edge). Leaves the font set on `ctx`.
 export function lineFont(ctx: CanvasRenderingContext2D, line: string, room: number): string {
   let px = LINE_PX;
-  const font = (): string => `${String(px)}px system-ui, sans-serif`;
+  const font = (): string => `500 ${String(px)}px Fredoka, system-ui, sans-serif`;
   ctx.font = font();
   while (px > MIN_LINE_PX && ctx.measureText(line).width > room) {
     px -= 0.5;

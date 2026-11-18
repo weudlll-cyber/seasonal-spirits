@@ -1,7 +1,8 @@
 // Seasonal Sumo — what the drawing remembers of each ghost between frames (moved out of ghosts.ts
-// on NIGHT 2026-11-18): its last positions for the trail, when it began to fall (the fall
-// animation), when it took off and landed (the jump's arc and ground rings) and when a dash
-// passed under it ("Dodged!"). Bounded by the ghost ids: a ghost no longer drawn is forgotten.
+// on NIGHT 2026-11-18): its last positions (the dash puffs), the side it faces (the character
+// looks where it last walked), when it began to fall (the fall), when it took off and landed (the
+// jump's arc and ground rings) and when a dash passed under it ("Dodged!"). Bounded by the ghost
+// ids: a ghost no longer drawn is forgotten.
 
 import {
   GHOST_AIRBORNE,
@@ -13,6 +14,7 @@ import { DODGED_MS, RING_MS } from './jump.js';
 import { shape } from './shape.js';
 
 const TRAIL_POINTS = 12;
+const FACE_SPEED = 20; // field units per second sideways before a character turns
 
 const since = (at: number | undefined, nowMs: number, ms: number): number | null =>
   at === undefined || nowMs - at >= ms ? null : (nowMs - at) / ms;
@@ -23,6 +25,7 @@ export class Trails {
   private readonly tookOffAt = new Map<number, number>(); // while in the air
   private readonly groundAt = new Map<number, number>(); // the last take-off or landing
   private readonly dodgedAt = new Map<number, number>();
+  private readonly left = new Map<number, boolean>(); // faces left
 
   record(ghosts: readonly GhostState[], nowMs: number): void {
     const seen = new Set<number>();
@@ -32,9 +35,11 @@ export class Trails {
       list.push({ x: g.x, y: g.y });
       if (list.length > TRAIL_POINTS) list.shift();
       this.points.set(g.id, list);
+      if (Math.abs(g.vx) > FACE_SPEED) this.left.set(g.id, g.vx < 0);
       this.moments(g, nowMs);
     }
-    for (const ids of [this.points, this.fellAt, this.tookOffAt, this.groundAt, this.dodgedAt]) {
+    const all = [this.points, this.fellAt, this.tookOffAt, this.groundAt, this.dodgedAt, this.left];
+    for (const ids of all) {
       for (const id of ids.keys()) if (!seen.has(id)) ids.delete(id);
     }
   }
@@ -52,6 +57,11 @@ export class Trails {
 
   of(id: number): readonly { x: number; y: number }[] {
     return this.points.get(id) ?? [];
+  }
+
+  // The character faces left (it last walked left); right until it has walked.
+  facesLeft(id: number): boolean {
+    return this.left.get(id) ?? false;
   }
 
   // 0 just fallen … 1 gone.

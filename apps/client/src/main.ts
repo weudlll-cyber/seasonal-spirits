@@ -6,6 +6,9 @@
 // from the server's state, only the own ghost is drawn ahead of it by the own input
 // (prediction.ts, display only).
 
+import '@fontsource/fredoka/latin-500.css';
+import '@fontsource/fredoka/latin-600.css';
+import '@fontsource/fredoka/latin-700.css';
 import {
   GHOST_FALLING,
   GHOST_OUT,
@@ -201,7 +204,7 @@ function snapshot(now: number): Frame {
   };
 }
 
-// "You are Team <Season>" in the team colour, for players only (owner's play test 2026-11-15).
+// "You are Team <Season>" behind the team's colour dot, for players only (owner's play test 2026-11-15).
 // On a narrow phone "You are " is hidden (index.html), so the team's name is never cut off.
 // While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3);
 // out of lives, that it watches until the next match (LIVES 2026-11-17).
@@ -209,7 +212,7 @@ function showTeam(team: number | null, backInMs: number | null, out: boolean): v
   teamLine.hidden = team === null;
   if (team !== null && (out || backInMs !== null)) {
     teamLine.textContent = out ? OUT_LINE : fellLine(backInMs ?? 0);
-    teamLine.style.color = seasonColour(team);
+    teamLine.style.setProperty('--team', seasonColour(team));
     delete teamLine.dataset.team;
     return;
   }
@@ -218,7 +221,7 @@ function showTeam(team: number | null, backInMs: number | null, out: boolean): v
   lead.className = 'lead';
   lead.textContent = 'You are ';
   teamLine.replaceChildren(lead, `Team ${seasonName(team)}`);
-  teamLine.style.color = seasonColour(team);
+  teamLine.style.setProperty('--team', seasonColour(team));
   teamLine.dataset.team = String(team);
 }
 

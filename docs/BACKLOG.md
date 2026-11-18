@@ -61,9 +61,7 @@ characters with season hats, bright by default with a dark mode the player can s
 the world (the slanted view, sky, sea, the island with its decor and crack line, the platform
 of the walled modes, the halving's break-off): done. Piece 2, the characters and effects (their
 cached drawing, own marker, dash puffs, jump, falling off with a splash, the restyled marks)
-and the HUD in Fredoka: open — done when the ghosts are drawn as characters from a cache, the
-old ghost shape, trail and fall drawing are gone, and the HUD has the new look with every
-function kept. Piece 3, dark mode: open — done when a Light/Dark switch in the client and the
+and the HUD in Fredoka: done. Piece 3, dark mode: open — done when a Light/Dark switch in the client and the
 viewer (remembered, Light by default) switches every colour, with text contrast at least
 4.5:1 in both. Done when: all three pieces landed and the owner has played the look.
 
@@ -148,12 +146,6 @@ newest state: 113 ms → 8 ms from a key to the drawn movement) is merged into `
 (CLOSED). New placeholders in the client: `SEND_GAP_MS` (60), `PREDICTION_LAG_MS` (40),
 `CORRECTION_MS` (150), `SNAP_DISTANCE` (100). Done when: the owner has played the responsive
 client and decided the four placeholders.
-
-t. **Season colours** (owner's question 2026-11-16, after the look pictures): Summer
-(#E06E22) and Autumn (#F9A825) are hard to tell apart. Open whether the four colours are
-fixed by Seasonal Tokens (website design tokens, CONCEPT.md §8) or may change. No colour
-changed. Done when: the owner has the answer; if they may change, a new pair is chosen and
-drawn.
 
 v. **V5 rules** (owner decision 2026-11-16, CHAIN 2026-11-16-V5): the game rebuilt to the
 owner's concept V5.0 on `feat/v5-rules` — stealing, the swap, the team signals and the
@@ -842,6 +834,23 @@ Done when: the spec is green ten runs in a row.
   and walls. The jump's lift stays a diameter on screen (divided by the tilt) — commit "feat:
   the Sky Island world".
 
+- 2026-11-18 — **Sky Island look, piece 2: characters, effects and the HUD** (OPEN ag). The
+  ghosts are round characters in the new team colours with feet, arms, belly, eyes, cheeks, a
+  smile and their season's hat (render `character.ts`), painted once per size and pose into
+  offscreen canvases and copied every frame (`sprites.ts`), each over a soft shadow, facing where
+  it walks, bobbing with stepping feet; the own one marked by a white ground ring (pulsing after
+  a respawn) and a white triangle (`own.ts`); dash puffs; the fall a tip over the edge, a
+  head-down drop with streaks and "Aaah!" and a splash on the sea (`fall.ts`); labels in white
+  pills (`ghost-labels.ts`, `pill.ts`); bomb, wind-up, "Dodged!" and the protection ring in the
+  ink look; what a character reaches moved to `reach.ts`. The HUD in Fredoka (bundled,
+  `@fontsource/fredoka` 5.3.0: the font files only, no dependencies, no install script, OFL
+  1.1): the clock a white box, team line and score pills with a colour dot (text in ink, so it
+  reads), lives as red circles, the red tilted banner, big round Dash and Jump buttons; the help's
+  drawings in the same look. Removed: the circle ghosts, the trail, the shrink-and-fade fall, the
+  own ring round the body and its arrow, the hearts. Point **t** (season colours, Summer and
+  Autumn too alike) is answered by the owner's new team colours — commit "feat: the Sky Island
+  characters and HUD".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1152,3 +1161,9 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | `pnpm e2e play` (desktop and phone)                                                                                                                                                       | same tree                                                                                                                                 | 2 passed                                                                                                                                                                                                                            | `reports/screens/latest/` (git-ignored)                                                        |
 | 2026-11-18 | `pnpm verify:changed`                                                                                                                                                                     | same tree                                                                                                                                 | first run 1 of 287 failed (name not kept; the load-sensitive match tests alone green), second run green                                                                                                                             | this commit                                                                                    |
 | 2026-11-18 | screenshots on `pnpm dev`: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844 (scratch Playwright script)                                                               | same tree                                                                                                                                 | island, crack, break-off chunks, platform, fence, bunting seen at both sizes                                                                                                                                                        | `reports/screens/latest/p1-*.png` (git-ignored)                                                |
+| 2026-11-18 | `vitest run` render and client tests                                                                                                                                                      | working tree of look piece 2                                                                                                              | first the clock font test (its fake read "500 13px" as 500) and the shadow count (the take-off ring shares its fill); then 74 passed                                                                                                | this commit                                                                                    |
+| 2026-11-18 | `pnpm e2e play readability` (desktop and phone)                                                                                                                                           | same tree, label pills 5 px each side                                                                                                     | desktop 3 passed; phone: play failed once (joined mid-match, the arena read before a halving stayed), readability: two labels overlapped                                                                                            | this commit                                                                                    |
+| 2026-11-18 | `pnpm e2e play readability --project=phone`                                                                                                                                               | label pills 3 px each side                                                                                                                | 2 passed, 1 skipped (by design)                                                                                                                                                                                                     | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-18 | frame cost (client frame callback, headless Chromium 1280×800, 60 s straight runs, Sumo)                                                                                                  | same tree                                                                                                                                 | p50 1.1 ms, p95 2.1 ms, 1 of 3636 over 12 ms (N 3636); machine load 33–62 %                                                                                                                                                         | the sheet, "Sky Island look"                                                                   |
+| 2026-11-18 | `pnpm verify:changed` (toolchain changed: everything)                                                                                                                                     | same tree                                                                                                                                 | 47 files, 290 tests passed; format, lint, typecheck green                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-18 | screenshots on `pnpm dev`: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844                                                                                           | label pills 5 px                                                                                                                          | characters, hats, puffs, own ring and triangle, pills, clock box, banner, buttons seen at both sizes                                                                                                                                | `reports/screens/latest/p2-*.png` (git-ignored)                                                |

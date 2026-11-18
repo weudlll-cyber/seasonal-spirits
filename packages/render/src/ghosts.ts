@@ -1,54 +1,47 @@
-// Seasonal Sumo — the ghosts in Seasonal Spirits' look B: the body in its team's colour,
-// players and bots alike, back to front by where they stand; the own one's marks over all of
-// them (own.ts). A fast ghost
-// — dashing or knocked flying — leaves a short trail in its team's colour; a ghost falling off
-// the arena shrinks and fades (fallMs); one out is not drawn; one just back (protected) wears a
-// pale dashed ring; one in the air after a jump rises on an arc over its shadow, its label and
-// marks with it, with a ground ring at take-off and landing and "Dodged!" when a dash passed
-// under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts); in
-// Halving Bomb only the top three and the own ghost show a score (scoreTop); a dash winding up
-// glows with its line (windup.ts). What the drawing
+// Seasonal Sumo — the ghosts as the Sky Island look's characters (owner's choice 2026-11-18): a
+// character in its team's colour and season hat (character.ts, cached by sprites.ts), players
+// and bots alike, back to front by where they stand, each over a soft shadow, facing the side it
+// walks to with a bob and stepping feet; the own one's ring on the ground and triangle above
+// (own.ts). A fast one — dashing or knocked flying — leaves three white puffs; one falling off
+// tips over the edge into the sea (fall.ts); one out is not drawn; one just back (protected)
+// wears a white dashed ring; one in the air after a jump rises on an arc while its shadow stays
+// on the ground, with a ground ring at take-off and landing and "Dodged!" when a dash passed
+// under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts); a dash
+// winding up glows with its line (windup.ts). Labels: ghost-labels.ts. What the drawing
 // remembers between frames is trails.ts.
 
 import {
-  GHOST_AIRBORNE,
   GHOST_BOMB,
   GHOST_FALLING,
   GHOST_OUT,
   GHOST_PROTECTED,
   type GhostState,
 } from '@seasonal-spirits/protocol';
-import { bombReach, drawBomb, drawCarrier } from './bomb.js';
-import {
-  LABEL_HEIGHT,
-  labelText,
-  placeLabels,
-  type LabelCandidate,
-  type PlacedLabel,
-} from './labels.js';
-import {
-  AIR_TOP_SCALE,
-  airScale,
-  arcHeight,
-  drawDodged,
-  drawGroundRing,
-  drawShadow,
-  lifted,
-} from './jump.js';
-import { OWN_REACH, drawOwnMarks } from './own.js';
-import { MUTED, TEXT, seasonColour } from './palette.js';
+import { drawBomb, drawCarrier } from './bomb.js';
+import { inkWidth } from './character.js';
+import { drawFall } from './fall.js';
+import { drawLabels } from './ghost-labels.js';
+import { airScale, arcHeight, drawDodged, drawGroundRing, drawShadow, lifted } from './jump.js';
+import type { PlacedLabel } from './labels.js';
+import { drawOwnPointer, drawOwnRing } from './own.js';
+import { look } from './palette.js';
+import { PROTECT_RING, ghostRadiusPx, ghostReach } from './reach.js';
 import { shape } from './shape.js';
+import { drawSprite } from './sprites.js';
 import type { Trails } from './trails.js';
-import { byDepth, circle, sx, sy, visibleArea, type View } from './view.js';
+import { byDepth, circle, sx, sy, type View } from './view.js';
 import { drawWindUp } from './windup.js';
 
-// A ghost faster than running can make it leaves a trail: a dash or a knock.
-const trailSpeed = (): number => shape().maxSpeed * 1.1;
+// A ghost faster than running can make it leaves puffs: a dash or a knock.
+const puffSpeed = (): number => shape().maxSpeed * 1.1;
+const WALK_SPEED = 20; // field units per second before the feet step
+const STEP_MS = 140; // one step
+const BOB_PX = 1.5;
 
 export interface GhostStyle {
   ownId: number | null; // the ghost this client steers, marked clearly
   trails: Trails;
-  nowMs: number; // drives the fall animation
+  nowMs: number; // drives the fall, the steps and the pulses
   labelAll: boolean; // every ghost named (spectators, the viewer)
   fuse: number; // the bombs' fuse: 1 full … 0 going off (fuseLeft in modes.ts)
   ownPulseMs?: number | null; // since the own ghost's pulse began (own.ts), null: none
@@ -60,15 +53,10 @@ export interface GhostStyle {
   scoreTop?: number | null;
 }
 
-export function ghostRadiusPx(v: View): number {
-  // The match's size; at least 4 px, so a ghost stays visible on a small phone.
-  return Math.max(4, shape().ghostRadius * v.scale);
-}
-
 const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
 
 // A ghost as drawn: `g` lifted on its jump's arc at height `h` (0 on the ground), `real` where it
-// is — its shadow, trail and ground ring stay there.
+// is — its shadow, puffs and ground rings stay there.
 interface Aloft {
   g: GhostState;
   real: GhostState;
@@ -89,15 +77,7 @@ export function drawGhosts(
   style: GhostStyle,
 ): PlacedLabel[] {
   const shown = ghosts.filter(visible).map((g) => aloft(g, style));
-  for (const { real, h } of shown) {
-    if (Math.hypot(real.vx, real.vy) > trailSpeed() && !(real.flags & GHOST_FALLING)) {
-      drawTrail(v, real, style.trails);
-    }
-    // On the ground: the shadow of one in the air, the ring of a take-off or a landing.
-    if (h > 0) drawShadow(v, real, ghostRadiusPx(v), h);
-    const ring = style.trails.ring(real.id, style.nowMs);
-    if (ring !== null) drawGroundRing(v, real, ghostRadiusPx(v), ring);
-  }
+  for (const d of shown) drawGround(v, d, style);
   drawBodies(v, shown, style);
   const labels = drawLabels(
     v,
@@ -111,59 +91,76 @@ export function drawGhosts(
   return labels;
 }
 
-// Back to front by where they stand; the own ghost's marks over all of them, so it is always
-// found (FIX 2026-11-17-3).
-function drawBodies(v: View, shown: readonly Aloft[], style: GhostStyle): void {
-  let own: { x: number; y: number; r: number } | null = null;
-  for (const d of byDepth(shown.map((a) => ({ ...a, y: a.real.y })))) {
-    const r = drawBody(v, d, style);
-    if (d.g.id === style.ownId && r !== null) own = { x: d.g.x, y: d.g.y, r };
-  }
-  if (own) drawOwnMarks(v, own, style.ownPulseMs ?? null);
+// On the ground under a character: its shadow, its puffs, the ring of a take-off or a landing,
+// and for the own one its ring.
+function drawGround(v: View, { real, h }: Aloft, style: GhostStyle): void {
+  if (real.flags & GHOST_FALLING) return;
+  const r = ghostRadiusPx(v);
+  drawShadow(v, real, r, h);
+  if (Math.hypot(real.vx, real.vy) > puffSpeed()) drawPuffs(v, real, style.trails, r);
+  const ring = style.trails.ring(real.id, style.nowMs);
+  if (ring !== null) drawGroundRing(v, real, r, ring);
+  if (real.id === style.ownId) drawOwnRing(v, { ...real, r }, style.ownPulseMs ?? null);
 }
 
-function drawTrail(v: View, g: GhostState, trails: Trails): void {
-  const pts = trails.of(g.id);
+// Three white puffs behind a fast character at places it just passed, fading away from it.
+function drawPuffs(v: View, g: GhostState, trails: Trails, r: number): void {
   const { ctx } = v;
-  ctx.strokeStyle = seasonColour(g.team);
-  ctx.lineCap = 'round';
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1];
-    const b = pts[i];
-    if (!a || !b) continue;
-    ctx.globalAlpha = (i / pts.length) * 0.5;
-    ctx.lineWidth = Math.max(2, ghostRadiusPx(v) * (i / pts.length));
+  const l = look();
+  const pts = trails.of(g.id);
+  ctx.strokeStyle = l.ink;
+  ctx.fillStyle = l.puff;
+  ctx.lineWidth = inkWidth(r) * 0.8;
+  [3, 6, 9].forEach((back, i) => {
+    const p = pts[pts.length - 1 - back];
+    if (!p) return;
+    ctx.globalAlpha = 0.9 - 0.25 * i;
     ctx.beginPath();
-    ctx.moveTo(sx(v, a.x), sy(v, a.y));
-    ctx.lineTo(sx(v, b.x), sy(v, b.y));
+    ctx.arc(sx(v, p.x), sy(v, p.y) + r * 0.7, r * (0.48 - 0.1 * i), 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
-  }
+  });
   ctx.globalAlpha = 1;
 }
 
-// Pixels outside the body to the protection ring's centre line; ghostReach adds half its width.
-const PROTECT_RING = 9;
+// Back to front by where they stand; the own one's triangle over all of them, so it is always
+// found (FIX 2026-11-17-3).
+function drawBodies(v: View, shown: readonly Aloft[], style: GhostStyle): void {
+  let own: { x: number; y: number; top: number } | null = null;
+  for (const d of byDepth(shown.map((a) => ({ ...a, y: a.real.y })))) {
+    const r = drawBody(v, d, style);
+    if (d.g.id === style.ownId && r !== null) {
+      own = { x: d.g.x, y: d.g.y, top: ghostReach(r, d.g, null) };
+    }
+  }
+  if (own) drawOwnPointer(v, own);
+}
 
 // Returns the body's drawn radius, or null while it falls (no marks then).
 function drawBody(v: View, d: Aloft, style: GhostStyle): number | null {
   const { ctx } = v;
-  const { g } = d;
-  const fall = g.flags & GHOST_FALLING ? style.trails.fall(g.id, style.nowMs) : 0;
-  const size = ghostRadiusPx(v) * (1 - 0.8 * fall) * airScale(d.h);
+  const { g, real, h } = d;
+  const base = ghostRadiusPx(v);
+  const left = style.trails.facesLeft(g.id);
+  if (g.flags & GHOST_FALLING) {
+    const at = { x: sx(v, g.x), y: sy(v, g.y), r: base, team: g.team, left };
+    drawFall(ctx, at, style.trails.fall(g.id, style.nowMs));
+    return null;
+  }
   // A carrier pulses in its halo; the bomb above keeps to the body's own size.
-  const carrier = fall === 0 && (g.flags & GHOST_BOMB) !== 0;
-  const at = { x: g.x, y: g.y, r: size };
-  const r = carrier ? drawCarrier(v, at, style.fuse, style.nowMs) : size;
+  const carrier = (g.flags & GHOST_BOMB) !== 0;
+  const at = { x: g.x, y: g.y, r: base * airScale(h) };
+  const r = carrier ? drawCarrier(v, at, style.fuse, style.nowMs) : at.r;
   // A dash winding up: its glow behind the body and its line (windup.ts).
-  if (fall === 0 && g.windUp !== null) drawWindUp(v, { x: g.x, y: g.y, r }, g.windUp);
-  ctx.globalAlpha = 1 - 0.8 * fall;
-  ctx.fillStyle = seasonColour(g.team);
-  circle(v, g.x, g.y, r);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  if (fall > 0) return null;
+  if (g.windUp !== null) drawWindUp(v, { x: g.x, y: g.y, r }, g.windUp);
+  const walking = h === 0 && Math.hypot(real.vx, real.vy) > WALK_SPEED;
+  const beat = style.nowMs / STEP_MS + g.id * 0.37;
+  const bob = walking ? Math.sin(beat * Math.PI) * BOB_PX : 0;
+  const pose = !walking ? 'idle' : Math.floor(beat) % 2 ? 'stepA' : 'stepB';
+  const y = sy(v, g.y) - Math.abs(bob);
+  drawSprite(ctx, { x: sx(v, g.x), y, r, base, left }, g.team, pose);
   if (g.flags & GHOST_PROTECTED) {
-    ctx.strokeStyle = MUTED;
+    ctx.strokeStyle = look().puff;
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     circle(v, g.x, g.y, r + PROTECT_RING);
@@ -172,87 +169,4 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): number | null {
   }
   if (carrier) drawBomb(v, at, style.fuse, style.nowMs);
   return r;
-}
-
-// How far from the centre drawBody draws for a ghost of body radius `r` pixels: what its label
-// keeps clear of (LabelCandidate.r); a bomb above it counts in full.
-export function ghostReach(
-  r: number,
-  g: Pick<GhostState, 'id' | 'flags'>,
-  ownId: number | null,
-): number {
-  const outside = [
-    g.id === ownId ? OWN_REACH : 0,
-    g.flags & GHOST_PROTECTED ? PROTECT_RING + 1 : 0,
-    g.flags & GHOST_BOMB ? bombReach(r) - r : 0,
-    g.flags & GHOST_AIRBORNE ? r * (AIR_TOP_SCALE - 1) : 0,
-  ];
-  return r + Math.max(...outside);
-}
-
-const labelFont = (own: boolean): string => `${own ? 'bold ' : ''}12px system-ui, sans-serif`;
-
-// Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots), with its tag
-// as the fallback in a crowd (labelText, placeLabels: labels.ts).
-function candidateOf(
-  v: View,
-  g: GhostState,
-  style: GhostStyle,
-  scored: ReadonlySet<number> | null,
-): LabelCandidate {
-  const { ctx } = v;
-  const own = g.id === style.ownId;
-  const text = scored
-    ? labelText(g, own, true, own || scored.has(g.id))
-    : labelText(g, own, style.labelAll);
-  const z = style.zone;
-  const crowded = !own && z && Math.hypot(g.x - z.x, g.y - z.y) <= z.r;
-  const { tag } = text;
-  const full = crowded ? tag : text.full;
-  ctx.font = labelFont(own);
-  return {
-    id: g.id,
-    x: sx(v, g.x),
-    y: sy(v, g.y),
-    r: ghostReach(ghostRadiusPx(v), g, style.ownId),
-    full,
-    fullWidth: ctx.measureText(full).width,
-    tag,
-    tagWidth: ctx.measureText(tag).width,
-    own,
-    score: g.score,
-  };
-}
-
-// The ids of the `n` highest scores above 0; a tie goes to the lower id, so the set holds still.
-function topScorers(ghosts: readonly GhostState[], n: number): Set<number> {
-  const ranked = ghosts.filter((g) => g.score > 0).sort((a, b) => b.score - a.score || a.id - b.id);
-  return new Set(ranked.slice(0, n).map((g) => g.id));
-}
-
-function drawLabels(v: View, ghosts: readonly GhostState[], style: GhostStyle): PlacedLabel[] {
-  const { ctx } = v;
-  const area = visibleArea(v);
-  const shown = (c: LabelCandidate): boolean =>
-    c.x >= area.left && c.x <= area.right && c.y >= area.top && c.y <= area.bottom;
-  const scored = style.scoreTop ? topScorers(ghosts, style.scoreTop) : null;
-  const candidates = ghosts.map((g) => candidateOf(v, g, style, scored)).filter(shown);
-  const placed = placeLabels(candidates, area);
-  ctx.strokeStyle = MUTED;
-  ctx.lineWidth = 1;
-  for (const p of placed) {
-    if (!p.leader) continue;
-    ctx.beginPath();
-    ctx.moveTo(p.leader.x, p.leader.y);
-    ctx.lineTo(p.x, p.y - LABEL_HEIGHT / 2);
-    ctx.stroke();
-  }
-  ctx.textAlign = 'center';
-  ctx.fillStyle = TEXT;
-  for (const p of placed) {
-    ctx.font = labelFont(p.own);
-    ctx.fillText(p.text, p.x, p.y);
-  }
-  ctx.textAlign = 'start';
-  return placed;
 }
