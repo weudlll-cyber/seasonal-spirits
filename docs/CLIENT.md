@@ -22,8 +22,10 @@ Spirits' client is on `master`.
 | `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown               |
 | `src/input.ts`             | Keyboard (WASD/arrows, Space to dash, Shift to jump) and the touch joystick       |
 | `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute |
-| `src/result.ts`            | Result screen: the mode's awards, scores per team and player, the bridge box      |
-| `src/sound.ts`             | The halving tone (Web Audio)                                                      |
+| `src/result.ts`            | Result screen: the podium, the mode's awards, scores per team and player, bridge  |
+| `src/start.ts`             | The start screen while the client joins                                           |
+| `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                   |
+| `src/sound-events.ts`      | Which sounds a new state calls for                                                |
 | `src/config.ts`            | Bridge box on/off and its links                                                   |
 | `e2e/`                     | Playwright config, helpers and the specs                                          |
 | `packages/render` (shared) | What client and viewer share: island, characters, clock, words, the look switch   |
@@ -69,6 +71,18 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   tick) behind the newest state, interpolated, and extrapolated from its last two states
   when the next one is late (FIX 2026-11-17-2: at 100 ms another ghost was drawn 2.7 ghost
   radii behind where a dash hit it, at 50 ms 1.8 radii; the drawn path stays smooth).
+
+## Sound
+
+Behind the Sound switch (muted: nothing plays); synthesised with Web Audio — short tones and
+noise bursts, no audio file — through a modest master volume (`sound.ts`, NIGHT 2026-11-19). From
+each state against the one before (`sound-events.ts`): a whoosh at the own dash, a thump at a hit
+(the own character knocked, or one within `HIT_REACH` body radii of its dash), a boing at its jump
+and a tap at the landing, a falling whistle into a splash at its fall; at a halving a crack and a
+rumble in sumo, a chime when King of the Season's zone moves, a pop when the bombs blow; the
+bombs' tick, once a second and four times a second in the last five; a beep each second of the
+last five of a countdown; a short fanfare at the match end. The context starts on the first key
+or touch (browsers allow sound only after a gesture).
 
 ## Screen
 
@@ -207,7 +221,7 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena
   halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; 3.5 s) on a red
   banner (#CC4858), slightly tilted, white text with an ink edge, right under the band at the top edge of
-  the play area — never over its middle (NIGHT 2026-11-18) — with a short flash and one tone. The match end the same way: "LAST CHANCE — push them
+  the play area — never over its middle (NIGHT 2026-11-18) — with a short flash and its sound. The match end the same way: "LAST CHANCE — push them
   off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
   rules with drawings (sumo: push them off, dash, the arena halves; hill: stand in the zone,

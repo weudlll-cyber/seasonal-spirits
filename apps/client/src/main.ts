@@ -49,7 +49,7 @@ import { ResultScreen } from './result.js';
 import { NO_MARKS, drawScene, type Drawn, type Frame } from './scene.js';
 import { ScoreBoard } from './scores.js';
 import { StartScreen } from './start.js';
-import { DeadlineTone } from './sound.js';
+import { Sound } from './sound.js';
 
 // Render this far behind the newest state: one server tick, so other ghosts are drawn about a
 // ghost radius from where they are (FIX 2026-11-17-2: at 100 ms they lagged 2.7 radii at a
@@ -74,8 +74,9 @@ const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
 bindLookSwitch(el('look', HTMLButtonElement));
-const tone = new DeadlineTone();
-bindMute(() => tone.toggleMute(), tone.muted);
+const sound = new Sound();
+bindMute(() => sound.toggleMute(), sound.muted);
+
 const teamLine = el('team');
 const memory = { trails: new Trails(), breaks: new BreakOff(), seasons: new Seasons() };
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
@@ -101,6 +102,7 @@ const marker = new OwnMarker();
 
 const conn = new Connection(spectate ? 'spectator' : 'player', {
   onState: (s: ServerState) => {
+    sound.observe(s, conn.welcome?.ghost ?? null);
     marker.observe(s, conn.welcome?.ghost ?? null, performance.now(), clientConfig(s.mode).outMs);
     if (!(s.flags & STATE_RESULT)) recap = null; // a match runs: the last recap is over
     // Each deadline event is in one state only; every state passes here, so none is missed.
@@ -109,7 +111,6 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
     // The result screen waits until "MATCH OVER" has been seen.
     if (s.flags & STATE_MATCH_END_EVENT) resultFrom = performance.now() + MATCH_OVER_MS;
     hud.deadline(s);
-    tone.play();
   },
   onMode: (mode, reason) => {
     hud.say(

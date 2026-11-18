@@ -68,9 +68,9 @@ look on desktop and phone and said what stays.
 
 ah. **NIGHT CHAIN 2026-11-19 — the Sky Island look clearer, livelier, complete** (owner's
 direction 2026-11-18; render, client, viewer and sound only). Pieces 1 (clarity), 2 (life
-and polish), 3 (the season on the island) and 4 (start and result screens) landed (CLOSED).
-Still to do, in this order, each its own commit with screenshots, frame cost and the specs: 5 sound
-(synthesised, behind the Sound switch); 6 the viewer in the same look; 7 measure the bomb pass
+and polish), 3 (the season on the island), 4 (start and result screens) and 5 (sound) landed
+(CLOSED). Still to do, in this order, each its own commit with screenshots, frame cost and the
+specs: 6 the viewer in the same look; 7 measure the bomb pass
 touch (N = 10 per latency); 8 cleanup (the unused `drawBomb` export, `simulation.test` and
 `packs.test` stable under full-suite load). Done when: every piece is CLOSED or recorded here as
 dropped.
@@ -949,6 +949,17 @@ Done when: the spec is green ten runs in a row.
   rules (needs the owner's word). Also fixed: the client's header said a spectator sees every
   name — commit "feat: start and result screens on the island".
 
+- 2026-11-19 — **NIGHT CHAIN piece 5: sound** (OPEN ah). The one deadline tone became the
+  game's sounds, all synthesised with Web Audio behind the Sound switch through a master volume of
+  0.35 (`sound.ts`, class `Sound`, was `DeadlineTone`): dash whoosh, hit thump, jump boing,
+  landing tap, fall whistle and splash, sumo's crack and rumble, King's zone chime, the bombs'
+  pop and their ticking (faster in the last five seconds), countdown beeps, a match-end fanfare.
+  Which sound a state calls for is pure (`sound-events.ts`). Reused: the mute switch and its
+  memory, the knock rule and the hit reach of render `moments.ts` (`isKnocked`, `HIT_REACH`, now
+  exported), `modeOf`, `clientConfig`. Tests: `sound.test.ts` (every event to its sound, nothing
+  new while nothing happens, every sound has parts, nothing plays with Sound off) — commit "feat:
+  the game's sounds".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1298,3 +1309,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | screenshots on `pnpm dev`: the start screen and the result screen of a Sumo match with 15 s seasons, desktop and phone, Light and Dark, twice                                             | piece 4 working tree                                                                                                                      | title, island, four characters, podium order against the table, confetti, card on the phone checked; rock cut and small characters fixed between the runs                                                                           | `reports/screens/latest/p7-*.png` (git-ignored)                                                |
 | 2026-11-19 | `pnpm e2e play readability help spectate` (desktop and phone)                                                                                                                             | piece 4 working tree                                                                                                                      | 8 passed, 2 skipped (by design)                                                                                                                                                                                                     | `reports/screens/latest/` (git-ignored)                                                        |
 | 2026-11-19 | typecheck (client) and eslint on the piece 4 sources                                                                                                                                      | piece 4 working tree                                                                                                                      | green                                                                                                                                                                                                                               | this commit                                                                                    |
+| 2026-11-19 | `vitest run` client tests with `sound.test.ts`                                                                                                                                            | piece 5 working tree                                                                                                                      | 39 tests passed                                                                                                                                                                                                                     | this commit                                                                                    |
+| 2026-11-19 | typecheck (client, render) and eslint on the piece 5 sources                                                                                                                              | piece 5 working tree                                                                                                                      | green after `Sound.observe` took the event tracking out of `main.ts` (300 lines), the test's fake context out of its `describe`, `tone`'s glide as a pair                                                                           | this commit                                                                                    |
+| 2026-11-19 | screenshots on `pnpm dev`: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844                                                                                           | piece 5 working tree                                                                                                                      | the picture unchanged by the sounds                                                                                                                                                                                                 | `reports/screens/latest/p8-*.png` (git-ignored)                                                |
+| 2026-11-19 | `pnpm e2e play readability` (desktop and phone)                                                                                                                                           | piece 5 working tree                                                                                                                      | 5 passed, 1 skipped (by design)                                                                                                                                                                                                     | `reports/screens/latest/` (git-ignored)                                                        |

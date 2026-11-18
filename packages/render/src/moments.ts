@@ -18,12 +18,13 @@ export const STRETCH_MS = 160;
 export const SQUASH_MS = 220;
 export const STAR_MS = 260;
 // How near a dasher must be, in body radii, to count as the one that hit.
-const HIT_REACH = 3.5;
+export const HIT_REACH = 3.5;
 
 // A character goes faster than running can make it: a dash or a knock.
 export const fastSpeed = (): number => shape().maxSpeed * 1.1;
 
-const knocked = (g: GhostState): boolean =>
+// Knocked: faster than running without dashing or jumping (also the client's hit sound).
+export const isKnocked = (g: GhostState): boolean =>
   Math.hypot(g.vx, g.vy) > fastSpeed() && !(g.flags & (GHOST_DASHING | GHOST_AIRBORNE));
 
 export class Moments {
@@ -39,7 +40,7 @@ export class Moments {
     for (const g of ghosts) {
       seen.add(g.id);
       this.edges(g, nowMs);
-      const slides = knocked(g);
+      const slides = isKnocked(g);
       if (slides && !this.sliding.has(g.id)) this.hit(g, ghosts, nowMs);
       if (slides) this.sliding.add(g.id);
       else this.sliding.delete(g.id);
