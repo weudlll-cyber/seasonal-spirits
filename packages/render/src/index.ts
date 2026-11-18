@@ -4,6 +4,8 @@
 export * from './palette.js';
 export * from './view.js';
 export { drawField, playBox } from './field.js';
+export { BreakOff } from './breakoff.js';
+export { drawSky } from './sky.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 export { drawGhosts, ghostRadiusPx, type GhostStyle } from './ghosts.js';
 export { Trails } from './trails.js';

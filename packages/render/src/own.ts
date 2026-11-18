@@ -7,7 +7,7 @@ import { QUARTER, teamAngle, type Team } from '@seasonal-spirits/game-core';
 import type { WireDisc } from '@seasonal-spirits/protocol';
 import { seasonColour } from './palette.js';
 import { shape } from './shape.js';
-import { circle, sx, sy, type View } from './view.js';
+import { VIEW_TILT, circle, sx, sy, type View } from './view.js';
 
 const BRIGHT = '#ffffff';
 const EDGE = '#05080b'; // the dark edge keeps the white marks clear on any ground
@@ -68,12 +68,15 @@ export function drawRespawnBand(v: View, area: WireDisc, team: Team): void {
   const spread = QUARTER;
   const from = teamAngle(team) - spread / 2;
   const to = from + spread;
-  const cx = sx(v, area.x);
-  const cy = sy(v, area.y);
+  // Built lying on the ground (squashed by the view's tilt); the path outlives the transform.
+  ctx.save();
+  ctx.translate(sx(v, area.x), sy(v, area.y));
+  ctx.scale(1, VIEW_TILT);
   ctx.beginPath();
-  ctx.arc(cx, cy, area.r * outer * v.scale, from, to);
-  ctx.arc(cx, cy, area.r * inner * v.scale, to, from, true);
+  ctx.arc(0, 0, area.r * outer * v.scale, from, to);
+  ctx.arc(0, 0, area.r * inner * v.scale, to, from, true);
   ctx.closePath();
+  ctx.restore();
   ctx.globalAlpha = 0.18;
   ctx.fillStyle = seasonColour(team);
   ctx.fill();

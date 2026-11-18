@@ -55,6 +55,18 @@ works when it anticipates; the bots jump at every dash they see (about 320 jumps
 Done when: the owner has compared with and without, and decided the jump's time, cooldown,
 steering and the bots' jump chance (placeholders), or dropped it.
 
+ag. **The Sky Island look** (owner's choice 2026-11-18, on `proto/sumo`; render and client
+only, no rule, setting, protocol or bot change): a floating island above the sea, round toy-like
+characters with season hats, bright by default with a dark mode the player can switch. Piece 1,
+the world (the slanted view, sky, sea, the island with its decor and crack line, the platform
+of the walled modes, the halving's break-off): done. Piece 2, the characters and effects (their
+cached drawing, own marker, dash puffs, jump, falling off with a splash, the restyled marks)
+and the HUD in Fredoka: open — done when the ghosts are drawn as characters from a cache, the
+old ghost shape, trail and fall drawing are gone, and the HUD has the new look with every
+function kept. Piece 3, dark mode: open — done when a Light/Dark switch in the client and the
+viewer (remembered, Light by default) switches every colour, with text contrast at least
+4.5:1 in both. Done when: all three pieces landed and the owner has played the look.
+
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
@@ -818,6 +830,18 @@ Done when: the spec is green ten runs in a row.
   under the machine's load, not the game's work: nothing changed there — commit "fix: the own
   ghost runs evenly past other ghosts".
 
+- 2026-11-18 — **Sky Island look, piece 1: the world** (owner's choice; OPEN ag). The field
+  seen at a slant (`VIEW_TILT` 0.55 in render `view.ts`; the camera keeps room for the rock,
+  `ISLAND_DEPTH`; ghosts drawn back to front, `byDepth`, the own ghost's marks over all); the sky
+  with sun, clouds, far islands and the sea band, drawn once per size into offscreen canvases
+  (`sky.ts`); sumo's arena a floating island with dirt edge, rock body, strata and roots
+  (`island.ts`) and decor scaled with it (`decor.ts`); the next halving's line a dashed crack,
+  pulsing in the countdown; the outer ring breaking off in ten chunks at a halving
+  (`breakoff.ts`); hill and bomb a rounded platform with a fence, the hill zone ringed with
+  bunting. Removed: the dark void, the ground colour per season and the grid, the glowing edge
+  and walls. The jump's lift stays a diameter on screen (divided by the tilt) — commit "feat:
+  the Sky Island world".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1122,3 +1146,9 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | own ghost stutter a)+c): scripted player through the client frame path (buffer, interpolate, OwnPrediction), 60 s straight runs, Sumo and Bomb, LAN address                               | `ee9d293` and the fixed prediction                                                                                                        | uneven straight frames Sumo 495/1017 → 128/431, Bomb 151/1986 → 101/2400; arrival σ 6 ms (N 1198 each); details in the sheet                                                                                                        | the sheet, "Own ghost stutter"                                                                 |
 | 2026-11-18 | own ghost stutter b): rAF intervals and the client frame callback in headless Chromium at 1280×800, 60 s; an empty page for comparison                                                    | same tree, `pnpm dev`                                                                                                                     | client >25 ms 333/3275 (load 36–43 %) and 1096/2452 (load 100 %); empty page 6/3639; frame work p50 2.7 ms, p95 5.3 ms (N 2464)                                                                                                     | the sheet, "Own ghost stutter"                                                                 |
 | 2026-11-18 | `vitest run` prediction tests with the fix and the new test against the old prediction                                                                                                    | working tree of the stutter fix                                                                                                           | with the fix 9 passed; the new test fails on the old path (a jump of 8.4 u)                                                                                                                                                         | this commit                                                                                    |
+| 2026-11-18 | frame cost before the Sky Island look: the client frame callback in headless Chromium at 1280×800, 60 s straight runs on `pnpm dev`                                                       | `487fb9a`                                                                                                                                 | p50 1.7 ms, p95 2.6 ms, 3 of 3579 over 12 ms (N 3579); machine load 23–65 %                                                                                                                                                         | the sheet, "Sky Island look"                                                                   |
+| 2026-11-18 | same frame cost measurement, Sumo started through the admin endpoint                                                                                                                      | working tree of look piece 1                                                                                                              | p50 2.1 ms, p95 3.3 ms, 2 of 3670 over 12 ms (N 3670); machine load 21–69 %                                                                                                                                                         | the sheet, "Sky Island look"                                                                   |
+| 2026-11-18 | `vitest run` render tests and the client camera test                                                                                                                                      | working tree of look piece 1                                                                                                              | first the jump lift failed (squashed by the tilt; lift divided by it); then 45 passed                                                                                                                                               | this commit                                                                                    |
+| 2026-11-18 | `pnpm e2e play` (desktop and phone)                                                                                                                                                       | same tree                                                                                                                                 | 2 passed                                                                                                                                                                                                                            | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-18 | `pnpm verify:changed`                                                                                                                                                                     | same tree                                                                                                                                 | first run 1 of 287 failed (name not kept; the load-sensitive match tests alone green), second run green                                                                                                                             | this commit                                                                                    |
+| 2026-11-18 | screenshots on `pnpm dev`: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844 (scratch Playwright script)                                                               | same tree                                                                                                                                 | island, crack, break-off chunks, platform, fence, bunting seen at both sizes                                                                                                                                                        | `reports/screens/latest/p1-*.png` (git-ignored)                                                |

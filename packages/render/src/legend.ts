@@ -17,11 +17,14 @@ export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
     marker: 'protected',
     text: 'Pale dashed ring: just back after a fall; nobody can push it yet.',
   },
-  { marker: 'edge', text: "Glowing ring: the arena's edge. Past it you fall." },
-  { marker: 'nextEdge', text: 'Dashed ring before a halving: where the edge will be after it.' },
+  { marker: 'edge', text: "The island's edge: step past it and you fall into the sea." },
+  {
+    marker: 'nextEdge',
+    text: 'Dashed crack: where the island breaks at the next halving; it pulses before it breaks.',
+  },
   {
     marker: 'zone',
-    text: 'King of the Season: the glowing disc is the zone; a dashed one shows where it jumps.',
+    text: 'King of the Season: the bunting rings the zone; a dashed ring shows where it jumps.',
   },
   {
     marker: 'bomb',

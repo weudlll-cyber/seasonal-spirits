@@ -1,5 +1,6 @@
 // Seasonal Sumo — the ghosts in Seasonal Spirits' look B: the body in its team's colour,
-// players and bots alike; the own one drawn on top of all with its marks (own.ts). A fast ghost
+// players and bots alike, back to front by where they stand; the own one's marks over all of
+// them (own.ts). A fast ghost
 // — dashing or knocked flying — leaves a short trail in its team's colour; a ghost falling off
 // the arena shrinks and fades (fallMs); one out is not drawn; one just back (protected) wears a
 // pale dashed ring; one in the air after a jump rises on an arc over its shadow, its label and
@@ -38,7 +39,7 @@ import { OWN_REACH, drawOwnMarks } from './own.js';
 import { MUTED, TEXT, seasonColour } from './palette.js';
 import { shape } from './shape.js';
 import type { Trails } from './trails.js';
-import { circle, sx, sy, visibleArea, type View } from './view.js';
+import { byDepth, circle, sx, sy, visibleArea, type View } from './view.js';
 import { drawWindUp } from './windup.js';
 
 // A ghost faster than running can make it leaves a trail: a dash or a knock.
@@ -97,9 +98,7 @@ export function drawGhosts(
     const ring = style.trails.ring(real.id, style.nowMs);
     if (ring !== null) drawGroundRing(v, real, ghostRadiusPx(v), ring);
   }
-  // The own ghost last: on top of every other (FIX 2026-11-17-3).
-  const own = shown.filter((d) => d.g.id === style.ownId);
-  for (const d of [...shown.filter((d) => d.g.id !== style.ownId), ...own]) drawBody(v, d, style);
+  drawBodies(v, shown, style);
   const labels = drawLabels(
     v,
     shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),
@@ -110,6 +109,17 @@ export function drawGhosts(
     if (t !== null) drawDodged(v, g, ghostRadiusPx(v) * airScale(h), t);
   }
   return labels;
+}
+
+// Back to front by where they stand; the own ghost's marks over all of them, so it is always
+// found (FIX 2026-11-17-3).
+function drawBodies(v: View, shown: readonly Aloft[], style: GhostStyle): void {
+  let own: { x: number; y: number; r: number } | null = null;
+  for (const d of byDepth(shown.map((a) => ({ ...a, y: a.real.y })))) {
+    const r = drawBody(v, d, style);
+    if (d.g.id === style.ownId && r !== null) own = { x: d.g.x, y: d.g.y, r };
+  }
+  if (own) drawOwnMarks(v, own, style.ownPulseMs ?? null);
 }
 
 function drawTrail(v: View, g: GhostState, trails: Trails): void {
@@ -134,7 +144,8 @@ function drawTrail(v: View, g: GhostState, trails: Trails): void {
 // Pixels outside the body to the protection ring's centre line; ghostReach adds half its width.
 const PROTECT_RING = 9;
 
-function drawBody(v: View, d: Aloft, style: GhostStyle): void {
+// Returns the body's drawn radius, or null while it falls (no marks then).
+function drawBody(v: View, d: Aloft, style: GhostStyle): number | null {
   const { ctx } = v;
   const { g } = d;
   const fall = g.flags & GHOST_FALLING ? style.trails.fall(g.id, style.nowMs) : 0;
@@ -150,7 +161,7 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): void {
   circle(v, g.x, g.y, r);
   ctx.fill();
   ctx.globalAlpha = 1;
-  if (fall > 0) return;
+  if (fall > 0) return null;
   if (g.flags & GHOST_PROTECTED) {
     ctx.strokeStyle = MUTED;
     ctx.lineWidth = 2;
@@ -159,8 +170,8 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): void {
     ctx.stroke();
     ctx.setLineDash([]);
   }
-  if (g.id === style.ownId) drawOwnMarks(v, { x: g.x, y: g.y, r }, style.ownPulseMs ?? null);
   if (carrier) drawBomb(v, at, style.fuse, style.nowMs);
+  return r;
 }
 
 // How far from the centre drawBody draws for a ghost of body radius `r` pixels: what its label

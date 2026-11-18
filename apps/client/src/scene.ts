@@ -1,6 +1,6 @@
-// Seasonal Sumo — one frame of the canvas: the whole playing area fitted below the band, its
-// ghosts and labels, the own ghost's marks (its pulse; its respawn band while out), and the
-// season clock. Returns what it drew, for the browser specs.
+// Seasonal Sumo — one frame of the canvas: the sky, the whole playing area — the island —
+// fitted below the band, its ghosts and labels, the own ghost's marks (its pulse; its respawn
+// band while out), and the season clock. Returns what it drew, for the browser specs.
 
 import type { Team } from '@seasonal-spirits/game-core';
 import {
@@ -12,6 +12,7 @@ import {
 import {
   CLOCK_HEIGHT,
   belowBar,
+  drawSky,
   drawClock,
   drawField,
   drawRespawnBand,
@@ -26,6 +27,7 @@ import {
   sx,
   sy,
   visibleArea,
+  type BreakOff,
   type PlacedLabel,
   type Rect,
   type Trails,
@@ -101,15 +103,22 @@ export function playArea(view: View, s: ServerState | undefined): Rect {
   };
 }
 
-export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, trails: Trails): Drawn {
+// What the drawing remembers between frames: the ghosts' (render trails.ts) and the island's
+// halving (render breakoff.ts).
+export interface Memory {
+  trails: Trails;
+  breaks: BreakOff;
+}
+
+export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memory): Drawn {
   const view = camera(ctx, f.latest, f.hud.zones);
   const now = performance.now();
-  ctx.fillStyle = '#05080b';
-  ctx.fillRect(0, 0, ctx.canvas.width, view.top);
+  const { trails } = memory;
+  drawSky(ctx);
   trails.record(f.ghosts, now);
   let labels: PlacedLabel[] = [];
   belowBar(view, () => {
-    drawField(view, f.latest);
+    drawField(view, f.latest, now, memory.breaks);
     const area = f.latest?.area;
     if (f.marks.backInMs !== null && f.ownTeam !== null && area)
       drawRespawnBand(view, area, f.ownTeam as Team);

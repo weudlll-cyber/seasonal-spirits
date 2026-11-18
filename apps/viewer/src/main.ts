@@ -19,10 +19,12 @@ import {
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import {
+  BreakOff,
   CLOCK_HEIGHT,
   Trails,
   drawClock,
   drawField,
+  drawSky,
   drawGhosts,
   clientConfig,
   fuseLeft,
@@ -61,6 +63,7 @@ const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const trails = new Trails();
+const breaks = new BreakOff();
 // The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump); with the
 // settings the panel shows.
 const fastest = (s: Settings): JumpDetector =>
@@ -129,7 +132,8 @@ function frame(): void {
   const latest = buffer.at(-1)?.state;
   if (latest) useShape(clientConfig(latest.mode, settings));
   trails.record(ghosts, now);
-  drawField(fitField(ctx, CLOCK_HEIGHT), latest);
+  drawSky(ctx);
+  drawField(fitField(ctx, CLOCK_HEIGHT), latest, now, breaks);
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
     ownId: null,
     trails,

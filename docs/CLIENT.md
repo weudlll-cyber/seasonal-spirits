@@ -12,7 +12,7 @@ Spirits' client is on `master`.
 | File                       | What it holds                                                                     |
 | -------------------------- | --------------------------------------------------------------------------------- |
 | `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook     |
-| `src/scene.ts`             | One canvas frame: the camera on the whole playing area, ghosts, labels, clock     |
+| `src/scene.ts`             | One canvas frame: sky, the camera on the whole island, ghosts, labels, clock      |
 | `src/storage.ts`           | Remembered choices (mute, help seen) in localStorage, safe when it throws         |
 | `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys      |
 | `src/scores.ts`            | The team chips in the band: score and ghosts still in per team, the leader framed |
@@ -83,18 +83,27 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   out, its colour names it). Out of lives the team line says "You are out — watching" until
   the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 68 px
   (`BAND_HEIGHT`).
-- **Field** (render `field.ts`). Sumo: a dark void around a disc in the season's ground colour
-  with a glowing edge in the season's colour; during the countdown before a halving a dashed
-  ring (in the next season's colour) shows the edge after it; after the banner the edge eases
-  in over 2 s. Hill and bomb: a walled square with glowing walls; in hill the zone glows in the
-  season's colour, and in the countdown a dashed ring shows where it jumps.
+- **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
+  quarters above: screen y = field y × `VIEW_TILT` (0.55, render `view.ts`; input directions
+  stay screen = field), ghosts drawn back to front by where they stand (`byDepth`). Around it
+  the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, clouds,
+  small far islands, the sea band at the bottom, two big clouds low in front. Sumo: the arena is
+  a floating island's round grass top with an ink rim, a dirt edge and a hanging rock body with
+  strata, roots and three jagged points (render `island.ts`), grass tufts, flowers, two trees and
+  two pebbles on it (render `decor.ts`, scaled with the arena); the next halving's edge is a
+  dashed crack with small ticks the whole match, pulsing in the countdown; at the halving the
+  outer ring breaks into ten chunks that drop and shrink towards the sea over a second (render
+  `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
+  the same island with a low wooden fence along its walls; in hill the zone is tinted grass
+  ringed by small flags in the season's colour, and in the countdown a dashed ring shows where
+  it jumps.
 - **Bomb** (render `bomb.ts`, NIGHT 2026-11-18 piece 5): a carrier is unmistakable at any
   size — a large bomb above it (at least the body's size), black with a pale rim, a thick fuse
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,
   and the carrier's body pulsing in a hot halo, quicker as the fuse burns down; its label keeps
   clear of it.
 - **Ghosts** (look B of Seasonal Spirits): circles in their team colour. The own one (render
-  `own.ts`, FIX 2026-11-17-3) is drawn on top of all, with a thick white ring on a dark edge,
+  `own.ts`, FIX 2026-11-17-3) has its marks drawn over all others, a thick white ring on a dark edge,
   a small arrow pointing down at it and "You"; after a respawn, at every match start and on
   joining, a ring pulses three times (1.5 s). While it is out after a fall, the band's team
   line says "You fell — back in 3 … 1" (server time of the fall plus `outMs`) and its team's
@@ -117,8 +126,8 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   label, under the bar or past the screen edge.
 - **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
   sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
-  below the band with a ghost's radius and 8 px to spare (`scene.ts` `camera`, render
-  `fitBox`). It keeps clear of the Dash button and, on touch screens, the joystick's thumb zone
+  below the band with a ghost's radius and 8 px to spare, squashed by the view's tilt and with
+  room under it for the island's rock (`ISLAND_DEPTH`; `scene.ts` `camera`, render `fitBox`). It keeps clear of the Dash button and, on touch screens, the joystick's thumb zone
   (render `clearArea`: above them on a portrait phone, between them on a landscape phone or a
   desktop). In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen. There is no view choice and no minimap.

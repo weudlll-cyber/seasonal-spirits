@@ -7,7 +7,7 @@
 
 import { TEXT } from './palette.js';
 import { shape } from './shape.js';
-import { circle, sx, sy, type View } from './view.js';
+import { VIEW_TILT, circle, sx, sy, type View } from './view.js';
 
 export const AIR_TOP_SCALE = 1.5; // the body's size at the top of the arc
 export const RING_MS = 350; // how long the ground ring spreads at take-off and landing
@@ -18,10 +18,10 @@ export function arcHeight(t: number): number {
   return Math.sin(Math.PI * Math.min(1, Math.max(0, t)));
 }
 
-// Where a ghost at height `h` is drawn: one ghost diameter up at the top (field units), and how
-// much larger.
+// Where a ghost at height `h` is drawn: one ghost diameter up on screen at the top (in field
+// units, so divided by the view's tilt that squashes them), and how much larger.
 export function lifted(g: { x: number; y: number }, h: number): { x: number; y: number } {
-  return { x: g.x, y: g.y - h * 2 * shape().ghostRadius };
+  return { x: g.x, y: g.y - (h * 2 * shape().ghostRadius) / VIEW_TILT };
 }
 
 export function airScale(h: number): number {

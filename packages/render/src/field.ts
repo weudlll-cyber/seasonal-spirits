@@ -1,20 +1,32 @@
-// Seasonal Sumo — the field of each mode on a dark void: sumo's arena, a disc in the season's
-// ground colour with a glowing edge; hill and bomb a walled square with glowing walls, and in
-// hill the zone glowing in the season's colour. During the countdown before a halving the disc
-// after it — the arena's next edge, the zone's next place — shows dashed (the server sends
-// both discs, protocol state.ts).
+// Seasonal Sumo — the field of each mode as a floating island (Sky Island look, 2026-11-18):
+// sumo's arena is the island's round top with the next halving's line as a dashed crack (pulsing
+// in the countdown) and its outer ring breaking off at a halving (breakoff.ts); hill and bomb a
+// rounded platform with a fence along the walls, in hill the zone ringed with bunting in the
+// season's colour and, in the countdown, its next place dashed (the server sends both discs,
+// protocol state.ts). The sky around it is sky.ts.
 
 import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
-import { STATE_TO_END, type ServerState, type WireDisc } from '@seasonal-spirits/protocol';
+import {
+  STATE_OPEN_END,
+  STATE_RESULT,
+  STATE_TO_END,
+  type ServerState,
+  type WireDisc,
+} from '@seasonal-spirits/protocol';
+import type { BreakOff } from './breakoff.js';
+import { drawDecor } from './decor.js';
+import { drawFence, drawGround } from './island.js';
 import { clientConfig } from './modes.js';
-import { LINE, ground, seasonColour } from './palette.js';
-import { FIELD, circle, sx, sy, type Box, type View } from './view.js';
+import { look, seasonColour } from './palette.js';
+import { shape } from './shape.js';
+import { drawFrontClouds } from './sky.js';
+import { groundCircle, sx, sy, type Box, type View } from './view.js';
 
 const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
-const GRID = 250; // field units between the faint ground lines
-const VOID = '#020305';
 // Before the first state: sumo's arena as it starts.
 const START: WireDisc = { x: CENTRE, y: CENTRE, r: DEFAULT_CONFIG.arenaRadius };
+const PLATFORM = 1.05; // the platform reaches a little past the walls: the fence stands on it
+const CRACK_TICKS = 18;
 
 // The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
 // always on screen): the walled square, or sumo's arena as it is now — the server eases its edge
@@ -26,69 +38,95 @@ export function playBox(s: ServerState | undefined): Box {
   return { x: a.x, y: a.y, half: a.r };
 }
 
-export function drawField(v: View, s: ServerState | undefined): void {
-  const { ctx } = v;
-  ctx.fillStyle = VOID;
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  const season = s?.season ?? 0;
-  const colour = seasonColour(season);
-  const cfg = clientConfig(s?.mode ?? 0);
-  // The ground — the disc or the square — with the faint lines clipped to it.
+// The island under the ghosts; `breaks` remembers sumo's halving between frames.
+export function drawField(
+  v: View,
+  s: ServerState | undefined,
+  nowMs: number,
+  breaks: BreakOff,
+): void {
   const box = playBox(s);
-  const shape = (): void => {
-    const h = box.half * v.scale;
-    if (!walled(cfg)) {
-      circle(v, box.x, box.y, h);
-      return;
-    }
-    ctx.beginPath();
-    ctx.rect(sx(v, box.x) - h, sy(v, box.y) - h, 2 * h, 2 * h);
-  };
-  ctx.save();
-  shape();
-  ctx.fillStyle = ground(season);
+  const walls = walled(clientConfig(s?.mode ?? 0));
+  breaks.observe(walls ? null : (s?.area ?? START), nowMs, shape().sumo.shrink);
+  breaks.draw(v, nowMs, 'behind');
+  const r = walls ? box.half * PLATFORM : box.half;
+  drawDecor(v.ctx, drawGround(v, { x: box.x, y: box.y, r, square: walls }));
+  if (walls) drawWalled(v, s, box);
+  else if (s?.next && ahead(s)) drawCrack(v, s.next, s.countdownMs === null ? null : nowMs);
+  breaks.draw(v, nowMs, 'front');
+  drawFrontClouds(v.ctx);
+}
+
+// A halving still comes (not the match end, not an open end, not the result pause).
+const ahead = (s: ServerState): boolean =>
+  !(s.flags & (STATE_TO_END | STATE_OPEN_END | STATE_RESULT));
+
+// Hill and bomb: the fence; in hill the zone and, in the countdown before a halving, its next
+// place dashed.
+function drawWalled(v: View, s: ServerState | undefined, box: Box): void {
+  drawFence(v, box, box.half);
+  if (!s?.area) return;
+  drawZone(v, s.area, seasonColour(s.season));
+  if (!s.next || s.countdownMs === null || !ahead(s)) return;
+  groundCircle(v, s.next.x, s.next.y, s.next.r);
+  v.ctx.setLineDash([12, 9]);
+  v.ctx.strokeStyle = seasonColour(s.season + 1);
+  v.ctx.lineWidth = 3;
+  v.ctx.stroke();
+  v.ctx.setLineDash([]);
+}
+
+// King of the Season's zone: tinted grass ringed by a string of small flags in its colour.
+function drawZone(v: View, z: WireDisc, colour: string): void {
+  const { ctx } = v;
+  const ink = look().ink;
+  groundCircle(v, z.x, z.y, z.r);
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = colour;
   ctx.fill();
-  ctx.clip();
-  drawGrid(v);
-  ctx.restore();
-  // The glowing edge or walls.
-  shape();
-  ctx.strokeStyle = colour;
-  ctx.shadowColor = colour;
-  ctx.shadowBlur = 18;
-  ctx.lineWidth = 4;
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
-  // The zone glows inside the walls.
-  if (s?.area && walled(cfg)) {
-    circle(v, s.area.x, s.area.y, s.area.r * v.scale);
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = colour;
+  const flags = Math.max(8, Math.min(40, Math.round((z.r * v.scale) / 9)));
+  ctx.fillStyle = colour;
+  for (let i = 0; i < flags; i++) {
+    const a = (i / flags) * Math.PI * 2;
+    const x = sx(v, z.x + Math.cos(a) * z.r);
+    const y = sy(v, z.y + Math.sin(a) * z.r);
+    ctx.beginPath();
+    ctx.moveTo(x - 4, y - 1);
+    ctx.lineTo(x + 4, y - 1);
+    ctx.lineTo(x, y + 7);
+    ctx.closePath();
     ctx.fill();
-    ctx.globalAlpha = 1;
     ctx.stroke();
-  }
-  ctx.shadowBlur = 0;
-  // What comes, in the countdown before a halving (not before the match end).
-  if (s?.next && s.countdownMs !== null && !(s.flags & STATE_TO_END)) {
-    circle(v, s.next.x, s.next.y, s.next.r * v.scale);
-    ctx.setLineDash([10, 8]);
-    ctx.strokeStyle = seasonColour(season + 1);
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.setLineDash([]);
   }
 }
 
-function drawGrid(v: View): void {
+// Where the next halving breaks the island: a dashed crack with small ticks across it; in the
+// countdown (`pulseMs` the time) it pulses.
+function drawCrack(v: View, next: WireDisc, pulseMs: number | null): void {
   const { ctx } = v;
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 1;
+  const beat = pulseMs === null ? 0 : 0.5 + 0.5 * Math.sin(pulseMs / 120);
+  ctx.globalAlpha = pulseMs === null ? 0.85 : 0.6 + 0.4 * beat;
+  ctx.strokeStyle = look().crack;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 4 + 2 * beat;
+  groundCircle(v, next.x, next.y, next.r);
+  ctx.setLineDash([16, 10]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  for (let u = GRID; u < FIELD; u += GRID) {
-    ctx.moveTo(v.ox + u * v.scale, v.oy);
-    ctx.lineTo(v.ox + u * v.scale, v.oy + FIELD * v.scale);
-    ctx.moveTo(v.ox, v.oy + u * v.scale);
-    ctx.lineTo(v.ox + FIELD * v.scale, v.oy + u * v.scale);
+  for (let i = 0; i < CRACK_TICKS; i++) {
+    const a = ((i + 0.3) / CRACK_TICKS) * Math.PI * 2;
+    const x = sx(v, next.x + Math.cos(a) * next.r);
+    const y = sy(v, next.y + Math.sin(a) * next.r);
+    const lean = i % 2 ? 5 : -5;
+    ctx.moveTo(x - lean, y - 5);
+    ctx.lineTo(x + lean * 0.4, y + 2);
   }
   ctx.stroke();
+  ctx.globalAlpha = 1;
 }

@@ -23,6 +23,7 @@ import {
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import {
+  BreakOff,
   Trails,
   clientConfig,
   matchName,
@@ -68,7 +69,7 @@ document.body.classList.toggle('spectating', spectate);
 const tone = new DeadlineTone();
 bindMute(() => tone.toggleMute(), tone.muted);
 const teamLine = el('team');
-const trails = new Trails();
+const memory = { trails: new Trails(), breaks: new BreakOff() };
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
 const result = new ResultScreen();
@@ -230,7 +231,7 @@ function livesOf(f: Frame): { hearts: boolean[] | null; out: boolean } {
 
 function draw(f: Frame): Drawn {
   if (f.latest) help.show(modeOf(f.latest.mode), matchName(f.latest), variantRule(f.latest));
-  const drawn = drawScene(ctx, f, trails);
+  const drawn = drawScene(ctx, f, memory);
   const lives = livesOf(f);
   showTeam(f.ownTeam, f.marks.backInMs, lives.out);
   hearts.update(lives.hearts);
