@@ -59,6 +59,8 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   await dash(page, info);
   await expect.poll(async () => (await view(page)).own?.dashLeftMs ?? 0).toBeGreaterThan(0);
   // The jump (NIGHT 2026-11-18): Shift or the Jump button; the own ghost is in the air at once.
+  // The seat was a bot's, which may have just jumped to dodge: its cooldown comes along.
+  await expect(page.locator('#jump')).toHaveClass(/\bready\b/, { timeout: 5000 });
   if (info.project.name === 'phone') await page.locator('#jump').tap();
   else await page.keyboard.press('Shift');
   await expect
