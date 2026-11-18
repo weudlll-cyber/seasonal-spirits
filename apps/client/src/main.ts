@@ -1,7 +1,8 @@
 // Seasonal Sumo — the player client: joins the match, steers one ghost, shows the match.
 // Development mode, no sign-in: the server gives a free slot (a bot leaves) or, when every
 // slot has a player, lets the client watch. With ?spectate=1 it only watches (CONCEPT.md §5):
-// the whole field, every name, the clock and the halving staging, no controls. Draws with
+// the whole field, the players' and the top three's names, the clock and the halving staging, no
+// controls. A start screen shows while it joins (start.ts). Draws with
 // packages/render (scene.ts), interpolates with packages/protocol; everything shown comes
 // from the server's state, only the own ghost is drawn ahead of it by the own input
 // (prediction.ts, display only).
@@ -47,6 +48,7 @@ import { OwnPrediction, type ServerOwn } from './prediction.js';
 import { ResultScreen } from './result.js';
 import { NO_MARKS, drawScene, type Drawn, type Frame } from './scene.js';
 import { ScoreBoard } from './scores.js';
+import { StartScreen } from './start.js';
 import { DeadlineTone } from './sound.js';
 
 // Render this far behind the newest state: one server tick, so other ghosts are drawn about a
@@ -79,6 +81,7 @@ const memory = { trails: new Trails(), breaks: new BreakOff(), seasons: new Seas
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
 const result = new ResultScreen();
+const start = new StartScreen();
 const scores = new ScoreBoard();
 const hearts = new Hearts();
 let dashPressed = false; // since the last frame: the own prediction dashes too
@@ -236,6 +239,7 @@ function livesOf(f: Frame): { hearts: boolean[] | null; out: boolean } {
 }
 
 function draw(f: Frame): Drawn {
+  start.update(f.latest !== undefined, performance.now());
   if (f.latest) help.show(modeOf(f.latest.mode), matchName(f.latest), variantRule(f.latest));
   const drawn = drawScene(ctx, f, memory);
   const lives = livesOf(f);

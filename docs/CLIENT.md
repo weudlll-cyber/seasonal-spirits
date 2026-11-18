@@ -72,6 +72,12 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
 
 ## Screen
 
+- **Start screen** (`start.ts`, render `podium.ts`, NIGHT 2026-11-19): "Seasonal Party" in a
+  white pill over a small floating island with the four seasons' characters idling on it, and
+  "Joining the match …", while the client connects and joins; it lets every touch through and
+  fades out once the first state is in and it has shown for 1.2 s. There is no name entry and no
+  team choice: the server seats a player on a team.
+
 - **Top bar** (Sky Island look: white panels with an ink outline and drop shadow, Fredoka
   bundled with `@fontsource/fredoka`, no request to a font service). The season clock: one line
   in a small white pill at the top left (render `clock.ts`, 36 px `CLOCK_HEIGHT`; NIGHT
@@ -191,6 +197,11 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   stay as large as the width allows: drawn larger than their body they would mislead about
   contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen. There is no view choice and no minimap.
+- **Result screen** (`result.ts`): over the result a podium on a small floating island —
+  the winning team's character on the middle step, the second and third on the lower ones — with
+  a confetti burst in the winner's colour (render `podium.ts`, NIGHT 2026-11-19), the same for
+  every mode (the team order of `teamLines`); below it the place, the awards, the teams and the
+  players as before, in the white card.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena

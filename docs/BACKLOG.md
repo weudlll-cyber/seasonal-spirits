@@ -68,8 +68,8 @@ look on desktop and phone and said what stays.
 
 ah. **NIGHT CHAIN 2026-11-19 — the Sky Island look clearer, livelier, complete** (owner's
 direction 2026-11-18; render, client, viewer and sound only). Pieces 1 (clarity), 2 (life
-and polish) and 3 (the season on the island) landed (CLOSED). Still to do, in this order, each
-its own commit with screenshots, frame cost and the specs: 4 start and result screens in the look; 5 sound
+and polish), 3 (the season on the island) and 4 (start and result screens) landed (CLOSED).
+Still to do, in this order, each its own commit with screenshots, frame cost and the specs: 5 sound
 (synthesised, behind the Sound switch); 6 the viewer in the same look; 7 measure the bomb pass
 touch (N = 10 per latency); 8 cleanup (the unused `drawBomb` export, `simulation.test` and
 `packs.test` stable under full-suite load). Done when: every piece is CLOSED or recorded here as
@@ -938,6 +938,17 @@ Done when: the spec is green ten runs in a row.
   `season.test.ts` (the first season at once, the fade over a second, the grass halfway in the
   middle, Dark's colours, the colour mix) — commit "feat: the season on the island".
 
+- 2026-11-19 — **NIGHT CHAIN piece 4: start and result screens** (OPEN ah). A start screen
+  (`start.ts`): "Seasonal Party" over a small floating island with the four seasons' characters
+  idling, while the client joins — it never blocks and fades out after the first state and 1.2 s.
+  The result card opens with a podium on a floating island: the best three teams' characters on
+  their steps, a confetti burst in the winner's colour, for every mode (render `podium.ts`,
+  `result.ts`). Reused: the island's `drawGround`, the cached characters (`drawSprite`), the
+  ambient time, `teamLines` for the order. Not built: a name entry and a team choice — the client
+  has none (the server seats a player), and adding them needs a protocol change, outside tonight's
+  rules (needs the owner's word). Also fixed: the client's header said a spectator sees every
+  name — commit "feat: start and result screens on the island".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1284,3 +1295,6 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | frame cost after piece 3, twice (same setup as before)                                                                                                                                    | piece 3 working tree, a late keep-halving match with 15 s seasons                                                                         | p95 9.4 ms (N 1897) and 7.7 ms (N 2392); machine load 100 % nearly throughout (another project's test suite running)                                                                                                                | `reports/night-2026-11-19.md`                                                                  |
 | 2026-11-19 | frame cost A/B under the same load, the piece 2 tree (stash) then piece 3, each on a fresh Sumo match                                                                                     | piece 2 tree / piece 3 working tree                                                                                                       | stale late match: piece 2 p95 5.5 ms (N 2752), piece 3 11.4 ms (N 1738); fresh match: piece 3 p95 6.5 ms (N 1974), piece 2 6.8 ms (N 2221) — piece 3 costs nothing measurable; the rise is the load and the zoomed camera           | `reports/night-2026-11-19.md`                                                                  |
 | 2026-11-19 | `pnpm e2e play readability` (desktop and phone)                                                                                                                                           | piece 3 working tree                                                                                                                      | 5 passed, 1 skipped (by design) — the phone play spec green on the first run this time                                                                                                                                              | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-19 | screenshots on `pnpm dev`: the start screen and the result screen of a Sumo match with 15 s seasons, desktop and phone, Light and Dark, twice                                             | piece 4 working tree                                                                                                                      | title, island, four characters, podium order against the table, confetti, card on the phone checked; rock cut and small characters fixed between the runs                                                                           | `reports/screens/latest/p7-*.png` (git-ignored)                                                |
+| 2026-11-19 | `pnpm e2e play readability help spectate` (desktop and phone)                                                                                                                             | piece 4 working tree                                                                                                                      | 8 passed, 2 skipped (by design)                                                                                                                                                                                                     | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-19 | typecheck (client) and eslint on the piece 4 sources                                                                                                                                      | piece 4 working tree                                                                                                                      | green                                                                                                                                                                                                                               | this commit                                                                                    |

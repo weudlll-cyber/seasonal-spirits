@@ -2,8 +2,10 @@
 // (knockouts or points) per team — in Last One Standing the teams in their final order, the
 // winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player,
 // the own place, the time to the next match, and the bridge box of CONCEPT.md §8 (on by default,
-// switched off in config.ts). Result and awards come from the server's recap message, the names
-// and the time to the next match from the state.
+// switched off in config.ts). Over it a podium on a floating island with the best three teams'
+// characters and a confetti burst in the winner's colour (render podium.ts, NIGHT 2026-11-19),
+// for every mode. Result and awards come from the server's recap message, the names and the time
+// to the next match from the state.
 
 import {
   GHOST_BOT,
@@ -11,7 +13,7 @@ import {
   type ServerRecap,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { mmss, modeWords, seasonColour, seasonName } from '@seasonal-spirits/render';
+import { drawPodium, mmss, modeWords, seasonColour, seasonName } from '@seasonal-spirits/render';
 import { BRIDGE_TEXT, CLIENT_CONFIG } from './config.js';
 import { el } from './hud.js';
 
@@ -32,7 +34,10 @@ export class ResultScreen {
   private readonly players = el('result-players');
   private readonly place = el('result-place');
   private readonly next = el('result-next');
+  private readonly podium = el('podium', HTMLCanvasElement).getContext('2d');
   private shown: ServerRecap | null = null; // the recap on screen
+  private shownAt = 0; // when it came on screen: the confetti's start
+  private order: number[] = []; // the teams, best first
 
   constructor() {
     const bridge = el('bridge');
@@ -56,8 +61,12 @@ export class ResultScreen {
       return;
     }
     this.next.textContent = `Next match in ${mmss(s.nextMatchMs)}`;
+    const now = performance.now();
+    if (this.podium) drawPodium(this.podium, this.order, { nowMs: now, sinceMs: this.shownAt });
     if (this.shown === recap) return;
     this.shown = recap;
+    this.shownAt = now;
+    this.order = teamLines(recap).map(([team]) => team);
     this.fill(recap, (ghost) => nameIn(s, ghost, ownId), { ownId, unit: modeWords(s.mode).unit });
   }
 

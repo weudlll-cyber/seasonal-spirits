@@ -411,6 +411,54 @@
         background: var(--veil);
         overflow: auto;
       }
+      /* The start screen (start.ts): the title in a white pill over a small floating island with
+         the four seasons' characters, while the client joins; it lets every touch through and
+         fades out (NIGHT 2026-11-19). */
+      #start {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: var(--sky);
+        pointer-events: none;
+        transition: opacity 0.4s;
+      }
+      #start.gone {
+        opacity: 0;
+      }
+      #start h1 {
+        margin: 0;
+        padding: 6px 22px;
+        font-size: clamp(30px, 9vw, 52px);
+        font-weight: 700;
+        color: var(--panel-text);
+        background: var(--panel);
+        border: 3px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: var(--drop);
+      }
+      #start canvas,
+      #podium {
+        display: block;
+        margin: 0 auto;
+        max-width: 100%;
+      }
+      #start p {
+        margin: 0;
+        padding: 3px 12px;
+        color: var(--panel-text);
+        background: var(--panel);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #start {
+          transition: none;
+        }
+      }
       #result[hidden],
       [hidden] {
         display: none !important;
@@ -481,9 +529,15 @@
       <div id="scores" aria-label="Per team" hidden></div>
     </div>
     <div id="help" role="dialog" aria-label="How to play" hidden></div>
+    <div id="start" aria-hidden="true">
+      <h1>Seasonal Party</h1>
+      <canvas id="start-island" width="340" height="230"></canvas>
+      <p>Joining the match …</p>
+    </div>
     <div id="result" hidden>
       <div class="card">
         <h2>Result</h2>
+        <canvas id="podium" width="300" height="190" aria-hidden="true"></canvas>
         <p id="result-place"></p>
         <div id="result-awards-box">
           <h3>Awards</h3>
