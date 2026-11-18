@@ -11,7 +11,7 @@ import {
   STATE_TO_END,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { clockWidth, lineFont, statusLine } from './clock.js';
+import { lineFont, lineRoom, statusLine } from './clock.js';
 
 const state = (over: Partial<ServerState>): ServerState => ({
   tick: 0,
@@ -75,21 +75,27 @@ describe('clock status line', () => {
 });
 
 describe('clock status line on a narrow screen (owner 2026-11-17: band text cut off)', () => {
-  // A canvas whose text is 0.55 em wide per character, as Fredoka is about.
+  // A canvas whose text is 0.47 em wide per character: Fredoka's widest countdown line
+  // (measured in Chromium 2026-11-19: 0.43–0.48 em).
   const fake = { font: '500 13px Fredoka, system-ui, sans-serif' };
   const px = (): number => Number(/([\d.]+)px/.exec(fake.font)?.[1]);
   const ctx = Object.assign(fake, {
-    measureText: (t: string) => ({ width: t.length * 0.55 * px() }),
+    measureText: (t: string) => ({ width: t.length * 0.47 * px() }),
   }) as unknown as CanvasRenderingContext2D;
-  // The clock's box on a 390 px phone, clear of the look switch, 8 px inside.
-  const room = clockWidth(390) - 2 * 8;
+  // The clock's pill on a 390 px phone (the client's Light/Dark switch sits in the band).
+  const room = lineRoom(390);
 
-  it('shrinks the longest line of every mode until it fits a 390 px phone', () => {
+  it('shrinks the longest line of every mode until it fits a 390 px phone, not below 11 px', () => {
     for (const mode of [0, 1, 2]) {
       const line = statusLine(state({ mode, countdownMs: 6000 }));
       lineFont(ctx, line, room);
       expect(ctx.measureText(line).width, line).toBeLessThanOrEqual(room);
+      expect(px(), line).toBeGreaterThanOrEqual(11);
     }
+  });
+
+  it('stops at 11 px even where the line would need less (NIGHT 2026-11-19: 9 px)', () => {
+    expect(lineFont(ctx, 'x'.repeat(200), room)).toBe('500 11px Fredoka, system-ui, sans-serif');
   });
 
   it('keeps 13 px where the line fits', () => {

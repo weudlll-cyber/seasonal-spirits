@@ -143,7 +143,6 @@ function frame(): void {
     ownId: null,
     trails,
     nowMs: now,
-    labelAll: true,
     fuse: latest ? fuseLeft(latest) : 1,
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),

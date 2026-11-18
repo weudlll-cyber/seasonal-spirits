@@ -96,8 +96,9 @@ function drawBack(ctx: Ctx, w: number, h: number, l: Look): void {
   const u = Math.min(w, h) / 800; // the backdrop's unit: 1 on an 800 px screen
   ctx.fillStyle = l.sky;
   ctx.fillRect(0, 0, w, h);
-  // The sun (at night the moon and the stars), top right below the bar.
-  const sun = { x: w - 90 * u - 20, y: 190 * u, r: 38 * u };
+  // The sun (at night the moon and the stars), top right below the bar and the band (on a phone
+  // it stood behind the band, NIGHT 2026-11-19).
+  const sun = { x: w - 90 * u - 20, y: Math.max(190 * u, 140), r: 38 * u };
   if (l.night) night(ctx, { w, h, u }, sun, l);
   else {
     ctx.lineWidth = 10 * u;

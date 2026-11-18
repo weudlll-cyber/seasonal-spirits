@@ -5,7 +5,7 @@
 // shrinks with the arena at a halving.
 
 import { look } from './palette.js';
-import { ISLAND_DEPTH, VIEW_TILT, sx, sy, type View } from './view.js';
+import { ISLAND_DEPTH, sx, sy, type View } from './view.js';
 
 // The ground in field units: a disc of radius `r`, or a square of half side `r`.
 export interface Ground {
@@ -52,7 +52,7 @@ export interface OnScreen {
 
 export function onScreen(v: View, g: Ground): OnScreen {
   const rx = g.r * v.scale;
-  const ry = rx * VIEW_TILT;
+  const ry = rx * v.tilt;
   return {
     cx: sx(v, g.x),
     cy: sy(v, g.y),
@@ -74,7 +74,7 @@ export function outline(ctx: CanvasRenderingContext2D, o: OnScreen, cy: number):
   const c = r * CORNER;
   ctx.save();
   ctx.translate(o.cx, cy);
-  ctx.scale(1, VIEW_TILT);
+  ctx.scale(1, o.ry / o.rx); // the view's tilt
   ctx.moveTo(-r + c, -r);
   ctx.arcTo(r, -r, r, r, c);
   ctx.arcTo(r, r, -r, r, c);
@@ -168,12 +168,16 @@ export function drawGround(v: View, g: Ground): OnScreen {
   return o;
 }
 
+// How tall the fence's posts stand, in the walls' half side: the camera keeps room for them
+// above the back wall (field.ts cameraBox).
+export const FENCE_RISE = 0.07;
+
 // The walled modes' low wooden fence along the walls (half side `half` field units): posts and
 // two rails, drawn on the ground's edge.
 export function drawFence(v: View, centre: { x: number; y: number }, half: number): void {
   const { ctx } = v;
   const l = look();
-  const post = Math.max(8, half * v.scale * 0.07); // px tall
+  const post = half * v.scale * FENCE_RISE; // px tall
   const corners = [
     [-1, -1],
     [1, -1],

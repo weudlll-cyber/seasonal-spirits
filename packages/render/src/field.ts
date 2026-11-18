@@ -15,12 +15,12 @@ import {
 } from '@seasonal-spirits/protocol';
 import type { BreakOff } from './breakoff.js';
 import { drawDecor } from './decor.js';
-import { drawFence, drawGround } from './island.js';
+import { FENCE_RISE, drawFence, drawGround } from './island.js';
 import { clientConfig } from './modes.js';
 import { look, seasonColour } from './palette.js';
 import { shape } from './shape.js';
 import { drawFrontClouds } from './sky.js';
-import { groundCircle, sx, sy, type Box, type View } from './view.js';
+import { VIEW_TILT, groundCircle, sx, sy, type Box, type View } from './view.js';
 
 const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
 // Before the first state: sumo's arena as it starts.
@@ -36,6 +36,18 @@ export function playBox(s: ServerState | undefined): Box {
   if (walled(cfg)) return { x: CENTRE, y: CENTRE, half: cfg.wallHalf };
   const a = s?.area ?? START;
   return { x: a.x, y: a.y, half: a.r };
+}
+
+// The square the client's camera fits around the playing area: room for a character standing on
+// its edge and, in the walled modes, for the back fence's posts above the back wall (NIGHT
+// 2026-11-19: they reached under the band) — their height in field depth at the usual slant, the
+// most a steeper view needs.
+export function cameraBox(s: ServerState | undefined): Box {
+  const b = playBox(s);
+  const ghost = shape().ghostRadius;
+  const walls = walled(clientConfig(s?.mode ?? 0));
+  const extra = walls ? Math.max(0, (FENCE_RISE * b.half) / VIEW_TILT - ghost) : 0;
+  return { x: b.x, y: b.y - extra / 2, half: b.half + ghost + extra / 2 };
 }
 
 // The island under the ghosts; `breaks` remembers sumo's halving between frames.
@@ -76,28 +88,37 @@ function drawWalled(v: View, s: ServerState | undefined, box: Box): void {
   v.ctx.setLineDash([]);
 }
 
-// King of the Season's zone: tinted grass ringed by a string of small flags in its colour.
+// King of the Season's zone: tinted grass inside an ink ring with its colour on it, ringed by a
+// string of flags in its colour — the flags sized by the zone on screen, never smaller than a
+// thumb's glance reads (NIGHT 2026-11-19: on the phone they were hard to see).
 function drawZone(v: View, z: WireDisc, colour: string): void {
   const { ctx } = v;
   const ink = look().ink;
   groundCircle(v, z.x, z.y, z.r);
-  ctx.globalAlpha = 0.28;
+  ctx.globalAlpha = 0.4;
   ctx.fillStyle = colour;
   ctx.fill();
   ctx.globalAlpha = 1;
   ctx.strokeStyle = ink;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 5;
   ctx.stroke();
-  const flags = Math.max(8, Math.min(40, Math.round((z.r * v.scale) / 9)));
+  ctx.strokeStyle = colour;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  const rx = z.r * v.scale;
+  const w = Math.max(5, Math.min(9, rx / 9)); // half a flag's width, px
+  const flags = Math.max(8, Math.min(40, Math.round((2 * Math.PI * rx) / (3.2 * w))));
   ctx.fillStyle = colour;
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = ink;
   for (let i = 0; i < flags; i++) {
     const a = (i / flags) * Math.PI * 2;
     const x = sx(v, z.x + Math.cos(a) * z.r);
-    const y = sy(v, z.y + Math.sin(a) * z.r);
+    const y = sy(v, z.y + Math.sin(a) * z.r) - 2;
     ctx.beginPath();
-    ctx.moveTo(x - 4, y - 1);
-    ctx.lineTo(x + 4, y - 1);
-    ctx.lineTo(x, y + 7);
+    ctx.moveTo(x - w, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x, y + 1.8 * w);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();

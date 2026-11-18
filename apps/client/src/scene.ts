@@ -4,6 +4,7 @@
 
 import type { Team } from '@seasonal-spirits/game-core';
 import {
+  GHOST_BOT,
   GHOST_FALLING,
   GHOST_OUT,
   type GhostState,
@@ -20,9 +21,9 @@ import {
   fitBox,
   fuseLeft,
   scoreTopOf,
-  shape,
   zoneOf,
   ghostRadiusPx,
+  cameraBox,
   playBox,
   sx,
   sy,
@@ -66,8 +67,8 @@ export interface Drawn {
   controls: Rect[];
   zones: Rect[];
   labels: PlacedLabel[];
-  // Every ghost drawn and named inside the visible field, in pixels: one falling off (fading)
-  // or out (not drawn) has no label by design (render ghosts.ts).
+  // Every ghost drawn inside the visible field, in pixels, with what decides whether it is named
+  // (render ghost-labels.ts): one falling off or out has no label by design.
   ghostsShown: GhostOnScreen[];
 }
 
@@ -76,20 +77,25 @@ export interface GhostOnScreen {
   x: number;
   y: number;
   r: number; // the drawn radius
+  bot: boolean;
+  score: number;
 }
 
 // One camera for every mode and every client (owner 2026-11-17: only half the arena showed in
 // the old "Near" view): the whole playing area below the band, clear of the Dash button and the
-// joystick's thumb zone, with room for a ghost standing on its edge. In sumo it follows the
-// arena's edge in after a halving, so the smaller arena stays large on screen.
+// joystick's thumb zone, with room for a ghost standing on its edge and the fence (render
+// cameraBox). In sumo it follows the arena's edge in after a halving, so the smaller arena stays
+// large on screen. On a portrait phone the controls may cover the sky and the rock, never the
+// playing surface, and the view turns steeper to fill the height (render fitBox).
 export function camera(
   ctx: CanvasRenderingContext2D,
   s: ServerState | undefined,
   zones: readonly Rect[],
 ): View {
-  const box = playBox(s);
-  const fitted = { ...box, half: box.half + shape().ghostRadius };
-  return fitBox(ctx, CLOCK_HEIGHT + BAND_HEIGHT, fitted, { keepOut: zones, marginPx: MARGIN_PX });
+  return fitBox(ctx, CLOCK_HEIGHT + BAND_HEIGHT, cameraBox(s), {
+    keepOut: zones,
+    marginPx: MARGIN_PX,
+  });
 }
 
 // The playing area's square on screen.
@@ -126,7 +132,6 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       ownId: f.ownId,
       trails,
       nowMs: now,
-      labelAll: !f.playing,
       fuse: f.latest ? fuseLeft(f.latest) : 1,
       ownPulseMs: f.marks.pulseMs,
       zone: zoneOf(f.latest),
@@ -148,6 +153,13 @@ function onScreen(view: View, ghosts: readonly GhostState[]): GhostOnScreen[] {
   const area = visibleArea(view);
   return ghosts
     .filter((g) => !(g.flags & (GHOST_FALLING | GHOST_OUT)))
-    .map((g) => ({ id: g.id, x: sx(view, g.x), y: sy(view, g.y), r: ghostRadiusPx(view) }))
+    .map((g) => ({
+      id: g.id,
+      x: sx(view, g.x),
+      y: sy(view, g.y),
+      r: ghostRadiusPx(view),
+      bot: (g.flags & GHOST_BOT) !== 0,
+      score: g.score,
+    }))
     .filter((g) => g.x >= area.left && g.x <= area.right && g.y >= area.top && g.y <= area.bottom);
 }

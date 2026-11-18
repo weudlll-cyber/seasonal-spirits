@@ -1,9 +1,10 @@
 // Seasonal Sumo — the characters' name labels drawn (moved out of ghosts.ts for the Sky Island
-// look, 2026-11-18): every one on screen named in a white pill with an ink outline, its tag as
-// the fallback in a crowd, placed by labels.ts; inside King of the Season's zone only the tags,
-// in Halving Bomb a score only for the top scorers and the own one.
+// look, 2026-11-18): the own character, the real players and the top three by score named in a
+// white pill with an ink outline, bots otherwise not (NIGHT 2026-11-19: a label on almost every
+// character), the tag as the fallback in a crowd, placed by labels.ts; inside King of the
+// Season's zone only the tags, in Halving Bomb a score only for the top scorers and the own one.
 
-import type { GhostState } from '@seasonal-spirits/protocol';
+import { GHOST_BOT, type GhostState } from '@seasonal-spirits/protocol';
 import type { GhostStyle } from './ghosts.js';
 import {
   LABEL_HEIGHT,
@@ -19,9 +20,10 @@ import { sx, sy, visibleArea, type View } from './view.js';
 
 const labelFont = (own: boolean): string =>
   `${own ? '600' : '500'} 10px Fredoka, system-ui, sans-serif`;
+const NAMED_TOP = 3; // the top scorers are named even when they are bots
 
-// Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots), with its tag
-// as the fallback in a crowd (labelText, placeLabels: labels.ts). Widths include the pill.
+// A named character's label, its tag as the fallback in a crowd (labelText, placeLabels:
+// labels.ts). Widths include the pill.
 function candidateOf(
   v: View,
   g: GhostState,
@@ -30,9 +32,7 @@ function candidateOf(
 ): LabelCandidate {
   const { ctx } = v;
   const own = g.id === style.ownId;
-  const text = scored
-    ? labelText(g, own, true, own || scored.has(g.id))
-    : labelText(g, own, style.labelAll);
+  const text = labelText(g, own, !scored || own || scored.has(g.id));
   const z = style.zone;
   const crowded = !own && z && Math.hypot(g.x - z.x, g.y - z.y) <= z.r;
   const { tag } = text;
@@ -70,7 +70,13 @@ export function drawLabels(
   const shown = (c: LabelCandidate): boolean =>
     c.x >= area.left && c.x <= area.right && c.y >= area.top && c.y <= area.bottom;
   const scored = style.scoreTop ? topScorers(ghosts, style.scoreTop) : null;
-  const candidates = ghosts.map((g) => candidateOf(v, g, style, scored)).filter(shown);
+  const top = topScorers(ghosts, NAMED_TOP);
+  const named = (g: GhostState): boolean =>
+    g.id === style.ownId || !(g.flags & GHOST_BOT) || top.has(g.id);
+  const candidates = ghosts
+    .filter(named)
+    .map((g) => candidateOf(v, g, style, scored))
+    .filter(shown);
   const placed = placeLabels(candidates, area);
   ctx.strokeStyle = l.ink;
   ctx.lineWidth = 1.5;

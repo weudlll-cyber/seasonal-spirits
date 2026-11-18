@@ -57,12 +57,25 @@ steering and the bots' jump chance (placeholders), or dropped it.
 
 ag. **The Sky Island look** (owner's choice 2026-11-18, on `proto/sumo`; render and client
 only, no rule, setting, protocol or bot change): a floating island above the sea, round toy-like
-characters with season hats, bright by default with a dark mode the player can switch. All
-three pieces landed (CLOSED): the world, the characters with their effects and the HUD in
-Fredoka, the Light/Dark switch. Open for the owner's word: the banner's white text on #FF5A6E
-(about 3:1 by itself, read through its ink edge), the own character drawn in its depth order with
-only its marks on top, the island's rock reaching over the sea band. Done when: the owner has
-played the look on desktop and phone and said what stays.
+characters with season hats, bright by default with a dark mode the player can switch. The
+world, the characters with their effects, the HUD in Fredoka and the Light/Dark switch landed
+(CLOSED); NIGHT 2026-11-19 piece 1 made it clearer (CLOSED): the phone's field fills the height,
+fewer labels, the clock a single line, the banner's red at 4.5:1, the fence below the band, the
+zone's flags larger. Open for the owner's word: the own character drawn in its depth order with
+only its marks on top, the island's rock reaching over the sea band, the phone's steeper view
+(`MAX_TILT` 0.9) and the Sound switch as a note ♪ on a phone. Done when: the owner has played the
+look on desktop and phone and said what stays.
+
+ah. **NIGHT CHAIN 2026-11-19 — the Sky Island look clearer, livelier, complete** (owner's
+direction 2026-11-18; render, client, viewer and sound only). Piece 1 (clarity) landed (CLOSED).
+Still to do, in this order, each its own commit with screenshots, frame cost and the specs:
+2 life and polish (ambient motion, shading, squash and stretch, hit star, spiral eyes, splash
+crown, tumbling chunks, reduced motion); 3 the season on the island (petals, butterflies,
+leaves, snow, cross-fade at a halving); 4 start and result screens in the look; 5 sound
+(synthesised, behind the Sound switch); 6 the viewer in the same look; 7 measure the bomb pass
+touch (N = 10 per latency); 8 cleanup (the unused `drawBomb` export, `simulation.test` and
+`packs.test` stable under full-suite load). Done when: every piece is CLOSED or recorded here as
+dropped.
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
@@ -869,6 +882,25 @@ Done when: the spec is green ten runs in a row.
   clear of the arms at the sides"); labels in 10 px Fredoka with a 2 px pill edge — commit "fix:
   labels keep room in a crowd".
 
+- 2026-11-19 — **NIGHT CHAIN piece 1: clarity** (OPEN ag, ah; the planner's look at the `p3-*`
+  screenshots). The camera takes the larger of two fits (render `view.ts` `fitBox`): the whole
+  island at the usual slant between the controls (desktop, landscape), or the playing surface
+  alone across the width above the controls on a portrait phone, the controls over the sky and
+  the rock only, the view turning steeper up to `MAX_TILT` 0.9 — the tilt is now the view's own
+  (`View.tilt`; render `clearArea` removed). Labels only on the own character, the real players
+  and the top three by score (render `ghost-labels.ts`; the `labelAll` option removed), leader
+  lines at most about the character's height, a label without room near its character left out
+  ("You" never; render `labels.ts`). The clock is one line in a small pill with the season's dot,
+  13 px down to 11 px (render `clock.ts`, `CLOCK_HEIGHT` 64 → 36; its season cells and the unused
+  `seasonsOf` removed); the Light/Dark switch moved into the band's corner, the Sound switch a
+  note ♪ on a phone, the team line and lives a little smaller there. The banner's and the lives'
+  red #FF5A6E → #CC4858 (white on it 4.53:1, was 3.0:1). The camera keeps room for the back
+  fence's posts (render `cameraBox`, `FENCE_RISE`). The King zone: a stronger ring and flags
+  sized by the zone on screen. The sun stays below the band on a phone. Tests: the camera on a
+  desktop and a portrait phone, who is named, leader length, a non-own label left out, the clock
+  line not below 11 px; the readability spec checks that no bot outside the top three is named —
+  commit "feat: the Sky Island look clearer".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1193,3 +1225,11 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-18 | CI on `9c124df`                                                                                                                                                                           | `9c124df`                                                                                                                                 | e2e failed: readability desktop, "label \"21\" on another label"; CodeQL green                                                                                                                                                      | this commit                                                                                    |
 | 2026-11-18 | `pnpm e2e readability` (both sizes) with narrower labels only, twice                                                                                                                      | labels 10 px, pill edge 2 px                                                                                                              | first 3 passed, then 2 failed (labels on others)                                                                                                                                                                                    | this commit                                                                                    |
 | 2026-11-18 | `pnpm e2e readability` three times, then `pnpm e2e play`, `pnpm verify:changed`                                                                                                           | with the reach above apart from the sides                                                                                                 | readability 3 × 3 passed; play 2 passed; 297 tests passed, format, lint, typecheck green                                                                                                                                            | this commit                                                                                    |
+| 2026-11-19 | frame cost before the night (client frame callback, headless Chromium 1280×800, 60 s straight runs, Sumo, Light)                                                                          | `2f84312`                                                                                                                                 | p50 2.0 ms, p95 3.0 ms, 2 of 3653 over 12 ms (N 3653); machine load 1–59 %                                                                                                                                                          | `reports/night-2026-11-19.md`                                                                  |
+| 2026-11-19 | Fredoka widths of the clock's longest lines in Chromium                                                                                                                                   | piece 1 working tree                                                                                                                      | 11 px: 276–336 px (0.43–0.48 em per character); the phone's room 344 px                                                                                                                                                             | `reports/night-2026-11-19.md`                                                                  |
+| 2026-11-19 | `vitest run` render and client tests                                                                                                                                                      | piece 1 working tree                                                                                                                      | 14 files, 85 tests passed                                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-19 | `pnpm verify:changed` (toolchain changed: everything), then format and lint again on `labels.test.ts`, `jump.ts`                                                                          | piece 1 working tree                                                                                                                      | 49 files, 301 tests passed, typecheck green; format and lint then green                                                                                                                                                             | this commit                                                                                    |
+| 2026-11-19 | screenshots on `pnpm dev` in Light and Dark: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844                                                                         | piece 1 working tree                                                                                                                      | phone field fills the width and more height, few labels, clock pill, band, fence, zone flags checked; team line cut and sun behind the band fixed                                                                                   | `reports/screens/latest/p4-*.png` (git-ignored)                                                |
+| 2026-11-19 | `pnpm e2e play readability` (desktop and phone)                                                                                                                                           | piece 1 working tree                                                                                                                      | 4 passed, 1 skipped (by design), phone play failed: joined late in keep-halving, the arena no longer halved (284 before and after)                                                                                                  | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-19 | `pnpm e2e play --project=phone`                                                                                                                                                           | same tree                                                                                                                                 | 1 passed                                                                                                                                                                                                                            | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-19 | frame cost after piece 1 (same setup)                                                                                                                                                     | piece 1 working tree                                                                                                                      | p50 1.1 ms, p95 2.1 ms, 2 of 3651 over 12 ms (N 3651); machine load 2–57 %                                                                                                                                                          | `reports/night-2026-11-19.md`                                                                  |

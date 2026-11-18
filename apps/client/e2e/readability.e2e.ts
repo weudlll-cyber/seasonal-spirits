@@ -1,9 +1,10 @@
 // Seasonal Sumo — what the owner's play tests of 2026-11-15 and 2026-11-17 asked for, at desktop
 // and phone size: "You are Team <Season>", the team scores readable in the band. In every
-// sampled frame: the whole playing area on screen below the band and clear of the controls,
-// every ghost named, the own one "You", every name label wholly inside the view (not under the top bar, not past a
-// screen edge), none on another label; the corner buttons and the scores sit in the band, not
-// on the field. Screenshot: <size>-field.png in reports/screens/latest/.
+// sampled frame: the whole playing area on screen below the band and clear of the controls, the
+// own ghost named "You", no bot named outside the top three (NIGHT 2026-11-19), every name label
+// wholly inside the view (not under the top bar, not past a screen edge), none on another label;
+// the corner buttons and the scores sit in the band, not on the field. Screenshot:
+// <size>-field.png in reports/screens/latest/.
 
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
@@ -36,14 +37,16 @@ const labelBox = (l: ClientView['labels'][number]): Rect => ({
   bottom: l.y,
 });
 
-// Every ghost on screen named (owner's observation 2026-11-15: unnamed dots); no label under
-// the bar or past the screen edge, none on another label (session 2026-11-15-CD; a label cut
-// at the screen's edge, session 2026-11-16-LOOK-B).
+// Labels on the own ghost, the players and the top three only (NIGHT 2026-11-19: a label on
+// almost every character); no label under the bar or past the screen edge, none on another label
+// (session 2026-11-15-CD; a label cut at the screen's edge, session 2026-11-16-LOOK-B).
 function labelFaults(v: ClientView, screen: { width: number; height: number }): string[] {
   const faults: string[] = [];
   const named = new Set(v.labels.map((l) => l.id));
   for (const g of v.ghostsShown) {
-    if (!named.has(g.id)) faults.push(`ghost ${g.id} without a label`);
+    const above = v.ghostsShown.filter((o) => o.score > g.score).length;
+    if (named.has(g.id) && g.bot && g.id !== v.ghost && (g.score === 0 || above >= 3))
+      faults.push(`bot ${g.id} named outside the top three`);
   }
   // The own ghost is always "You", also in its respawn protection (owner 2026-11-17).
   const own = v.labels.find((l) => l.id === v.ghost);

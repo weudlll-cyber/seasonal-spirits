@@ -1,8 +1,9 @@
 // Seasonal Sumo — the camera: a square of the field, seen at a slant with the island's rock
-// under it, as large as it goes below the bar, clear of the controls in the bottom corners.
+// under it, as large as it goes below the bar, clear of the controls in the bottom corners; on a
+// portrait phone the playing surface fills the height above the controls at a steeper slant.
 
 import { describe, expect, it } from 'vitest';
-import { FIELD, ISLAND_DEPTH, VIEW_TILT, clearArea, fitBox, fitField, sx, sy } from './view.js';
+import { FIELD, ISLAND_DEPTH, MAX_TILT, VIEW_TILT, fitBox, fitField, sx, sy } from './view.js';
 
 const ctx = (width: number, height: number): CanvasRenderingContext2D =>
   ({ canvas: { width, height } }) as CanvasRenderingContext2D;
@@ -35,22 +36,32 @@ describe('camera', () => {
     expect(sx(v, 700)).toBeCloseTo(400);
   });
 
-  it('keeps clear of bottom controls: above them when tall, between them when wide', () => {
-    const tallDash = { left: 680, top: 1480, right: 790, bottom: 1590 };
-    const tallStick = { left: 0, top: 1300, right: 200, bottom: 1600 };
-    expect(clearArea(800, 1600, 64, [tallDash, tallStick])).toEqual({
-      left: 0,
-      top: 64,
-      right: 800,
-      bottom: 1300,
-    });
+  it('keeps a desktop between its bottom controls, at the usual slant', () => {
     const dash = { left: 880, top: 540, right: 990, bottom: 650 };
     const stick = { left: 0, top: 400, right: 200, bottom: 664 };
-    expect(clearArea(1000, 664, 64, [dash, stick])).toEqual({
-      left: 200,
-      top: 64,
-      right: 880,
-      bottom: 664,
-    });
+    const room = { keepOut: [dash, stick], marginPx: 0 };
+    const v = fitBox(ctx(1000, 664), 64, { x: 1000, y: 1000, half: 1000 }, room);
+    expect(v.tilt).toBe(VIEW_TILT);
+    // As wide as the strip; the whole island, rock included, between the bar and the bottom.
+    expect(sx(v, 0)).toBeCloseTo(200);
+    expect(sx(v, 2000)).toBeCloseTo(880);
+    expect(sy(v, 0)).toBeGreaterThanOrEqual(64);
+    expect(sy(v, 2000) + ISLAND_DEPTH * 1000 * v.scale).toBeLessThanOrEqual(664);
+  });
+
+  // NIGHT 2026-11-19: on a portrait phone the island filled only the top third.
+  it('fills a portrait phone between the band and the controls, turning the view steeper', () => {
+    const stick = { left: 0, top: 584, right: 195, bottom: 844 };
+    const actions = { left: 200, top: 740, right: 374, bottom: 828 };
+    const room = { keepOut: [stick, actions], marginPx: 8 };
+    const v = fitBox(ctx(390, 844), 104, { x: 1000, y: 1000, half: 1000 }, room);
+    expect(v.tilt).toBe(MAX_TILT);
+    // As wide as the screen allows; the playing surface clear of the band and the controls.
+    expect(sx(v, 0)).toBeCloseTo(8);
+    expect(sx(v, 2000)).toBeCloseTo(382);
+    expect(sy(v, 0)).toBeGreaterThanOrEqual(112);
+    expect(sy(v, 2000)).toBeLessThanOrEqual(576);
+    // The rock under it may reach over the controls, but not past the bottom edge.
+    expect(sy(v, 2000) + ISLAND_DEPTH * 1000 * v.scale).toBeLessThanOrEqual(836);
   });
 });

@@ -18,7 +18,7 @@
         --panel-text: #2b2140;
         --muted: #5b5270;
         --sky: #9edcf5;
-        --alert: #ff5a6e;
+        --alert: #cc4858; /* white on it 4.53:1 (NIGHT 2026-11-19; #ff5a6e was 3.0:1) */
         --dash: #ffc23c;
         --jump: #4cc2ff;
         --veil: rgba(43, 33, 64, 0.45);
@@ -67,27 +67,25 @@
         opacity: 0.45;
         cursor: default;
       }
-      /* The Light/Dark switch (render look-switch.ts): a small pill at the top right, its knob
-         left with a sun in Light, right with a moon in Dark. The clock keeps clear of it
-         (render clock.ts SWITCH_ROOM). */
-      #look {
-        position: fixed;
-        top: 16px;
-        right: 8px;
-        width: 54px;
-        height: 30px;
+      /* The Light/Dark switch (render look-switch.ts): a small pill in the band's corner, its
+         knob left with a sun in Light, right with a moon in Dark (NIGHT 2026-11-19: moved off the
+         top right, where it left the clock's line too little room on a phone). */
+      #corner #look {
+        position: relative;
+        width: 46px;
+        height: 26px;
         padding: 0;
         border-radius: 999px;
       }
       #look::after {
         content: '\2600';
         position: absolute;
-        top: 2px;
-        left: 3px;
-        width: 22px;
-        height: 22px;
-        line-height: 22px;
-        font-size: 14px;
+        top: 1px;
+        left: 2px;
+        width: 19px;
+        height: 19px;
+        line-height: 19px;
+        font-size: 12px;
         border-radius: 50%;
         background: #ffe073;
         color: #2b2140;
@@ -96,7 +94,7 @@
       }
       body.dark #look::after {
         content: '\263E';
-        left: 25px;
+        left: 21px;
         background: #fff3c4;
       }
       /* Jump left of Dash, both at the bottom right (JUMP 2026-11-17). */
@@ -217,10 +215,10 @@
       /* The halving, the bombs' blast and the match end (hud.ts): a red banner, slightly tilted,
          at the top edge of the play area right under the band — never over the middle of the
          field (NIGHT 2026-11-18); with the flash and the tone, the clock's countdown stays above
-         it. White text with an ink edge, so it reads on the red. */
+         it. White text on the red at 4.5:1 or more (--alert), with an ink edge. */
       #announce {
         position: fixed;
-        top: 140px;
+        top: 112px;
         left: 50%;
         width: max-content;
         max-width: 90vw;
@@ -260,13 +258,13 @@
           opacity: 0;
         }
       }
-      /* Under the canvas season clock (64 px): the band, 68 px (scene.ts BAND_HEIGHT), with the
+      /* Under the canvas season clock (36 px, render clock.ts CLOCK_HEIGHT): the band, 68 px (scene.ts BAND_HEIGHT), with the
          team line and the corner buttons, and below them the team scores. No control sits
          on the field (owner's play test 2026-11-15); the team line shrinks or ends in "…"
          before it reaches the buttons. */
       #band {
         position: fixed;
-        top: 64px;
+        top: 36px;
         left: 0;
         right: 0;
         height: 68px;
@@ -353,7 +351,7 @@
       }
       #notice {
         position: fixed;
-        top: 196px; /* below the banner (#announce) */
+        top: 168px; /* below the banner (#announce) */
         left: 50%;
         transform: translateX(-50%);
         background: var(--panel);
@@ -368,6 +366,30 @@
         #team .lead,
         #scores .name {
           display: none;
+        }
+        /* The Sound switch as a round note on a phone, struck through when off (its words stay
+           for screen readers): room in the band for the Light/Dark switch (NIGHT 2026-11-19). */
+        #corner #mute {
+          font-size: 0;
+          width: 30px;
+          height: 26px;
+          padding: 0;
+        }
+        #mute::before {
+          content: '\266A';
+          font-size: 15px;
+        }
+        #mute[aria-pressed='true']::before {
+          text-decoration: line-through;
+        }
+        /* A little smaller on a phone, so "You fell — back in 3" fits beside the lives. */
+        #team {
+          font-size: 15px;
+          padding: 1px 8px;
+        }
+        #hearts .heart {
+          width: 11px;
+          height: 11px;
         }
       }
       #corner {
@@ -438,7 +460,6 @@
   </head>
   <body>
     <canvas id="map"></canvas>
-    <button id="look" type="button" aria-label="Dark mode" aria-pressed="false"></button>
     <div id="stick"><div id="knob"></div></div>
     <div id="actions">
       <button id="jump" type="button" hidden>Jump <span class="key">(Shift)</span></button>
@@ -452,6 +473,7 @@
         <div id="team" class="dot" hidden></div>
         <div id="hearts" hidden></div>
         <div id="corner">
+          <button id="look" type="button" aria-label="Dark mode" aria-pressed="false"></button>
           <button id="help-open" type="button" aria-label="How to play">?</button>
           <button id="mute" type="button" aria-pressed="false">Sound on</button>
         </div>

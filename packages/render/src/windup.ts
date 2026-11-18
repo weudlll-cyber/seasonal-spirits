@@ -4,7 +4,7 @@
 // step aside.
 
 import { look } from './palette.js';
-import { VIEW_TILT, sx, sy, type View } from './view.js';
+import { sx, sy, type View } from './view.js';
 
 const LINE = 3.5; // the line's length in body radii
 
@@ -22,7 +22,7 @@ export function drawWindUp(v: View, at: { x: number; y: number; r: number }, ang
   ctx.fill();
   ctx.globalAlpha = 1;
   const dx = Math.cos(angle);
-  const dy = Math.sin(angle) * VIEW_TILT;
+  const dy = Math.sin(angle) * v.tilt;
   ctx.lineCap = 'round';
   for (const [colour, width] of [
     [l.ink, 7],

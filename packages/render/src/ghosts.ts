@@ -42,7 +42,6 @@ export interface GhostStyle {
   ownId: number | null; // the ghost this client steers, marked clearly
   trails: Trails;
   nowMs: number; // drives the fall, the steps and the pulses
-  labelAll: boolean; // every ghost named (spectators, the viewer)
   fuse: number; // the bombs' fuse: 1 full … 0 going off (fuseLeft in modes.ts)
   ownPulseMs?: number | null; // since the own ghost's pulse began (own.ts), null: none
   // King of the Season's zone: inside it the crowd is labelled by its short tags only (NIGHT
@@ -63,11 +62,11 @@ interface Aloft {
   h: number;
 }
 
-function aloft(g: GhostState, style: GhostStyle): Aloft {
+function aloft(v: View, g: GhostState, style: GhostStyle): Aloft {
   const t = style.trails.air(g.id, style.nowMs, shape().jump.airMs);
   if (t === null) return { g, real: g, h: 0 };
   const h = arcHeight(t);
-  return { g: { ...g, ...lifted(g, h) }, real: g, h };
+  return { g: { ...g, ...lifted(v, g, h) }, real: g, h };
 }
 
 // Returns the labels as drawn (the client's browser specs read them).
@@ -76,7 +75,7 @@ export function drawGhosts(
   ghosts: readonly GhostState[],
   style: GhostStyle,
 ): PlacedLabel[] {
-  const shown = ghosts.filter(visible).map((g) => aloft(g, style));
+  const shown = ghosts.filter(visible).map((g) => aloft(v, g, style));
   for (const d of shown) drawGround(v, d, style);
   drawBodies(v, shown, style);
   const labels = drawLabels(

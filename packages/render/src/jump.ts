@@ -10,7 +10,7 @@ import { REACH } from './character.js';
 import { look } from './palette.js';
 import { pill } from './pill.js';
 import { shape } from './shape.js';
-import { VIEW_TILT, sx, sy, type View } from './view.js';
+import { sx, sy, type View } from './view.js';
 
 export const AIR_TOP_SCALE = 1.5; // the body's size at the top of the arc
 export const RING_MS = 350; // how long the ground ring spreads at take-off and landing
@@ -23,8 +23,8 @@ export function arcHeight(t: number): number {
 
 // Where a ghost at height `h` is drawn: one ghost diameter up on screen at the top (in field
 // units, so divided by the view's tilt that squashes them), and how much larger.
-export function lifted(g: { x: number; y: number }, h: number): { x: number; y: number } {
-  return { x: g.x, y: g.y - (h * 2 * shape().ghostRadius) / VIEW_TILT };
+export function lifted(v: View, g: { x: number; y: number }, h: number): { x: number; y: number } {
+  return { x: g.x, y: g.y - (h * 2 * shape().ghostRadius) / v.tilt };
 }
 
 export function airScale(h: number): number {
@@ -50,7 +50,7 @@ export function drawGroundRing(v: View, g: { x: number; y: number }, r: number, 
   ctx.strokeStyle = look().puff;
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.ellipse(sx(v, g.x), sy(v, g.y) + r, rx, rx * VIEW_TILT * 0.75, 0, 0, 2 * Math.PI);
+  ctx.ellipse(sx(v, g.x), sy(v, g.y) + r, rx, rx * v.tilt * 0.75, 0, 0, 2 * Math.PI);
   ctx.stroke();
   ctx.globalAlpha = 1;
 }

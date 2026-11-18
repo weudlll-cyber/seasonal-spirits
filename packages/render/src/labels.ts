@@ -1,17 +1,19 @@
-// Seasonal Sumo — where the ghosts' name labels go (from Seasonal Spirits, owner's play tests
-// 2026-11-15 and 2026-11-16). Every ghost on screen carries a label or at least its short tag,
-// never two on top of each other, never on another ghost, never under the top bar or past the
-// screen edge. Also the label's words: name and the mode's score. Pure: positions and widths in,
-// placements out, tested without a canvas.
+// Seasonal Sumo — where the characters' name labels go (from Seasonal Spirits, owner's play
+// tests 2026-11-15 and 2026-11-16; NIGHT 2026-11-19: fewer, and near their character). A label
+// sits near its character or not at all — the own one always shows; never two on top of each
+// other, never on another character, never under the top bar or past the screen edge. Also the
+// label's words: name and the mode's score. Pure: positions and widths in, placements out,
+// tested without a canvas.
 
 import { GHOST_BOT, ghostName, ghostTag, type GhostState } from '@seasonal-spirits/protocol';
 import { overlaps, type Rect } from './view.js';
 
 export const LABEL_HEIGHT = 14; // pixels of one 12 px label line, with a little air
 const GAP = 2; // pixels kept free between two labels, and between a label and the screen edge
-// Distances (pixels from the ghost's centre) at which a tag that found no room beside its
-// ghost is tried, in eight directions, joined to the ghost by a thin leader line.
-const LEADER_RINGS = [30, 46, 64, 84, 106];
+// Distances at which a tag that found no room beside its character is tried, in eight
+// directions, joined to it by a thin leader line: in the character's drawn height, so no leader
+// is much longer than the character is tall (NIGHT 2026-11-19: long leaders tangled on the phone).
+const LEADER_RINGS = [0.9, 1.15];
 
 export interface LabelCandidate {
   id: number;
@@ -51,20 +53,18 @@ interface Spot {
   leader: boolean;
 }
 
-// A ghost's label: the own one "You", a ghost with a score its name and the score ("Bot 3 ·
-// 2") unless `scored` is false (a mode that shows only some scores), the others their name
-// when `labelAll` (spectators, the viewer), else their tag. The tag is the fallback in a crowd.
+// A character's label: the own one "You", the others their name, with the score once it has
+// some ("Bot 3 · 2") unless `scored` is false (a mode that shows only some scores). The tag is
+// the fallback in a crowd.
 export function labelText(
   g: Pick<GhostState, 'id' | 'flags' | 'score'>,
   own: boolean,
-  labelAll: boolean,
   scored = true,
 ): { full: string; tag: string } {
   const bot = (g.flags & GHOST_BOT) !== 0;
   const tag = own ? 'You' : ghostTag(g.id, bot);
   const name = own ? 'You' : ghostName(g.id, bot);
-  if (g.score > 0 && scored) return { full: `${name} · ${g.score}`, tag };
-  return { full: own || labelAll ? name : tag, tag };
+  return { full: g.score > 0 && scored ? `${name} · ${g.score}` : name, tag };
 }
 
 // A label's centre x moved so its `half` width lies inside the area's left and right edge.
@@ -72,9 +72,9 @@ function insideX(area: Rect, x: number, half: number): number {
   return Math.min(Math.max(x, area.left + half + GAP), area.right - half - GAP);
 }
 
-// The places to try, best first: the full text above and below the ghost, then the tag above,
-// below, right and left of it, then the tag further out on a leader line (the own ghost keeps
-// its full text everywhere).
+// The places to try, best first: the full text above and below the character, then the tag
+// above, below, right and left of it, then the tag a little further out on a short leader line
+// (the own one keeps its full text everywhere).
 function spotsFor(c: LabelCandidate): Spot[] {
   const full = { text: c.full, width: c.fullWidth };
   const short = c.own ? full : { text: c.tag, width: c.tagWidth };
@@ -86,7 +86,8 @@ function spotsFor(c: LabelCandidate): Spot[] {
   const spots = [...near(full), ...near(short)];
   spots.push({ ...short, x: c.x + c.r + 4 + short.width / 2, y: middle, leader: false });
   spots.push({ ...short, x: c.x - c.r - 4 - short.width / 2, y: middle, leader: false });
-  for (const d of LEADER_RINGS) {
+  const tall = (c.up ?? c.r) + c.r; // the character's drawn height
+  for (const d of LEADER_RINGS.map((k) => k * tall)) {
     for (let k = 0; k < 8; k++) {
       const a = -Math.PI / 2 + (k * Math.PI) / 4;
       const x = c.x + Math.cos(a) * d;
@@ -105,10 +106,10 @@ function boxIn(area: Rect, s: Spot): Rect | null {
   return box.top < area.top || box.bottom > area.bottom ? null : box;
 }
 
-// The first free spot; when every spot is taken, the first one inside the area (a label may
-// then overlap, but a ghost is never left without one); when no spot fits between the bar and
-// the bottom, the tag at the ghost's height, still inside the left and right edge.
-function choose(c: LabelCandidate, area: Rect, taken: readonly Rect[]): PlacedLabel {
+// The first free spot; when every spot is taken, none — except for the own character: then the
+// first one inside the area (it may overlap), and when no spot fits between the bar and the
+// bottom, the tag at its height, still inside the left and right edge.
+function choose(c: LabelCandidate, area: Rect, taken: readonly Rect[]): PlacedLabel | null {
   let fallback: { s: Spot; box: Rect } | null = null;
   for (const s of spotsFor(c)) {
     const box = boxIn(area, s);
@@ -116,6 +117,7 @@ function choose(c: LabelCandidate, area: Rect, taken: readonly Rect[]): PlacedLa
     fallback ??= { s, box };
     if (!taken.some((t) => overlaps(t, box, GAP))) return toPlaced(c, s, box);
   }
+  if (!c.own) return null;
   if (fallback) return toPlaced(c, fallback.s, fallback.box);
   const y = Math.max(area.top + LABEL_HEIGHT, Math.min(area.bottom, c.y));
   const half = c.tagWidth / 2;
@@ -143,10 +145,10 @@ export function bodyBox(g: { x: number; y: number; r: number; up?: number }): Re
 }
 
 // `area` is the visible field: below the bar, inside the screen; `avoid` are boxes already
-// drawn there. Every ghost's body counts as taken too, so no name sits on
-// a neighbouring ghost (session 2026-11-15-CD: names landed on the ghost next door). The own
-// label is placed first, then the others, the one carrying more coins first. The result is in
-// drawing order, the own label last so it sits on top.
+// drawn there. Every character's body counts as taken too, so no name sits on a neighbouring
+// one (session 2026-11-15-CD: names landed on the ghost next door). The own label is placed
+// first, then the others, the higher score first; one that finds no free spot near its
+// character is left out. The result is in drawing order, the own label last so it sits on top.
 export function placeLabels(
   candidates: readonly LabelCandidate[],
   area: Rect,
@@ -156,15 +158,17 @@ export function placeLabels(
     (a, b) => Number(b.own) - Number(a.own) || b.score - a.score || a.id - b.id,
   );
   const taken: Rect[] = [...avoid, ...candidates.map(bodyBox)];
-  const placed = order.map((c) => {
+  const placed: PlacedLabel[] = [];
+  for (const c of order) {
     const p = choose(c, area, taken);
+    if (!p) continue;
+    placed.push(p);
     taken.push({
       left: p.x - p.width / 2,
       right: p.x + p.width / 2,
       top: p.y - LABEL_HEIGHT,
       bottom: p.y,
     });
-    return p;
-  });
+  }
   return [...placed.filter((p) => !p.own), ...placed.filter((p) => p.own)];
 }

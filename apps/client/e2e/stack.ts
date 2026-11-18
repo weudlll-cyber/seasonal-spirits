@@ -53,7 +53,7 @@ export interface ClientView {
   controls: Rect[];
   zones: Rect[];
   labels: { id: number; text: string; x: number; y: number; width: number; own: boolean }[];
-  ghostsShown: { id: number; x: number; y: number; r: number }[];
+  ghostsShown: { id: number; x: number; y: number; r: number; bot: boolean; score: number }[];
 }
 
 // Waits for the client's first frame: right after a (re)load window.__client does not exist

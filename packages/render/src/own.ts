@@ -9,7 +9,7 @@ import { QUARTER, teamAngle, type Team } from '@seasonal-spirits/game-core';
 import type { WireDisc } from '@seasonal-spirits/protocol';
 import { look, seasonColour } from './palette.js';
 import { shape } from './shape.js';
-import { VIEW_TILT, sx, sy, type View } from './view.js';
+import { sx, sy, type View } from './view.js';
 
 const RING_WIDTH = 4;
 const POINTER_GAP = 6; // px between what the character reaches up to and the triangle's tip
@@ -83,7 +83,7 @@ export function drawRespawnBand(v: View, area: WireDisc, team: Team): void {
   // Built lying on the ground (squashed by the view's tilt); the path outlives the transform.
   ctx.save();
   ctx.translate(sx(v, area.x), sy(v, area.y));
-  ctx.scale(1, VIEW_TILT);
+  ctx.scale(1, v.tilt);
   ctx.beginPath();
   ctx.arc(0, 0, area.r * outer * v.scale, from, to);
   ctx.arc(0, 0, area.r * inner * v.scale, to, from, true);

@@ -33,7 +33,8 @@ Spirits' client is on `master`.
 The client says `{"kind":"player"}`; the server gives it a bot's seat on the team with the
 fewest players (the ghost stops where the bot left it) and answers with a welcome. When
 every seat has a player, the client watches instead and says so. `?spectate=1` only watches:
-the whole field, every name, the clock and the halving staging, no controls; it sends its
+the whole field, the players' and the top three's names, the clock and the halving staging, no
+controls; it sends its
 hello and nothing more.
 
 The client hears the settings in force (`{"kind":"tuning",…}`, every setting, checked against
@@ -72,14 +73,17 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
 ## Screen
 
 - **Top bar** (Sky Island look: white panels with an ink outline and drop shadow, Fredoka
-  bundled with `@fontsource/fredoka`, no request to a font service). The season clock in a
-  white rounded box at the top left (four seasons — a window that moves on through bomb's nine
-  and sumo's keep-halving —, the mode's name with sumo's variant, "Seasonal Sumo · Points" or
-  "· Last One Standing", the time left, the countdown in red; with no deadline at all — Last One
-  Standing "stop, no time limit" after the third halving — the time played, "· 6:52 played"),
-  and under it the band: "You are Team <Season>" in a white pill behind the team's colour dot,
-  the own lives as red circles beside it (sumo only; a lost one white; past five lives one and
-  the number left, "×7", so the team line keeps its room on a phone), the corner buttons, and a
+  bundled with `@fontsource/fredoka`, no request to a font service). The season clock: one line
+  in a small white pill at the top left (render `clock.ts`, 36 px `CLOCK_HEIGHT`; NIGHT
+  2026-11-19 removed its row of season cells, which repeated the team pills) — a dot in the
+  season's colour, the mode's name with sumo's variant, "Seasonal Sumo · Points" or "· Last One
+  Standing", the season, the time left and the next season, the countdown in red; with no
+  deadline at all — Last One Standing "stop, no time limit" after the third halving — the time
+  played, "· 6:52 played"; 13 px, shrinking to 11 px at the least on a phone. Under it the band:
+  "You are Team <Season>" in a white pill behind the team's colour dot, the own lives as red
+  circles beside it (sumo only; a lost one white; past five lives one and the number left, "×7",
+  so the team line keeps its room on a phone), the corner buttons — the Light/Dark switch, "?"
+  and Sound (on a phone a round note ♪, struck through when off) —, and a
   white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
   still in; Last One Standing "Spring 7 in"; hill and bomb "Spring 12"; the leader outlined in
   its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the
@@ -87,8 +91,9 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 68 px
   (`BAND_HEIGHT`).
 - **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
-  quarters above: screen y = field y × `VIEW_TILT` (0.55, render `view.ts`; input directions
-  stay screen = field), ghosts drawn back to front by where they stand (`byDepth`). Around it
+  quarters above: screen y = field y × the view's tilt (`VIEW_TILT` 0.55, steeper on a portrait
+  phone up to `MAX_TILT` 0.9 — see Camera; render `view.ts`; input directions stay screen =
+  field), ghosts drawn back to front by where they stand (`byDepth`). Around it
   the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, clouds,
   small far islands, the sea band at the bottom, two big clouds low in front. Sumo: the arena is
   a floating island's round grass top with an ink rim, a dirt edge and a hanging rock body with
@@ -97,21 +102,26 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   dashed crack with small ticks the whole match, pulsing in the countdown; at the halving the
   outer ring breaks into ten chunks that drop and shrink towards the sea over a second (render
   `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
-  the same island with a low wooden fence along its walls; in hill the zone is tinted grass
-  ringed by small flags in the season's colour, and in the countdown a dashed ring shows where
-  it jumps.
+  the same island with a low wooden fence along its walls (the camera keeps room for the back
+  fence's posts below the band, render `cameraBox`); in hill the zone is tinted grass inside an
+  ink ring in the season's colour, ringed by flags in that colour sized by the zone on screen
+  (NIGHT 2026-11-19: on the phone they were hard to see), and in the countdown a dashed ring
+  shows where it jumps.
 - **Bomb** (render `bomb.ts`, NIGHT 2026-11-18 piece 5): a carrier is unmistakable at any
   size — a large bomb above it (at least the body's size), black with a pale rim, a thick fuse
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,
   and the carrier's body pulsing in a hot halo, quicker as the fuse burns down; its label keeps
   clear of it.
-- **Light and Dark** (Sky Island look, piece 3): a small pill switch at the top right of the
-  client and the viewer (render `look-switch.ts`), Light by default, the choice remembered in
+- **Light and Dark** (Sky Island look, piece 3): a small pill switch in the client's band
+  corner (NIGHT 2026-11-19: moved off the top right, where it left the clock's line too little
+  room on a phone) and at the viewer's top right (render `look-switch.ts`), Light by default,
+  the choice remembered in
   localStorage (`seasonal-spirits.look`; render `storage.ts`, which also keeps the mute and the
   help seen). Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
   `body.dark`): a night sky with stars and a crescent moon, dimmer island colours, three small
   lanterns on the island, the crack glowing; the team colours stay. Text keeps a contrast of at
-  least 4.5:1 in both (tested in `palette.test.ts`); the clock box leaves room for the switch.
+  least 4.5:1 in both (tested in `palette.test.ts`); the banner's and the lives' red is
+  #CC4858, white on it 4.53:1 (NIGHT 2026-11-19; #FF5A6E was 3.0:1).
 - **Ghosts** (Sky Island look 2026-11-18): round toy-like characters (render `character.ts`)
   in their team colour — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
   with feet in a darker shade, short arms, a light belly, big eyes, pink cheeks, a smile and the
@@ -137,25 +147,35 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   (a dash, a knock) leaves three white puffs; one falling off (render `fall.ts`) tips over the
   edge, turns head-down with an open mouth and drops, shrinking, to the sea with three white
   streaks and an "Aaah!" bubble, and splashes there, all within `fallMs`; one out is not drawn;
-  one just back wears a white dashed ring (protected). Labels (render `ghost-labels.ts`): white
-  pills with an ink outline — the name, "· 2" for a score of 2 (knockouts or points), the short
-  tag in a crowd — in King of the Season's zone always the short tag (NIGHT 2026-11-18: full
-  names piled up there); in Halving Bomb every ghost its name, the score only for the top three
-  and the own ghost (render `scoreTopOf`, `GhostStyle.scoreTop`); "You" stays; never on another
-  label, under the bar or past the screen edge; they keep clear of the hat, a bomb, the rings
-  and the triangle (render `reach.ts`).
+  one just back wears a white dashed ring (protected). Labels (render `ghost-labels.ts`, NIGHT
+  2026-11-19: a label had sat on almost every character): only the own character, the real
+  players and the top three by score carry one, bots otherwise none, for players and spectators
+  alike; white pills with an ink outline — the name, "· 2" for a score of 2 (knockouts or
+  points), the short tag in a crowd — in King of the Season's zone always the short tag (NIGHT
+  2026-11-18: full names piled up there); in Halving Bomb the score only for the top three and
+  the own ghost (render `scoreTopOf`, `GhostStyle.scoreTop`). A label sits beside its character
+  or on a leader line no longer than about the character's height (render `labels.ts`); one that
+  finds no room there is left out — "You" never; never on another label, under the bar or past
+  the screen edge; they keep clear of the hat, a bomb, the rings and the triangle (render
+  `reach.ts`).
 - **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
   sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
-  below the band with a ghost's radius and 8 px to spare, squashed by the view's tilt and with
-  room under it for the island's rock (`ISLAND_DEPTH`; `scene.ts` `camera`, render `fitBox`). It keeps clear of the Dash button and, on touch screens, the joystick's thumb zone
-  (render `clearArea`: above them on a portrait phone, between them on a landscape phone or a
-  desktop). In sumo it follows the arena's edge as the server eases it in after a halving, so
+  below the band with a ghost's radius and 8 px to spare (and the fence's posts, render
+  `cameraBox`), squashed by the view's tilt (`scene.ts` `camera`, render `fitBox`). It keeps
+  clear of the Dash and Jump buttons and, on touch screens, the joystick's thumb zone, and takes
+  the larger of two fits: the whole island with its rock (`ISLAND_DEPTH`) at the usual slant in
+  the strip between the controls (a desktop, a landscape phone), or the playing surface alone
+  across the whole width above the controls (a portrait phone, NIGHT 2026-11-19: the island had
+  filled only the top third) — there the controls may cover the sky and the rock, never the
+  surface, and the view turns steeper, up to `MAX_TILT` 0.9, to fill the height. The characters
+  stay as large as the width allows: drawn larger than their body they would mislead about
+  contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen. There is no view choice and no minimap.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena
   halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; 3.5 s) on a red
-  banner, slightly tilted, white text with an ink edge, right under the band at the top edge of
+  banner (#CC4858), slightly tilted, white text with an ink edge, right under the band at the top edge of
   the play area — never over its middle (NIGHT 2026-11-18) — with a short flash and one tone. The match end the same way: "LAST CHANCE — push them
   off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three
@@ -191,7 +211,7 @@ touch):
   preset saves and loads, the starting settings back at the end;
 - `e2e/readability.e2e.ts`: the team line, the scores readable in the band, every sampled
   frame's playing area wholly on screen and clear of the controls, its labels in view and
-  apart;
+  apart, the own one "You", no bot named outside the top three;
 - `e2e/help.e2e.ts`: the help on the first visit with its rules and drawings;
 - `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello.
 

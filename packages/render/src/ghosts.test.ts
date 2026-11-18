@@ -1,7 +1,8 @@
 // Seasonal Sumo — the own ghost is always labelled "You": also with the respawn protection's
 // dashed ring around it and in a crowd (owner 2026-11-17: no ghost showed "You"); and only the
 // own character wears the ground ring, the triangle and the pulse (FIX 2026-11-17-3; Sky Island
-// look 2026-11-18).
+// look 2026-11-18); who carries a label at all — the own one, the players and the top three
+// (NIGHT 2026-11-19).
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -41,7 +42,6 @@ describe('own label', () => {
       ownId: 3,
       trails: new Trails(),
       nowMs: 0,
-      labelAll: false,
       fuse: 1,
     });
     expect(labels.find((l) => l.id === 3)?.text).toBe('You · 4');
@@ -50,29 +50,28 @@ describe('own label', () => {
 
 // NIGHT 2026-11-18: in King of the Season's crowded zone full names piled up.
 describe('labels in the hill zone', () => {
-  it('names the ghosts in the zone by their short tags, those outside in full, "You" always', () => {
-    const inside = [ghost(5, 1000, GHOST_BOT, 2), ghost(6, 1020, GHOST_BOT, 1)];
+  it('names the players in the zone by their short tags, those outside in full, "You" always', () => {
+    const inside = [ghost(5, 1000, 0, 2), ghost(6, 1020, 0, 1)];
     const outside = ghost(7, 1500, GHOST_BOT, 3);
     const own = ghost(3, 990, 0, 4);
     const labels = drawGhosts(fitField(ctx, 132), [...inside, outside, own], {
       ownId: 3,
       trails: new Trails(),
       nowMs: 0,
-      labelAll: true,
       fuse: 1,
       zone: { x: 1000, y: 1000, r: 120 },
     });
     const text = (id: number) => labels.find((l) => l.id === id)?.text;
-    expect([text(5), text(6)]).toEqual(['5', '6']);
+    expect([text(5), text(6)]).toEqual(['P5', 'P6']);
     expect(text(7)).toBe('Bot 7 · 3');
     expect(text(3)).toBe('You · 4');
   });
 });
 
 // NIGHT 2026-11-18, piece 5: Halving Bomb's labels are names; scores only for the top three and
-// the own ghost.
+// the own ghost. NIGHT 2026-11-19: bots outside the top three carry no label at all.
 describe('labels in Halving Bomb', () => {
-  it('names every ghost, with a score only for the top three and the own ghost', () => {
+  it('names the top three with their scores and the own ghost, no other bot', () => {
     const scores = [5, 9, 7, 3, 8];
     const others = scores.map((s, i) => ghost(10 + i, 400 + 300 * i, GHOST_BOT, s));
     const own = ghost(3, 1950, 0, 1);
@@ -80,19 +79,40 @@ describe('labels in Halving Bomb', () => {
       ownId: 3,
       trails: new Trails(),
       nowMs: 0,
-      labelAll: false,
       fuse: 1,
       scoreTop: 3,
     });
     const text = (id: number) => labels.find((l) => l.id === id)?.text;
     expect([10, 11, 12, 13, 14].map(text)).toEqual([
-      'Bot 10',
+      undefined,
       'Bot 11 · 9',
       'Bot 12 · 7',
-      'Bot 13',
+      undefined,
       'Bot 14 · 8',
     ]);
     expect(text(3)).toBe('You · 1');
+  });
+});
+
+// NIGHT 2026-11-19: a number or a name on almost every character, long leader lines.
+describe('who is named', () => {
+  it('names the own character, every real player and the top three bots, no other bot', () => {
+    const bots = [1, 2, 3, 4, 5].map((id) => ghost(id, 300 + 250 * id, GHOST_BOT, id));
+    const player = ghost(8, 500, 0, 0);
+    const own = ghost(9, 1900, 0, 0);
+    const labels = drawGhosts(fitField(ctx, 132), [...bots, player, own], {
+      ownId: 9,
+      trails: new Trails(),
+      nowMs: 0,
+      fuse: 1,
+    });
+    expect(labels.map((l) => l.text).sort()).toEqual([
+      'Bot 3 · 3',
+      'Bot 4 · 4',
+      'Bot 5 · 5',
+      'Player 8',
+      'You',
+    ]);
   });
 });
 
@@ -104,7 +124,6 @@ describe('own marks', () => {
       ownId,
       trails: new Trails(),
       nowMs: 0,
-      labelAll: false,
       fuse: 1,
       ownPulseMs,
     });
@@ -153,7 +172,6 @@ describe('characters', () => {
       ownId: null,
       trails: new Trails(),
       nowMs: 0,
-      labelAll: false,
       fuse: 1,
     });
     expect(bodies(r).map((b) => b.y)).toEqual([sy(v, 1000), sy(v, 1100)]);
@@ -171,7 +189,6 @@ describe('the bomb carrier', () => {
       ownId: null,
       trails: new Trails(),
       nowMs,
-      labelAll: false,
       fuse: 0.5,
     });
     const body = ghostRadiusPx(v);

@@ -1,6 +1,7 @@
-// Seasonal Sumo — name labels: every ghost on screen gets its name or at least its tag, no two
-// overlap, the own one always shows its full text on top, the one with a higher score keeps its
-// name, nothing reaches under the top bar or past the screen edge; and the label's words.
+// Seasonal Sumo — name labels: a label sits near its character or is left out (the own one
+// always shows, its full text on top), no two overlap, no leader is much longer than the
+// character is tall, the one with a higher score keeps its name, nothing reaches under the top
+// bar or past the screen edge; and the label's words.
 
 import { describe, expect, it } from 'vitest';
 import { GHOST_BOT } from '@seasonal-spirits/protocol';
@@ -52,7 +53,7 @@ describe('name labels', () => {
     expect(placed.map((p) => p.text).sort()).toEqual(['Bot 1', 'Bot 2', 'Bot 3']);
   });
 
-  it('labels every ghost of a stacked crowd of ten, without any overlap', () => {
+  it('leaves out who finds no room near a stacked crowd of ten, without any overlap', () => {
     const crowd = Array.from({ length: 10 }, (_, i) =>
       at(i + 1, 400 + (i % 4) * 6, 400 + Math.floor(i / 4) * 6, {
         full: `Bot ${i + 1} · 1`,
@@ -60,10 +61,9 @@ describe('name labels', () => {
       }),
     );
     const placed = placeLabels(crowd, AREA);
-    expect(placed.map((p) => p.id).sort((a, b) => a - b)).toEqual(crowd.map((c) => c.id));
+    expect(placed.length).toBeGreaterThan(2);
+    expect(placed.length).toBeLessThan(crowd.length);
     expect(noOverlaps(placed)).toBe(true);
-    // Who found no room beside the ghost stands apart, joined by a leader line.
-    expect(placed.some((p) => p.leader !== null)).toBe(true);
   });
 
   it('keeps the own full label in a crowd and draws it last', () => {
@@ -81,7 +81,7 @@ describe('name labels', () => {
     const richLabel = placed.find((p) => p.id === 2);
     expect(richLabel?.text).toBe('Bot 2 · 9');
     expect(richLabel?.y).toBeLessThan(300);
-    expect(placed.find((p) => p.id === 1)).toBeDefined();
+    expect(placed.find((p) => p.id === 1)?.text).toBe('Bot 1 · 2');
     expect(noOverlaps(placed)).toBe(true);
   });
 
@@ -105,6 +105,23 @@ describe('name labels', () => {
   });
 });
 
+// NIGHT 2026-11-19: leaders up to 106 px tangled on the phone.
+describe('leader lines', () => {
+  it('keeps every leader line within about one character height', () => {
+    const crowd = Array.from({ length: 10 }, (_, i) =>
+      at(i + 1, 400 + (i % 4) * 6, 400 + Math.floor(i / 4) * 6, { up: 15 }),
+    );
+    const placed = placeLabels(crowd, AREA);
+    const tall = 15 + 10; // up + r
+    expect(placed.some((p) => p.leader !== null)).toBe(true);
+    for (const p of placed.filter((q) => q.leader)) {
+      const leader = p.leader as { x: number; y: number };
+      const length = Math.hypot(p.x - leader.x, p.y - LABEL_HEIGHT / 2 - leader.y);
+      expect(length, p.text).toBeLessThanOrEqual(1.25 * tall);
+    }
+  });
+});
+
 // Session 2026-11-16-LOOK-B: "You · 6  (5 half)" at the left screen edge was pushed inside
 // onto the own ghost's ring, which hid its last letter.
 describe('name labels at the screen edge', () => {
@@ -121,12 +138,14 @@ describe('name labels at the screen edge', () => {
     expect(overlaps(box(label), ring), 'the label on the own ring').toBe(false);
   });
 
-  it('keeps even the last-resort tag inside the edge when no spot fits in the height', () => {
-    // A view as tall as one label: no spot above or below a ghost fits.
+  it('keeps even the own last-resort tag inside the edge when no spot fits in the height', () => {
+    // A view as tall as one label: no spot above or below a ghost fits; another one is left out.
     const flat = { left: 0, top: 100, right: 800, bottom: 110 };
-    const ghost = at(1, 1, 105, { tag: 'Bot 12' });
-    const p = placeLabels([ghost], flat)[0] as PlacedLabel;
-    expect(p.text).toBe('Bot 12');
+    const ghost = at(1, 1, 105, { tag: 'You · 12', own: true });
+    const placed = placeLabels([ghost, at(2, 400, 105)], flat);
+    expect(placed).toHaveLength(1);
+    const p = placed[0] as PlacedLabel;
+    expect(p.text).toBe('You · 12');
     // The text is drawn centred on p.x, as wide as measured.
     expect(p.x - ghost.tagWidth / 2).toBeGreaterThanOrEqual(flat.left);
     expect(p.x + ghost.tagWidth / 2).toBeLessThanOrEqual(flat.right);
@@ -137,22 +156,22 @@ describe('label text', () => {
   const ghost = { id: 3, flags: GHOST_BOT, score: 0 };
 
   it('names a ghost with its score once it has some', () => {
-    expect(labelText({ ...ghost, score: 9 }, false, false)).toEqual({
+    expect(labelText({ ...ghost, score: 9 }, false)).toEqual({
       full: 'Bot 3 · 9',
       tag: '3',
     });
   });
 
   it('calls the own ghost "You", with its score', () => {
-    expect(labelText({ ...ghost, score: 6 }, true, false)).toEqual({
+    expect(labelText({ ...ghost, score: 6 }, true)).toEqual({
       full: 'You · 6',
       tag: 'You',
     });
   });
 
-  it('shows an empty ghost only by its tag to a player, by its name to a spectator', () => {
-    expect(labelText(ghost, false, false).full).toBe('3');
-    expect(labelText(ghost, false, true).full).toBe('Bot 3');
+  it('names a ghost without a score, and leaves the score out where the mode hides it', () => {
+    expect(labelText(ghost, false)).toEqual({ full: 'Bot 3', tag: '3' });
+    expect(labelText({ ...ghost, score: 4 }, false, false).full).toBe('Bot 3');
   });
 });
 

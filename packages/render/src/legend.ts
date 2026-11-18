@@ -9,7 +9,7 @@ export type LegendMarker =
 export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
   {
     marker: 'team',
-    text: 'Colour and hat: the team. Label: its name, or only its number in a crowd; "· 2": its score (knockouts or points).',
+    text: 'Colour and hat: the team. Labels on you, the players and the top three: the name, or only the number in a crowd; "· 2": the score (knockouts or points).',
   },
   { marker: 'own', text: 'White ring on the ground, white triangle above, label "You": you.' },
   { marker: 'fast', text: 'White puffs behind a character: it dashed or was knocked flying.' },

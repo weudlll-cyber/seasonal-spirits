@@ -5,7 +5,7 @@
 
 import type { WireDisc } from '@seasonal-spirits/protocol';
 import { look } from './palette.js';
-import { VIEW_TILT, sx, sy, type View } from './view.js';
+import { sx, sy, type View } from './view.js';
 
 const BREAK_MS = 1000;
 const CHUNKS = 10;
@@ -82,7 +82,7 @@ function chunk(v: View, b: Break, t: number, i: number): void {
   const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
   const scale = 1 - 0.75 * t;
   const drop = t * t * ctx.canvas.height * 0.5 + t * 20 * ((i % 3) - 1);
-  const thick = (b.from - b.to) * v.scale * VIEW_TILT * 0.6;
+  const thick = (b.from - b.to) * v.scale * v.tilt * 0.6;
   ctx.save();
   ctx.translate(cx, cy + drop);
   ctx.rotate(t * (i % 2 ? 1.2 : -1.2));

@@ -7,7 +7,6 @@ import {
   DEFAULT_SETTINGS,
   GAME_MODES,
   configFrom,
-  seasonsInMatch,
   type GameConfig,
   type GameMode,
   type Settings,
@@ -83,10 +82,6 @@ export function matchName(s: { mode: number; flags: number }): string {
 // owner's live tuning when the server sent one (development only).
 export function clientConfig(index: number, tuning: Settings | null = null): GameConfig {
   return configFrom(tuning ?? DEFAULT_SETTINGS, modeOf(index));
-}
-
-export function seasonsOf(index: number): number {
-  return seasonsInMatch(clientConfig(index));
 }
 
 // The bombs' fuse: the share of the season left — 1 just handed out … 0 going off.

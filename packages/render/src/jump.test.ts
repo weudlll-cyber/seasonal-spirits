@@ -39,7 +39,6 @@ function frame(atMs: number, flags = GHOST_AIRBORNE) {
     ownId: null,
     trails,
     nowMs: atMs,
-    labelAll: false,
     fuse: 1,
   });
   return { r, v, body: bodies(r)[0] };
