@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 import { GHOST_PROTECTED } from '@seasonal-spirits/protocol';
-import { ghostRadiusPx, ghostReach } from './reach.js';
+import { ghostRadiusPx, ghostReach, ghostSide } from './reach.js';
 import { fitField, type View } from './view.js';
 
 // A desktop camera: about 0.63 px per field unit.
@@ -29,5 +29,11 @@ describe('drawn sizes', () => {
     // above that ring.
     expect(ghostReach(10, { id: 1, flags: GHOST_PROTECTED }, null)).toBe(20);
     expect(ghostReach(10, { id: 1, flags: GHOST_PROTECTED }, 1)).toBe(39);
+  });
+
+  // CI 2026-11-18: counting the hat on every side left a crowd's labels no room.
+  it('keeps labels clear of the arms at the sides, not of the hat', () => {
+    expect(ghostSide(10, { flags: 0 })).toBe(13);
+    expect(ghostSide(10, { flags: GHOST_PROTECTED })).toBe(20);
   });
 });

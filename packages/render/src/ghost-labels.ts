@@ -14,11 +14,11 @@ import {
 } from './labels.js';
 import { look } from './palette.js';
 import { PILL_PAD, pillBox } from './pill.js';
-import { ghostRadiusPx, ghostReach } from './reach.js';
+import { ghostRadiusPx, ghostReach, ghostSide } from './reach.js';
 import { sx, sy, visibleArea, type View } from './view.js';
 
 const labelFont = (own: boolean): string =>
-  `${own ? '600' : '500'} 11px Fredoka, system-ui, sans-serif`;
+  `${own ? '600' : '500'} 10px Fredoka, system-ui, sans-serif`;
 
 // Every ghost on screen is named (owner's observation 2026-11-15: unnamed dots), with its tag
 // as the fallback in a crowd (labelText, placeLabels: labels.ts). Widths include the pill.
@@ -42,7 +42,8 @@ function candidateOf(
     id: g.id,
     x: sx(v, g.x),
     y: sy(v, g.y),
-    r: ghostReach(ghostRadiusPx(v), g, style.ownId),
+    r: ghostSide(ghostRadiusPx(v), g),
+    up: ghostReach(ghostRadiusPx(v), g, style.ownId),
     full,
     fullWidth: ctx.measureText(full).width + 2 * PILL_PAD,
     tag,

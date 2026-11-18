@@ -1,7 +1,7 @@
 // Seasonal Sumo — how large a character is drawn and how far its drawing reaches (moved out of
 // ghosts.ts for the Sky Island look, 2026-11-18): its body radius in pixels from the match's
-// size, and how far above its centre the hat, a bomb, the protection ring or the own triangle
-// reach — what its label keeps clear of.
+// size, how far above its centre the hat, a bomb, the protection ring or the own triangle reach,
+// and how far to its sides it reaches — what its label keeps clear of.
 
 import {
   GHOST_AIRBORNE,
@@ -24,8 +24,14 @@ export function ghostRadiusPx(v: View): number {
   return Math.max(4, shape().ghostRadius * v.scale);
 }
 
-// How far from the body's centre a character of body radius `r` pixels is drawn: what its label
-// keeps clear of (LabelCandidate.r) — its hat (larger in the air), a bomb above it in full, the
+// How far to the sides and below a character of body radius `r` pixels is drawn (LabelCandidate.r):
+// its arms and feet, or the protection ring.
+export function ghostSide(r: number, g: Pick<GhostState, 'flags'>): number {
+  return g.flags & GHOST_PROTECTED ? r + PROTECT_RING + 1 : r * REACH.side;
+}
+
+// How far above the body's centre a character of body radius `r` pixels is drawn: what its label
+// keeps clear of (LabelCandidate.up) — its hat (larger in the air), a bomb above it in full, the
 // protection ring, and for the own one the triangle above all of that.
 export function ghostReach(
   r: number,

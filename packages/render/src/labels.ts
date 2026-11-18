@@ -22,6 +22,9 @@ export interface LabelCandidate {
   // 2026-11-16-LOOK-B: "You · 6  (5 half)" pushed in from the screen edge onto the own ring,
   // the ring hid its last letter).
   r: number;
+  // Pixels above the centre what is drawn reaches when that is more than `r` (a character's hat,
+  // a bomb, the own triangle: Sky Island look); `r` when absent.
+  up?: number;
   full: string; // the name (with the score once it has some)
   fullWidth: number;
   tag: string; // the short tag: the bot's number, "P<n>" for a player, "You"
@@ -77,7 +80,7 @@ function spotsFor(c: LabelCandidate): Spot[] {
   const short = c.own ? full : { text: c.tag, width: c.tagWidth };
   const middle = c.y + LABEL_HEIGHT / 2 - 2;
   const near = (t: typeof full): Spot[] => [
-    { ...t, x: c.x, y: c.y - c.r - 6, leader: false },
+    { ...t, x: c.x, y: c.y - (c.up ?? c.r) - 6, leader: false },
     { ...t, x: c.x, y: c.y + c.r + 6 + LABEL_HEIGHT, leader: false },
   ];
   const spots = [...near(full), ...near(short)];
@@ -133,10 +136,10 @@ function toPlaced(c: LabelCandidate, s: Spot, box: Rect): PlacedLabel {
   };
 }
 
-// The square around a ghost's drawn body (centre and radius in pixels): what a label keeps
-// clear of.
-export function bodyBox(g: { x: number; y: number; r: number }): Rect {
-  return { left: g.x - g.r, right: g.x + g.r, top: g.y - g.r, bottom: g.y + g.r };
+// The box around a ghost's drawing (centre, radius and the reach above in pixels): what a label
+// keeps clear of.
+export function bodyBox(g: { x: number; y: number; r: number; up?: number }): Rect {
+  return { left: g.x - g.r, right: g.x + g.r, top: g.y - (g.up ?? g.r), bottom: g.y + g.r };
 }
 
 // `area` is the visible field: below the bar, inside the screen; `avoid` are boxes already
