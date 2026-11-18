@@ -94,14 +94,19 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   quarters above: screen y = field y × the view's tilt (`VIEW_TILT` 0.55, steeper on a portrait
   phone up to `MAX_TILT` 0.9 — see Camera; render `view.ts`; input directions stay screen =
   field), ghosts drawn back to front by where they stand (`byDepth`). Around it
-  the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, clouds,
-  small far islands, the sea band at the bottom, two big clouds low in front. Sumo: the arena is
+  the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, small far
+  islands, the sea band at the bottom, two big clouds low in front; over it what moves slowly
+  (render `ambient.ts`, NIGHT 2026-11-19): the far clouds drift and wrap round, the waves move
+  along, the sun's dashed ring turns, at night the moon glows softly and a few stars twinkle; the
+  grass tufts and the tree crowns sway a little (render `decor.ts`). With
+  `prefers-reduced-motion` all of that holds still and the effects below run half as long
+  (render `motion.ts`). Sumo: the arena is
   a floating island's round grass top with an ink rim, a dirt edge and a hanging rock body with
   strata, roots and three jagged points (render `island.ts`), grass tufts, flowers, two trees and
   two pebbles on it (render `decor.ts`, scaled with the arena); the next halving's edge is a
   dashed crack with small ticks the whole match, pulsing in the countdown; at the halving the
-  outer ring breaks into ten chunks that drop and shrink towards the sea over a second (render
-  `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
+  outer ring breaks into ten chunks that tumble, drop and shrink towards the sea over a second
+  (render `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
   the same island with a low wooden fence along its walls (the camera keeps room for the back
   fence's posts below the band, render `cameraBox`); in hill the zone is tinted grass inside an
   ink ring in the season's colour, ringed by flags in that colour sized by the zone on screen
@@ -123,7 +128,8 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   least 4.5:1 in both (tested in `palette.test.ts`); the banner's and the lives' red is
   #CC4858, white on it 4.53:1 (NIGHT 2026-11-19; #FF5A6E was 3.0:1).
 - **Ghosts** (Sky Island look 2026-11-18): round toy-like characters (render `character.ts`)
-  in their team colour — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
+  in their team colour, softly shaded (a highlight at the top left, a shade at the lower right)
+  — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
   with feet in a darker shade, short arms, a light belly, big eyes, pink cheeks, a smile and the
   season's hat (spring a crown of flowers, summer a straw hat and sunglasses, autumn a beanie
   with a leaf, winter a wool hat with a pompom), each over a soft shadow, facing the side it last
@@ -144,9 +150,14 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   owner's option, render `windup.ts`) glows white with an ink-edged line on the ground in its
   direction; the own ghost holds through its wind-up from the press on (the prediction). What
   the drawing remembers between frames is render `trails.ts`. A character faster than running
-  (a dash, a knock) leaves three white puffs; one falling off (render `fall.ts`) tips over the
-  edge, turns head-down with an open mouth and drops, shrinking, to the sea with three white
-  streaks and an "Aaah!" bubble, and splashes there, all within `fallMs`; one out is not drawn;
+  (a dash, a knock) leaves three white puffs; a dash's start stretches the body upright, a
+  landing and a respawn squash it, a landing kicks up dust at the feet (two puffs on a phone,
+  four on a desktop), a knock shows a white star halfway between the knocked one and the dasher
+  that hit it, and the knocked one slides with spiral eyes (render `moments.ts`, `effects.ts`; the
+  client sees no hit itself: a knock is a character faster than running without dashing); one
+  falling off (render `fall.ts`) tips over the edge, turns head-down with an open mouth and
+  drops, shrinking, to the sea with three white streaks and an "Aaah!" bubble, and lands in a
+  white crown of water with a ring widening round it on the sea, all within `fallMs`; one out is not drawn;
   one just back wears a white dashed ring (protected). Labels (render `ghost-labels.ts`, NIGHT
   2026-11-19: a label had sat on almost every character): only the own character, the real
   players and the top three by score carry one, bots otherwise none, for players and spectators

@@ -1,7 +1,8 @@
 // Seasonal Sumo — a character falling off the island (Sky Island look, 2026-11-18): it tips over
 // the edge, turns head-down with an open "o" mouth, drops and shrinks towards the sea below with
-// three white speed streaks and a short "Aaah!" bubble, and lands with a small splash on the sea
-// band — all within the match's fall time (fallMs; `t` 0 … 1 from trails.ts).
+// three white speed streaks and a short "Aaah!" bubble, and lands in a splash on the sea band — a
+// white crown with a ring widening round it — all within the match's fall time (fallMs; `t`
+// 0 … 1 from trails.ts).
 
 import { inkWidth } from './character.js';
 import { look } from './palette.js';
@@ -63,32 +64,41 @@ function streaks(ctx: CanvasRenderingContext2D, x: number, y: number, r: number)
   }
 }
 
-// A small white splash on the sea band, `t` 0 … 1 into it.
+// The splash on the sea band, `t` 0 … 1 into it (NIGHT 2026-11-19): a white crown of water rising
+// and sinking back, and a ring widening on the sea round it.
 function splash(
   ctx: CanvasRenderingContext2D,
   { x, sea, r }: { x: number; sea: number; r: number },
   t: number,
 ): void {
   const l = look();
+  ctx.strokeStyle = l.ink;
+  ctx.lineWidth = inkWidth(r) * 0.7;
+  // The ring on the sea, lying flat.
   ctx.globalAlpha = 1 - t;
+  ctx.strokeStyle = l.puff;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.ellipse(x, sea + 8, r * (0.9 + 2.2 * t), r * (0.3 + 0.6 * t), 0, 0, Math.PI * 2);
+  ctx.stroke();
+  // The crown: five spikes up from a base, highest in the middle of the splash.
+  const rise = Math.sin(Math.PI * Math.min(1, t * 1.3)) * r * 1.6;
+  const half = r * (0.7 + 0.4 * t);
   ctx.fillStyle = l.puff;
   ctx.strokeStyle = l.ink;
   ctx.lineWidth = inkWidth(r) * 0.7;
   ctx.beginPath();
-  ctx.ellipse(x, sea + 6, r * (0.8 + t), r * (0.25 + 0.2 * t), 0, 0, Math.PI * 2);
+  ctx.moveTo(x - half, sea + 6);
+  for (let i = 0; i <= 4; i++) {
+    const px = x - half + (i / 4) * 2 * half;
+    const tip = rise * (i === 2 ? 1 : i % 2 ? 0.75 : 0.55);
+    ctx.lineTo(px - half * 0.12, sea + 2 - tip * 0.35);
+    ctx.lineTo(px, sea + 2 - tip);
+    ctx.lineTo(px + half * 0.12, sea + 2 - tip * 0.35);
+  }
+  ctx.lineTo(x + half, sea + 6);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  for (const side of [-1, -0.4, 0.4, 1]) {
-    ctx.beginPath();
-    ctx.arc(
-      x + side * r * (0.6 + t),
-      sea - r * (0.6 + t * 0.8) * (1 - Math.abs(side) * 0.3),
-      r * 0.18,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fill();
-    ctx.stroke();
-  }
   ctx.globalAlpha = 1;
 }

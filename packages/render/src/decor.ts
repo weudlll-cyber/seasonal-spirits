@@ -1,9 +1,11 @@
 // Seasonal Sumo — what grows on the island's top (Sky Island look, 2026-11-18): grass tufts, a
 // few flowers, two small trees at the back, two pebbles, and at night three small lanterns with a
 // warm halo — at fixed places in the ground's own units, so they scale with the arena and shrink
-// with it at a halving. Pure decoration: nothing here touches a ghost.
+// with it at a halving; the tufts and the tree crowns sway a little (NIGHT 2026-11-19; still with
+// reduced motion). Pure decoration: nothing here touches a ghost.
 
 import type { OnScreen } from './island.js';
+import { ambientMs } from './motion.js';
 import { LANTERN, look } from './palette.js';
 
 // Places on the top: (u, w) from -1 to 1 across and from back to front.
@@ -43,8 +45,9 @@ const TREES = [
   [0.6, -0.48, 1],
 ] as const;
 
-export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen): void {
+export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: number): void {
   const l = look();
+  const t = ambientMs(nowMs) / 1000;
   const u = o.rx; // the decoration's unit
   const at = (p: readonly [number, number, ...unknown[]]): [number, number] => [
     o.cx + p[0] * o.rx * 0.82,
@@ -58,9 +61,10 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen): void {
   ctx.beginPath();
   for (const p of TUFTS) {
     const [x, y] = at(p);
+    const sway = Math.sin(t * 1.7 + p[0] * 4) * tuft * 0.3;
     for (const lean of [-0.6, 0, 0.6]) {
       ctx.moveTo(x + lean * tuft * 0.4, y);
-      ctx.lineTo(x + lean * tuft, y - tuft);
+      ctx.lineTo(x + lean * tuft + sway, y - tuft);
     }
   }
   ctx.stroke();
@@ -84,22 +88,38 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen): void {
     ctx.fill();
     ctx.stroke();
   }
-  const crown = size(0.085, 6, 26);
+  trees(
+    ctx,
+    TREES.map((p) => [...at(p), p[2]]),
+    size(0.085, 6, 26),
+    t,
+  );
+  if (l.night) lanterns(ctx, LANTERNS.map(at), size(0.03, 3, 8));
+}
+
+// The two trees at (x, y) px with their crown colour's index, the crowns swaying a little (`t`
+// seconds).
+function trees(
+  ctx: CanvasRenderingContext2D,
+  places: readonly (readonly [number, number, 0 | 1])[],
+  crown: number,
+  t: number,
+): void {
+  const l = look();
   ctx.lineWidth = 2.5;
-  for (const p of TREES) {
-    const [x, y] = at(p);
+  ctx.strokeStyle = l.ink;
+  for (const [x, y, k] of places) {
     ctx.fillStyle = l.roots;
     ctx.beginPath();
     ctx.rect(x - crown * 0.18, y - crown * 1.2, crown * 0.36, crown * 1.2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = l.crowns[p[2]];
+    ctx.fillStyle = l.crowns[k];
     ctx.beginPath();
-    ctx.arc(x, y - crown * 1.55, crown, 0, Math.PI * 2);
+    ctx.arc(x + Math.sin(t * 0.9 + k * 2) * crown * 0.07, y - crown * 1.55, crown, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }
-  if (l.night) lanterns(ctx, LANTERNS.map(at), size(0.03, 3, 8));
 }
 
 // Small lanterns on posts, each in a warm halo.

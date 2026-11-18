@@ -137,7 +137,7 @@ function frame(): void {
   const latest = buffer.at(-1)?.state;
   if (latest) useShape(clientConfig(latest.mode, settings));
   trails.record(ghosts, now);
-  drawSky(ctx);
+  drawSky(ctx, now);
   drawField(fitField(ctx, CLOCK_HEIGHT), latest, now, breaks);
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
     ownId: null,

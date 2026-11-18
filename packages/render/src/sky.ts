@@ -1,8 +1,8 @@
 // Seasonal Sumo — the sky around the island (Sky Island look, 2026-11-18): the sky, a sun top
-// right (at night a crescent moon and stars), soft clouds far behind, two or three small far
-// islands, the sea band at the bottom with its waves, and two big clouds low in front. Drawn once
-// per canvas size and look into offscreen canvases (the frame only copies them), so the backdrop
-// costs nothing per frame.
+// right (at night a crescent moon and stars), two or three small far islands, the sea band at
+// the bottom, and two big clouds low in front. Drawn once per canvas size and look into offscreen
+// canvases (the frame only copies them); what moves over it — the far clouds, the waves, the
+// sun's ring, the moon's glow, twinkling stars — is ambient.ts (NIGHT 2026-11-19).
 
 import { look, type Look } from './palette.js';
 
@@ -34,7 +34,7 @@ function blobs(
 }
 
 // A soft cloud at (x, y), `s` px across its middle puff.
-function cloud(ctx: Ctx, [x, y, s]: readonly [number, number, number], fill: string): void {
+export function cloud(ctx: Ctx, [x, y, s]: readonly [number, number, number], fill: string): void {
   blobs(
     ctx,
     [
@@ -67,6 +67,19 @@ function farIsland(ctx: Ctx, [x, y, s]: readonly [number, number, number], l: Lo
   ctx.stroke();
 }
 
+// The `i`th star of the night sky on a `w` × `h` canvas: a fixed scatter (golden-ratio steps),
+// the same on every size.
+export function starAt(i: number, w: number, h: number): [number, number] {
+  return [((i * 0.618034) % 1) * w, ((i * 0.381966 * 1.7) % 1) * seaTop(h) * 0.9];
+}
+
+// The sun's place and size (at night the moon's), top right below the bar and the band (on a
+// phone it stood behind the band, NIGHT 2026-11-19).
+export function sunOf(w: number, h: number): { x: number; y: number; r: number } {
+  const u = Math.min(w, h) / 800;
+  return { x: w - 90 * u - 20, y: Math.max(190 * u, 140), r: 38 * u };
+}
+
 // The night sky: small white stars at fixed places and a crescent moon where the sun stands.
 function night(
   ctx: Ctx,
@@ -76,9 +89,7 @@ function night(
 ): void {
   ctx.fillStyle = '#ffffff';
   for (let i = 0; i < 70; i++) {
-    // A fixed scatter (golden-ratio steps), the same on every size.
-    const x = ((i * 0.618034) % 1) * w;
-    const y = ((i * 0.381966 * 1.7) % 1) * seaTop(h) * 0.9;
+    const [x, y] = starAt(i, w, h);
     ctx.globalAlpha = 0.45 + 0.5 * ((i * 0.7548) % 1);
     ctx.beginPath();
     ctx.arc(x, y, (i % 3 === 0 ? 1.8 : 1.1) * Math.max(1, u), 0, Math.PI * 2);
@@ -96,16 +107,10 @@ function drawBack(ctx: Ctx, w: number, h: number, l: Look): void {
   const u = Math.min(w, h) / 800; // the backdrop's unit: 1 on an 800 px screen
   ctx.fillStyle = l.sky;
   ctx.fillRect(0, 0, w, h);
-  // The sun (at night the moon and the stars), top right below the bar and the band (on a phone
-  // it stood behind the band, NIGHT 2026-11-19).
-  const sun = { x: w - 90 * u - 20, y: Math.max(190 * u, 140), r: 38 * u };
+  // The sun (at night the moon and the stars); its turning ring is ambient.ts.
+  const sun = sunOf(w, h);
   if (l.night) night(ctx, { w, h, u }, sun, l);
   else {
-    ctx.lineWidth = 10 * u;
-    ctx.strokeStyle = l.sunRing;
-    ctx.beginPath();
-    ctx.arc(sun.x, sun.y, sun.r + 14 * u, 0, Math.PI * 2);
-    ctx.stroke();
     ctx.fillStyle = l.sun;
     ctx.lineWidth = OUTLINE;
     ctx.strokeStyle = l.ink;
@@ -114,18 +119,10 @@ function drawBack(ctx: Ctx, w: number, h: number, l: Look): void {
     ctx.fill();
     ctx.stroke();
   }
-  for (const [fx, fy, fs] of [
-    [0.1, 0.3, 70],
-    [0.42, 0.22, 52],
-    [0.72, 0.42, 60],
-    [0.2, 0.62, 44],
-  ] as const) {
-    cloud(ctx, [fx * w, fy * h, fs * u], l.cloud);
-  }
   farIsland(ctx, [0.08 * w, 0.48 * h, 34 * u], l);
   farIsland(ctx, [0.9 * w, 0.62 * h, 26 * u], l);
   farIsland(ctx, [0.62 * w, 0.18 * h + 40 * u, 18 * u], l);
-  // The sea band and its waves.
+  // The sea band (its waves: ambient.ts).
   const sea = seaTop(h);
   ctx.fillStyle = l.sea;
   ctx.fillRect(0, sea, w, h - sea);
@@ -135,18 +132,6 @@ function drawBack(ctx: Ctx, w: number, h: number, l: Look): void {
   ctx.moveTo(0, sea);
   ctx.lineTo(w, sea);
   ctx.stroke();
-  ctx.strokeStyle = l.wave;
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = 'round';
-  const step = 46;
-  for (let row = 0; row < 3; row++) {
-    const y = sea + ((h - sea) * (row + 1)) / 4;
-    for (let x = (row % 2) * (step / 2); x < w; x += step) {
-      ctx.beginPath();
-      ctx.arc(x + 9, y + 5, 9, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-    }
-  }
 }
 
 function drawFront(ctx: Ctx, w: number, h: number, l: Look): void {
@@ -183,8 +168,8 @@ function layer(
 const back = { current: null as Layer | null };
 const front = { current: null as Layer | null };
 
-// The whole canvas: the sky, the far clouds and islands, the sea.
-export function drawSky(ctx: Ctx): void {
+// The whole canvas: the sky, the sun or the moon and the stars, the far islands, the sea.
+export function drawBackdrop(ctx: Ctx): void {
   const { width, height } = ctx.canvas;
   ctx.drawImage(layer(back, width, height, drawBack), 0, 0);
 }

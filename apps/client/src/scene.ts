@@ -120,7 +120,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
   const view = camera(ctx, f.latest, f.hud.zones);
   const now = performance.now();
   const { trails } = memory;
-  drawSky(ctx);
+  drawSky(ctx, now);
   trails.record(f.ghosts, now);
   let labels: PlacedLabel[] = [];
   belowBar(view, () => {

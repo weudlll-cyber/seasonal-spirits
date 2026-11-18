@@ -1,7 +1,7 @@
 // Seasonal Sumo — sumo's halving on screen (Sky Island look, 2026-11-18): the island's outer ring
-// breaks into chunks — grass, dirt and rock — that drop and shrink towards the sea over about a
-// second, while the server eases the edge in to the new size. Watches the arena's radius the
-// states bring: a drop starts the break (no event to miss between two frames).
+// breaks into chunks — grass, dirt and rock — that tumble, drop and shrink towards the sea over
+// about a second, while the server eases the edge in to the new size. Watches the arena's radius
+// the states bring: a drop starts the break (no event to miss between two frames).
 
 import type { WireDisc } from '@seasonal-spirits/protocol';
 import { look } from './palette.js';
@@ -53,7 +53,21 @@ export class BreakOff {
 // Chunk `i`'s place round the ring, a little uneven.
 const angleOf = (i: number): number => ((i + 0.5) / CHUNKS) * Math.PI * 2 + (i % 2) * 0.12;
 
-// Chunk `i`: a piece of the ring, dropped and shrunk by `t` (0 … 1).
+// Chunk `i` from (x, y) px, `t` (0 … 1) into its fall: dropped, shrunk, and tumbling — turning
+// and flipping over its long side (NIGHT 2026-11-19).
+function tumble(
+  ctx: CanvasRenderingContext2D,
+  [x, y]: [number, number],
+  t: number,
+  i: number,
+): void {
+  const scale = 1 - 0.75 * t;
+  ctx.translate(x, y + t * t * ctx.canvas.height * 0.5 + t * 20 * ((i % 3) - 1));
+  ctx.rotate(t * (i % 2 ? 3.2 : -3.2));
+  ctx.scale(scale, scale * Math.cos(t * Math.PI * (1.2 + (i % 3) * 0.3)));
+}
+
+// Chunk `i`: a piece of the ring, `t` (0 … 1) into its fall.
 function chunk(v: View, b: Break, t: number, i: number): void {
   const { ctx } = v;
   const a = angleOf(i);
@@ -80,13 +94,9 @@ function chunk(v: View, b: Break, t: number, i: number): void {
   ];
   const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
   const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-  const scale = 1 - 0.75 * t;
-  const drop = t * t * ctx.canvas.height * 0.5 + t * 20 * ((i % 3) - 1);
   const thick = (b.from - b.to) * v.scale * v.tilt * 0.6;
   ctx.save();
-  ctx.translate(cx, cy + drop);
-  ctx.rotate(t * (i % 2 ? 1.2 : -1.2));
-  ctx.scale(scale, scale);
+  tumble(ctx, [cx, cy], t, i);
   ctx.globalAlpha = 1 - 0.4 * t;
   const face = (dy: number): void => {
     ctx.beginPath();

@@ -7,7 +7,9 @@
 // wears a white dashed ring; one in the air after a jump rises on an arc while its shadow stays
 // on the ground, with a ground ring at take-off and landing and "Dodged!" when a dash passed
 // under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts); a dash
-// winding up glows with its line (windup.ts). Labels: ghost-labels.ts. What the drawing
+// winding up glows with its line (windup.ts). A dash's start stretches the body, a landing or a
+// respawn squashes it, a landing kicks up dust, a hit shows a white star and the knocked one
+// slides with spiral eyes (moments.ts, effects.ts). Labels: ghost-labels.ts. What the drawing
 // remembers between frames is trails.ts.
 
 import {
@@ -19,10 +21,12 @@ import {
 } from '@seasonal-spirits/protocol';
 import { drawBomb, drawCarrier } from './bomb.js';
 import { inkWidth } from './character.js';
+import { drawDust, drawStar } from './effects.js';
 import { drawFall } from './fall.js';
 import { drawLabels } from './ghost-labels.js';
 import { airScale, arcHeight, drawDodged, drawGroundRing, drawShadow, lifted } from './jump.js';
 import type { PlacedLabel } from './labels.js';
+import { fastSpeed } from './moments.js';
 import { drawOwnPointer, drawOwnRing } from './own.js';
 import { look } from './palette.js';
 import { PROTECT_RING, ghostRadiusPx, ghostReach } from './reach.js';
@@ -32,8 +36,6 @@ import type { Trails } from './trails.js';
 import { byDepth, circle, sx, sy, type View } from './view.js';
 import { drawWindUp } from './windup.js';
 
-// A ghost faster than running can make it leaves puffs: a dash or a knock.
-const puffSpeed = (): number => shape().maxSpeed * 1.1;
 const WALK_SPEED = 20; // field units per second before the feet step
 const STEP_MS = 140; // one step
 const BOB_PX = 1.5;
@@ -86,6 +88,8 @@ export function drawGhosts(
   for (const { g, h } of shown) {
     const t = style.trails.dodged(g.id, style.nowMs);
     if (t !== null) drawDodged(v, g, ghostRadiusPx(v) * airScale(h), t);
+    const star = style.trails.moments.star(g.id, style.nowMs);
+    if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
   }
   return labels;
 }
@@ -96,9 +100,11 @@ function drawGround(v: View, { real, h }: Aloft, style: GhostStyle): void {
   if (real.flags & GHOST_FALLING) return;
   const r = ghostRadiusPx(v);
   drawShadow(v, real, r, h);
-  if (Math.hypot(real.vx, real.vy) > puffSpeed()) drawPuffs(v, real, style.trails, r);
+  if (Math.hypot(real.vx, real.vy) > fastSpeed()) drawPuffs(v, real, style.trails, r);
   const ring = style.trails.ring(real.id, style.nowMs);
   if (ring !== null) drawGroundRing(v, real, r, ring);
+  const dust = style.trails.moments.dust(real.id, style.nowMs);
+  if (dust !== null) drawDust(v, real, r, dust);
   if (real.id === style.ownId) drawOwnRing(v, { ...real, r }, style.ownPulseMs ?? null);
 }
 
@@ -155,9 +161,12 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): number | null {
   const walking = h === 0 && Math.hypot(real.vx, real.vy) > WALK_SPEED;
   const beat = style.nowMs / STEP_MS + g.id * 0.37;
   const bob = walking ? Math.sin(beat * Math.PI) * BOB_PX : 0;
-  const pose = !walking ? 'idle' : Math.floor(beat) % 2 ? 'stepA' : 'stepB';
+  const moments = style.trails.moments;
+  const step = Math.floor(beat) % 2 ? 'stepA' : 'stepB';
+  const pose = moments.dizzy(g.id) ? 'dizzy' : walking ? step : 'idle';
   const y = sy(v, g.y) - Math.abs(bob);
-  drawSprite(ctx, { x: sx(v, g.x), y, r, base, left }, g.team, pose);
+  const squash = moments.squash(g.id, style.nowMs);
+  drawSprite(ctx, { x: sx(v, g.x), y, r, base, left, squash }, g.team, pose);
   if (g.flags & GHOST_PROTECTED) {
     ctx.strokeStyle = look().puff;
     ctx.lineWidth = 2;

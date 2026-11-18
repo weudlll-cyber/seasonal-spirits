@@ -38,6 +38,7 @@ export function recorder(width = 1280, height = 800): Recorded {
     closePath: () => rec.closed.push(start),
     fillText: (s: string) => rec.texts.push(s),
     measureText: (s: string) => ({ width: 6 * s.length }),
+    createRadialGradient: () => ({ addColorStop: () => undefined }),
   };
   const ctx = new Proxy(state, {
     get: (o, k) => {

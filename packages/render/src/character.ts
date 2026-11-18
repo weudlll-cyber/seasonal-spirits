@@ -2,17 +2,21 @@
 // its body's centre: a bean body in the team's colour with an ink outline, two oval feet, short
 // arms, a lighter belly, big eyes, pink cheeks, a small smile and its season's hat (spring a
 // crown of flowers, summer a straw sun hat and sunglasses, autumn a rust beanie with a leaf,
-// winter a wool hat with a pompom). Pure drawing on any context; sprites.ts caches it.
+// winter a wool hat with a pompom); softly shaded — a highlight at the top left, a shade at the
+// lower right — and with spiral eyes when knocked ('dizzy', NIGHT 2026-11-19). Pure drawing on
+// any context; sprites.ts caches it.
 
 import { look, seasonColour } from './palette.js';
 
-export type Pose = 'idle' | 'stepA' | 'stepB' | 'falling';
+export type Pose = 'idle' | 'stepA' | 'stepB' | 'falling' | 'dizzy';
 
 // How far the drawing reaches from the body's centre, in body radii: the hat's top, the feet's
 // bottom, the arms' sides.
 export const REACH = { top: 1.5, bottom: 1.2, side: 1.3 } as const;
 
 const BELLY = 'rgba(255, 255, 255, 0.33)';
+const LIGHT = 'rgba(255, 255, 255, 0.45)';
+const SHADE = 'rgba(30, 20, 60, 0.18)';
 const CHEEK = 'rgba(255, 122, 168, 0.33)';
 const HATS = {
   flower: ['#ff8fb1', '#ffffff', '#ff8fb1'],
@@ -58,6 +62,7 @@ export function drawCharacter(ctx: Ctx, team: number, pose: Pose, r: number): vo
   }
   oval(ctx, [0, 0, r, r * 1.04], colour);
   ctx.save();
+  shading(ctx, r);
   ctx.lineWidth = 0;
   ctx.fillStyle = BELLY;
   ctx.beginPath();
@@ -74,10 +79,47 @@ export function drawCharacter(ctx: Ctx, team: number, pose: Pose, r: number): vo
   hat(ctx, team, r);
 }
 
+// Inside the body (the current path): a shade towards the lower right, a soft highlight at the
+// top left. Leaves the body as the clip.
+function shading(ctx: Ctx, r: number): void {
+  ctx.clip();
+  const shade = ctx.createRadialGradient(
+    -0.35 * r,
+    -0.45 * r,
+    0.4 * r,
+    -0.2 * r,
+    -0.2 * r,
+    1.4 * r,
+  );
+  shade.addColorStop(0, 'rgba(30, 20, 60, 0)');
+  shade.addColorStop(1, SHADE);
+  ctx.fillStyle = shade;
+  ctx.fillRect(-r, -1.1 * r, 2 * r, 2.2 * r);
+  ctx.fillStyle = LIGHT;
+  ctx.beginPath();
+  ctx.ellipse(-0.42 * r, -0.55 * r, 0.26 * r, 0.16 * r, -0.6, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Spiral eyes: a knocked character sliding away.
+function spirals(ctx: Ctx, r: number): void {
+  for (const side of [-1, 1]) {
+    oval(ctx, [side * 0.33 * r, -0.2 * r, 0.24 * r, 0.3 * r], '#ffffff');
+    ctx.beginPath();
+    for (let a = 0; a < Math.PI * 4; a += 0.3) {
+      const d = (a / (Math.PI * 4)) * 0.2 * r;
+      ctx.lineTo(side * 0.33 * r + Math.cos(a * side) * d, -0.2 * r + Math.sin(a * side) * d);
+    }
+    ctx.stroke();
+  }
+}
+
 function face(ctx: Ctx, team: number, pose: Pose, r: number): void {
   const ink = look().ink;
   ctx.lineWidth = Math.max(1, inkWidth(r) * 0.6);
-  if ((team & 3) === 1) {
+  if (pose === 'dizzy') {
+    spirals(ctx, r);
+  } else if ((team & 3) === 1) {
     // Summer: dark sunglasses instead of the eyes.
     ctx.fillStyle = ink;
     for (const side of [-1, 1]) {

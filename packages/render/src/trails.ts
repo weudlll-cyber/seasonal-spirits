@@ -1,8 +1,8 @@
 // Seasonal Sumo — what the drawing remembers of each ghost between frames (moved out of ghosts.ts
 // on NIGHT 2026-11-18): its last positions (the dash puffs), the side it faces (the character
 // looks where it last walked), when it began to fall (the fall), when it took off and landed (the
-// jump's arc and ground rings) and when a dash passed under it ("Dodged!"). Bounded by the ghost
-// ids: a ghost no longer drawn is forgotten.
+// jump's arc and ground rings), when a dash passed under it ("Dodged!"), and the moments its
+// effects play from (moments.ts). Bounded by the ghost ids: a ghost no longer drawn is forgotten.
 
 import {
   GHOST_AIRBORNE,
@@ -11,13 +11,11 @@ import {
   type GhostState,
 } from '@seasonal-spirits/protocol';
 import { DODGED_MS, RING_MS } from './jump.js';
+import { Moments, since } from './moments.js';
 import { shape } from './shape.js';
 
 const TRAIL_POINTS = 12;
 const FACE_SPEED = 20; // field units per second sideways before a character turns
-
-const since = (at: number | undefined, nowMs: number, ms: number): number | null =>
-  at === undefined || nowMs - at >= ms ? null : (nowMs - at) / ms;
 
 export class Trails {
   private readonly points = new Map<number, { x: number; y: number }[]>();
@@ -26,6 +24,7 @@ export class Trails {
   private readonly groundAt = new Map<number, number>(); // the last take-off or landing
   private readonly dodgedAt = new Map<number, number>();
   private readonly left = new Map<number, boolean>(); // faces left
+  readonly moments = new Moments();
 
   record(ghosts: readonly GhostState[], nowMs: number): void {
     const seen = new Set<number>();
@@ -36,8 +35,9 @@ export class Trails {
       if (list.length > TRAIL_POINTS) list.shift();
       this.points.set(g.id, list);
       if (Math.abs(g.vx) > FACE_SPEED) this.left.set(g.id, g.vx < 0);
-      this.moments(g, nowMs);
+      this.flagMoments(g, nowMs);
     }
+    this.moments.record(ghosts, nowMs);
     const all = [this.points, this.fellAt, this.tookOffAt, this.groundAt, this.dodgedAt, this.left];
     for (const ids of all) {
       for (const id of ids.keys()) if (!seen.has(id)) ids.delete(id);
@@ -45,7 +45,7 @@ export class Trails {
   }
 
   // When the ghost began to fall, took off, landed, and dodged a dash.
-  private moments(g: GhostState, nowMs: number): void {
+  private flagMoments(g: GhostState, nowMs: number): void {
     if (!(g.flags & GHOST_FALLING)) this.fellAt.delete(g.id);
     else if (!this.fellAt.has(g.id)) this.fellAt.set(g.id, nowMs);
     const air = (g.flags & GHOST_AIRBORNE) !== 0;

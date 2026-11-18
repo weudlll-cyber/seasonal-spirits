@@ -67,15 +67,24 @@ only its marks on top, the island's rock reaching over the sea band, the phone's
 look on desktop and phone and said what stays.
 
 ah. **NIGHT CHAIN 2026-11-19 — the Sky Island look clearer, livelier, complete** (owner's
-direction 2026-11-18; render, client, viewer and sound only). Piece 1 (clarity) landed (CLOSED).
-Still to do, in this order, each its own commit with screenshots, frame cost and the specs:
-2 life and polish (ambient motion, shading, squash and stretch, hit star, spiral eyes, splash
-crown, tumbling chunks, reduced motion); 3 the season on the island (petals, butterflies,
+direction 2026-11-18; render, client, viewer and sound only). Pieces 1 (clarity) and 2 (life
+and polish) landed (CLOSED). Still to do, in this order, each its own commit with screenshots,
+frame cost and the specs: 3 the season on the island (petals, butterflies,
 leaves, snow, cross-fade at a halving); 4 start and result screens in the look; 5 sound
 (synthesised, behind the Sound switch); 6 the viewer in the same look; 7 measure the bomb pass
 touch (N = 10 per latency); 8 cleanup (the unused `drawBomb` export, `simulation.test` and
 `packs.test` stable under full-suite load). Done when: every piece is CLOSED or recorded here as
 dropped.
+
+ai. **The phone play spec joins a match too late** (NIGHT 2026-11-19: failed on the first run of
+pieces 1 and 2, as on 2026-11-18 piece 2; green on the rerun): it waits for a halving's countdown,
+then for the arena to shrink below 0.75 of its size within 5 s — and saw it stay at 284 field
+units. The phone run starts on the stack the desktop run has been playing for about a minute, so
+it may land in the late seasons. CI ran it green on `43e4566`; on the dev server every halving
+shrinks the arena (400 → 284 → 202) and a phone client threw no page error over a match. Done
+when: the cause is found (the arena no longer halving
+there, or the banner of the previous halving matched) and the spec waits for a fresh match or
+reads the arena at the right moment, green ten runs in a row.
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
@@ -901,6 +910,22 @@ Done when: the spec is green ten runs in a row.
   line not below 11 px; the readability spec checks that no bot outside the top three is named —
   commit "feat: the Sky Island look clearer".
 
+- 2026-11-19 — **NIGHT CHAIN piece 2: life and polish** (OPEN ah). Ambient motion over the
+  cached backdrop (render `ambient.ts`; `sky.ts` keeps the still parts, `drawSky` takes the time):
+  the far clouds drift and wrap, each painted once; the waves move along; the sun's dashed ring
+  turns; at night the moon glows and twelve stars twinkle; tufts and tree crowns sway (render
+  `decor.ts`). The characters softly shaded in their cached sprites; a dash's start stretches, a
+  landing and a respawn squash (feet staying put), a landing kicks up dust (two puffs on a phone,
+  four on a desktop), a knock shows a white star between the knocked one and the dasher and the
+  knocked one slides with spiral eyes (pose `dizzy`) — render `moments.ts` (part of `Trails`) and
+  `effects.ts`. The splash is a white crown with a ring widening on the sea (render `fall.ts`), the
+  halving's chunks tumble (render `breakoff.ts`). With prefers-reduced-motion the ambient motion
+  holds still and the effects run half as long (render `motion.ts`). Reused: the sprite cache, the
+  cloud and star drawing of `sky.ts`, `Trails`' bounded memory, the `since` helper (moved to
+  `moments.ts`), the fast-speed rule of the puffs (`fastSpeed`, was `puffSpeed`). Tests:
+  `moments.test.ts` (landing squash and dust, dash stretch, star at the midpoint and spiral eyes,
+  no star without a dasher, reduced motion) — commit "feat: the Sky Island look comes alive".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                     | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                              | Evidence                                                                                       |
@@ -1233,3 +1258,12 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | `pnpm e2e play readability` (desktop and phone)                                                                                                                                           | piece 1 working tree                                                                                                                      | 4 passed, 1 skipped (by design), phone play failed: joined late in keep-halving, the arena no longer halved (284 before and after)                                                                                                  | `reports/screens/latest/` (git-ignored)                                                        |
 | 2026-11-19 | `pnpm e2e play --project=phone`                                                                                                                                                           | same tree                                                                                                                                 | 1 passed                                                                                                                                                                                                                            | `reports/screens/latest/` (git-ignored)                                                        |
 | 2026-11-19 | frame cost after piece 1 (same setup)                                                                                                                                                     | piece 1 working tree                                                                                                                      | p50 1.1 ms, p95 2.1 ms, 2 of 3651 over 12 ms (N 3651); machine load 2–57 %                                                                                                                                                          | `reports/night-2026-11-19.md`                                                                  |
+| 2026-11-19 | `vitest run` render tests with `moments.test.ts`                                                                                                                                          | piece 2 working tree                                                                                                                      | 10 files, 56 tests passed                                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-19 | screenshots on `pnpm dev` in Light and Dark: Sumo (start, countdown, halving), King, Bomb at 1280×800 and 390×844                                                                         | piece 2 working tree                                                                                                                      | star bursts at hits, tumbling chunks, squashed landings, the sun's dashed ring, the moon's glow, the crown splash's place checked                                                                                                   | `reports/screens/latest/p5-*.png` (git-ignored)                                                |
+| 2026-11-19 | frame cost after piece 2 (client frame callback, headless Chromium 1280×800, 60 s straight runs, Sumo, Light)                                                                             | piece 2 working tree                                                                                                                      | p50 1.5 ms, p95 2.4 ms, 2 of 3655 over 12 ms (N 3655); machine load 14–60 %                                                                                                                                                         | `reports/night-2026-11-19.md`                                                                  |
+| 2026-11-19 | `pnpm e2e play readability` (desktop and phone)                                                                                                                                           | piece 2 working tree, sources edited during the run                                                                                       | play desktop passed; readability both sizes "execution context destroyed" (Vite reloaded the page on my edit); phone play failed: arena stayed 284                                                                                  | —                                                                                              |
+| 2026-11-19 | `pnpm e2e play readability` (desktop and phone), nothing edited during the run                                                                                                            | piece 2 working tree                                                                                                                      | 4 passed, 1 skipped (by design); phone play failed again: arena stayed 284 after the halving (OPEN ai)                                                                                                                              | `reports/screens/latest/` (git-ignored)                                                        |
+| 2026-11-19 | eslint and prettier on the piece 2 sources                                                                                                                                                | piece 2 working tree                                                                                                                      | green after splitting `sunRing`'s parameters, `tumble` out of `chunk`, `edges` out of `Moments.record`, `trees` out of `drawDecor`                                                                                                  | this commit                                                                                    |
+| 2026-11-19 | Sumo · Points with 15 s seasons on `pnpm dev`, a spectator logging season and arena radius                                                                                                | piece 2 working tree                                                                                                                      | every halving shrinks: 400 → 284 at 14 s, 284 → 202 at 29 s, easing over about 2 s                                                                                                                                                  | OPEN ai                                                                                        |
+| 2026-11-19 | a Pixel 7 player client on `pnpm dev` over a Sumo match, page errors and console errors caught                                                                                            | piece 2 working tree                                                                                                                      | none                                                                                                                                                                                                                                | OPEN ai                                                                                        |
+| 2026-11-19 | CI on `43e4566` (`gh run list --branch proto/sumo`)                                                                                                                                       | `43e4566`                                                                                                                                 | CI success (the phone play spec included), CodeQL success                                                                                                                                                                           | OPEN ai                                                                                        |

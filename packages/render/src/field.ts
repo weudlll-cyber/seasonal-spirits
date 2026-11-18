@@ -62,7 +62,7 @@ export function drawField(
   breaks.observe(walls ? null : (s?.area ?? START), nowMs, shape().sumo.shrink);
   breaks.draw(v, nowMs, 'behind');
   const r = walls ? box.half * PLATFORM : box.half;
-  drawDecor(v.ctx, drawGround(v, { x: box.x, y: box.y, r, square: walls }));
+  drawDecor(v.ctx, drawGround(v, { x: box.x, y: box.y, r, square: walls }), nowMs);
   if (walls) drawWalled(v, s, box);
   else if (s?.next && ahead(s)) drawCrack(v, s.next, s.countdownMs === null ? null : nowMs);
   breaks.draw(v, nowMs, 'front');
