@@ -3,7 +3,8 @@
 
 export * from './palette.js';
 export * from './view.js';
-export { cameraBox, drawField, playBox } from './field.js';
+export { cameraBox, drawField, playBox, type FieldMemory } from './field.js';
+export { Seasons, drawSeasonAir } from './season.js';
 export { BreakOff } from './breakoff.js';
 export { drawSky } from './ambient.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';

@@ -1,6 +1,6 @@
 // Seasonal Spirits — colours and names of the four seasons and the Sky Island look's palettes
-// (owner's choice 2026-11-18), light and dark (the player's switch, look-switch.ts): the one
-// list both apps draw with; index = season = team.
+// (owner's choice 2026-11-18), light and dark (the player's switch, look-switch.ts), tinted by the
+// season in play (season.ts): the one list both apps draw with; index = season = team.
 
 // The team colours of the Sky Island look (they replace the website's tokens in this game; the
 // owner's question of 2026-11-16 — Summer and Autumn too alike — answered with them).
@@ -98,15 +98,27 @@ export const DARK: Look = {
 // The lanterns on the island at night.
 export const LANTERN = '#ffd98a';
 
+// The colours the season in play gives the island (season.ts), over Light or Dark.
+export type SeasonTint = Pick<Look, 'grass' | 'tuft' | 'crowns'>;
+
+let base: Look = LIGHT;
+let tint: SeasonTint | null = null;
 let current: Look = LIGHT;
 
-// The look in force: Light unless the player switched to Dark (look-switch.ts).
+// The look in force: Light unless the player switched to Dark (look-switch.ts), with the season's
+// island colours over it.
 export function look(): Look {
   return current;
 }
 
 export function useLook(dark: boolean): void {
-  current = dark ? DARK : LIGHT;
+  base = dark ? DARK : LIGHT;
+  current = tint ? { ...base, ...tint } : base;
+}
+
+export function tintLook(t: SeasonTint): void {
+  tint = t;
+  current = { ...base, ...t };
 }
 
 export function seasonColour(i: number): string {

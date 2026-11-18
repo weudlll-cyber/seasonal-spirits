@@ -27,6 +27,7 @@ import {
 } from '@seasonal-spirits/protocol';
 import {
   BreakOff,
+  Seasons,
   Trails,
   bindLookSwitch,
   clientConfig,
@@ -74,7 +75,7 @@ bindLookSwitch(el('look', HTMLButtonElement));
 const tone = new DeadlineTone();
 bindMute(() => tone.toggleMute(), tone.muted);
 const teamLine = el('team');
-const memory = { trails: new Trails(), breaks: new BreakOff() };
+const memory = { trails: new Trails(), breaks: new BreakOff(), seasons: new Seasons() };
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
 const result = new ResultScreen();

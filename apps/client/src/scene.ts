@@ -14,6 +14,7 @@ import {
   CLOCK_HEIGHT,
   belowBar,
   drawSky,
+  drawSeasonAir,
   drawClock,
   drawField,
   drawRespawnBand,
@@ -28,7 +29,7 @@ import {
   sx,
   sy,
   visibleArea,
-  type BreakOff,
+  type FieldMemory,
   type PlacedLabel,
   type Rect,
   type Trails,
@@ -109,22 +110,21 @@ export function playArea(view: View, s: ServerState | undefined): Rect {
   };
 }
 
-// What the drawing remembers between frames: the ghosts' (render trails.ts) and the island's
-// halving (render breakoff.ts).
-export interface Memory {
+// What the drawing remembers between frames: the ghosts' (render trails.ts), the island's
+// halving (render breakoff.ts) and the season's fade (render season.ts).
+export interface Memory extends FieldMemory {
   trails: Trails;
-  breaks: BreakOff;
 }
 
 export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memory): Drawn {
   const view = camera(ctx, f.latest, f.hud.zones);
   const now = performance.now();
   const { trails } = memory;
-  drawSky(ctx, now);
+  drawSky(ctx, now, f.latest?.season);
   trails.record(f.ghosts, now);
   let labels: PlacedLabel[] = [];
   belowBar(view, () => {
-    drawField(view, f.latest, now, memory.breaks);
+    drawField(view, f.latest, now, memory);
     const area = f.latest?.area;
     if (f.marks.backInMs !== null && f.ownTeam !== null && area)
       drawRespawnBand(view, area, f.ownTeam as Team);
@@ -137,6 +137,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       zone: zoneOf(f.latest),
       scoreTop: scoreTopOf(f.latest),
     });
+    drawSeasonAir(view, memory.seasons, now);
   });
   drawClock(ctx, f.latest);
   return {

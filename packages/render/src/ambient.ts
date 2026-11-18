@@ -38,14 +38,15 @@ function cloudSprite(size: number, l: Look): HTMLCanvasElement {
   return canvas;
 }
 
-export function drawSky(ctx: Ctx, nowMs: number): void {
+// The whole sky; in summer (`season` 1) the sun's ring stronger.
+export function drawSky(ctx: Ctx, nowMs: number, season?: number): void {
   drawBackdrop(ctx);
   const { width: w, height: h } = ctx.canvas;
   const l = look();
   const t = ambientMs(nowMs) / 1000;
   const u = Math.min(w, h) / 800;
   if (l.night) nightGlow(ctx, { w, h, u }, t, l);
-  else sunRing(ctx, { ...sunOf(w, h), u, t }, l);
+  else sunRing(ctx, { ...sunOf(w, h), u: season === 1 ? u * 1.5 : u, t }, l);
   for (const [fx, fy, size, speed] of CLOUDS) {
     const img = cloudSprite(size * u, l);
     const span = w + img.width;

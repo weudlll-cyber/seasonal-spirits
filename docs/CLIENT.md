@@ -112,6 +112,15 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   ink ring in the season's colour, ringed by flags in that colour sized by the zone on screen
   (NIGHT 2026-11-19: on the phone they were hard to see), and in the countdown a dashed ring
   shows where it jumps.
+- **The season on the island** (render `season.ts`, `season-decor.ts`, NIGHT 2026-11-19): the
+  season in play, as the HUD names it, colours the grass, the tufts and the tree crowns (Light
+  and Dark each; the palette's tint, render `palette.ts` `tintLook`) and decorates the island —
+  spring blossoms on the crowns and pink and white petals drifting across; summer warmer grass,
+  a stronger sun's ring and three butterflies; autumn orange and red crowns, leaves falling and
+  tumbling and a few lying on the grass; winter paler grass, snowflakes and snow on the rim, the
+  crowns and the pebbles. At a halving the new season fades in over about a second (half that
+  with reduced motion). The particles are a function of their index and the time — no memory —
+  at most 28 on a desktop, 14 on a phone, drawn below the band.
 - **Bomb** (render `bomb.ts`, NIGHT 2026-11-18 piece 5): a carrier is unmistakable at any
   size — a large bomb above it (at least the body's size), black with a pale rim, a thick fuse
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,

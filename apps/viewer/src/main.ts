@@ -23,12 +23,14 @@ import {
 } from '@seasonal-spirits/protocol';
 import {
   BreakOff,
+  Seasons,
   CLOCK_HEIGHT,
   Trails,
   bindLookSwitch,
   drawClock,
   drawField,
   drawSky,
+  drawSeasonAir,
   drawGhosts,
   clientConfig,
   fuseLeft,
@@ -68,7 +70,7 @@ const jumpCounter = new PerMinuteCounter();
 const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const trails = new Trails();
-const breaks = new BreakOff();
+const field = { breaks: new BreakOff(), seasons: new Seasons() };
 // The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump); with the
 // settings the panel shows.
 const fastest = (s: Settings): JumpDetector =>
@@ -137,8 +139,8 @@ function frame(): void {
   const latest = buffer.at(-1)?.state;
   if (latest) useShape(clientConfig(latest.mode, settings));
   trails.record(ghosts, now);
-  drawSky(ctx, now);
-  drawField(fitField(ctx, CLOCK_HEIGHT), latest, now, breaks);
+  drawSky(ctx, now, latest?.season);
+  drawField(fitField(ctx, CLOCK_HEIGHT), latest, now, field);
   drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
     ownId: null,
     trails,
@@ -147,6 +149,7 @@ function frame(): void {
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),
   });
+  drawSeasonAir(fitField(ctx, CLOCK_HEIGHT), field.seasons, now);
   drawClock(ctx, latest);
 
   // Expose for Playwright / probe self-check.

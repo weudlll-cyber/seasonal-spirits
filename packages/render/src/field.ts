@@ -3,7 +3,8 @@
 // in the countdown) and its outer ring breaking off at a halving (breakoff.ts); hill and bomb a
 // rounded platform with a fence along the walls, in hill the zone ringed with bunting in the
 // season's colour and, in the countdown, its next place dashed (the server sends both discs,
-// protocol state.ts). The sky around it is sky.ts.
+// protocol state.ts). The season in play tints it and decorates it (season.ts, season-decor.ts).
+// The sky around it is sky.ts.
 
 import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import {
@@ -18,6 +19,8 @@ import { drawDecor } from './decor.js';
 import { FENCE_RISE, drawFence, drawGround } from './island.js';
 import { clientConfig } from './modes.js';
 import { look, seasonColour } from './palette.js';
+import { followSeason, type Seasons } from './season.js';
+import { drawSeasonOn } from './season-decor.js';
 import { shape } from './shape.js';
 import { drawFrontClouds } from './sky.js';
 import { VIEW_TILT, groundCircle, sx, sy, type Box, type View } from './view.js';
@@ -50,19 +53,28 @@ export function cameraBox(s: ServerState | undefined): Box {
   return { x: b.x, y: b.y - extra / 2, half: b.half + ghost + extra / 2 };
 }
 
-// The island under the ghosts; `breaks` remembers sumo's halving between frames.
+// What the field remembers between frames: sumo's halving and the season's fade.
+export interface FieldMemory {
+  breaks: BreakOff;
+  seasons: Seasons;
+}
+
+// The island under the ghosts.
 export function drawField(
   v: View,
   s: ServerState | undefined,
   nowMs: number,
-  breaks: BreakOff,
+  { breaks, seasons }: FieldMemory,
 ): void {
+  followSeason(seasons, s, nowMs);
   const box = playBox(s);
   const walls = walled(clientConfig(s?.mode ?? 0));
   breaks.observe(walls ? null : (s?.area ?? START), nowMs, shape().sumo.shrink);
   breaks.draw(v, nowMs, 'behind');
   const r = walls ? box.half * PLATFORM : box.half;
-  drawDecor(v.ctx, drawGround(v, { x: box.x, y: box.y, r, square: walls }), nowMs);
+  const ground = drawGround(v, { x: box.x, y: box.y, r, square: walls });
+  drawDecor(v.ctx, ground, nowMs);
+  drawSeasonOn(v.ctx, ground, seasons, nowMs);
   if (walls) drawWalled(v, s, box);
   else if (s?.next && ahead(s)) drawCrack(v, s.next, s.countdownMs === null ? null : nowMs);
   breaks.draw(v, nowMs, 'front');

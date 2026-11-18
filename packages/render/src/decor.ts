@@ -31,7 +31,7 @@ const FLOWERS = [
   [0.35, 0.65],
   [-0.2, -0.75],
 ] as const;
-const PEBBLES = [
+export const PEBBLES = [
   [0.3, 0.45],
   [-0.38, 0.72],
 ] as const;
@@ -40,20 +40,36 @@ const LANTERNS = [
   [0.05, -0.8],
   [0.78, -0.05],
 ] as const;
-const TREES = [
+export const TREES = [
   [-0.55, -0.55, 0],
   [0.6, -0.48, 1],
 ] as const;
 
+// A place (u, w) on the top in pixels.
+export function spotOn(o: OnScreen, p: readonly [number, number, ...unknown[]]): [number, number] {
+  return [o.cx + p[0] * o.rx * 0.82, o.cy + p[1] * o.ry * 0.82];
+}
+
+// A decoration's size: `k` of the ground's half width, between `min` and `max` px.
+export function sizeOn(o: OnScreen, k: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, o.rx * k));
+}
+
+export const pebbleSize = (o: OnScreen): number => sizeOn(o, 0.03, 3, 9);
+
+// Tree `i`'s crown on screen: centre and radius, swaying a little (`t` seconds).
+export function crownOf(o: OnScreen, i: number, t: number): { x: number; y: number; r: number } {
+  const tree = TREES[i] ?? TREES[0];
+  const r = sizeOn(o, 0.085, 6, 26);
+  const [x, y] = spotOn(o, tree);
+  return { x: x + Math.sin(t * 0.9 + tree[2] * 2) * r * 0.07, y: y - r * 1.55, r };
+}
+
 export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: number): void {
   const l = look();
   const t = ambientMs(nowMs) / 1000;
-  const u = o.rx; // the decoration's unit
-  const at = (p: readonly [number, number, ...unknown[]]): [number, number] => [
-    o.cx + p[0] * o.rx * 0.82,
-    o.cy + p[1] * o.ry * 0.82,
-  ];
-  const size = (k: number, min: number, max: number): number => Math.min(max, Math.max(min, u * k));
+  const at = (p: readonly [number, number, ...unknown[]]): [number, number] => spotOn(o, p);
+  const size = (k: number, min: number, max: number): number => sizeOn(o, k, min, max);
   ctx.lineCap = 'round';
   ctx.strokeStyle = l.tuft;
   ctx.lineWidth = 2;
@@ -80,7 +96,7 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
     ctx.stroke();
   });
   ctx.fillStyle = l.pebble;
-  const pebble = size(0.03, 3, 9);
+  const pebble = pebbleSize(o);
   for (const p of PEBBLES) {
     const [x, y] = at(p);
     ctx.beginPath();
@@ -88,38 +104,29 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
     ctx.fill();
     ctx.stroke();
   }
-  trees(
-    ctx,
-    TREES.map((p) => [...at(p), p[2]]),
-    size(0.085, 6, 26),
-    t,
-  );
+  trees(ctx, o, t);
   if (l.night) lanterns(ctx, LANTERNS.map(at), size(0.03, 3, 8));
 }
 
-// The two trees at (x, y) px with their crown colour's index, the crowns swaying a little (`t`
-// seconds).
-function trees(
-  ctx: CanvasRenderingContext2D,
-  places: readonly (readonly [number, number, 0 | 1])[],
-  crown: number,
-  t: number,
-): void {
+// The two trees, their crowns swaying a little (`t` seconds).
+function trees(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
   const l = look();
   ctx.lineWidth = 2.5;
   ctx.strokeStyle = l.ink;
-  for (const [x, y, k] of places) {
+  TREES.forEach((tree, i) => {
+    const [x, y] = spotOn(o, tree);
+    const crown = crownOf(o, i, t);
     ctx.fillStyle = l.roots;
     ctx.beginPath();
-    ctx.rect(x - crown * 0.18, y - crown * 1.2, crown * 0.36, crown * 1.2);
+    ctx.rect(x - crown.r * 0.18, y - crown.r * 1.2, crown.r * 0.36, crown.r * 1.2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = l.crowns[k];
+    ctx.fillStyle = l.crowns[tree[2]];
     ctx.beginPath();
-    ctx.arc(x + Math.sin(t * 0.9 + k * 2) * crown * 0.07, y - crown * 1.55, crown, 0, Math.PI * 2);
+    ctx.arc(crown.x, crown.y, crown.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-  }
+  });
 }
 
 // Small lanterns on posts, each in a warm halo.
