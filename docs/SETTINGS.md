@@ -8,7 +8,7 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | Key            | Setting                          | Range                   | Default | Modes            | Applies    |
 | -------------- | -------------------------------- | ----------------------- | ------- | ---------------- | ---------- |
 | `maxSpeed`     | Walking speed                    | 120–480 u/s (step 10)   | 240     | sumo, hill, bomb | now        |
-| `acceleration` | Acceleration                     | 300–3000 u/s² (step 50) | 900     | sumo, hill, bomb | now        |
+| `acceleration` | Acceleration                     | 300–3000 u/s² (step 50) | 2000    | sumo, hill, bomb | now        |
 | `friction`     | Friction (speed lost per second) | 0.5–6 /s (step 0.1)     | 2.5     | sumo, hill, bomb | now        |
 | `ghostRadius`  | Ghost size (radius)              | 8–32 u (step 1)         | 16      | sumo, hill, bomb | next match |
 

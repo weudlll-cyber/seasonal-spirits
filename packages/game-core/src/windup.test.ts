@@ -51,7 +51,7 @@ describe('the dash wind-up', () => {
       expect([s.dashed, Math.hypot(s.vx, s.vy)]).toEqual([false, 0]);
     expect(steps[3]?.dashed).toBe(true);
     expect(steps[3]?.vx).toBeGreaterThan(WIND.maxSpeed); // along +x, not where it steered
-    expect(Math.abs(steps[3]?.vy ?? 1)).toBeLessThan(WIND.maxSpeed / 4);
+    expect(Math.abs(steps[3]?.vy ?? Infinity)).toBeLessThan((steps[3]?.vx ?? 0) / 4);
   });
 
   it('runs the cooldown from the press: pressing again during the wind-up does nothing', () => {

@@ -75,7 +75,9 @@ describe('in the air, pushing', () => {
       place(m, 1, 0, 0).vx = 200;
       if (jump) act(m, 1, JUMP);
       else act(m, 1, { dx: 0, dy: 0 });
-      for (let i = 0; i < 8; i++) act(m, 1, { dx: 0, dy: 1 });
+      // Two ticks: on the ground the turn reaches the top speed soon after (acceleration 2000),
+      // and a capped turn would hide the share.
+      for (let i = 0; i < 2; i++) act(m, 1, { dx: 0, dy: 1 });
       return ghost(m, 1).vy;
     };
     expect(turn(true)).toBeLessThan(turn(false) * 0.15);

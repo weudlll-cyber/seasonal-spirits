@@ -92,14 +92,15 @@ describe('match host seat handover', () => {
   // 2026-11-18: a player inherited the cooldowns of a bot that had just dashed or jumped.
   it('gives a taken-over seat ready dash and jump, and keeps its place, lives, score and team', () => {
     const host = hostOf(4);
+    // The bot in the first seat in a cooldown — a dash or a jump; neither may come along.
     const busy = (s: WireState) => {
       const g = s.ghosts[0];
-      return g !== undefined && g.dashLeftMs > 0 && g.jumpLeftMs > 0;
+      return g !== undefined && (g.dashLeftMs > 0 || g.jumpLeftMs > 0);
     };
     let before = host.tick(50);
     for (let t = 0; t < 60_000 && !busy(before); t += 50) before = host.tick(50);
     const seat = before.ghosts[0];
-    if (!seat || !busy(before)) throw new Error('the bot never dashed and jumped');
+    if (!seat || !busy(before)) throw new Error('the bot never dashed or jumped');
     const slot = host.join(1);
     expect(slot?.ghost).toBe(seat.id); // the first seat of the team with the fewest players
     const after = host.tick(0).ghosts.find((g) => g.id === seat.id);

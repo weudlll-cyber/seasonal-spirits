@@ -63,7 +63,7 @@ const inGroup = <E extends Entry<string>>(group: SettingGroup, entries: readonly
 export const SETTINGS = [
   ...inGroup('movement', [
     n('maxSpeed', 'Walking speed', ['u/s', 120, 480, 10, 240]),
-    n('acceleration', 'Acceleration', ['u/s²', 300, 3000, 50, 900]),
+    n('acceleration', 'Acceleration', ['u/s²', 300, 3000, 50, 2000]), // owner's choice 2026-11-18
     n('friction', 'Friction (speed lost per second)', ['/s', 0.5, 6, 0.1, 2.5]),
     n('ghostRadius', 'Ghost size (radius)', ['u', 8, 32, 1, 16], NEXT),
   ]),
