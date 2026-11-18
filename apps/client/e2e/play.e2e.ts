@@ -1,7 +1,8 @@
 // Seasonal Sumo — one short match in the player client, at desktop and phone size: join, move,
-// dash (the button's cooldown ring runs), jump (the own ghost in the air), live through a HALVING with the arena halving, the
-// last-chance countdown and "MATCH OVER", and see the result screen with the awards and the
-// bridge box. Screenshots of each step go to reports/screens/latest/ (git-ignored).
+// jump (the own ghost in the air), dash (the button's cooldown ring runs), live through a
+// HALVING with the arena halving, the last-chance countdown and "MATCH OVER", and see the result
+// screen with the awards and the bridge box. Screenshots of each step go to
+// reports/screens/latest/ (git-ignored).
 
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -31,9 +32,40 @@ async function steering(page: Page, info: TestInfo): Promise<Steering> {
   return info.project.name === 'phone' ? joystick(page) : keyboard(page);
 }
 
-async function dash(page: Page, info: TestInfo): Promise<void> {
-  if (info.project.name === 'phone') await page.locator('#dash').tap();
-  else await page.keyboard.press('Space');
+async function press(page: Page, info: TestInfo, action: 'dash' | 'jump'): Promise<void> {
+  if (info.project.name === 'phone') await page.locator(`#${action}`).tap();
+  else await page.keyboard.press(action === 'dash' ? 'Space' : 'Shift');
+}
+
+// A falling ghost can neither jump nor dash, and the bots may push the player off the small arena
+// on its way: an action is pressed again until it took (within 15 s, a respawn included).
+async function until(
+  page: Page,
+  info: TestInfo,
+  action: 'dash' | 'jump',
+  took: () => Promise<boolean>,
+): Promise<void> {
+  await expect(async () => {
+    await press(page, info, action);
+    await expect.poll(took, { timeout: 1000 }).toBe(true);
+  }).toPass({ timeout: 15_000 });
+}
+
+const airborne = async (page: Page): Promise<boolean> =>
+  (((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE) !== 0;
+
+// The jump (NIGHT 2026-11-18), standing in the middle before any dash: Shift or the Jump button,
+// in the air at once (a taken-over seat starts with the jump ready); then the landing — a dash
+// needs the ground.
+async function jumpAndLand(page: Page, info: TestInfo): Promise<void> {
+  await until(page, info, 'jump', () => airborne(page));
+  await shot(page, info, 'match');
+  await expect.poll(() => airborne(page), { timeout: 3000 }).toBe(false);
+}
+
+// The dash: the server's cooldown starts.
+async function dashOnce(page: Page, info: TestInfo): Promise<void> {
+  await until(page, info, 'dash', async () => ((await view(page)).own?.dashLeftMs ?? 0) > 0);
 }
 
 test('join, move, dash, a halving, the last chance and the result with the bridge box', async ({
@@ -55,29 +87,25 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   });
   expect(moved, 'the own ghost moves').toBe(true);
   await steer.hold(0, 0);
-  // The jump (NIGHT 2026-11-18), standing in the middle — after a dash the shrinking arena's
-  // edge may be passed, and a falling ghost cannot jump: Shift or the Jump button, in the air at
-  // once. The seat was a bot's, which may have just jumped to dodge: its cooldown comes along.
-  const airborne = async () => ((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE;
-  await expect(page.locator('#jump')).toHaveClass(/\bready\b/, { timeout: 5000 });
-  if (info.project.name === 'phone') await page.locator('#jump').tap();
-  else await page.keyboard.press('Shift');
-  await expect.poll(airborne, { timeout: 2000 }).toBe(GHOST_AIRBORNE);
-  await shot(page, info, 'match');
-  await expect.poll(airborne, { timeout: 3000 }).toBe(0); // landed: a dash needs the ground
-  // Then the dash: the server's cooldown starts.
+  await jumpAndLand(page, info);
   await steer.hold(1, 0);
   await expect(page.locator('#dash')).toBeVisible();
-  await dash(page, info);
-  await expect.poll(async () => (await view(page)).own?.dashLeftMs ?? 0).toBeGreaterThan(0);
+  await dashOnce(page, info);
   await steer.hold(0, 0);
 
   // The next halving: the announcement with the new season, and the arena halves.
   const announce = page.locator('#announce');
   const halving = /^HALVING — the arena halves · (Spring|Summer|Autumn|Winter) is in season$/;
+  // The arena read in the countdown to a halving (not to the match's end): read earlier, a new
+  // match in between starts at full size; read at the announcement, the edge may already be
+  // easing in. Up to one season, or the rest of the last season, the result pause and one season.
+  const toHalving = async () => {
+    const c = (await view(page)).countdown;
+    return c !== null && !c.toEnd;
+  };
+  await expect.poll(toHalving, { timeout: 45_000 }).toBe(true);
   const before = (await view(page)).area?.r ?? 0;
-  // Up to one season, or the rest of the last season, the result pause and one season.
-  await expect(announce).toHaveText(halving, { timeout: 45_000 });
+  await expect(announce).toHaveText(halving, { timeout: 15_000 });
   const match = halving.exec((await announce.textContent()) ?? '');
   const season = SEASON_NAMES.indexOf(match?.[1] ?? '');
   await expect.poll(async () => (await view(page)).season).toBe(season);

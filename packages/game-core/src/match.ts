@@ -140,10 +140,14 @@ export class Match {
   }
 
   // A player takes over a ghost a bot steered: it starts from standing, not with the bot's
-  // momentum (the server calls this on a join).
+  // momentum, and with dash and jump ready as a new ghost's — not the cooldown of a bot that
+  // just dashed or jumped to dodge; place, lives, score and team stay (the server calls this
+  // on a join).
   halt(id: number): void {
     const g = this.s.ghosts.find((x) => x.id === id);
-    if (g) Object.assign(g, { vx: 0, vy: 0, dashUntilMs: 0, knockedUntilMs: 0 });
+    if (!g) return;
+    Object.assign(g, { vx: 0, vy: 0, dashUntilMs: 0, knockedUntilMs: 0 });
+    Object.assign(g, { dashReadyMs: 0, jumpReadyMs: 0 });
   }
 
   // The owner's live tuning changed the arena's starting size (development only): the running

@@ -195,8 +195,8 @@ sets with the live panel.
 ## Bots
 
 **Seats.** Bots only fill missing players: every team has 8 seats (32 slots); a joining
-player takes a bot's seat in the team with the fewest players at once (the ghost stops,
-`halt`), a leaving one stands for the reconnect grace, then a bot takes the seat again
+player takes a bot's seat in the team with the fewest players at once (the ghost stops, its
+dash and jump ready as a new ghost's, its place, lives, score and team kept; `halt`), a leaving one stands for the reconnect grace, then a bot takes the seat again
 (apps/server `match-host.ts`). Teams stay equal at all times.
 
 **The brains**, one per mode behind the same human-like layer. Hill (`bots/hill.ts`): to the

@@ -33,7 +33,7 @@ is encoded once and sent to every client that has said hello.
   seats without a player (owner requirement 2026-11-17), each a human-like bot seeded from
   the match and its seat (game-core `createBot`, docs/GAME-CORE.md "Bots").
 - A player who says `{"kind":"player"}` takes a bot's seat on the team with the fewest players
-  at once — the ghost stops where the bot left it (`halt`) — and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>,"name":"Player <id>"}`.
+  at once — the ghost stops where the bot left it, with dash and jump ready (`halt`) — and gets one text message `{"kind":"welcome","ghost":<id>,"team":<0..3>,"name":"Player <id>"}`.
   When every slot has a player, the client becomes a spectator and gets
   `{"kind":"spectating","reason":"full"}`; from then on it must send nothing (THREATS 12b).
   Names are `ghostName` in `packages/protocol`, the same on every client, until the website

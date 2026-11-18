@@ -39,8 +39,6 @@ for (const mode of ['hill', 'bomb'] as const) {
     expect(moved, 'the own ghost moves').toBe(true);
     await act(page, info, 'dash');
     await expect.poll(async () => (await view(page)).own?.dashLeftMs ?? 0).toBeGreaterThan(0);
-    // The seat was a bot's, which may have just jumped to dodge: its cooldown comes along.
-    await expect(page.locator('#jump')).toHaveClass(/\bready\b/, { timeout: 5000 });
     await act(page, info, 'jump');
     await expect
       .poll(async () => ((await view(page)).own?.flags ?? 0) & GHOST_AIRBORNE, { timeout: 2000 })
