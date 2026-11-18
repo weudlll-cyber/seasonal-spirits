@@ -138,6 +138,30 @@ describe('OwnPrediction against other ghosts', () => {
   });
 });
 
+// 2026-11-18, the owner's stutter: the path stopped at ghosts drawn a render buffer late, which
+// the server pushes aside; it fell behind and the correction pulled it on in jerks.
+describe('OwnPrediction running past another ghost', () => {
+  it('keeps up with the server and glides round the ghost, never a jump', () => {
+    const p = new OwnPrediction();
+    const D = 2 * DEFAULT_CONFIG.ghostRadius;
+    const other = { x: 500, y: 503 }; // still drawn where it stood; the server pushed it aside
+    const run = { dx: 1, dy: 0 };
+    // The server's word: the own ghost runs on at the top speed, PREDICTION_LAG_MS behind.
+    const server = (t: number) =>
+      at(400 + (235 * Math.max(0, t - PREDICTION_LAG_MS)) / 1000, 500, t);
+    p.update(0, run, server(0));
+    let last = { x: 400, y: 500 };
+    let shown = last;
+    for (let t = 16; t <= 1500; t += 16) {
+      shown = p.update(t, run, server(t), { others: [other] }) ?? shown;
+      expect(Math.hypot(shown.x - other.x, shown.y - other.y)).toBeGreaterThanOrEqual(D - 1e-6);
+      expect(Math.hypot(shown.x - last.x, shown.y - last.y)).toBeLessThan(D / 4);
+      last = shown;
+    }
+    expect(Math.abs(shown.x - server(1500).x)).toBeLessThan(20); // past it, with the server
+  });
+});
+
 // NIGHT 2026-11-18, piece 6: with the dash's wind-up on, the own ghost holds as the core holds it,
 // then dashes — not ahead of the server.
 describe('OwnPrediction with the dash wind-up', () => {

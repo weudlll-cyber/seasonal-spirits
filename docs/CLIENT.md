@@ -56,11 +56,15 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   twice the same.
 - **The own ghost answers at once**: it is drawn where the own input — with momentum, top
   speed and a dash — has already taken it, moved with the server's own rules (`stepGhost`,
-  `dashVelocity`, the walls of the mode on screen), stopped at a ghost it touches (never drawn
-  through one; wedged between two it stays where it was drawn until the server moves them —
-  FIX 2026-11-17-3), pulled smoothly towards the server's position and restarted from the
-  server's position and speed when more than `SNAP_DISTANCE` off (a knock it could not see
-  coming, a respawn). Display only (THREATS row 36). Every other ghost is drawn 50 ms (one
+  `dashVelocity`, the walls of the mode on screen) as a ghost that touches nobody — the others
+  are drawn a buffer late and the server pushes them aside, so a path stopped at them fell
+  behind and was pulled on in jerks (the stutter, measured and fixed 2026-11-18) —, pulled
+  smoothly towards the server's position and restarted from the server's position and speed
+  when more than `SNAP_DISTANCE` off (a knock it could not see coming, a respawn). What is drawn
+  follows that by the path's own motion and closes any gap within `BLEND_MS` (100 ms), at most
+  at running speed on top: no jump; it never passes through a drawn ghost — it stops at one
+  from its side and slides round it (wedged between two it stays where it was drawn until the
+  server moves them — FIX 2026-11-17-3). Display only (THREATS row 36). Every other ghost is drawn 50 ms (one
   tick) behind the newest state, interpolated, and extrapolated from its last two states
   when the next one is late (FIX 2026-11-17-2: at 100 ms another ghost was drawn 2.7 ghost
   radii behind where a dash hit it, at 50 ms 1.8 radii; the drawn path stays smooth).

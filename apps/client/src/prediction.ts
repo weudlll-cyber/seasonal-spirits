@@ -1,12 +1,14 @@
 // Seasonal Sumo — where the client draws its own ghost (from Seasonal Spirits' session
 // 2026-11-16-RESPONSE): moved at once by the player's own direction and dash with the server's
-// movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity), pulled
-// smoothly towards what the server says, snapped to it when far off; inside the walls of hill
-// and bomb as the core keeps it (fieldBounds); stopped at another ghost it touches, never drawn
-// through it (FIX 2026-11-17-3), until the server's answer moves it on; in the air after a jump
-// barely steered and touching nobody, as the core (jump.ts airSteer; JUMP 2026-11-17); with the
-// dash's wind-up on, held still until the dash goes (game-core windup.ts). Display only: the
-// server's position is the truth and nothing of this leaves the client (THREATS row 36).
+// movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity) as a ghost
+// that touches nobody, pulled smoothly towards what the server says, snapped to it when far off;
+// inside the walls of hill and bomb as the core keeps it (fieldBounds); drawn gliding, never in
+// a jump (BLEND_MS; the stutter fix 2026-11-18), and never through another ghost — it stops at
+// one and slides round it (FIX 2026-11-17-3) while the server pushes it aside; in the air after
+// a jump barely steered and touching nobody, as the core (jump.ts airSteer; JUMP 2026-11-17);
+// with the dash's wind-up on, held still until the dash goes (game-core windup.ts). Display
+// only: the server's position is the truth and nothing of this leaves the client (THREATS row
+// 36).
 
 import {
   DEFAULT_CONFIG,
@@ -41,6 +43,9 @@ export const CORRECTION_MS = 150;
 // closed at once. Placeholder — owner decides.
 export const SNAP_DISTANCE = 100;
 const HISTORY_MS = 1000; // own path kept to compare with the server's older word
+// What is drawn closes a gap to where the path and the correction put it within this, on top of
+// the path's own motion: a correction or a release from another ghost glides, it does not jump.
+const BLEND_MS = 100;
 const MAX_FRAME_MS = 100; // a stalled tab does not fling the ghost forward
 
 type Point = Motion & { at: number };
@@ -51,6 +56,19 @@ export interface FrameInput {
   dash?: boolean; // the player pressed Dash
   jump?: boolean; // the player pressed Jump
   others?: readonly { x: number; y: number }[];
+}
+
+// From `from` towards `to`: the path's own motion this frame plus the share dt / BLEND_MS of the
+// rest of the gap — that share at most `catchUp` (running speed: never faster than twice it).
+function approach(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  step: { moved: number; dt: number; catchUp: number },
+): { x: number; y: number } {
+  const d = Math.hypot(to.x - from.x, to.y - from.y);
+  const most = step.moved + Math.min(d * Math.min(1, step.dt / BLEND_MS), step.catchUp);
+  if (d <= most) return to;
+  return { x: from.x + ((to.x - from.x) * most) / d, y: from.y + ((to.y - from.y) * most) / d };
 }
 
 // Moved out of every ghost it overlaps to touching distance, with the speed into it taken
@@ -133,26 +151,42 @@ export class OwnPrediction {
     this.air = air;
     // In the air it touches nobody (jump.ts): no ghost stops it.
     const others = air ? [] : (input.others ?? []);
-    const reach = 2 * this.cfg.ghostRadius;
     const last = this.path.at(-1);
     if (!last || server.frozen) {
       this.path = [{ at: now, x: server.x, y: server.y, vx: server.vx, vy: server.vy }];
       this.offset = { x: 0, y: 0 };
       this.wind = null; // a fall ends a wind-up on the server too
     } else {
-      this.advance(last, { now, dir, dash: input.dash === true, air }, server, others);
+      this.advance(last, { now, dir, dash: input.dash === true, air }, server);
     }
-    const head = this.path.at(-1) ?? server;
+    // The path's own motion this frame (a reset to the server's word is none).
+    const dt = Math.min(MAX_FRAME_MS, now - (last?.at ?? now));
+    this.shown = this.drawn(this.path.at(-1) ?? server, dt, others);
+    return this.shown;
+  }
+
+  // Where the path and the correction put it; drawn from the last frame towards there, never
+  // through a ghost (it stops at one from its own side and slides round it) and never in a jump
+  // (a gap closes within BLEND_MS) — but at once across SNAP_DISTANCE (a respawn).
+  private drawn(
+    head: Motion,
+    dt: number,
+    others: readonly { x: number; y: number }[],
+  ): { x: number; y: number } {
+    const reach = 2 * this.cfg.ghostRadius;
     const b = fieldBounds(this.cfg);
-    // The correction may pull it into a ghost too: what is drawn stays outside every one.
-    const drawn = { x: head.x + this.offset.x, y: head.y + this.offset.y, vx: 0, vy: 0 };
-    const out = stopAt(drawn, others, reach);
+    const target = { x: head.x + this.offset.x, y: head.y + this.offset.y };
+    const moved = (Math.hypot(head.vx, head.vy) * dt) / 1000;
+    const from = this.shown;
+    const near = from && Math.hypot(target.x - from.x, target.y - from.y) <= SNAP_DISTANCE;
+    const catchUp = (this.cfg.maxSpeed * dt) / 1000;
+    const toward = near ? approach(from, target, { moved, dt, catchUp }) : target;
+    const out = stopAt({ ...toward, vx: 0, vy: 0 }, others, reach);
     const free = { x: clamp(out.x, b.lo, b.hi), y: clamp(out.y, b.lo, b.hi) };
     // Wedged between ghosts with no free spot: it stays where it was drawn, as long as that is
     // clear, until the server's answer moves the others aside.
-    const stay = !clear(free, others, reach) && this.shown && clear(this.shown, others, reach);
-    this.shown = stay && this.shown ? this.shown : free;
-    return this.shown;
+    if (from && !clear(free, others, reach) && clear(from, others, reach)) return from;
+    return free;
   }
 
   // Drawn in the air in the last frame (the jump's look starts with the press, not the echo).
@@ -175,12 +209,11 @@ export class OwnPrediction {
   }
 
   // One frame on from the last path point by the own input (in the air barely steered, no dash),
-  // stopped at the ghosts it touches, then corrected towards the server's word.
+  // then corrected towards the server's word.
   private advance(
     last: Point,
     frame: { now: number; dir: Direction; dash: boolean; air: boolean },
     server: ServerOwn,
-    others: readonly { x: number; y: number }[],
   ): void {
     const { now, dir, dash, air } = frame;
     const dt = Math.min(MAX_FRAME_MS, Math.max(0, now - last.at));
@@ -189,7 +222,10 @@ export class OwnPrediction {
     const holding = this.wind !== null;
     const from = v ? { ...last, vx: v.x, vy: v.y } : holding ? { ...last, vx: 0, vy: 0 } : last;
     const steer = holding ? IDLE : air ? airSteer(this.cfg, dir) : dir;
-    const to = stopAt(stepGhost(this.cfg, from, steer, dt), others, 2 * this.cfg.ghostRadius);
+    // The path runs as the server moves a ghost that touches nobody: the others are drawn a
+    // render buffer late and the server pushes them aside, so stopping the path at them made it
+    // fall behind and the correction pull it on in jerks (2026-11-18, the stutter measurement).
+    const to = stepGhost(this.cfg, from, steer, dt);
     this.path.push({ at: now, ...to });
     while ((this.path[0]?.at ?? now) < now - HISTORY_MS) this.path.shift();
     this.correct(server, dt);
