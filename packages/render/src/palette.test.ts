@@ -1,9 +1,9 @@
 // Seasonal Sumo — the Sky Island look's text reads in both looks (owner 2026-11-18: contrast at
-// least 4.5:1): the panels' text and the clock's countdown on the panel, the season names on
-// their colours in the clock.
+// least 4.5:1): the panels' text and the clock's countdown on the panel. (The season names on
+// their colours went with the clock's season cells, NIGHT 2026-11-19.)
 
 import { describe, expect, it } from 'vitest';
-import { DARK, LIGHT, SEASON_COLOURS, type Look } from './palette.js';
+import { DARK, LIGHT, type Look } from './palette.js';
 
 // WCAG 2 relative luminance and contrast ratio of two #rrggbb colours.
 function luminance(hex: string): number {
@@ -26,11 +26,5 @@ describe.each([
   it("keeps the panels' text and the countdown at 4.5:1 or more", () => {
     expect(contrast(l.panelText, l.panel)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(l.alertText, l.panel)).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it('keeps the season names on their colours at 4.5:1 or more', () => {
-    for (const colour of SEASON_COLOURS) {
-      expect(contrast(l.ink, colour), colour).toBeGreaterThanOrEqual(4.5);
-    }
   });
 });

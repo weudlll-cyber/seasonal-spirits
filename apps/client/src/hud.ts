@@ -105,10 +105,10 @@ export function bindMute(toggle: () => boolean, muted: boolean): void {
   });
 }
 
-// What of the HUD lies over the canvas (session 2026-11-15-B). Controls: the visible Dash
-// button (bottom right). Thumb zones: the controls plus, on touch screens, where the left thumb
-// rests on the joystick (bottom left); the camera fits the playing area clear of all of them
-// (scene.ts).
+// What of the HUD lies over the canvas (session 2026-11-15-B). Controls: the visible Dash and
+// Jump buttons (bottom right). Thumb zones: the controls plus, on touch screens, where the left
+// thumb rests on the joystick (bottom left); the camera fits the playing area clear of all of
+// them (scene.ts).
 const STICK_ZONE = { width: 220, height: 260 }; // pixels, at most half the screen wide
 
 // The joystick's thumb zone on a `width` × `height` touch screen.

@@ -32,10 +32,19 @@ function groups(s: Readonly<MatchState>): Set<number>[] {
   return out;
 }
 
-// The longest time one pack kept a core of at least MIN_PACK of the same ghosts.
-function longestPackMs(seed: number): number {
+// One whole 32-bot match per seed, watched once for both checks (NIGHT 2026-11-19: four whole
+// matches ran in two test cases, 12–16 s alone, and timed out beside the rest of the suite):
+// the longest time one pack kept a core of at least MIN_PACK of the same ghosts, and the share of
+// ghost-ticks on the arena spent nearly still (below 5 units/s).
+const watched = new Map<number, { longestPackMs: number; stillShare: number }>();
+
+function watch(seed: number): { longestPackMs: number; stillShare: number } {
+  const known = watched.get(seed);
+  if (known) return known;
   let packs: { core: Set<number>; since: number }[] = [];
   let longest = 0;
+  let still = 0;
+  let all = 0;
   simulate(DEFAULT_CONFIG, seed, undefined, (s) => {
     packs = groups(s).map((g) => {
       const prev = packs.find((p) => [...g].filter((id) => p.core.has(id)).length >= MIN_PACK);
@@ -44,38 +53,32 @@ function longestPackMs(seed: number): number {
       longest = Math.max(longest, s.elapsedMs - since);
       return { core, since };
     });
-  });
-  return longest;
-}
-
-// The share of ghost-ticks on the arena spent nearly still (below 5 units/s).
-function stillShare(seed: number): number {
-  let still = 0;
-  let all = 0;
-  simulate(DEFAULT_CONFIG, seed, undefined, (s) => {
     for (const g of s.ghosts) {
       if (g.phase !== 'in') continue;
       all++;
       if (Math.hypot(g.vx, g.vy) < 5) still++;
     }
   });
-  return still / all;
+  const out = { longestPackMs: longest, stillShare: still / all };
+  watched.set(seed, out);
+  return out;
 }
 
 describe('bots spread out and move', () => {
-  // Three whole 32-bot matches take a few seconds.
-  it(
-    'no group of more than 4 ghosts stays together longer than 15 s',
-    {
-      timeout: 20_000,
-    },
-    () => {
-      for (const seed of [1, 2, 3])
-        expect(longestPackMs(seed), `seed ${seed}`).toBeLessThanOrEqual(MAX_PACK_MS);
+  // One whole 32-bot match per case: about 3–5 s alone.
+  it.each([1, 2, 3])(
+    'seed %i: no group of more than 4 ghosts stays together longer than 15 s',
+    { timeout: 20_000 },
+    (seed) => {
+      expect(watch(seed).longestPackMs).toBeLessThanOrEqual(MAX_PACK_MS);
     },
   );
 
-  it('stands nearly still less than 5 % of the time', { timeout: 20_000 }, () => {
-    expect(stillShare(1)).toBeLessThan(0.05);
-  });
+  it(
+    'stands nearly still less than 5 % of the time (seed 1, watched above)',
+    { timeout: 20_000 },
+    () => {
+      expect(watch(1).stillShare).toBeLessThan(0.05);
+    },
+  );
 });

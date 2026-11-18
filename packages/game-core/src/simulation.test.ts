@@ -6,10 +6,12 @@ import { botRoster, simulate } from './simulation.js';
 
 describe('simulated match', () => {
   it('is identical for the same seed and differs for another seed', () => {
-    // 8 bots keep this quick; determinism does not depend on the count.
-    const a = simulate(DEFAULT_CONFIG, 7, botRoster(8));
-    const b = simulate(DEFAULT_CONFIG, 7, botRoster(8));
-    const c = simulate(DEFAULT_CONFIG, 8, botRoster(8));
+    // 8 bots and 10 s seasons keep this quick; determinism depends on neither. (NIGHT 2026-11-19:
+    // three whole 8-bot matches took 2 s alone and timed out at the default 5 s beside the suite.)
+    const short = { ...DEFAULT_CONFIG, seasonDurationMs: 10_000 };
+    const a = simulate(short, 7, botRoster(8));
+    const b = simulate(short, 7, botRoster(8));
+    const c = simulate(short, 8, botRoster(8));
     expect(a.result).toEqual(b.result);
     expect(a.result).not.toEqual(c.result);
   });

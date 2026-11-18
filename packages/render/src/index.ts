@@ -30,4 +30,3 @@ export {
   zoneOf,
   type ModeWords,
 } from './modes.js';
-export { drawBomb } from './bomb.js';

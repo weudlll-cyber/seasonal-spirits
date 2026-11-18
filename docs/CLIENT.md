@@ -35,8 +35,8 @@ Spirits' client is on `master`.
 The client says `{"kind":"player"}`; the server gives it a bot's seat on the team with the
 fewest players (the ghost stops where the bot left it) and answers with a welcome. When
 every seat has a player, the client watches instead and says so. `?spectate=1` only watches:
-the whole field, the players' and the top three's names, the clock and the halving staging, no
-controls; it sends its
+the whole playing area, the players' and the top three's names, the clock and the halving staging,
+no controls; it sends its
 hello and nothing more.
 
 The client hears the settings in force (`{"kind":"tuning",…}`, every setting, checked against
