@@ -66,7 +66,8 @@ pnpm verify:changed  # the same checks, only for what changed since origin/maste
 macOS), writes their output to `logs/dev-*.log` and their PIDs to `tmp/dev-pids.json`, and
 waits until server, client and viewer answer. It refuses to start if a port is taken or a
 previous `pnpm dev` is still running, and with `NODE_ENV=production`. `--lan` is
-development only and never the default; on Windows the firewall may ask once whether Node
+development only and never the default; the phone address is the home network's (a VPN or
+virtual adapter listed first is passed over); on Windows the firewall may ask once whether Node
 may accept connections.
 
 ## Checks

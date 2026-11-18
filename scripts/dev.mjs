@@ -133,12 +133,21 @@ function isStarted(p) {
   return typeof name === 'string' && Number.isSafeInteger(pid) && Number(pid) > 0;
 }
 
-// The machine's first IPv4 address on the local network, for the phone.
+// The machine's IPv4 address on the local network, for the phone. Home ranges first: a VPN
+// (Tailscale's 100.64/10) or a virtual switch (WSL's 172.x) may come first in the list but
+// is not reachable from a phone on the same Wi-Fi.
+const LAN_ORDER = [/^192\.168\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./];
+
 function lanAddress() {
-  for (const list of Object.values(os.networkInterfaces())) {
-    for (const i of list ?? []) if (i.family === 'IPv4' && !i.internal) return i.address;
+  const all = Object.values(os.networkInterfaces())
+    .flatMap((list) => list ?? [])
+    .filter((i) => i.family === 'IPv4' && !i.internal)
+    .map((i) => i.address);
+  for (const range of LAN_ORDER) {
+    const found = all.find((a) => range.test(a));
+    if (found) return found;
   }
-  return null;
+  return all[0] ?? null;
 }
 
 /** @param {boolean} lan */
@@ -185,7 +194,7 @@ async function start(lan) {
       `Phone (same Wi-Fi): ${address ? `http://${address}:${CLIENT_PORT}` : 'no LAN address found'}`,
     );
   console.log(
-    `Viewer (debug, tuning sliders): http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`,
+    `Viewer (debug, admin area: settings and presets): http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`,
   );
 }
 

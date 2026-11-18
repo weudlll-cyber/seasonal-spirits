@@ -160,7 +160,8 @@ Bomb, Rotation), each control with its unit and "now" or "next match", Reset per
 **presets**: save the current settings under a name, load one, delete one. A preset is a JSON
 file in the git-ignored dev data folder `data/presets/` (`presets.ts`), checked against the schema
 when saved and when loaded (an invalid or unknown value is refused, never applied); `pnpm dev`
-starts with the last loaded one. Presets replaced the copy line.
+starts with the last loaded one (deleting it clears that mark, and the modes rotate again).
+Presets replaced the copy line.
 
 The panel talks to one endpoint, `GET` / `POST /api/v1/admin/settings` (`admin-settings.ts`; the
 path follows the sibling games' admin routes), with one access check in front of it,

@@ -119,6 +119,20 @@ describe('admin settings and presets', () => {
     expect(e.answer(POST, named('save', 'Bad Name')).status).toBe(400);
   });
 
+  // NIGHT 2026-11-18: a deleted preset's mark kept `pnpm dev` from rotating the modes.
+  it('forgets the last loaded preset when it is deleted, not when another one is', () => {
+    let now = 0;
+    const { e, dir } = endpoint({}, () => (now += 100));
+    const mark = path.join(dir, 'last-loaded.txt');
+    e.answer(POST, named('save', 'kept'));
+    e.answer(POST, named('save', 'gone'));
+    e.answer(POST, named('load', 'gone'));
+    e.answer(POST, named('delete', 'kept'));
+    expect(fs.readFileSync(mark, 'utf8')).toBe('gone');
+    e.answer(POST, named('delete', 'gone'));
+    expect(fs.existsSync(mark)).toBe(false);
+  });
+
   it('refuses a stored preset with a bad value, and applies nothing of it', () => {
     let now = 0;
     const { e, applied, dir } = endpoint({}, () => (now += 100));

@@ -66,6 +66,9 @@ export class PresetStore {
   remove(name: string): boolean {
     if (!PRESET_NAME.test(name) || !this.list().includes(name)) return false;
     fs.unlinkSync(this.file(name));
+    // `pnpm dev` keeps the rotation off while a last loaded preset is marked; a deleted one
+    // must not keep it off.
+    if (this.lastLoaded() === null) fs.rmSync(path.join(this.dir, LAST), { force: true });
     return true;
   }
 
