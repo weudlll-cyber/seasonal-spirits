@@ -1,6 +1,7 @@
 // Seasonal Sumo — the match server's game side: the seats, who steers each, match after match,
 // and each match's mode and sumo variant from the rotation (settings rotation1…6; "alternate"
-// takes Points and Last One Standing in turn). Every number comes from the settings (game-core
+// takes Points and Last One Standing in turn) — or the game the admin panel started, kept for
+// the following matches while its "keep playing" switch is on. Every number comes from the settings (game-core
 // settings.ts, NIGHT 2026-11-18): those that apply at once reach the running match on a change
 // (tune), the rest wait for the next match. Every seat holds a ghost; a bot steers it until a
 // player joins, and again when a player has been gone for reconnectGraceMs. Seats are filled at a
@@ -10,7 +11,6 @@
 
 import {
   Match,
-  SUMO_VARIANTS,
   botRoster,
   botSeed,
   configFrom,
@@ -22,11 +22,13 @@ import {
   type Intent,
   type MatchEvent,
   type Roster,
+  type RotationSlot,
   type Settings,
-  type SumoVariant,
 } from '@seasonal-spirits/game-core';
 import type { GameAction, ServerRecap } from '@seasonal-spirits/protocol';
+import { NextGame } from './next-game.js';
 import { recapOf } from './recap.js';
+import { refresh } from './refresh.js';
 import { toWire, type WireState } from './wire.js';
 
 export type { WireState } from './wire.js';
@@ -36,23 +38,11 @@ type Controller =
   | { kind: 'player'; clientId: number; dx: number; dy: number; action: GameAction | null }
   | { kind: 'standing'; since: number }; // a player left; the ghost waits for the grace time
 
-// `target` takes `source`'s values in place, nested objects and arrays included: the running
-// match, its rules and its bots keep reading the same config object.
-function refresh(target: Record<string, unknown>, source: Record<string, unknown>): void {
-  for (const [k, v] of Object.entries(source)) {
-    const t = target[k];
-    if (typeof v === 'object' && v !== null && typeof t === 'object' && t !== null) {
-      refresh(t as Record<string, unknown>, v as Record<string, unknown>);
-    } else target[k] = v;
-  }
-}
-
 export class MatchHost {
   private wanted: Settings; // the latest settings: the next match starts with them
   private running: Settings; // the running match's: its start's, with the at-once changes
   private cfg: GameConfig; // the running match's config, built from `running`
   private matchNumber = 0;
-  private sumoMatches = 0; // sumo matches started: "alternate" takes the variants in turn
   private roster: Roster[] = [];
   private readonly control = new Map<number, Controller>();
   private match: Match;
@@ -62,6 +52,8 @@ export class MatchHost {
   private lastEvents: readonly MatchEvent[] = []; // of the tick just run
   private recap: ServerRecap | null = null; // of the match just ended, during the result pause
   private told = false; // the clients know the running settings
+  private game: RotationSlot = { mode: 'sumo', variant: 'points' }; // the running match's
+  private readonly next = new NextGame(); // the rotation's, or the game the admin panel started
 
   constructor(settings: Settings, firstSeed: number) {
     this.wanted = settings;
@@ -130,6 +122,25 @@ export class MatchHost {
     this.told = false;
   }
 
+  // The admin panel's "start" (development; server.ts checks who asks, the caller has validated
+  // the settings): the running match ends at once — no result pause, no recap — and `game`
+  // starts with `settings` through the normal start; afterwards the rotation goes on, unless
+  // `keep` holds this game for every following match.
+  startGame(game: RotationSlot, settings: Settings, keep: boolean): void {
+    this.next.started(game, keep);
+    this.wanted = settings;
+    this.nextMatch();
+  }
+
+  // The "keep playing this game" switch on its own: on holds the running match's game.
+  keepGame(on: boolean): void {
+    this.next.keepOn(on, this.game);
+  }
+
+  keeping(): boolean {
+    return this.next.keeping();
+  }
+
   // The settings the clients play by now, once after each change (the tuning message); null
   // when they know them already.
   settingsToTell(): Settings | null {
@@ -190,21 +201,12 @@ export class MatchHost {
     this.match = this.newMatch();
   }
 
-  // The match of `running` and this.seed: the rotation's slot for this match number, its sumo
-  // variant — in turn for "alternate", Points first —, the seats for the team size.
+  // The match of `running` and this.seed: its game and sumo variant (next-game.ts — the started
+  // game, else the rotation's slot for this match number), the seats for the team size.
   private newMatch(): Match {
-    const rotation = rotationOf(this.running);
-    const slot = rotation[this.matchNumber % rotation.length] ?? {
-      mode: 'sumo',
-      variant: 'points',
-    };
+    const { slot, variant } = this.next.pick(rotationOf(this.running), this.matchNumber);
+    this.game = slot;
     this.cfg = configFrom(this.running, slot.mode);
-    let variant: SumoVariant = 'points';
-    if (slot.mode === 'sumo') {
-      const turn = SUMO_VARIANTS[this.sumoMatches % SUMO_VARIANTS.length] ?? 'points';
-      variant = slot.variant === 'alternate' ? turn : slot.variant;
-      this.sumoMatches++;
-    }
     this.seat(4 * this.running.teamSize);
     this.told = false;
     const match = new Match(this.cfg, this.seed, this.roster, variant);

@@ -1,13 +1,13 @@
 // Seasonal Spirits — Playwright: the player client against its own short-match servers.
 // Starts the run's own stacks, never the developer's `pnpm dev` (3930/5930/5931): Sumo on
-// 3932/5932 — with the admin settings open to its own client page, for the panel spec — and King
-// of the Season and Halving Bomb on 3933/5933 and 3934/5934, each with 15 s seasons (a whole
-// match in 60 s), then plays them in Chromium at a desktop size and at a phone size with touch.
+// 3932/5932 — with its viewer on 5935, whose admin panel the panel spec drives — and King of the
+// Season and Halving Bomb on 3933/5933 and 3934/5934, each with 15 s seasons (a whole match in
+// 60 s), then plays them in Chromium at a desktop size and at a phone size with touch.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
-import { CLIENT_PORT, HELP_SEEN, MODE_STACKS, SERVER_PORT } from './stack.js';
+import { CLIENT_PORT, HELP_SEEN, MODE_STACKS, SERVER_PORT, VIEWER_PORT } from './stack.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const CI = process.env.CI !== undefined;
@@ -39,16 +39,24 @@ export default defineConfig({
   ],
   webServer: [
     // Points with 9 lives (FIX 2026-11-17-4): the play spec waits for the last countdown, which a
-    // match ended early by lives would never reach. The admin settings answer the client's own
-    // page (VIEWER_PORT), its presets kept under test-results/.
+    // match ended early by lives would never reach. The admin settings answer the viewer's page
+    // (VIEWER_PORT), its presets kept under test-results/.
     ...stack(SERVER_PORT, CLIENT_PORT, {
       GAME_MODE: 'sumo',
       SUMO_VARIANT: 'points',
       SUMO_LIVES: '9',
       DEV_TUNING: '1',
-      VIEWER_PORT: String(CLIENT_PORT),
+      VIEWER_PORT: String(VIEWER_PORT),
       PRESET_DIR: path.join(ROOT, 'test-results', 'presets'),
     }),
+    {
+      command: 'pnpm --filter @seasonal-spirits/viewer start',
+      cwd: ROOT,
+      url: `http://localhost:${String(VIEWER_PORT)}`,
+      env: { VIEWER_PORT: String(VIEWER_PORT), PORT: String(SERVER_PORT) },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
     ...stack(MODE_STACKS.hill.server, MODE_STACKS.hill.client, { GAME_MODE: 'hill' }),
     ...stack(MODE_STACKS.bomb.server, MODE_STACKS.bomb.client, { GAME_MODE: 'bomb' }),
   ],

@@ -79,7 +79,7 @@ export class GameServer {
     this.cfg = cfg;
     this.host = new MatchHost(cfg.settings, cfg.firstSeed);
     const dir = cfg.presetDir ?? 'presets';
-    this.admin = adminEndpoint(cfg.adminOrigins, dir, this.host, cfg.settings);
+    this.admin = adminEndpoint(cfg.adminOrigins, dir, this.host);
   }
 
   async listen(): Promise<void> {

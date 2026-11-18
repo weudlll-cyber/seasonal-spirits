@@ -27,6 +27,7 @@ import {
   clientConfig,
   fuseLeft,
   fitField,
+  modeOf,
   scoreTopOf,
   useShape,
   zoneOf,
@@ -66,10 +67,15 @@ const fastest = (s: Settings): JumpDetector =>
   new JumpDetector({ speedUnitsPerSecond: s.dashSpeed + s.knockSpeed });
 let settings: Settings = DEFAULT_SETTINGS;
 let jumpDetector = fastest(settings);
-void startAdminPanel(`${__SERVER_HTTP_URL__}${ADMIN_SETTINGS_PATH}`, tuningRoot, (s) => {
-  settings = s;
-  jumpDetector = fastest(s);
-});
+void startAdminPanel(
+  `${__SERVER_HTTP_URL__}${ADMIN_SETTINGS_PATH}`,
+  tuningRoot,
+  () => buffer.at(-1)?.state,
+  (s) => {
+    settings = s;
+    jumpDetector = fastest(s);
+  },
+);
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
@@ -144,6 +150,7 @@ function frame(): void {
     underrunsPer60s: underrunCounter.value(now),
     stateBytes: lastStateBytes,
     serverHz,
+    gameMode: latest ? modeOf(latest.mode) : null, // the admin panel spec's started game
   };
 
   hud.textContent =

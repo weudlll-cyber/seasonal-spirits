@@ -12,6 +12,8 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 | `src/main.ts`           | Reads and validates the environment, starts the server                |
 | `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds, metrics      |
 | `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle          |
+| `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started   |
+| `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config     |
 | `src/wire.ts`           | Game state → wire state: per-ghost values, the arena, the team scores |
 | `src/http-routes.ts`    | `/metrics-lite` (loopback only), everything else 404                  |
 | `src/admin-settings.ts` | The admin settings endpoint and its one access check (`DEV_TUNING`)   |
@@ -156,13 +158,31 @@ its hello, after a change and at every new match (public: the rules everyone pla
 predicts and draws with them.
 
 The admin panel (the viewer's, http://localhost:5931, with `DEV_TUNING=1`, which `pnpm dev`
-sets) is generated from the schema: grouped (Movement, Dash & push, Jump, Falling & respawn,
-Match flow, Bots — general, Bots — endgame, Sumo, King of the Season, Halving Bomb, Rotation), each control with its unit and "now" or "next match", Reset per group, and the
-**presets**: save the current settings under a name, load one, delete one. A preset is a JSON
-file in the git-ignored dev data folder `data/presets/` (`presets.ts`), checked against the schema
-when saved and when loaded (an invalid or unknown value is refused, never applied); `pnpm dev`
-starts with the last loaded one (deleting it clears that mark, and the modes rotate again).
-Presets replaced the copy line.
+sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`) is built around one flow —
+choose the game, see and set its values, start — and generated from the schema, its groups
+Movement, Dash & push, Jump, Falling & respawn, Match flow, Bots — general, Bots — endgame, Sumo,
+King of the Season, Halving Bomb, Rotation. Two tabs:
+
+- **Next match** (opens first): four large buttons — Sumo · Points, Sumo · Last One Standing,
+  King of the Season, Halving Bomb; nothing below until one is chosen. Then a draft of its values,
+  copied from the settings in force: the shared groups and that game's group only, every row of
+  another game hidden; groups collapsible (Movement, Dash & push and the game's open at first;
+  open or closed remembered in the browser); each row with its unit and "now" or "next match", a
+  Reset to the schema's defaults per group. Editing the draft changes nothing on the server.
+  Presets: one read into the draft, the draft saved as one. Then **Start <game>** and the switch
+  **Keep playing this game**: the game and the draft in one request — the running match ends at
+  once (no result pause, no recap) and the chosen game starts through the normal start;
+  afterwards the rotation goes on, or with the switch on the same game follows until it is
+  switched off or another game is started (a development session flag of the server,
+  `next-game.ts`, not a setting).
+- **Running match**: the running game's name and time left, its values only (the same groups
+  and hiding) and the Rotation, live as before — "now" rows at once, "next match" rows from the
+  next match; the keep switch; presets loaded into it, the current settings saved as one.
+
+A preset is a JSON file in the git-ignored dev data folder `data/presets/` (`presets.ts`), checked
+against the schema when saved and when loaded or read (an invalid or unknown value is refused,
+never applied); `pnpm dev` starts with the last loaded one (deleting it clears that mark, and the
+modes rotate again).
 
 The panel talks to one endpoint, `GET` / `POST /api/v1/admin/settings` (`admin-settings.ts`; the
 path follows the sibling games' admin routes), with one access check in front of it,
@@ -176,9 +196,13 @@ login (CONCEPT.md section 16, BACKLOG OPEN):
 application/json` only (415), so another page cannot reach it without the browser's
   preflight, which only the viewer's origin passes;
 - a body of at most 4096 bytes (413) holding one command: `apply` with every setting, each in its
-  range and on its step (400 otherwise, nothing applied), or `save` / `load` / `delete` with a
+  range and on its step (400 otherwise, nothing applied); `start` with a `game` — one of the four
+  above, checked against the rotation slots (game-core `startableGame`) — every setting and
+  `keep` true or false (400 otherwise, nothing started); `keep` with `on` true or false; `save`
+  (with the panel's draft as `settings`, checked against the schema, or without: the current
+  settings) / `load` (applied) / `read` (handed to the draft, nothing applied) / `delete` with a
   preset name of 1–32 lowercase letters, digits and dashes (400), an unknown preset 404, a stored
-  one that does not pass the schema 422 (not applied), at most 50 presets (409); at most 20
-  commands a second (429);
+  one that does not pass the schema 422 (not used), at most 50 presets (409); at most 20 commands
+  a second (429); the answer: the settings, the preset names, the keep switch;
 - never through the player message validator: `parseClientMessage` still takes a hello, a
   direction and the two actions only. [THREATS.md](THREATS.md) rows 39 and 42.

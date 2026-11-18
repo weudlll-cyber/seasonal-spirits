@@ -1,6 +1,7 @@
 // Seasonal Sumo — the game's admin settings endpoint (NIGHT 2026-11-18, piece 3; it grew out of
-// TUNE 2026-11-17's /dev/tune): one endpoint, ADMIN_SETTINGS_PATH, for the settings and the named
-// presets, which the admin panel (the viewer's, today) talks to. Access is one check in front of
+// TUNE 2026-11-17's /dev/tune): one endpoint, ADMIN_SETTINGS_PATH, for the settings, the named
+// presets and the next match (choose a game, its values, start it — the panel rebuild), which the
+// admin panel (the viewer's, today) talks to. Access is one check in front of
 // it (adminAccess): today the dev flag — the server creates the endpoint only with DEV_TUNING=1,
 // and it refuses to exist with NODE_ENV=production — a loopback caller and the viewer's origin;
 // later the game's own admin login, as the sibling games' admin areas have it (BACKLOG OPEN).
@@ -8,7 +9,12 @@
 // message validator never sees any of it (THREATS rows 39, 42).
 
 import type http from 'node:http';
-import { readSettings, type Settings } from '@seasonal-spirits/game-core';
+import {
+  readSettings,
+  startableGame,
+  type RotationSlot,
+  type Settings,
+} from '@seasonal-spirits/game-core';
 import type { ServerTuning } from '@seasonal-spirits/protocol';
 import { refuseProduction, type Env } from './env.js';
 import { isLoopback } from './http-routes.js';
@@ -20,9 +26,12 @@ const MAX_CHANGES_PER_SECOND = 20;
 
 export interface AdminOptions {
   origins: readonly string[]; // the admin panel's page: no other page may call
-  start: Settings; // the starting values, for Reset
   current: () => Settings; // the settings the next match starts with
   apply: (s: Settings) => void;
+  // Ends the running match at once and starts `game` with `settings` (match-host.ts startGame).
+  start: (game: RotationSlot, settings: Settings, keep: boolean) => void;
+  keep: (on: boolean) => void; // "keep playing this game" on its own
+  keeping: () => boolean;
   presets: PresetStore;
   env: Env;
   now?: () => number; // the clock of the rate limit
@@ -38,8 +47,9 @@ export interface AdminHead {
 
 export interface AdminView {
   current: Settings;
-  start: Settings;
   presets: string[];
+  keep: boolean; // "keep playing this game" is on
+  preset?: Settings; // a preset read into the panel's draft ("read"), nothing applied
 }
 
 export interface AdminAnswer {
@@ -56,22 +66,36 @@ export function adminAccess(head: AdminHead, origins: readonly string[]): number
   return null;
 }
 
-// The endpoint of a server: null without the panel's origins (no DEV_TUNING). It starts from the
-// server's starting settings; a change goes to `host` (the match host), which tells the clients.
+// What the endpoint needs of the match host.
+export interface AdminHost {
+  tune: (s: Settings) => void;
+  settingsWanted: () => Settings;
+  startGame: (game: RotationSlot, settings: Settings, keep: boolean) => void;
+  keepGame: (on: boolean) => void;
+  keeping: () => boolean;
+}
+
+// The endpoint of a server: null without the panel's origins (no DEV_TUNING). A change goes to
+// `host` (the match host), which tells the clients.
 export function adminEndpoint(
   origins: readonly string[] | null | undefined,
   presetDir: string,
-  host: { tune: (s: Settings) => void; settingsWanted: () => Settings },
-  start: Settings,
+  host: AdminHost,
 ): AdminSettings | null {
   if (!origins) return null;
   return new AdminSettings({
     origins,
-    start,
     current: () => host.settingsWanted(),
     apply: (s) => {
       host.tune(s);
     },
+    start: (game, s, keep) => {
+      host.startGame(game, s, keep);
+    },
+    keep: (on) => {
+      host.keepGame(on);
+    },
+    keeping: () => host.keeping(),
     presets: new PresetStore(presetDir),
     env: process.env,
   });
@@ -83,19 +107,57 @@ export function tuningText(values: Settings): string {
   return JSON.stringify(m);
 }
 
+// The commands: apply settings to the running match; save the current settings — or the
+// panel's draft — as a preset, load one (applied), read one (into the draft only), delete one;
+// start a game with its settings; switch "keep playing this game".
 type Command =
-  { action: 'apply'; settings: Settings } | { action: 'save' | 'load' | 'delete'; name: string };
+  | { action: 'apply'; settings: Settings }
+  | { action: 'save'; name: string; settings: Settings | null }
+  | { action: 'load' | 'read' | 'delete'; name: string }
+  | { action: 'start'; game: RotationSlot; settings: Settings; keep: boolean }
+  | { action: 'keep'; on: boolean };
 
-// A POST body: one command, its fields checked; null for anything else.
+type Fields = Record<string, unknown>;
+const nameOf = (f: Fields): string | null =>
+  typeof f.name === 'string' && f.name.length <= 32 ? f.name : null;
+const named =
+  (action: 'load' | 'read' | 'delete') =>
+  (f: Fields): Command | null => {
+    const name = nameOf(f);
+    return name === null ? null : { action, name };
+  };
+
+// One reader per action, each checking its fields (the settings against the schema, the game
+// against the startable games); null for anything else.
+const READERS: Record<string, (f: Fields) => Command | null> = {
+  apply: (f) => {
+    const settings = readSettings(f.settings);
+    return settings ? { action: 'apply', settings } : null;
+  },
+  save: (f) => {
+    const name = nameOf(f);
+    const draft = f.settings === undefined ? null : readSettings(f.settings);
+    if (name === null || (f.settings !== undefined && !draft)) return null;
+    return { action: 'save', name, settings: draft };
+  },
+  load: named('load'),
+  read: named('read'),
+  delete: named('delete'),
+  start: (f) => {
+    const game = startableGame(f.game);
+    const settings = readSettings(f.settings);
+    if (!game || !settings || typeof f.keep !== 'boolean') return null;
+    return { action: 'start', game, settings, keep: f.keep };
+  },
+  keep: (f) => (typeof f.on === 'boolean' ? { action: 'keep', on: f.on } : null),
+};
+
+// A POST body: one command; null for anything else.
 function readCommand(value: unknown): Command | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-  const { action, settings, name } = value as Record<string, unknown>;
-  if (action === 'apply') {
-    const s = readSettings(settings);
-    return s ? { action, settings: s } : null;
-  }
-  const named = action === 'save' || action === 'load' || action === 'delete';
-  return named && typeof name === 'string' && name.length <= 32 ? { action, name } : null;
+  const f = value as Fields;
+  const read = typeof f.action === 'string' && Object.hasOwn(READERS, f.action);
+  return read ? (READERS[f.action as string]?.(f) ?? null) : null;
 }
 
 export class AdminSettings {
@@ -170,31 +232,36 @@ export class AdminSettings {
     }
     const c = readCommand(value);
     if (!c) return { status: 400 };
+    if (c.action === 'read' || c.action === 'load') return this.preset(c.action, c.name);
     const status = this.run(c);
     return status === 200 ? { status, body: this.view() } : { status };
   }
 
-  // 200 done; 404 no such preset; 409 the preset folder is full; 400 a bad name; 422 a stored
-  // preset that does not pass the schema (not applied).
-  private run(c: Command): number {
+  // 200 done; 404 no such preset; 409 the preset folder is full; 400 a bad name.
+  private run(c: Exclude<Command, { action: 'read' | 'load' }>): number {
     const { presets } = this.o;
-    if (c.action === 'apply') {
-      this.o.apply(c.settings);
-      return 200;
-    }
     if (c.action === 'delete') return presets.remove(c.name) ? 200 : 404;
     if (c.action === 'save') {
-      const saved = presets.save(c.name, this.o.current());
+      const saved = presets.save(c.name, c.settings ?? this.o.current());
       return saved.ok ? 200 : saved.reason === 'full' ? 409 : 400;
     }
-    const loaded = presets.load(c.name);
-    if (!loaded.ok) return loaded.reason === 'unknown' ? 404 : 422;
-    this.o.apply(loaded.settings);
+    if (c.action === 'apply') this.o.apply(c.settings);
+    if (c.action === 'start') this.o.start(c.game, c.settings, c.keep);
+    if (c.action === 'keep') this.o.keep(c.on);
     return 200;
   }
 
+  // A stored preset, checked against the schema (404 unknown, 422 invalid — nothing of it used):
+  // "load" applies it to the running match, "read" only hands it to the panel's draft.
+  private preset(action: 'read' | 'load', name: string): AdminAnswer {
+    const loaded = this.o.presets.load(name);
+    if (!loaded.ok) return { status: loaded.reason === 'unknown' ? 404 : 422 };
+    if (action === 'load') this.o.apply(loaded.settings);
+    return { status: 200, body: { ...this.view(), preset: loaded.settings } };
+  }
+
   private view(): AdminView {
-    return { current: this.o.current(), start: this.o.start, presets: this.o.presets.list() };
+    return { current: this.o.current(), presets: this.o.presets.list(), keep: this.o.keeping() };
   }
 
   private withinRate(): boolean {

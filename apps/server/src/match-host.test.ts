@@ -231,6 +231,39 @@ describe('match host lifecycle', () => {
   });
 });
 
+// The panel rebuild (2026-11-18): the admin panel starts a chosen game with its settings.
+describe('match host started game', () => {
+  const BOMB = { mode: 'bomb', variant: 'points' } as const;
+  // A short Bomb match (its least length), a short pause; the rotation is Sumo alone.
+  const QUICK: Settings = { ...DEFAULT_SETTINGS, teamSize: 2, bombMatch: 60, resultPause: 3 };
+  const modeAfter = (host: MatchHost, ms: number): number => runFor(host, ms).at(-1)?.mode ?? -1;
+
+  it('ends the running match at once and starts the game with the sent settings', () => {
+    const host = hostOf(8);
+    runFor(host, 1000);
+    host.startGame(BOMB, { ...QUICK, perBomb: 2 }, false);
+    const s = host.tick(50);
+    expect([s.mode, s.matchMs, s.flags & (STATE_RESULT | STATE_MATCH_END_EVENT)]).toEqual([
+      2, 50, 0,
+    ]);
+    expect(host.recapNow(false)).toBeNull(); // no result, no recap
+    expect(host.settingsInForce().perBomb).toBe(2);
+    expect(s.ghosts.filter((g) => g.flags & GHOST_BOMB)).toHaveLength(4); // 8 players, 2 per bomb
+  });
+
+  it('goes on with the rotation afterwards, or keeps the game while the switch is on', () => {
+    const once = hostOf(8);
+    once.startGame(BOMB, QUICK, false);
+    expect(modeAfter(once, 60_000 + 3000 + 100)).toBe(0); // Sumo again
+    const kept = hostOf(8);
+    kept.startGame(BOMB, QUICK, true);
+    expect(kept.keeping()).toBe(true);
+    expect(modeAfter(kept, 60_000 + 3000 + 100)).toBe(2); // Bomb again
+    kept.keepGame(false);
+    expect(modeAfter(kept, 60_000 + 3000 + 100)).toBe(0);
+  });
+});
+
 // LIVES 2026-11-17: Points and Last One Standing in turn; a ghost out of lives is not handed
 // to a joining player while one with lives is free.
 describe('match host sumo variants and lives', () => {

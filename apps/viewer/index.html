@@ -32,20 +32,21 @@
       canvas {
         display: block;
       }
-      /* The admin panel: settings and presets (admin-panel.ts), only with the server's DEV_TUNING.
-         Never taller than the window below the clock and never wider than it: it scrolls inside,
-         so every slider and the copy line stay reachable (FIX 2026-11-17-5). */
+      /* The admin panel (admin-panel.ts): "Next match" — choose a game, set its values, start —
+         and "Running match", only with the server's DEV_TUNING. Never taller than the window
+         below the clock and never wider than it: it scrolls inside, so every row and button
+         stays reachable (FIX 2026-11-17-5). */
       #tuning {
         position: fixed;
         top: 76px;
         right: 12px;
-        width: 300px;
+        width: 340px;
         max-width: calc(100vw - 24px);
         max-height: calc(100vh - 88px);
         box-sizing: border-box;
         overflow-y: auto;
         padding: 8px 12px;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.9); /* the field shows through little: readable on a phone */
         border: 1px solid #22303c;
         border-radius: 6px;
         font-size: 13px;
@@ -74,9 +75,57 @@
         width: 100%;
         box-sizing: border-box;
       }
-      #tuning p {
+      #tuning p.status {
         margin: 4px 0 0;
         color: #ff9b9b;
+      }
+      #tuning button {
+        font: inherit;
+        color: #e6edf3;
+        background: #17222c;
+        border: 1px solid #3a4b5a;
+        border-radius: 6px;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      #tuning .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+      #tuning .tabs button {
+        flex: 1;
+        padding: 8px;
+      }
+      #tuning .tabs button.active,
+      #tuning .games button.chosen {
+        border-color: #ffd54f;
+        font-weight: bold;
+      }
+      #tuning .games {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      #tuning .games button {
+        min-height: 56px;
+        font-size: 14px;
+      }
+      #tuning button.start {
+        width: 100%;
+        padding: 12px;
+        font-size: 15px;
+        font-weight: bold;
+        border-color: #ffd54f;
+      }
+      #tuning label.switch {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      #tuning .running {
+        font-weight: bold;
       }
     </style>
   </head>

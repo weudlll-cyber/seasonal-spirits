@@ -1,14 +1,16 @@
 // Seasonal Sumo — the admin settings endpoint (THREATS rows 39, 42): absent without the flag and in
 // production, refused from another host or page, only settings that pass the schema applied,
 // rate bounded; presets saved, loaded and deleted by name, a stored preset with a bad value
-// refused and never applied; a change reaches the running match and every client.
+// refused and never applied; a change reaches the running match and every client; the next match
+// (the panel rebuild): a game started with its settings, the keep switch, a preset read into the
+// draft without applying it.
 
 import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, type Settings } from '@seasonal-spirits/game-core';
+import { DEFAULT_SETTINGS, type RotationSlot, type Settings } from '@seasonal-spirits/game-core';
 import { ADMIN_SETTINGS_PATH, parseServerMessage } from '@seasonal-spirits/protocol';
 import { AdminSettings, type AdminHead } from './admin-settings.js';
 import { rawToText } from './client-record.js';
@@ -30,20 +32,30 @@ const named = (action: string, name: string): string => JSON.stringify({ action,
 function endpoint(env: Record<string, string> = {}, now = () => 0) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'presets-'));
   const applied: Settings[] = [];
+  const started: { game: RotationSlot; settings: Settings; keep: boolean }[] = [];
   let current = DEFAULT_SETTINGS;
+  let keep = false;
   const e = new AdminSettings({
     origins: [VIEWER],
-    start: DEFAULT_SETTINGS,
     current: () => current,
     apply: (s) => {
       applied.push(s);
       current = s;
     },
+    start: (game, settings, k) => {
+      started.push({ game, settings, keep: k });
+      current = settings;
+      keep = k;
+    },
+    keep: (on) => {
+      keep = on;
+    },
+    keeping: () => keep,
     presets: new PresetStore(dir),
     env,
     now,
   });
-  return { e, applied, dir };
+  return { e, applied, started, dir };
 }
 
 describe('admin settings refusals', () => {
@@ -97,11 +109,11 @@ describe('admin settings refusals', () => {
 });
 
 describe('admin settings and presets', () => {
-  it('applies valid settings and answers with them, the starting values and the presets', () => {
+  it('applies valid settings and answers with them, the presets and the keep switch', () => {
     const { e, applied } = endpoint();
     expect(e.answer(POST, apply(VALID))).toEqual({
       status: 200,
-      body: { current: VALID, start: DEFAULT_SETTINGS, presets: [] },
+      body: { current: VALID, presets: [], keep: false },
     });
     expect(applied).toEqual([VALID]);
   });
@@ -171,6 +183,67 @@ function request(server: GameServer, method: string, body?: string) {
     },
   );
 }
+
+// The panel rebuild (2026-11-18): choose the game, set its values in a draft, start it.
+describe('admin next match', () => {
+  const start = (game: unknown, settings: unknown, keep: unknown = false): string =>
+    JSON.stringify({ action: 'start', game, settings, keep });
+
+  it('starts a startable game with the sent settings and the keep switch', () => {
+    const { e, started } = endpoint();
+    const answer = e.answer(POST, start('Halving Bomb', VALID, true));
+    expect(answer.status).toBe(200);
+    expect(answer.body).toMatchObject({ current: VALID, keep: true });
+    expect(started).toEqual([
+      { game: { mode: 'bomb', variant: 'points' }, settings: VALID, keep: true },
+    ]);
+  });
+
+  it('refuses an unknown game, invalid settings or a missing keep, and starts nothing', () => {
+    let now = 0;
+    const { e, started } = endpoint({}, () => (now += 100));
+    for (const body of [
+      start('Tetris', VALID),
+      start('off', VALID), // a rotation slot, but no game
+      start('Sumo', VALID), // its variant is a setting, not a choice here
+      start('Halving Bomb', { ...VALID, perBomb: 99 }),
+      start('Halving Bomb', { ...VALID, unknown: 1 }),
+      start('Halving Bomb', VALID, 'yes'),
+    ]) {
+      expect(e.answer(POST, body).status).toBe(400);
+    }
+    expect(started).toEqual([]);
+  });
+
+  it('refuses a start from another host or page like every other command', () => {
+    const { e, started } = endpoint();
+    const body = start('King of the Season', VALID);
+    expect(e.answer({ ...POST, remote: '192.168.0.66' }, body).status).toBe(404);
+    expect(e.answer({ ...POST, origin: 'http://evil.example' }, body).status).toBe(403);
+    expect(started).toEqual([]);
+  });
+
+  it('switches "keep playing this game" on its own', () => {
+    let now = 0;
+    const { e } = endpoint({}, () => (now += 100));
+    expect(e.answer(POST, JSON.stringify({ action: 'keep', on: true })).body?.keep).toBe(true);
+    expect(e.answer(POST, JSON.stringify({ action: 'keep', on: false })).body?.keep).toBe(false);
+    expect(e.answer(POST, JSON.stringify({ action: 'keep', on: 1 })).status).toBe(400);
+  });
+
+  it('saves the draft as a preset and reads one into the draft without applying it', () => {
+    let now = 0;
+    const { e, applied } = endpoint({}, () => (now += 100));
+    const save = JSON.stringify({ action: 'save', name: 'draft', settings: VALID });
+    expect(e.answer(POST, save).body?.presets).toEqual(['draft']);
+    const read = e.answer(POST, named('read', 'draft'));
+    expect(read.body?.preset).toEqual(VALID);
+    expect(read.body?.current).toEqual(DEFAULT_SETTINGS);
+    expect(applied).toEqual([]);
+    const bad = JSON.stringify({ action: 'save', name: 'x', settings: { ...VALID, lives: 0 } });
+    expect(e.answer(POST, bad).status).toBe(400);
+  });
+});
 
 describe('admin settings on the server', () => {
   let server: GameServer | null = null;
