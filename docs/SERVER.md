@@ -156,8 +156,8 @@ its hello, after a change and at every new match (public: the rules everyone pla
 predicts and draws with them.
 
 The admin panel (the viewer's, http://localhost:5931, with `DEV_TUNING=1`, which `pnpm dev`
-sets) is generated from the schema: grouped (General, Bots, Sumo, King of the Season, Halving
-Bomb, Rotation), each control with its unit and "now" or "next match", Reset per group, and the
+sets) is generated from the schema: grouped (Movement, Dash & push, Jump, Falling & respawn,
+Match flow, Bots — general, Bots — endgame, Sumo, King of the Season, Halving Bomb, Rotation), each control with its unit and "now" or "next match", Reset per group, and the
 **presets**: save the current settings under a name, load one, delete one. A preset is a JSON
 file in the git-ignored dev data folder `data/presets/` (`presets.ts`), checked against the schema
 when saved and when loaded (an invalid or unknown value is refused, never applied); `pnpm dev`

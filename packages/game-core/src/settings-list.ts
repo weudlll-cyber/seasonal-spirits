@@ -61,12 +61,13 @@ const inGroup = <E extends Entry<string>>(group: SettingGroup, entries: readonly
   entries.map((e) => ({ ...e, group }));
 
 export const SETTINGS = [
-  ...inGroup('general', [
-    n('teamSize', 'Team size (seats bots fill)', ['seats', 1, 12, 1, 8], NEXT),
-    n('ghostRadius', 'Ghost size (radius)', ['u', 8, 32, 1, 16], NEXT),
+  ...inGroup('movement', [
     n('maxSpeed', 'Walking speed', ['u/s', 120, 480, 10, 240]),
     n('acceleration', 'Acceleration', ['u/s²', 300, 3000, 50, 900]),
     n('friction', 'Friction (speed lost per second)', ['/s', 0.5, 6, 0.1, 2.5]),
+    n('ghostRadius', 'Ghost size (radius)', ['u', 8, 32, 1, 16], NEXT),
+  ]),
+  ...inGroup('dash', [
     n('dashSpeed', 'Dash strength', ['u/s', 160, 1200, 10, 480]),
     n('dashTime', 'Dash: knocks for', ['s', 0.05, 0.6, 0.05, 0.25]),
     n('dashCooldown', 'Dash: cooldown', ['s', 0.3, 5, 0.1, 1.5]),
@@ -76,10 +77,14 @@ export const SETTINGS = [
     n('knockWeight', 'Thrown ghost weight', ['×', 1, 20, 1, 10]),
     n('restitution', 'Bounce', ['share', 0, 1, 0.05, 0]),
     n('inSeasonPush', 'In-season push factor', ['×', 1, 2, 0.05, 1.25]),
+  ]),
+  ...inGroup('jump', [
     choice('jump', 'Jump', SWITCH, { value: 1 }),
     n('jumpAir', 'Jump: time in the air', ['s', 0.2, 1.5, 0.05, 0.5]),
     n('jumpCooldown', 'Jump: cooldown', ['s', 0.5, 5, 0.1, 3]),
     n('jumpSteer', 'Jump: steering left in the air', ['share', 0, 1, 0.05, 0.1]),
+  ]),
+  ...inGroup('falling', [
     n('fall', 'Fall animation', ['s', 0.2, 1.5, 0.1, 0.6]),
     n('respawn', 'Respawn delay (from the fall)', ['s', 0.5, 10, 0.5, 3]),
     n('protect', 'Spawn protection', ['s', 0, 5, 0.1, 1]),
@@ -88,6 +93,9 @@ export const SETTINGS = [
     n('respawnOuter', 'Respawn band: to (share of radius)', ['share', 0, 1, 0.05, 0.75]),
     n('startSpread', 'Start ring (share of radius)', ['share', 0.2, 0.9, 0.05, 0.6], NEXT),
     n('edgeEase', 'Edge easing after a halving', ['s', 0.5, 5, 0.1, 2]),
+  ]),
+  ...inGroup('flow', [
+    n('teamSize', 'Team size (seats bots fill)', ['seats', 1, 12, 1, 8], NEXT),
     n('countdown', 'Countdown before a deadline', ['s', 3, 20, 1, 10], ENDGAME),
     n('resultPause', 'Result pause', ['s', 3, 60, 1, 15], NEXT),
     n('reconnectGrace', 'Reconnect grace', ['s', 0, 60, 1, 12]),
@@ -110,6 +118,8 @@ export const SETTINGS = [
     n('botDashAim', 'Dash only when lined up (cosine)', ['cos', 0, 1, 0.05, 0.9]),
     n('botWander', 'Wander point moves every', ['s', 0.5, 10, 0.5, 3]),
     n('botApproach', 'Approach from the side (share of dash range)', ['share', 0, 1, 0.05, 0.25]),
+  ]),
+  ...inGroup('botsEndgame', [
     n('botLead', 'Endgame: aim ahead', ['s', 0, 1, 0.05, 0.3], ENDGAME),
     n('botBoldAt', 'Endgame: bold below this many left', ['ghosts', 2, 32, 1, 8], ENDGAME),
     n('botBoldAim', 'Endgame: widest dash angle (cosine)', ['cos', -1, 1, 0.05, 0.5], ENDGAME),

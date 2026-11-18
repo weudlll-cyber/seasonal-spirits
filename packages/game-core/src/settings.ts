@@ -1,18 +1,37 @@
 // Seasonal Sumo — every number that shapes play, in one schema (NIGHT 2026-11-18, piece 3): its
 // key, group, label, unit, range, step, default, the modes it belongs to, and whether it applies
-// at once or from the next match — the shape here, the entries in settings-list.ts. The game's config is built from it (config.ts configFrom); the
-// server validates with it (readSettings), the admin panel and the docs table (docs/SETTINGS.md,
-// settings-doc.ts) are generated from it. Nothing else holds a gameplay number; the numbers in
+// at once or from the next match — the shape here, the entries in settings-list.ts. The game's
+// config is built from it (config.ts configFrom); the server validates with it (readSettings),
+// the admin panel and the docs table (docs/SETTINGS.md, settings-doc.ts) are generated from it. Nothing else holds a gameplay number; the numbers in
 // game-core that are not gameplay are listed in NOT_SETTINGS.
 
 import type { GameMode } from './config.js';
 import { ROTATION_SLOTS, SETTINGS } from './settings-list.js';
 
-export const SETTING_GROUPS = ['general', 'bots', 'sumo', 'hill', 'bomb', 'rotation'] as const;
+// The groups, in the panel's and the docs' order: the shared values by what they shape, the
+// bots, one group per game (its own bot values at its end), the rotation.
+export const SETTING_GROUPS = [
+  'movement',
+  'dash',
+  'jump',
+  'falling',
+  'flow',
+  'bots',
+  'botsEndgame',
+  'sumo',
+  'hill',
+  'bomb',
+  'rotation',
+] as const;
 export type SettingGroup = (typeof SETTING_GROUPS)[number];
 export const GROUP_LABELS: Record<SettingGroup, string> = {
-  general: 'General',
-  bots: 'Bots',
+  movement: 'Movement',
+  dash: 'Dash & push',
+  jump: 'Jump',
+  falling: 'Falling & respawn',
+  flow: 'Match flow',
+  bots: 'Bots — general',
+  botsEndgame: 'Bots — endgame',
   sumo: 'Sumo',
   hill: 'King of the Season',
   bomb: 'Halving Bomb',

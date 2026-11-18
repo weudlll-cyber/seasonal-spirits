@@ -3,41 +3,61 @@
 Generated from `packages/game-core/src/settings.ts` by `pnpm settings:doc` — do not edit by
 hand. Every number that shapes play; all placeholders the owner sets in the admin panel.
 
-## General
+## Movement
 
-| Key              | Setting                              | Range                     | Default | Modes            | Applies    |
-| ---------------- | ------------------------------------ | ------------------------- | ------- | ---------------- | ---------- |
-| `teamSize`       | Team size (seats bots fill)          | 1–12 seats (step 1)       | 8       | sumo, hill, bomb | next match |
-| `ghostRadius`    | Ghost size (radius)                  | 8–32 u (step 1)           | 16      | sumo, hill, bomb | next match |
-| `maxSpeed`       | Walking speed                        | 120–480 u/s (step 10)     | 240     | sumo, hill, bomb | now        |
-| `acceleration`   | Acceleration                         | 300–3000 u/s² (step 50)   | 900     | sumo, hill, bomb | now        |
-| `friction`       | Friction (speed lost per second)     | 0.5–6 /s (step 0.1)       | 2.5     | sumo, hill, bomb | now        |
-| `dashSpeed`      | Dash strength                        | 160–1200 u/s (step 10)    | 480     | sumo, hill, bomb | now        |
-| `dashTime`       | Dash: knocks for                     | 0.05–0.6 s (step 0.05)    | 0.25    | sumo, hill, bomb | now        |
-| `dashCooldown`   | Dash: cooldown                       | 0.3–5 s (step 0.1)        | 1.5     | sumo, hill, bomb | now        |
-| `dashWindUp`     | Dash: wind-up                        | off / on                  | off     | sumo, hill, bomb | now        |
-| `dashWindUpTime` | Dash: wind-up length                 | 0–0.4 s (step 0.01)       | 0.12    | sumo, hill, bomb | now        |
-| `knockSpeed`     | Push strength (a dash hit)           | 0–960 u/s (step 10)       | 320     | sumo, hill, bomb | now        |
-| `knockWeight`    | Thrown ghost weight                  | 1–20 × (step 1)           | 10      | sumo, hill, bomb | now        |
-| `restitution`    | Bounce                               | 0–1 share (step 0.05)     | 0       | sumo, hill, bomb | now        |
-| `inSeasonPush`   | In-season push factor                | 1–2 × (step 0.05)         | 1.25    | sumo, hill, bomb | now        |
-| `jump`           | Jump                                 | off / on                  | on      | sumo, hill, bomb | now        |
-| `jumpAir`        | Jump: time in the air                | 0.2–1.5 s (step 0.05)     | 0.5     | sumo, hill, bomb | now        |
-| `jumpCooldown`   | Jump: cooldown                       | 0.5–5 s (step 0.1)        | 3       | sumo, hill, bomb | now        |
-| `jumpSteer`      | Jump: steering left in the air       | 0–1 share (step 0.05)     | 0.1     | sumo, hill, bomb | now        |
-| `fall`           | Fall animation                       | 0.2–1.5 s (step 0.1)      | 0.6     | sumo, hill, bomb | now        |
-| `respawn`        | Respawn delay (from the fall)        | 0.5–10 s (step 0.5)       | 3       | sumo, hill, bomb | now        |
-| `protect`        | Spawn protection                     | 0–5 s (step 0.1)          | 1       | sumo, hill, bomb | now        |
-| `credit`         | Knockout credit window               | 0.5–10 s (step 0.5)       | 3       | sumo, hill, bomb | now        |
-| `respawnInner`   | Respawn band: from (share of radius) | 0–1 share (step 0.05)     | 0.25    | sumo, hill, bomb | now        |
-| `respawnOuter`   | Respawn band: to (share of radius)   | 0–1 share (step 0.05)     | 0.75    | sumo, hill, bomb | now        |
-| `startSpread`    | Start ring (share of radius)         | 0.2–0.9 share (step 0.05) | 0.6     | sumo, hill, bomb | next match |
-| `edgeEase`       | Edge easing after a halving          | 0.5–5 s (step 0.1)        | 2       | sumo, hill, bomb | now        |
-| `countdown`      | Countdown before a deadline          | 3–20 s (step 1)           | 10      | sumo, hill       | now        |
-| `resultPause`    | Result pause                         | 3–60 s (step 1)           | 15      | sumo, hill, bomb | next match |
-| `reconnectGrace` | Reconnect grace                      | 0–60 s (step 1)           | 12      | sumo, hill, bomb | now        |
+| Key            | Setting                          | Range                   | Default | Modes            | Applies    |
+| -------------- | -------------------------------- | ----------------------- | ------- | ---------------- | ---------- |
+| `maxSpeed`     | Walking speed                    | 120–480 u/s (step 10)   | 240     | sumo, hill, bomb | now        |
+| `acceleration` | Acceleration                     | 300–3000 u/s² (step 50) | 900     | sumo, hill, bomb | now        |
+| `friction`     | Friction (speed lost per second) | 0.5–6 /s (step 0.1)     | 2.5     | sumo, hill, bomb | now        |
+| `ghostRadius`  | Ghost size (radius)              | 8–32 u (step 1)         | 16      | sumo, hill, bomb | next match |
 
-## Bots
+## Dash & push
+
+| Key              | Setting                    | Range                  | Default | Modes            | Applies |
+| ---------------- | -------------------------- | ---------------------- | ------- | ---------------- | ------- |
+| `dashSpeed`      | Dash strength              | 160–1200 u/s (step 10) | 480     | sumo, hill, bomb | now     |
+| `dashTime`       | Dash: knocks for           | 0.05–0.6 s (step 0.05) | 0.25    | sumo, hill, bomb | now     |
+| `dashCooldown`   | Dash: cooldown             | 0.3–5 s (step 0.1)     | 1.5     | sumo, hill, bomb | now     |
+| `dashWindUp`     | Dash: wind-up              | off / on               | off     | sumo, hill, bomb | now     |
+| `dashWindUpTime` | Dash: wind-up length       | 0–0.4 s (step 0.01)    | 0.12    | sumo, hill, bomb | now     |
+| `knockSpeed`     | Push strength (a dash hit) | 0–960 u/s (step 10)    | 320     | sumo, hill, bomb | now     |
+| `knockWeight`    | Thrown ghost weight        | 1–20 × (step 1)        | 10      | sumo, hill, bomb | now     |
+| `restitution`    | Bounce                     | 0–1 share (step 0.05)  | 0       | sumo, hill, bomb | now     |
+| `inSeasonPush`   | In-season push factor      | 1–2 × (step 0.05)      | 1.25    | sumo, hill, bomb | now     |
+
+## Jump
+
+| Key            | Setting                        | Range                 | Default | Modes            | Applies |
+| -------------- | ------------------------------ | --------------------- | ------- | ---------------- | ------- |
+| `jump`         | Jump                           | off / on              | on      | sumo, hill, bomb | now     |
+| `jumpAir`      | Jump: time in the air          | 0.2–1.5 s (step 0.05) | 0.5     | sumo, hill, bomb | now     |
+| `jumpCooldown` | Jump: cooldown                 | 0.5–5 s (step 0.1)    | 3       | sumo, hill, bomb | now     |
+| `jumpSteer`    | Jump: steering left in the air | 0–1 share (step 0.05) | 0.1     | sumo, hill, bomb | now     |
+
+## Falling & respawn
+
+| Key            | Setting                              | Range                     | Default | Modes            | Applies    |
+| -------------- | ------------------------------------ | ------------------------- | ------- | ---------------- | ---------- |
+| `fall`         | Fall animation                       | 0.2–1.5 s (step 0.1)      | 0.6     | sumo, hill, bomb | now        |
+| `respawn`      | Respawn delay (from the fall)        | 0.5–10 s (step 0.5)       | 3       | sumo, hill, bomb | now        |
+| `protect`      | Spawn protection                     | 0–5 s (step 0.1)          | 1       | sumo, hill, bomb | now        |
+| `credit`       | Knockout credit window               | 0.5–10 s (step 0.5)       | 3       | sumo, hill, bomb | now        |
+| `respawnInner` | Respawn band: from (share of radius) | 0–1 share (step 0.05)     | 0.25    | sumo, hill, bomb | now        |
+| `respawnOuter` | Respawn band: to (share of radius)   | 0–1 share (step 0.05)     | 0.75    | sumo, hill, bomb | now        |
+| `startSpread`  | Start ring (share of radius)         | 0.2–0.9 share (step 0.05) | 0.6     | sumo, hill, bomb | next match |
+| `edgeEase`     | Edge easing after a halving          | 0.5–5 s (step 0.1)        | 2       | sumo, hill, bomb | now        |
+
+## Match flow
+
+| Key              | Setting                     | Range               | Default | Modes            | Applies    |
+| ---------------- | --------------------------- | ------------------- | ------- | ---------------- | ---------- |
+| `teamSize`       | Team size (seats bots fill) | 1–12 seats (step 1) | 8       | sumo, hill, bomb | next match |
+| `countdown`      | Countdown before a deadline | 3–20 s (step 1)     | 10      | sumo, hill       | now        |
+| `resultPause`    | Result pause                | 3–60 s (step 1)     | 15      | sumo, hill, bomb | next match |
+| `reconnectGrace` | Reconnect grace             | 0–60 s (step 1)     | 12      | sumo, hill, bomb | now        |
+
+## Bots — general
 
 | Key                 | Setting                                      | Range                     | Default | Modes            | Applies |
 | ------------------- | -------------------------------------------- | ------------------------- | ------- | ---------------- | ------- |
@@ -58,10 +78,15 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | `botDashAim`        | Dash only when lined up (cosine)             | 0–1 cos (step 0.05)       | 0.9     | sumo, hill, bomb | now     |
 | `botWander`         | Wander point moves every                     | 0.5–10 s (step 0.5)       | 3       | sumo, hill, bomb | now     |
 | `botApproach`       | Approach from the side (share of dash range) | 0–1 share (step 0.05)     | 0.25    | sumo, hill, bomb | now     |
-| `botLead`           | Endgame: aim ahead                           | 0–1 s (step 0.05)         | 0.3     | sumo, hill       | now     |
-| `botBoldAt`         | Endgame: bold below this many left           | 2–32 ghosts (step 1)      | 8       | sumo, hill       | now     |
-| `botBoldAim`        | Endgame: widest dash angle (cosine)          | -1–1 cos (step 0.05)      | 0.5     | sumo, hill       | now     |
-| `botCommit`         | Endgame: attack anyway after                 | 0.5–10 s (step 0.5)       | 3       | sumo, hill       | now     |
+
+## Bots — endgame
+
+| Key          | Setting                             | Range                | Default | Modes      | Applies |
+| ------------ | ----------------------------------- | -------------------- | ------- | ---------- | ------- |
+| `botLead`    | Endgame: aim ahead                  | 0–1 s (step 0.05)    | 0.3     | sumo, hill | now     |
+| `botBoldAt`  | Endgame: bold below this many left  | 2–32 ghosts (step 1) | 8       | sumo, hill | now     |
+| `botBoldAim` | Endgame: widest dash angle (cosine) | -1–1 cos (step 0.05) | 0.5     | sumo, hill | now     |
+| `botCommit`  | Endgame: attack anyway after        | 0.5–10 s (step 0.5)  | 3       | sumo, hill | now     |
 
 ## Sumo
 

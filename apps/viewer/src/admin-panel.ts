@@ -155,7 +155,7 @@ function groupBox(
   reset: (mine: readonly Entry[]) => void,
 ): HTMLElement {
   const box = el('details');
-  box.open = g === 'general';
+  box.open = g === 'movement';
   box.append(el('summary', GROUP_LABELS[g]));
   const mine = SETTINGS.filter((s) => s.group === g);
   box.append(...mine.map((s) => controls.get(s.key)?.row ?? el('span')));
