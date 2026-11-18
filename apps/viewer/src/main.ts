@@ -1,6 +1,7 @@
 // Seasonal Spirits — browser viewer: a spectator of the running match, as a debug view.
 // Connects through the artificial delay queue, interpolates the ghosts and draws the whole
-// match with the client's drawing (packages/render). The HUD shows the network numbers; they
+// match with the client's drawing (packages/render): the same island, characters, effects,
+// season and clock pill, Light or Dark. The HUD shows the network numbers; they
 // are also exposed on window for Playwright checks. With the server's admin settings endpoint on
 // (pnpm dev) it carries the admin panel (admin-panel.ts); it draws with the settings in force.
 
@@ -34,7 +35,8 @@ import {
   drawGhosts,
   clientConfig,
   fuseLeft,
-  fitField,
+  cameraBox,
+  fitBox,
   modeOf,
   scoreTopOf,
   useShape,
@@ -71,6 +73,7 @@ const underrunCounter = new PerMinuteCounter();
 let lastStateBytes = 0;
 const trails = new Trails();
 const field = { breaks: new BreakOff(), seasons: new Seasons() };
+const SWITCH_ROOM = 64; // px at the top right the clock's pill leaves to the Light/Dark switch
 // The fastest a ghost moves: a dash plus a knock (a respawn still counts as a jump); with the
 // settings the panel shows.
 const fastest = (s: Settings): JumpDetector =>
@@ -140,8 +143,10 @@ function frame(): void {
   if (latest) useShape(clientConfig(latest.mode, settings));
   trails.record(ghosts, now);
   drawSky(ctx, now, latest?.season);
-  drawField(fitField(ctx, CLOCK_HEIGHT), latest, now, field);
-  drawGhosts(fitField(ctx, CLOCK_HEIGHT), ghosts, {
+  // The client's camera: the playing area as large as it goes (sumo's arena follows its halving).
+  const view = fitBox(ctx, CLOCK_HEIGHT, cameraBox(latest), { keepOut: [], marginPx: 8 });
+  drawField(view, latest, now, field);
+  drawGhosts(view, ghosts, {
     ownId: null,
     trails,
     nowMs: now,
@@ -149,8 +154,8 @@ function frame(): void {
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),
   });
-  drawSeasonAir(fitField(ctx, CLOCK_HEIGHT), field.seasons, now);
-  drawClock(ctx, latest);
+  drawSeasonAir(view, field.seasons, now);
+  drawClock(ctx, latest, SWITCH_ROOM);
 
   // Expose for Playwright / probe self-check.
   (window as unknown as { __viewer: unknown }).__viewer = {

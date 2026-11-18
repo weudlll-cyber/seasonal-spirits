@@ -28,27 +28,28 @@
         border: 2.5px solid var(--ink);
         box-shadow: 3px 3px 0 var(--ink);
       }
-      /* The Light/Dark switch (render look-switch.ts): a small pill at the top right, its knob
-         left with a sun in Light, right with a moon in Dark. The clock keeps clear of it
-         (render clock.ts SWITCH_ROOM). */
+      /* The Light/Dark switch (render look-switch.ts): a small pill at the top right in the
+         clock's row, its knob left with a sun in Light, right with a moon in Dark; the clock's
+         pill keeps clear of it (main.ts SWITCH_ROOM; NIGHT 2026-11-19: the same size as the
+         client's). */
       #look {
         position: fixed;
-        top: 16px;
+        top: 4px;
         right: 8px;
-        width: 54px;
-        height: 30px;
+        width: 46px;
+        height: 26px;
         padding: 0;
         border-radius: 999px;
       }
       #look::after {
         content: '\2600';
         position: absolute;
-        top: 2px;
-        left: 3px;
-        width: 22px;
-        height: 22px;
-        line-height: 22px;
-        font-size: 14px;
+        top: 1px;
+        left: 2px;
+        width: 19px;
+        height: 19px;
+        line-height: 19px;
+        font-size: 12px;
         border-radius: 50%;
         background: #ffe073;
         color: #2b2140;
@@ -57,7 +58,7 @@
       }
       body.dark #look::after {
         content: '\263E';
-        left: 25px;
+        left: 21px;
         background: #fff3c4;
       }
       html,
@@ -69,9 +70,11 @@
         font-family: Fredoka, system-ui, sans-serif;
         overflow: hidden;
       }
+      /* The network numbers at the bottom left, over the rock and the clouds, not the field
+         (NIGHT 2026-11-19: the viewer's camera now fills the height like the client's). */
       #hud {
         position: fixed;
-        top: 76px;
+        bottom: 12px;
         left: 12px;
         padding: 8px 12px;
         color: var(--panel-text);
@@ -92,11 +95,11 @@
          stays reachable (FIX 2026-11-17-5). */
       #tuning {
         position: fixed;
-        top: 76px;
+        top: 44px;
         right: 12px;
         width: 340px;
         max-width: calc(100vw - 24px);
-        max-height: calc(100vh - 88px);
+        max-height: calc(100vh - 56px);
         box-sizing: border-box;
         overflow-y: auto;
         padding: 8px 12px;
