@@ -9,7 +9,7 @@ import {
   type GameMode,
 } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';
-import { BODY_SHARE, overlaps, type Rect } from '@seasonal-spirits/render';
+import { BODY_SHARE, CAP_FROM_PX, overlaps, type Rect } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { stickZone } from './hud.js';
 import { camera, fieldTop, playArea } from './scene.js';
@@ -80,23 +80,28 @@ describe('one camera for every mode', () => {
         expect(a.right, what).toBeLessThanOrEqual(width);
         expect(a.bottom, what).toBeLessThanOrEqual(height);
         for (const z of zones) expect(overlaps(a, z), `${what} under a control`).toBe(false);
-        // Large enough to play — but late in Sumo the zoom cap keeps the characters' size and the
-        // smaller arena shrinks on screen with it (render BODY_SHARE).
-        if (!what.startsWith('sumo after 3'))
+        // Large enough to play — but late in Sumo the zoom cap (from 600 px, render BODY_SHARE)
+        // keeps the characters' size and the smaller arena shrinks on screen with it.
+        if (!what.startsWith('sumo after 3') || Math.min(width, height) < CAP_FROM_PX)
           expect(a.right - a.left, `${what} large enough to play`).toBeGreaterThan(200);
       }
     });
 
-    it(`keeps the shrunken arena as large on screen as the first, up to the zoom cap, at ${String(width)}×${String(height)}`, () => {
+    it(`keeps the shrunken arena as large on screen as the first, up to the zoom cap from 600 px, at ${String(width)}×${String(height)}`, () => {
       const sizes = STATES.slice(0, 7).map(([, s]) => {
         const a = playArea(camera(ctx, s, zones), s);
         return a.right - a.left;
       });
       const first = sizes[0] ?? 0;
       // Through the first halving nearly as large: only the room kept for a ghost on the edge (a
-      // ghost radius) is a larger share of the smaller arena. After that the zoom cap (render
-      // BODY_SHARE: a body at most 6 % of the shorter side) holds the scale.
+      // ghost radius) is a larger share of the smaller arena. After that, from 600 px on, the zoom
+      // cap (render BODY_SHARE: a body at most 6 % of the shorter side) holds the scale; a phone
+      // has no cap and keeps every arena nearly as large as the first.
       for (const px of sizes.slice(0, 3)) expect(px).toBeGreaterThan(first * 0.9);
+      if (Math.min(width, height) < CAP_FROM_PX) {
+        for (const px of sizes) expect(px).toBeGreaterThan(first * 0.75);
+        return;
+      }
       const maxScale = (BODY_SHARE * Math.min(width, height)) / (2 * DEFAULT_SETTINGS.ghostRadius);
       STATES.slice(0, 7).forEach(([, s], k) => {
         expect(sizes[k] ?? 0).toBeLessThanOrEqual(2 * (s.area?.r ?? 0) * maxScale + 1e-6);

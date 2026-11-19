@@ -5,9 +5,11 @@ export * from './palette.js';
 export * from './view.js';
 export {
   BODY_SHARE,
+  CAP_FROM_PX,
   cameraBox,
   drawField,
   fieldFront,
+  halfPx,
   playBox,
   type FieldFront,
   type FieldMemory,

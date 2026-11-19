@@ -10,6 +10,7 @@ import {
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import { halvingBanner, type Rect } from '@seasonal-spirits/render';
+import { fitBanner } from './banner-fit.js';
 
 const ANNOUNCE_MS = 3500;
 // "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
@@ -74,6 +75,7 @@ export class Hud {
     const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;
     this.announce.textContent = end ? 'MATCH OVER' : `HALVING — ${halvingBanner(s, tuning)}`;
     this.announce.hidden = false;
+    fitBanner(this.announce); // a phone: at most two lines inside the screen
     this.flash.classList.remove('go');
     this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation
     this.flash.classList.add('go');

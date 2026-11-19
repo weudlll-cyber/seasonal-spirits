@@ -52,10 +52,11 @@ const START: WireDisc = { x: CENTRE, y: CENTRE, r: DEFAULT_CONFIG.arenaRadius };
 const PLATFORM = 1.05; // the platform reaches a little past the walls: the fence stands on it
 const CRACK_TICKS = 18;
 // The zoom cap (planner 2026-11-19): a character's body diameter on screen at most this share
-// of the screen's shorter side — 48 px at 1280×800, 23.4 px at 390×844. It replaced a cap of 1.5
-// times the match start's scale, which on a phone kept late King's small field a small square
-// with sky above and below.
+// of the screen's shorter side — 48 px at 1280×800 — on screens whose shorter side is at least
+// CAP_FROM_PX (desktop, tablet). A phone has no cap (decision 2026-11-19, BACKLOG am: late
+// Sumo's island was 210 of 390 px wide): there the camera always fits the field.
 export const BODY_SHARE = 0.06;
+export const CAP_FROM_PX = 600;
 
 // The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
 // always on screen): the walled square as it is now, or sumo's arena as it is now — the server
@@ -70,16 +71,21 @@ export function playBox(s: ServerState | undefined): Box {
 // The square the client's camera fits around the playing area: room for a character standing on
 // its edge and, in the walled modes, for the back fence's posts above the back wall (NIGHT
 // 2026-11-19: they reached under the band) — their height in field depth at the usual slant, the
-// most a steeper view needs. Never so small on `screen` that a body is drawn larger than
-// BODY_SHARE allows (2026-11-19: late in a match the characters grew huge), so a late halving
-// shows more sky round the island instead.
+// most a steeper view needs. On a screen of CAP_FROM_PX and more never so small that a body is
+// drawn larger than BODY_SHARE allows (2026-11-19: late in a match the characters grew huge),
+// so a late halving there shows more sky round the island instead.
 export function cameraBox(s: ServerState | undefined, screen: Screen): Box {
   const box = around(playBox(s), walled(clientConfig(s?.mode ?? 0)));
-  // The pixels the screen gives half of any box: fitBox's scale for a half side of 1.
-  const perHalf = fitBox(screen.ctx, screen.top, { x: 0, y: 0, half: 1 }, screen.room).scale;
   const { width, height } = screen.ctx.canvas;
-  const maxScale = (BODY_SHARE * Math.min(width, height)) / (2 * shape().ghostRadius);
-  return { ...box, half: Math.max(box.half, perHalf / maxScale) };
+  const shorter = Math.min(width, height);
+  if (shorter < CAP_FROM_PX) return box;
+  const maxScale = (BODY_SHARE * shorter) / (2 * shape().ghostRadius);
+  return { ...box, half: Math.max(box.half, halfPx(screen) / maxScale) };
+}
+
+// The pixels `screen` gives half of any box the camera fits: fitBox's scale for a half side of 1.
+export function halfPx(screen: Screen): number {
+  return fitBox(screen.ctx, screen.top, { x: 0, y: 0, half: 1 }, screen.room).scale;
 }
 
 // What the camera is fitted into: the canvas, the pixels above the field and the room it keeps

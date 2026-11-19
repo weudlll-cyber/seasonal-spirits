@@ -1,18 +1,28 @@
 // Seasonal Sumo — the phone's follow camera in the walled modes (2026-11-19: on a portrait phone
 // King's and Bomb's square fields fitted only the width, the characters were tiny). On a portrait
-// screen, for a player on the field in King or Bomb, the camera follows the own character at the
-// scale Sumo has on that screen at a match start, clamped so it shows no more beyond the walls
-// than it must, and eased (about 150 ms); a minimap shows where it is (render minimap.ts). Once
-// the walls have closed in so far that the whole field fits at that scale, the whole field shows.
-// The owner's setting "Phone: follow camera in walled modes" switches it; desktop, landscape and
-// spectators keep the whole field.
+// screen, for a player on the field in King or Bomb, the camera follows the own character at a
+// scale where a body is FOLLOW_BODY_PX wide (decision 2026-11-19, BACKLOG am; was Sumo's starting
+// scale, about 14 px), clamped so it shows no more beyond the walls than it must, and eased
+// (about 150 ms); a minimap shows where it is (render minimap.ts). Once the walls have closed in
+// so far that the whole field fits at that scale, the whole field shows. The owner's setting
+// "Phone: follow camera in walled modes" switches it; desktop, landscape and spectators keep the
+// whole field.
 
 import { DEFAULT_SETTINGS, walled, type Settings } from '@seasonal-spirits/game-core';
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
-import { cameraBox, clientConfig, fitBox, type Room, type View } from '@seasonal-spirits/render';
+import {
+  cameraBox,
+  clientConfig,
+  fitBox,
+  halfPx,
+  shape,
+  type Room,
+  type View,
+} from '@seasonal-spirits/render';
 
 const EASE_MS = 150;
 const SNAP_MS = 500; // a frame longer ago than this: no easing from it (a new view, a resize)
+export const FOLLOW_BODY_PX = 22; // a character's body diameter on screen while followed
 
 // What the follow camera needs to know of the frame.
 export interface FollowInput {
@@ -29,9 +39,8 @@ export function followWanted(ctx: CanvasRenderingContext2D, f: FollowInput): boo
   return on && height > width && !!f.s && !!f.own && walled(clientConfig(f.s.mode));
 }
 
-// The followed view: Sumo's scale at a match start on this screen (its starting arena, fitted as
-// the camera fits it), centred on the own character, clamped to the walls; null when the whole
-// field fits at that scale.
+// The followed view: a body FOLLOW_BODY_PX wide, centred on the own character, clamped to the
+// walls; null when the whole field fits at that scale.
 export function followView(
   ctx: CanvasRenderingContext2D,
   top: number,
@@ -39,17 +48,22 @@ export function followView(
   f: Required<Pick<FollowInput, 's'>> & { own: { x: number; y: number } },
 ): View | null {
   const screen = { ctx, top, room };
-  const sumo = cameraBox(undefined, screen); // Sumo's arena at a match start, as the camera fits it
-  const fit = fitBox(ctx, top, sumo, room);
   const b = cameraBox(f.s, screen);
-  const free = b.half - sumo.half; // how far the centre may move from the field's middle
+  // The square the followed view shows, centred on the field's middle.
+  const seen = {
+    x: b.x,
+    y: b.y,
+    half: (halfPx(screen) * 2 * shape().ghostRadius) / FOLLOW_BODY_PX,
+  };
+  const free = b.half - seen.half; // how far the centre may move from the field's middle
   if (free <= 0) return null;
+  const fit = fitBox(ctx, top, seen, room);
   const clampTo = (p: number, c: number): number => Math.min(c + free, Math.max(c - free, p));
   const fx = clampTo(f.own.x, b.x);
   const fy = clampTo(f.own.y, b.y);
-  // Where the fit puts Sumo's arena's centre on screen: the followed point goes there.
-  const cx = fit.ox + sumo.x * fit.scale;
-  const cy = fit.oy + sumo.y * fit.scale * fit.tilt;
+  // Where the fit puts the square's centre on screen: the followed point goes there.
+  const cx = fit.ox + seen.x * fit.scale;
+  const cy = fit.oy + seen.y * fit.scale * fit.tilt;
   return { ...fit, ox: cx - fx * fit.scale, oy: cy - fy * fit.scale * fit.tilt };
 }
 

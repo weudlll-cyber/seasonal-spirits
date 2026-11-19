@@ -1,13 +1,13 @@
 // Seasonal Sumo — the phone's follow camera in King and Bomb (2026-11-19): only on a portrait
-// screen, for a player, with the setting on; at Sumo's scale on that screen, centred on the own
+// screen, for a player, with the setting on; a body about 22 px wide (decision 2026-11-19), centred on the own
 // character but never showing more beyond the walls than it must; the whole field once it fits;
 // eased, never jumping.
 
 import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
-import { cameraBox, fitBox, sx, sy } from '@seasonal-spirits/render';
+import { cameraBox, fitBox, ghostRadiusPx, halfPx, shape, sx, sy } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
-import { CameraEase, followView, followWanted } from './follow.js';
+import { CameraEase, FOLLOW_BODY_PX, followView, followWanted } from './follow.js';
 
 const canvas = (width: number, height: number): CanvasRenderingContext2D =>
   ({ canvas: { width, height } }) as CanvasRenderingContext2D;
@@ -41,27 +41,32 @@ describe('the follow camera: when', () => {
 });
 
 describe('the follow camera: where', () => {
-  const sumo = fitBox(phone, TOP, cameraBox(undefined, screen), room);
+  const seenHalf = (halfPx(screen) * 2 * shape().ghostRadius) / FOLLOW_BODY_PX;
 
-  it("draws at Sumo's scale on that screen, the own character where Sumo's middle is", () => {
+  it('draws a body about 22 px wide, the own character in the middle of the square it shows', () => {
     const v = followView(phone, TOP, room, { s: state(700, 2), own: own(1000, 1000) });
-    expect(v?.scale).toBeCloseTo(sumo.scale, 9);
-    expect(v && sx(v, 1000)).toBeCloseTo(sx(sumo, 1000), 6);
-    expect(v && sy(v, 1000)).toBeCloseTo(sy(sumo, 1000), 6);
+    expect(v && 2 * ghostRadiusPx(v)).toBeCloseTo(FOLLOW_BODY_PX, 9);
+    const mid = fitBox(phone, TOP, { x: 1000, y: 1000, half: seenHalf }, room);
+    expect(v && sx(v, 1000)).toBeCloseTo(sx(mid, 1000), 6);
+    expect(v && sy(v, 1000)).toBeCloseTo(sy(mid, 1000), 6);
   });
 
   it('stops at the walls: in a corner it shows no more beyond them than the middle would', () => {
     const s = state(700, 2);
+    const middle = followView(phone, TOP, room, { s, own: own(1000, 1000) });
     const corner = followView(phone, TOP, room, { s, own: own(1000 - 690, 1000 - 690) });
     const b = cameraBox(s, screen);
     expect(corner && sx(corner, b.x - b.half)).toBeCloseTo(
-      sx(sumo, 1000 - cameraBox(undefined, screen).half),
+      middle ? sx(middle, 1000 - seenHalf) : 0,
       6,
     );
   });
 
   it('shows the whole field once it fits at that scale', () => {
-    expect(followView(phone, TOP, room, { s: state(250), own: own(1000, 1000) })).toBeNull();
+    // Walls at 240: the camera's square (with a character's and the fence's room) is smaller
+    // than the followed square on this phone.
+    expect(followView(phone, TOP, room, { s: state(240), own: own(1000, 1000) })).toBeNull();
+    expect(followView(phone, TOP, room, { s: state(450), own: own(1000, 1000) })).not.toBeNull();
   });
 });
 

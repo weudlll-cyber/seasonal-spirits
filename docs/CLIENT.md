@@ -22,6 +22,7 @@ Spirits' client is on `master`.
 | `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown               |
 | `src/input.ts`             | Keyboard (WASD/arrows, Space to dash, Shift to jump) and the touch joystick       |
 | `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute |
+| `src/banner-fit.ts`        | The halving banner's text shrunk to at most two lines on a narrow screen          |
 | `src/result.ts`            | Result screen: the podium, the mode's awards, scores per team and player, bridge  |
 | `src/start.ts`             | The start screen while the client joins                                           |
 | `src/follow.ts`            | The phone's follow camera in King and Bomb, eased                                 |
@@ -241,15 +242,17 @@ or touch (browsers allow sound only after a gesture).
   stay as large as the width allows: drawn larger than their body they would mislead about
   contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen; in hill and bomb it follows the walls as they close
-  in. **Zoom cap** (planner 2026-11-19, replaced a cap of 1.5 times the start's scale that kept
-  late King's field small on a phone): the camera never comes so close that a character's body
-  diameter on screen exceeds 6 % of the screen's shorter side — 48 px at 1280 × 800, 23.4 px at
-  390 × 844 (render `cameraBox`, `BODY_SHARE`) — in every mode, for players, spectators and the
-  viewer; late Sumo arenas shrink on screen and more sky shows round them. A falling character is
+  in. **Zoom cap** (planner 2026-11-19, decided 2026-11-19, BACKLOG am): on a screen whose
+  shorter side is at least 600 px (desktop, tablet) the camera never comes so close that a
+  character's body diameter on screen exceeds 6 % of that side — 48 px at 1280 × 800 (render
+  `cameraBox`, `BODY_SHARE`, `CAP_FROM_PX`) — so late Sumo arenas shrink on screen there and
+  more sky shows round them. Below 600 px (a phone) there is no cap: the camera always fits the
+  island or field, so late Sumo, King and Bomb fill the width to the end. The same for players,
+  spectators and the viewer. A falling character is
   drawn at the scale of the field, never larger than a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
   fitted only a portrait phone's width, the characters were tiny): on a portrait screen, for a
-  player in King or Bomb, the camera follows the own character at the scale Sumo's starting arena
-  has on that screen, clamped so it shows no more beyond the walls than the middle would, and
+  player in King or Bomb, the camera follows the own character at a scale where a body is 22 px
+  wide (`FOLLOW_BODY_PX`, decision 2026-11-19; was Sumo's starting scale, about 14 px), clamped so it shows no more beyond the walls than the middle would, and
   eased over about 150 ms (scale, slant and offset; `CameraEase`); a minimap in the top right
   corner below the band shows the walls now, King's zone or the bombs' carriers and the own dot,
   each outlined in ink so it reads on every season's ground (3:1 at least, render
@@ -268,7 +271,9 @@ or touch (browsers allow sound only after a gesture).
   halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; when the walls
   close in "the zone halves and the walls close in · …", "the bomb goes off and the walls close
   in", render `halvingBanner`; 3.5 s) on a red
-  banner (#CC4858), slightly tilted, white text with an ink edge, right under the band at the top edge of
+  banner (#CC4858), slightly tilted, white text with an ink edge — never wider than the screen
+  minus 16 px; on a phone its text shrinks, not below 14 px, to at most two lines (`banner-fit.ts`,
+  2026-11-19) —, right under the band at the top edge of
   the play area — never over its middle (NIGHT 2026-11-18) — with a short flash and its sound. The match end the same way: "LAST CHANCE — push them
   off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
 - **Help** (`src/help.ts`): shown once on the first visit, any time with "?": the mode's three

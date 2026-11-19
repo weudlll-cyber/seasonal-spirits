@@ -1,15 +1,15 @@
-// Seasonal Sumo — the zoom cap (planner 2026-11-19): the camera fits the playing area as large as
-// it goes, but never so close that a character's body diameter on screen exceeds 6 % of the
-// screen's shorter side (48 px at 1280×800, 23.4 px at 390×844), in every mode — a late halving
-// shows more sky round the island instead of ever larger characters, and on a phone late King's
-// small field fills the width again; a falling character is never drawn larger than a standing
-// one.
+// Seasonal Sumo — the zoom cap (planner 2026-11-19, decision BACKLOG am): on a screen whose
+// shorter side is at least 600 px the camera never comes so close that a character's body
+// diameter exceeds 6 % of that side (48 px at 1280×800) — a late halving shows more sky round the
+// island instead of ever larger characters; below 600 px (a phone) there is no cap and the
+// camera always fits the field, so late Sumo, King and Bomb fill the width to the end. A falling
+// character is never drawn larger than a standing one.
 
 import type { ServerState } from '@seasonal-spirits/protocol';
 import { describe, expect, it } from 'vitest';
 import { bodies, recorder } from './canvas-recorder.js';
 import { drawFall } from './fall.js';
-import { BODY_SHARE, cameraBox, playBox } from './field.js';
+import { BODY_SHARE, CAP_FROM_PX, cameraBox, playBox } from './field.js';
 import { ghostRadiusPx } from './reach.js';
 import { fitBox, sx } from './view.js';
 
@@ -34,41 +34,45 @@ const fieldWidth = (w: number, h: number, s: ServerState): number => {
 };
 
 describe('the zoom cap', () => {
+  const late = [sumo(143), sumo(50), walled(2, 150), walled(1, 260)];
+
   for (const [w, h, capPx] of [
     [1280, 800, 48],
-    [390, 844, 23.4],
+    [800, 1280, 48],
+    [600, 960, 36],
   ] as const) {
-    it(`never draws a body wider than 6 % of the shorter side, any mode (${String(w)}×${String(h)}: ${String(capPx)} px)`, () => {
+    it(`never draws a body wider than 6 % of the shorter side from 600 px on (${String(w)}×${String(h)}: ${String(capPx)} px)`, () => {
       expect(BODY_SHARE * Math.min(w, h)).toBeCloseTo(capPx, 6);
-      for (const s of [
-        sumo(400),
-        sumo(143),
-        sumo(50),
-        walled(2, 700),
-        walled(2, 150),
-        walled(1, 260),
-      ])
+      for (const s of [sumo(400), ...late, walled(2, 700)])
         expect(diameter(w, h, s)).toBeLessThanOrEqual(capPx + 1e-9);
       expect(diameter(w, h, sumo(50))).toBeCloseTo(capPx, 6); // a tiny arena: the cap holds it
     });
   }
 
-  it('lets the match start fit the screen as before: the cap does not bind there', () => {
-    for (const [w, h] of [
-      [1280, 800],
-      [390, 844],
-    ] as const) {
-      for (const s of [sumo(400), walled(2, 700), walled(1, 450)]) {
+  for (const [w, h] of [
+    [390, 844],
+    [599, 900],
+    [844, 390],
+  ] as const) {
+    it(`has no cap below 600 px: the camera always fits the field (${String(w)}×${String(h)})`, () => {
+      expect(Math.min(w, h)).toBeLessThan(CAP_FROM_PX);
+      for (const s of [sumo(400), ...late, walled(2, 700)])
         expect(cameraBox(s, { ctx: ctx(w, h), top: TOP, room }).half).toBeLessThan(
           playBox(s).half + 60, // the area, a character on its edge and the fence's posts
         );
-        expect(diameter(w, h, s)).toBeLessThan(BODY_SHARE * Math.min(w, h));
-      }
-    }
+      // A tiny arena drawn larger than any cap would allow: the island fills the width.
+      expect(diameter(w, h, sumo(50))).toBeGreaterThan(BODY_SHARE * Math.min(w, h));
+    });
+  }
+
+  it("fills a phone's width to the end: late Sumo, King and Bomb", () => {
+    for (const s of [sumo(143), walled(1, 260), walled(2, 150)])
+      expect(fieldWidth(390, 844, s)).toBeGreaterThan(0.8 * (390 - 16));
   });
 
-  it("fills a phone's width with late King's smallest field (owner's p18 phone picture)", () => {
-    expect(fieldWidth(390, 844, walled(1, 260))).toBeGreaterThan(0.9 * (390 - 16));
+  it('keeps the desktop at the start as before: the cap does not bind there', () => {
+    for (const s of [sumo(400), walled(2, 700), walled(1, 450)])
+      expect(diameter(1280, 800, s)).toBeLessThan(48);
   });
 
   it('draws a falling character never larger than a standing one', () => {
