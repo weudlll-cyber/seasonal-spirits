@@ -220,7 +220,10 @@ or touch (browsers allow sound only after a gesture).
   stay as large as the width allows: drawn larger than their body they would mislead about
   contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen; in hill and bomb it follows the walls as they close
-  in. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
+  in. **Zoom cap** (2026-11-19): the camera's scale never exceeds twice its scale at the match
+  start (render `cameraBox`, `ZOOM_CAP`), in every mode and on every screen; from Sumo's third
+  halving on the island shrinks on screen and more sky shows round it. A falling character is
+  drawn at the scale of the field, never larger than a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
   fitted only a portrait phone's width, the characters were tiny): on a portrait screen, for a
   player in King or Bomb, the camera follows the own character at the scale Sumo's starting arena
   has on that screen, clamped so it shows no more beyond the walls than the middle would, and

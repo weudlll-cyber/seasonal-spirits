@@ -31,6 +31,7 @@ const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
 const START: WireDisc = { x: CENTRE, y: CENTRE, r: DEFAULT_CONFIG.arenaRadius };
 const PLATFORM = 1.05; // the platform reaches a little past the walls: the fence stands on it
 const CRACK_TICKS = 18;
+export const ZOOM_CAP = 2; // the camera's scale at most this many times the match start's
 
 // The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
 // always on screen): the walled square as it is now, or sumo's arena as it is now — the server
@@ -45,11 +46,23 @@ export function playBox(s: ServerState | undefined): Box {
 // The square the client's camera fits around the playing area: room for a character standing on
 // its edge and, in the walled modes, for the back fence's posts above the back wall (NIGHT
 // 2026-11-19: they reached under the band) — their height in field depth at the usual slant, the
-// most a steeper view needs.
+// most a steeper view needs. Never smaller than the match start's square / ZOOM_CAP: the scale
+// never exceeds ZOOM_CAP times the start's (2026-11-19: late in a match the characters grew
+// huge), so a late halving shows more sky round the island instead.
 export function cameraBox(s: ServerState | undefined): Box {
-  const b = playBox(s);
+  const cfg = clientConfig(s?.mode ?? 0);
+  const walls = walled(cfg);
+  const box = around(playBox(s), walls);
+  const start = around(
+    { x: CENTRE, y: CENTRE, half: walls ? cfg.wallHalf : cfg.arenaRadius },
+    walls,
+  );
+  return { ...box, half: Math.max(box.half, start.half / ZOOM_CAP) };
+}
+
+// The camera's square around a playing area `b` (cameraBox).
+function around(b: Box, walls: boolean): Box {
   const ghost = shape().ghostRadius;
-  const walls = walled(clientConfig(s?.mode ?? 0));
   const extra = walls ? Math.max(0, (FENCE_RISE * b.half) / VIEW_TILT - ghost) : 0;
   return { x: b.x, y: b.y - extra / 2, half: b.half + ghost + extra / 2 };
 }

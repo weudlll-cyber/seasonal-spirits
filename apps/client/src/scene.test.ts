@@ -61,14 +61,20 @@ describe('one camera for every mode', () => {
       }
     });
 
-    it(`keeps the shrunken arena as large on screen as the first at ${String(width)}×${String(height)}`, () => {
+    it(`keeps the shrunken arena as large on screen as the first, up to twice the start's scale, at ${String(width)}×${String(height)}`, () => {
       const sizes = STATES.slice(0, 7).map(([, s]) => {
         const a = playArea(camera(ctx, s, zones), s);
         return a.right - a.left;
       });
-      // Nearly as large: only the room kept for a ghost on the edge (a ghost radius) is a larger
-      // share of the smaller arena — of the 25-diameter start arena after three halvings, 7 %.
-      for (const px of sizes) expect(px).toBeGreaterThan((sizes[0] ?? 0) * 0.9);
+      const first = sizes[0] ?? 0;
+      // Through two halvings nearly as large: only the room kept for a ghost on the edge (a ghost
+      // radius) is a larger share of the smaller arena. After that the zoom cap (2026-11-19, render
+      // ZOOM_CAP 2) holds the scale at twice the start's: the arena shrinks on screen.
+      for (const px of sizes.slice(0, 5)) expect(px).toBeGreaterThan(first * 0.9);
+      STATES.slice(0, 7).forEach(([, s], k) => {
+        const r = s.area?.r ?? 0;
+        expect(sizes[k] ?? 0).toBeLessThanOrEqual((first * 2 * r) / DEFAULT_CONFIG.arenaRadius + 1);
+      });
     });
   }
 });
