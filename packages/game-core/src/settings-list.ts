@@ -154,8 +154,9 @@ export const SETTINGS = [
   ...inGroup('hill', [
     n('hillMatch', 'Match length', ['s', 60, 600, 15, 180], { ...HILL, ...NEXT }),
     n('hillJump', 'Zone jump interval', ['s', 15, 120, 5, 45], { ...HILL, ...NEXT }),
-    n('hillWall', 'Field size (half its side)', ['u', 400, 900, 10, 700], { ...HILL, ...NEXT }),
-    n('zoneRadius', 'Zone size at the start (radius)', ['u', 100, 500, 10, 300], {
+    // Owner's choice 2026-11-19: a smaller field and zone (700 and 300 left the zone 14 % of it).
+    n('hillWall', 'Field size (half its side)', ['u', 400, 900, 10, 450], { ...HILL, ...NEXT }),
+    n('zoneRadius', 'Zone size at the start (radius)', ['u', 100, 500, 5, 225], {
       ...HILL,
       ...NEXT,
     }),

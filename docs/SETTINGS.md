@@ -110,8 +110,8 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | ------------ | -------------------------------------------- | ----------------------- | ------- | ----- | ---------- |
 | `hillMatch`  | Match length                                 | 60–600 s (step 15)      | 180     | hill  | next match |
 | `hillJump`   | Zone jump interval                           | 15–120 s (step 5)       | 45      | hill  | next match |
-| `hillWall`   | Field size (half its side)                   | 400–900 u (step 10)     | 700     | hill  | next match |
-| `zoneRadius` | Zone size at the start (radius)              | 100–500 u (step 10)     | 300     | hill  | next match |
+| `hillWall`   | Field size (half its side)                   | 400–900 u (step 10)     | 450     | hill  | next match |
+| `zoneRadius` | Zone size at the start (radius)              | 100–500 u (step 5)      | 225     | hill  | next match |
 | `zoneShrink` | Each jump: zone radius ×                     | 0.5–1 × (step 0.01)     | 0.71    | hill  | now        |
 | `hillRate`   | Points per second in the zone                | 1–5 pts/s (step 1)      | 1       | hill  | now        |
 | `bounce`     | Bounce: pushed out within                    | 0.2–3 s (step 0.1)      | 1       | hill  | now        |

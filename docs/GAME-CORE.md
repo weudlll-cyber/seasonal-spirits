@@ -75,10 +75,12 @@ countdown.
 - **Walls** (hill, bomb). A square of `wallHalf` around the middle; `stepGhost` keeps a ghost
   inside it and takes the speed into a wall away (the speed along it stays). The arena there is
   the disc inside the walls and never halves; nobody falls.
-- **King of the Season** (`modes/hill.ts`). A zone (`hill.zoneRadius` 300 at the start) sits in
-  the quarter of the season in season, half way to its corner. Every ghost in it earns 1 point
-  per second for itself and its team (`scoreMs`, whole ms, so the sum is exact). At each
-  halving it jumps to the new season's quarter and its area halves (300 → 212 → 150 → 106);
+- **King of the Season** (`modes/hill.ts`). A zone (`hill.zoneRadius` 225 at the start, in walls
+  of half side 450 — the owner's choice 2026-11-19; at these sizes it fills its quarter exactly)
+  sits in the quarter of the season in season, half way to its corner (`quarterCentre`). Every
+  ghost in it earns 1 point per second for itself and its team (`scoreMs`, whole ms, so the sum
+  is exact). At each halving it jumps to the new season's quarter and its area halves (225 → 160
+  → 113 → 80);
   during the countdown the clients draw where it goes (`areaOf(...).next`). A ghost that leaves
   the zone within `hill.bounceMs` (1 s) of an opponent's dash into it is a bounce for that
   opponent — its own dash, not a plain push (NIGHT 2026-11-18; `lastTouch.dash`); a jump is

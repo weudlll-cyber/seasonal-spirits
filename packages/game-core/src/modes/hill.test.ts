@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { ghost, matchOf, modeCfg, runTo } from '../test-helpers.js';
+import { quarterCentre } from '../arena.js';
 import { areaOf } from './rules.js';
 
 const cfg = modeCfg('hill');
@@ -81,6 +82,21 @@ describe('hill zone', () => {
     expect([z.x > c.x, z.y < c.y]).toEqual([true, true]);
     expect(z.r).toBeCloseTo(cfg.hill.zoneRadius * cfg.hill.shrink, 6);
     expect(shown).toEqual(z);
+  });
+
+  // Owner's defaults 2026-11-19 (half side 450, zone 225): the zone at its starting size fits
+  // its quarter exactly — each quarter's middle ± the radius stays inside the walls.
+  it('fits the zone at its starting size into every quarter of the walls', () => {
+    const m = matchOf(cfg, two);
+    const c = m.state.arena.centre;
+    const lo = c.x - cfg.wallHalf;
+    const hi = c.x + cfg.wallHalf;
+    for (const team of [0, 1, 2, 3] as const) {
+      const q = quarterCentre(c, cfg.wallHalf, team);
+      const r = cfg.hill.zoneRadius;
+      expect(Math.min(q.x - r, q.y - r)).toBeGreaterThanOrEqual(lo);
+      expect(Math.max(q.x + r, q.y + r)).toBeLessThanOrEqual(hi);
+    }
   });
 
   it('has walls: a ghost pushed far beyond them stays inside and never falls', () => {
