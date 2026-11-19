@@ -7,7 +7,7 @@ import { contrast, judge } from './metrics.js';
 const text = (name: string, l: number, r: number, inside: number[] = []) => ({
   name,
   font: 14,
-  box: { l, t: 0, r, b: 20 },
+  box: { l, t: 0, r, b: 20 } as { l: number; t: number; r: number; b: number } | null,
   color: 'rgb(0, 0, 0)',
   bg: 'rgb(255, 255, 255)',
   inside,
@@ -26,8 +26,9 @@ describe('what the review measures', () => {
     expect(judge(raw([text('pill', 0, 90), text('dot', 10, 20, [0])])).overlaps).toEqual([]);
   });
 
-  it('marks a text past the screen edge as cut', () => {
+  it('marks a text past the screen edge as cut, not one scrolled out of view', () => {
     expect(judge(raw([text('wide', 300, 400)])).cut).toEqual(['wide']);
+    expect(judge(raw([{ ...text('away', 0, 50), box: null }])).fontMin).toBeNull();
   });
 
   it('measures contrast as WCAG does: black on white 21, a grey on white 4.48', () => {

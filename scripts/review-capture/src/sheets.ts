@@ -1,6 +1,6 @@
 // Seasonal Sumo review capture — the contact sheets (`pnpm review:sheets [mode …]` alone, or at
 // the end of a capture): per mode and size one grid of every shot in moment order, each labelled
-// with its number, moment, look and role, large enough to read the HUD (desktop and big screen
+// with its number, moment, look and role — the player's run first, then the spectator's —, large enough to read the HUD (desktop and big screen
 // 640 px wide, phone 260 px), split into -1, -2 … past about 4000 px. Drawn by the browser from
 // a page of <img>s, so no image library is needed.
 
@@ -10,6 +10,7 @@ import { chromium } from '@playwright/test';
 import { REVIEW_DIR } from './shoot.js';
 
 const MAX_HEIGHT = 4000;
+const ROLES = ['player', 'spectator', 'viewer'];
 const LABEL_PX = 22;
 const GAP = 10;
 const LAYOUT = {
@@ -59,7 +60,13 @@ export async function makeSheets(modes: readonly string[]): Promise<string[]> {
       for (const [size, l] of Object.entries(LAYOUT)) {
         const mine = shots
           .filter((s) => s.p?.size === size)
-          .sort((a, b) => (a.p?.nn ?? '').localeCompare(b.p?.nn ?? '') || a.f.localeCompare(b.f));
+          // Each run's own moments together: the player's run, then the spectator's, the viewer's.
+          .sort(
+            (a, b) =>
+              ROLES.indexOf(a.p?.role ?? '') - ROLES.indexOf(b.p?.role ?? '') ||
+              (a.p?.nn ?? '').localeCompare(b.p?.nn ?? '') ||
+              a.f.localeCompare(b.f),
+          );
         const perSheet =
           l.columns * Math.max(1, Math.floor(MAX_HEIGHT / (l.height + LABEL_PX + GAP)));
         const parts = Math.ceil(mine.length / perSheet);
