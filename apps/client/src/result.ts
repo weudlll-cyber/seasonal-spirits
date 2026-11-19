@@ -1,8 +1,9 @@
 // Seasonal Sumo — the result screen after a match: the mode's awards, the mode's score
 // (knockouts or points) per team — in Last One Standing the teams in their final order, the
 // winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player,
-// the own place, the time to the next match, and the bridge box of CONCEPT.md §8 (on by default,
-// switched off in config.ts). Over it a podium on a floating island with the best three teams'
+// the own place and the time to the next match at the top (review 2026-11-20: below the list it
+// was out of view on a desktop), and the bridge box of CONCEPT.md §8 (on by default, switched off
+// in config.ts). Over it a podium on a floating island with the best three teams'
 // characters and a confetti burst in the winner's colour (render podium.ts, NIGHT 2026-11-19),
 // for every mode. Result and awards come from the server's recap message, the names and the time
 // to the next match from the state.
@@ -13,7 +14,14 @@ import {
   type ServerRecap,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { drawPodium, mmss, modeWords, seasonColour, seasonName } from '@seasonal-spirits/render';
+import {
+  drawPodium,
+  mmss,
+  modeWords,
+  seasonColour,
+  seasonName,
+  type ModeWords,
+} from '@seasonal-spirits/render';
 import { BRIDGE_TEXT, CLIENT_CONFIG } from './config.js';
 import { el } from './hud.js';
 
@@ -73,7 +81,7 @@ export class ResultScreen {
   private fill(
     r: ServerRecap,
     name: (ghost: number) => string,
-    me: { ownId: number | null; unit: string },
+    me: { ownId: number | null; unit: ModeWords['unit'] },
   ): void {
     const lines = awardLines(r, name);
     this.awardsBox.hidden = lines.length === 0;
@@ -94,7 +102,8 @@ export class ResultScreen {
     this.place.hidden = own === -1;
     if (own !== -1) {
       const p = ranked[own];
-      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${p?.score ?? 0} ${me.unit}`;
+      const score = p?.score ?? 0;
+      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${counted(score, me.unit.one, me.unit.many)}`;
     }
   }
 }
@@ -127,16 +136,16 @@ export function teamLines(r: ServerRecap): [number, string][] {
 // does not know is not shown.
 const AWARDS: Record<string, [string, (value: number) => string]> = {
   'last-standing': ['Last one standing', (v) => `${counted(v, 'life', 'lives')} left`],
-  'best-pusher': ['Best pusher', (v) => `${v} knockouts`],
+  'best-pusher': ['Best pusher', (v) => counted(v, 'knockout', 'knockouts')],
   survivor: ['Survivor', (v) => `${mmss(v)} without a fall`],
   king: ['King', (v) => `${v} s in the zone`],
   bouncer: ['Bouncer', (v) => `${v} pushed out of the zone`],
-  'hot-hands': ['Hot hands', (v) => `${v} bombs passed`],
-  'cool-head': ['Cool head', (v) => `${v} points`],
+  'hot-hands': ['Hot hands', (v) => counted(v, 'bomb passed', 'bombs passed')],
+  'cool-head': ['Cool head', (v) => counted(v, 'point', 'points')],
 };
 
 // The awards the match earned, short enough for a phone; none earned, none shown.
-function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
+export function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, string][] {
   const lines: [string, string][] = [];
   for (const a of r.awards) {
     const known = AWARDS[a.kind];
@@ -145,7 +154,8 @@ function awardLines(r: ServerRecap, name: (ghost: number) => string): [string, s
   return lines;
 }
 
-function counted(n: number, one: string, many: string): string {
+// "1 knockout", "8 knockouts" (review 2026-11-20: the result said "1 knockouts").
+export function counted(n: number, one: string, many: string): string {
   return `${String(n)} ${n === 1 ? one : many}`;
 }
 

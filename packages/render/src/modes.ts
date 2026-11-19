@@ -21,7 +21,7 @@ export interface ModeWords {
   countdown: (next: string) => string; // "HALVING in 0:07 — …"
   banner: (season: string, walls: boolean) => string; // "HALVING — …"; `walls`: they close in
   lastChance: string; // "LAST CHANCE — … · 0:05"
-  unit: string; // what a score counts, plural
+  unit: { one: string; many: string }; // what a score counts ("1 knockout", "8 knockouts")
 }
 
 const WORDS: Record<GameMode, ModeWords> = {
@@ -30,7 +30,7 @@ const WORDS: Record<GameMode, ModeWords> = {
     countdown: (next) => `the arena halves, then ${next} is in season`,
     banner: (season) => `the arena halves · ${season} is in season`,
     lastChance: 'push them off',
-    unit: 'knockouts',
+    unit: { one: 'knockout', many: 'knockouts' },
   },
   hill: {
     name: 'King of the Season',
@@ -38,14 +38,14 @@ const WORDS: Record<GameMode, ModeWords> = {
     banner: (season, walls) =>
       `the zone halves${walls ? ' and the walls close in' : ''} · ${season} is in season`,
     lastChance: 'hold the zone',
-    unit: 'points',
+    unit: { one: 'point', many: 'points' },
   },
   bomb: {
     name: 'Halving Bomb',
     countdown: () => 'the bomb goes off',
     banner: (_, walls) => `the bomb goes off${walls ? ' and the walls close in' : ''}`,
     lastChance: 'pass the bomb',
-    unit: 'points',
+    unit: { one: 'point', many: 'points' },
   },
 };
 
