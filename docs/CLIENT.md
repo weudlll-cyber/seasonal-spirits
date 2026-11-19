@@ -40,7 +40,10 @@ fewest players (the ghost stops where the bot left it) and answers with a welcom
 every seat has a player, the client watches instead and says so. `?spectate=1` only watches:
 the whole playing area, the players' and the top three's names, the clock and the halving staging,
 no controls; it sends its
-hello and nothing more.
+hello and nothing more. A spectator's notice ("Watching the match.", or "All places taken —
+watching the match.") is a pill in the row under the band that King's hint uses: every
+spectator's field starts 24 px lower (`scene.ts` `fieldTop`), so the pill never covers the
+back fence or the zone (2026-11-19); hidden while a banner shows.
 
 The client hears the settings in force (`{"kind":"tuning",…}`, every setting, checked against
 the schema by `parseServerMessage`; [SERVER.md](SERVER.md) "Settings and presets") on its hello,
@@ -200,7 +203,8 @@ or touch (browsers allow sound only after a gesture).
   its shadow stays on the ground at its real position, smaller and darker the higher it is; a
   short ring spreads on the ground at the take-off and the landing; "Dodged!" shows in a pill
   above it for a second when the server flags a dash passing under (`GHOST_DODGED`) — moved up
-  out of another bubble's way, or left out when there is no room (render `clearBubble`). The own one
+  out of another bubble's way, or left out when there is no room (render `clearBubble`), and
+  kept inside the screen's sides and below the bar (render `dodgedAt`, 2026-11-19). The own one
   jumps from the press on (the prediction), not from the server's echo. A dash winding up (the
   owner's option, render `windup.ts`) glows white with an ink-edged line on the ground in its
   direction; the own ghost holds through its wind-up from the press on (the prediction). What
@@ -237,9 +241,11 @@ or touch (browsers allow sound only after a gesture).
   stay as large as the width allows: drawn larger than their body they would mislead about
   contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen; in hill and bomb it follows the walls as they close
-  in. **Zoom cap** (2026-11-19): the camera's scale never exceeds 1.5 times its scale at the
-  match start (render `cameraBox`, `ZOOM_CAP`; owner 2026-11-19, was twice), in every mode and on every screen; from Sumo's third
-  halving on the island shrinks on screen and more sky shows round it. A falling character is
+  in. **Zoom cap** (planner 2026-11-19, replaced a cap of 1.5 times the start's scale that kept
+  late King's field small on a phone): the camera never comes so close that a character's body
+  diameter on screen exceeds 6 % of the screen's shorter side — 48 px at 1280 × 800, 23.4 px at
+  390 × 844 (render `cameraBox`, `BODY_SHARE`) — in every mode, for players, spectators and the
+  viewer; late Sumo arenas shrink on screen and more sky shows round them. A falling character is
   drawn at the scale of the field, never larger than a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
   fitted only a portrait phone's width, the characters were tiny): on a portrait screen, for a
   player in King or Bomb, the camera follows the own character at the scale Sumo's starting arena

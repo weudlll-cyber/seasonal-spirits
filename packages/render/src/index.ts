@@ -4,13 +4,14 @@
 export * from './palette.js';
 export * from './view.js';
 export {
-  ZOOM_CAP,
+  BODY_SHARE,
   cameraBox,
   drawField,
   fieldFront,
   playBox,
   type FieldFront,
   type FieldMemory,
+  type Screen,
 } from './field.js';
 export { Seasons, drawSeasonAir } from './season.js';
 export { HIT_REACH, isKnocked } from './moments.js';

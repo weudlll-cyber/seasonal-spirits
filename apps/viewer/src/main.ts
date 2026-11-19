@@ -146,7 +146,8 @@ function frame(): void {
   trails.record(ghosts, now);
   drawSky(ctx, now, latest?.season);
   // The client's camera: the playing area as large as it goes (sumo's arena follows its halving).
-  const view = fitBox(ctx, CLOCK_HEIGHT, cameraBox(latest), { keepOut: [], marginPx: 8 });
+  const screen = { ctx, top: CLOCK_HEIGHT, room: { keepOut: [], marginPx: 8 } };
+  const view = fitBox(ctx, CLOCK_HEIGHT, cameraBox(latest, screen), screen.room);
   const ground = drawField(view, latest, now, field);
   drawGhosts(view, ghosts, {
     ownId: null,

@@ -47,6 +47,7 @@ import type { HudOnField } from './hud.js';
 export const BAND_HEIGHT = 68;
 // In King a row under the band for the hint pill (zone-hint.ts, index.html #hint), kept whether
 // it shows or not so the camera never jumps: the pill over the back fence hid it (2026-11-19).
+// A spectator's "Watching the match." notice sits in the same row (index.html #notice.row).
 const HINT_ROW = 24;
 const MARGIN_PX = 8; // between the playing area (and a ghost on its edge) and the screen's edge
 
@@ -95,23 +96,24 @@ export interface GhostOnScreen {
 // the old "Near" view): the whole playing area below the band, clear of the Dash button and the
 // joystick's thumb zone, with room for a ghost standing on its edge and the fence (render
 // cameraBox). In sumo it follows the arena's edge in after a halving, so the smaller arena stays
-// large on screen. On a portrait phone the controls may cover the sky and the rock, never the
-// playing surface, and the view turns steeper to fill the height (render fitBox).
+// large on screen, up to the zoom cap (render BODY_SHARE). On a portrait phone the controls may
+// cover the sky and the rock, never the playing surface, and the view turns steeper to fill the
+// height (render fitBox). `playing` false: a spectator's view, with the notice's row.
 export function camera(
   ctx: CanvasRenderingContext2D,
   s: ServerState | undefined,
   zones: readonly Rect[],
+  playing = true,
 ): View {
-  return fitBox(ctx, fieldTop(s), cameraBox(s), {
-    keepOut: zones,
-    marginPx: MARGIN_PX,
-  });
+  const top = fieldTop(s, playing);
+  const room = { keepOut: zones, marginPx: MARGIN_PX };
+  return fitBox(ctx, top, cameraBox(s, { ctx, top, room }), room);
 }
 
 // Pixels from the screen's top to where the field may begin: below the clock and the band, and
-// in King below the hint's row.
-export function fieldTop(s: ServerState | undefined): number {
-  return CLOCK_HEIGHT + BAND_HEIGHT + (zoneOf(s) ? HINT_ROW : 0);
+// in King, and for anyone not playing, below the row of the hint or the "Watching" notice.
+export function fieldTop(s: ServerState | undefined, playing = true): number {
+  return CLOCK_HEIGHT + BAND_HEIGHT + (zoneOf(s) || !playing ? HINT_ROW : 0);
 }
 
 // The playing area's square on screen.
@@ -140,7 +142,7 @@ function viewOf(
   memory: Memory,
   now: number,
 ): { view: View; follow: boolean } {
-  const whole = camera(ctx, f.latest, f.hud.zones);
+  const whole = camera(ctx, f.latest, f.hud.zones, f.playing);
   const input = { s: f.latest, own: f.own, tuning: f.tuning };
   if (!f.latest || !f.own || !followWanted(ctx, input)) {
     memory.camera.reset();

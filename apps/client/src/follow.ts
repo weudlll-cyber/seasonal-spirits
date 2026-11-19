@@ -38,9 +38,10 @@ export function followView(
   room: Room,
   f: Required<Pick<FollowInput, 's'>> & { own: { x: number; y: number } },
 ): View | null {
-  const sumo = cameraBox(undefined); // Sumo's arena at a match start, as the camera fits it
+  const screen = { ctx, top, room };
+  const sumo = cameraBox(undefined, screen); // Sumo's arena at a match start, as the camera fits it
   const fit = fitBox(ctx, top, sumo, room);
-  const b = cameraBox(f.s);
+  const b = cameraBox(f.s, screen);
   const free = b.half - sumo.half; // how far the centre may move from the field's middle
   if (free <= 0) return null;
   const clampTo = (p: number, c: number): number => Math.min(c + free, Math.max(c - free, p));

@@ -1,15 +1,16 @@
 // Seasonal Sumo — the jump drawn (NIGHT 2026-11-18): the character rises and grows on an arc
 // over its time in the air and comes down again, its shadow stays on the ground at its real
 // position, a ring spreads at the take-off, and "Dodged!" shows when the server flags a dash
-// passing under.
+// passing under, inside the screen even over a character at its edge.
 
 import { describe, expect, it } from 'vitest';
 import { GHOST_AIRBORNE, GHOST_DODGED, type GhostState } from '@seasonal-spirits/protocol';
 import { bodies, recorder } from './canvas-recorder.js';
 import { drawGhosts } from './ghosts.js';
+import { DODGED_BOX, dodgedAt } from './jump.js';
 import { ghostRadiusPx } from './reach.js';
 import { Trails } from './trails.js';
-import { fitField, sx, sy } from './view.js';
+import { fitBox, fitField, sx, sy } from './view.js';
 
 const AIR_MS = 500; // the default jump's time in the air (render shape.ts)
 
@@ -77,5 +78,15 @@ describe('the jump drawn', () => {
   it('says "Dodged!" only when the server flags a dash passing under', () => {
     expect(frame(100).r.texts).not.toContain('Dodged!');
     expect(frame(100, GHOST_AIRBORNE | GHOST_DODGED).r.texts).toContain('Dodged!');
+  });
+
+  it('keeps a "Dodged!" bubble inside a phone screen, over a character at either edge', () => {
+    const v = fitBox(recorder(390, 844).ctx, 128, { x: 1000, y: 1000, half: 300 });
+    for (const x of [700, 1300]) {
+      const at = dodgedAt(v, { x, y: 710 }, 12, 1);
+      expect(at.x - DODGED_BOX.width / 2).toBeGreaterThanOrEqual(0);
+      expect(at.x + DODGED_BOX.width / 2).toBeLessThanOrEqual(390);
+      expect(at.y - DODGED_BOX.height / 2).toBeGreaterThanOrEqual(128);
+    }
   });
 });

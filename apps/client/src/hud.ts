@@ -86,9 +86,11 @@ export class Hud {
     );
   }
 
-  say(text: string | null): void {
+  // `row`: a short notice in the row under the band (a spectator's), clear of the field.
+  say(text: string | null, row = false): void {
     this.notice.textContent = text ?? '';
     this.notice.hidden = text === null;
+    this.notice.classList.toggle('row', row);
   }
 }
 

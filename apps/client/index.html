@@ -383,6 +383,20 @@
         max-width: 90vw;
         text-align: center;
       }
+      /* A spectator's notice: a pill like #hint in the row under the band (scene.ts fieldTop),
+         never over the back fence or the zone (2026-11-19); hidden while a banner shows. */
+      #announce:not([hidden]) ~ #notice.row {
+        visibility: hidden;
+      }
+      #notice.row {
+        top: 105px;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 1px 10px;
+        border-width: 2px;
+        border-radius: 999px;
+      }
       @media (max-width: 480px) {
         #team .lead,
         #scores .name {

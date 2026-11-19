@@ -15,6 +15,7 @@ const phone = canvas(390, 844);
 const HILL = 1;
 const TOP = 104;
 const room = { keepOut: [{ left: 200, top: 700, right: 390, bottom: 844 }], marginPx: 8 };
+const screen = { ctx: phone, top: TOP, room };
 const state = (wall: number, mode = HILL): ServerState =>
   ({ mode, wall, area: null, next: null, ghosts: [] }) as unknown as ServerState;
 const own = (x: number, y: number): GhostState => ({ id: 1, x, y, flags: 0 }) as GhostState;
@@ -40,7 +41,7 @@ describe('the follow camera: when', () => {
 });
 
 describe('the follow camera: where', () => {
-  const sumo = fitBox(phone, TOP, cameraBox(undefined), room);
+  const sumo = fitBox(phone, TOP, cameraBox(undefined, screen), room);
 
   it("draws at Sumo's scale on that screen, the own character where Sumo's middle is", () => {
     const v = followView(phone, TOP, room, { s: state(700, 2), own: own(1000, 1000) });
@@ -52,9 +53,9 @@ describe('the follow camera: where', () => {
   it('stops at the walls: in a corner it shows no more beyond them than the middle would', () => {
     const s = state(700, 2);
     const corner = followView(phone, TOP, room, { s, own: own(1000 - 690, 1000 - 690) });
-    const b = cameraBox(s);
+    const b = cameraBox(s, screen);
     expect(corner && sx(corner, b.x - b.half)).toBeCloseTo(
-      sx(sumo, 1000 - cameraBox(undefined).half),
+      sx(sumo, 1000 - cameraBox(undefined, screen).half),
       6,
     );
   });
@@ -67,7 +68,7 @@ describe('the follow camera: where', () => {
 describe('the follow camera: easing', () => {
   it('glides towards a new view over about 150 ms and snaps after a pause', () => {
     const e = new CameraEase();
-    const a = { ...fitBox(phone, TOP, cameraBox(undefined), room) };
+    const a = { ...fitBox(phone, TOP, cameraBox(undefined, screen), room) };
     const b = { ...a, ox: a.ox + 100 };
     expect(e.ease(a, 0).ox).toBe(a.ox);
     const half = e.ease(b, 150).ox - a.ox;

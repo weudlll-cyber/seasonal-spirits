@@ -80,6 +80,15 @@ when: the cause is found (the arena no longer halving
 there, or the banner of the previous halving matched) and the spec waits for a fresh match or
 reads the arena at the right moment, green ten runs in a row.
 
+am. **The zoom cap's share — the planner's word** (follow-up piece 4, 2026-11-19): the cap is a
+body diameter of at most 6 % of the screen's shorter side, as asked. Under it desktop late King
+draws its characters at 47.6 px (was 41.7 under the old 1.5× cap) and late Sumo on a phone cannot
+fill the width (209 px at 23.4 px characters); no single share keeps both desktop pictures as
+they were (Sumo needs at least 6.3 %, King at most 5.2 %). The phone's follow camera in King and
+Bomb still draws at Sumo's starting scale (14.4 px), well under the cap. Done when: the planner
+or the owner has looked at `p19-king-last-desktop.png` and the Sumo phone shots and kept 6 % or
+named another share or rule (and whether the follow camera may come closer), and that is built.
+
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
@@ -1060,6 +1069,15 @@ Done when: the spec is green ten runs in a row.
   bodies cut at the walls (render `fieldFront`) — commit "feat: King readable when the field is
   small".
 
+- 2026-11-19 — **Follow-up piece 4: the zoom cap as the characters' size** (planner's look at
+  `p18`). The camera never comes so close that a body's diameter exceeds 6 % of the screen's
+  shorter side — 48 px at 1280 × 800, 23.4 px at 390 × 844 (render `BODY_SHARE`, `cameraBox` with
+  the screen), for players, spectators and the viewer; late King's smallest field fills a phone's
+  width again (342 of 374 px). A spectator's notice is a pill in the hint's row under the band
+  (`fieldTop(s, playing)`); "Dodged!" stays inside the screen (render `dodgedAt`). Named in the
+  report: desktop late King grows (41.7 → 47.6 px) and late Sumo on a phone cannot fill the
+  width under that rule — commit "feat: the zoom cap as the characters' size".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                                          | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                                                               | Evidence                                                                                       |
@@ -1470,3 +1488,6 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | a 32-bot King match played to its end on the dev server, four spectators at desktop and phone size, light and dark; three frames 20 s into the last season (`p18-king-last-*`), looked at frame by frame       | follow-up piece 3 working tree (third run)                                                                                                | outline in 12 of 12, crown in 11 of 12 (dark phone frame 1: under a "Dodged!" bubble), no character beyond the fence in any; runs 1 and 2: flags past the left fence and stars over the crown, fixed                                                                 | `reports/night-2026-11-19.md`, Follow-up piece 3                                               |
 | 2026-11-19 | play and readability specs, desktop and phone                                                                                                                                                                  | follow-up piece 3 working tree                                                                                                            | 4 passed, 1 skipped, 1 failed: desktop play, the arena stayed at 284 after the halving it waited for (OPEN ai)                                                                                                                                                       | this commit                                                                                    |
 | 2026-11-19 | desktop play spec alone                                                                                                                                                                                        | follow-up piece 3 working tree                                                                                                            | 1 passed                                                                                                                                                                                                                                                             | this commit                                                                                    |
+| 2026-11-19 | `pnpm verify:changed` (format, lint, typecheck, the tests it picks)                                                                                                                                            | follow-up piece 4 working tree                                                                                                            | after fixing one format issue and one `max-lines-per-function` in the viewer: typecheck green, 63 files / 370 tests green                                                                                                                                            | this commit                                                                                    |
+| 2026-11-19 | play, readability and spectate specs, desktop and phone                                                                                                                                                        | follow-up piece 4 working tree                                                                                                            | 6 passed, 2 skipped                                                                                                                                                                                                                                                  | this commit                                                                                    |
+| 2026-11-19 | one 32-bot match per mode on the dev server, spectators at phone size (King also desktop): start, after each halving, last season (`p19-*`), each shot looked at                                               | follow-up piece 4 working tree                                                                                                            | King's late field fills the phone's width (21 px characters); late Sumo on the phone 209 px wide at the 23.4 px cap; Bomb unchanged (walls stay); nothing beyond a fence; zone and bombs visible; desktop late King 47.6 px                                          | `reports/night-2026-11-19.md`, Follow-up piece 4                                               |

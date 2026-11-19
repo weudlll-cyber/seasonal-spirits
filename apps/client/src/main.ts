@@ -121,10 +121,10 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
     hud.deadline(s, conn.tuning);
   },
   onMode: (mode, reason) => {
+    // A spectator's notice is short and sits in the row under the band (scene.ts fieldTop).
     hud.say(
-      reason === 'full'
-        ? 'Every place in this match has a player — you are watching instead.'
-        : NOTICES[mode],
+      reason === 'full' ? 'All places taken — watching the match.' : NOTICES[mode],
+      mode === 'spectator',
     );
   },
   onRecap: (r) => {

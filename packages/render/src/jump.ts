@@ -55,19 +55,23 @@ export function drawGroundRing(v: View, g: { x: number; y: number }, r: number, 
   ctx.globalAlpha = 1;
 }
 
+// A "Dodged!" pill's size on screen, pixels (its text at 13 px bold, with room).
+export const DODGED_BOX = { width: 62, height: 20 };
+
 // Where "Dodged!" stands above a body of radius `r` px at (x, y) field units, `t` into its rise
-// (0 … 1): its pill's centre in pixels.
+// (0 … 1): its pill's centre in pixels, kept inside the canvas's sides and below the bar
+// (2026-11-19: on a phone a bubble over a character at the field's edge was cut off).
 export function dodgedAt(
   v: View,
   g: { x: number; y: number },
   r: number,
   t: number,
 ): { x: number; y: number } {
-  return { x: sx(v, g.x), y: sy(v, g.y) - r * REACH.top - 16 - 10 * t };
+  const half = DODGED_BOX.width / 2;
+  const x = Math.min(v.ctx.canvas.width - half, Math.max(half, sx(v, g.x)));
+  const y = sy(v, g.y) - r * REACH.top - 16 - 10 * t;
+  return { x, y: Math.max(v.top + DODGED_BOX.height / 2, y) };
 }
-
-// A "Dodged!" pill's size on screen, pixels (its text at 13 px bold, with room).
-export const DODGED_BOX = { width: 62, height: 20 };
 const DODGED_LIFTS = 3; // how often a bubble moves up out of another's way before it is left out
 
 // Never two "Dodged!" bubbles over each other (2026-11-19): `at` moved up a bubble's height at a
