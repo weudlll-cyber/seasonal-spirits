@@ -25,7 +25,9 @@
     "simulate": "pnpm --filter @seasonal-spirits/game-core simulate",
     "settings:doc": "pnpm --filter @seasonal-spirits/game-core settings:doc",
     "dev": "node scripts/dev.mjs",
-    "dev:stop": "node scripts/dev.mjs stop"
+    "dev:stop": "node scripts/dev.mjs stop",
+    "review:capture": "pnpm --filter @seasonal-spirits/review-capture start",
+    "review:sheets": "pnpm --filter @seasonal-spirits/review-capture sheets"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

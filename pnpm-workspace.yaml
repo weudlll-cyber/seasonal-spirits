@@ -4,6 +4,7 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'tools/*'
+  - 'scripts/review-capture'
 
 # Refuse installs on a Node version outside package.json "engines".
 engineStrict: true

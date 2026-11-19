@@ -6,6 +6,8 @@ tmp/
 data/
 night-task.md
 reports/screens/latest/
+# The review capture's single shots and measurements; its contact sheets stay.
+reports/screens/review/*/
 # Raw per-run outputs above 200 KB stay out of the repository (docs/BALANCE.md "Raw data"
 # names the command that regenerates each); new ones go to reports/raw/.
 reports/raw/

@@ -31,7 +31,7 @@ the viewer stays the debug view.
   interpolation, jump detection.
 - `packages/game-core` — the match: seasons, arena, momentum, dash, collisions, falls, halving, human-like bots.
 - `tools/probe` — bot clients + headless spectator + measurement run.
-- `scripts/` — `pnpm dev`, `pnpm verify:changed`.
+- `scripts/` — `pnpm dev`, `pnpm verify:changed`; `scripts/review-capture` the review capture.
 
 ## Ports
 
@@ -39,6 +39,7 @@ the viewer stays the debug view.
 - Player client: `5930` (override: `CLIENT_PORT`)
 - Viewer: `5931` (override: `VIEWER_PORT`)
 - Browser tests: server `3932`, client `5932` (their own stack, never `pnpm dev`'s)
+- Review capture: server `3936`, client `5936`, viewer `5937` (its own stack, seed 7)
 
 Chosen 2026-11-14 as the first free `*930` pair at that time; see
 [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md).
@@ -58,6 +59,9 @@ pnpm server       # just the server, in the foreground (SEASON_SECONDS=15 for a 
 pnpm client       # just the client on http://localhost:5930, in the foreground
 pnpm viewer       # just the viewer on http://localhost:5931, in the foreground
 pnpm e2e          # Playwright: the client at desktop and phone size on a short match
+pnpm review:capture [game …]  # every moment of a full match per mode, player and spectator,
+                  # desktop and phone, Light and Dark, the viewer; contact sheets (about 45 min)
+pnpm review:sheets [game …]   # the contact sheets again from the shots
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```
