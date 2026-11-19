@@ -13,6 +13,7 @@ import {
   GHOST_BOMB,
   GHOST_BOT,
   GHOST_FALLING,
+  GHOST_NO_RETURN,
   STATE_HALVING_EVENT,
   STATE_LAST_STANDING,
   STATE_MATCH_END_EVENT,
@@ -250,6 +251,29 @@ describe('match host started game', () => {
     expect(host.recapNow(false)).toBeNull(); // no result, no recap
     expect(host.settingsInForce().perBomb).toBe(2);
     expect(s.ghosts.filter((g) => g.flags & GHOST_BOMB)).toHaveLength(4); // 8 players, 2 per bomb
+  });
+
+  // 2026-11-19: the return lock on the wire — the giver of a pass carries GHOST_NO_RETURN for
+  // the lock's time (passBack, 1 s: twenty 50 ms ticks), then no more.
+  it('marks the giver of a bomb pass "no return" for exactly the lock', () => {
+    const host = hostOf(8);
+    host.startGame(BOMB, { ...QUICK, perBomb: 2 }, false);
+    const runs: number[] = []; // per locked stretch of one ghost, its length in ticks
+    const open = new Map<number, number>();
+    for (const s of runFor(host, 20_000)) {
+      for (const g of s.ghosts) {
+        const locked = (g.flags & GHOST_NO_RETURN) !== 0;
+        const ticks = open.get(g.id);
+        if (locked) open.set(g.id, (ticks ?? 0) + 1);
+        else if (ticks !== undefined) {
+          runs.push(ticks);
+          open.delete(g.id);
+        }
+      }
+    }
+    expect(runs.length).toBeGreaterThan(3);
+    // A lock ends early only when the same bomb is passed on again by the one who took it.
+    expect(Math.max(...runs)).toBe(QUICK.passBack * 20);
   });
 
   it('goes on with the rotation afterwards, or keeps the game while the switch is on', () => {

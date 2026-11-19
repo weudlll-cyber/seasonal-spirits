@@ -16,6 +16,7 @@ export { mulberry32 } from './rng.js';
 export { clamp, dashVelocity, fieldBounds, stepGhost, type Motion } from './geometry.js';
 export { areaOf, scoreOf } from './modes/rules.js';
 export { inZone } from './modes/hill.js';
+export { returnLocked } from './modes/bomb.js';
 export { AWARD_KINDS, awardsOf, ranked, type Award, type AwardKind } from './recap.js';
 export { createBot, type Bot } from './bots/human.js';
 export { simulate, botRoster, botSeed, SIM_TICK_MS, type SimulationReport } from './simulation.js';

@@ -1,8 +1,8 @@
 // Seasonal Sumo — King of the Season's zone on the island (field.ts draws it in hill): a soft
 // glow in the season's colour, slowly pulsing, inside an ink ring and a string of flags, with a
 // gold crown in its middle (2026-11-19: the zone reads as a place to go); in the countdown its
-// next place dashed with a faint fill. And where the island's decoration keeps off: the zone, its
-// next place and the four places it can jump to (zoneKeepOut).
+// next place dashed with a faint fill. And where the island's trees, pebbles and lanterns keep
+// off: the zone, its next place and the four places it can jump to (zoneKeepOut).
 
 import { quarterCentre, type Team } from '@seasonal-spirits/game-core';
 import type { ServerState, WireDisc } from '@seasonal-spirits/protocol';
@@ -53,9 +53,9 @@ export function drawNextZone(v: View, z: WireDisc, colour: string): void {
   ctx.setLineDash([]);
 }
 
-// Where no decoration stands in hill: the zone, its next place, and each quarter's middle at the
-// zone's starting size, at most half the quarter's side (wherever it can jump), on screen;
-// nothing in the other modes.
+// Where no tree, pebble or lantern stands in hill (the flat decoration grows anywhere): the
+// zone, its next place, and each quarter's middle at the zone's starting size, at most half the
+// quarter's side (wherever it can jump), on screen; nothing in the other modes.
 export function zoneKeepOut(v: View, box: Box, s: ServerState | undefined): Ellipse[] {
   const zone = zoneOf(s);
   if (!zone) return [];

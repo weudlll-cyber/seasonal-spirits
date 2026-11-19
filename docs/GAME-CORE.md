@@ -76,7 +76,8 @@ countdown.
 - **Walls** (hill, bomb). A square of `wallHalf` around the middle at the start; `stepGhost`
   keeps a ghost inside it and takes the speed into a wall away (the speed along it stays). The
   arena's radius there is the walls' half side. With `walls.close` (King's and Halving Bomb's
-  "Walls close in at each halving", on by default; owner's decision 2026-11-19) every halving
+  "Walls close in at each halving", King's on and Halving Bomb's off by default; owner's
+  decisions 2026-11-19 — closing in, the bomb changed hands about 6.7 times as often) every halving
   sets it to max(`walls.smallest`, half × `walls.factor`) — 0.71 and 250 by default, never larger
   than it was (`arena.ts` `wallsAfter`, `closeWalls`) — and the walls ease in over the edge
   easing time like sumo's edge. The match moves every ghost against the walls where they are now
@@ -97,7 +98,8 @@ countdown.
 - **Halving Bomb** (`modes/bomb.ts`). Everyone earns 1 point per second. One bomb per
   `bomb.playersPerBomb` (8) players, at least one, goes to distinct random players (the
   match's seeded source). A carrier passes it by touching an opponent that holds none — never
-  a teammate, and not back to the one that just gave it before `bomb.passBackMs` (1 s); the
+  a teammate, and not back to the one that just gave it before `bomb.passBackMs` (1 s; the
+  giver is `returnLocked` meanwhile and the clients mark it "no return", 2026-11-19); the
   nearest such opponent takes it. At each halving all bombs go off: each carrier's points
   halve, and new bombs go to random players.
 - **Scores.** `scoreOf`: sumo knockouts, else whole points; a team's score is its players'

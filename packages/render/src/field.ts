@@ -31,7 +31,8 @@ const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
 const START: WireDisc = { x: CENTRE, y: CENTRE, r: DEFAULT_CONFIG.arenaRadius };
 const PLATFORM = 1.05; // the platform reaches a little past the walls: the fence stands on it
 const CRACK_TICKS = 18;
-export const ZOOM_CAP = 2; // the camera's scale at most this many times the match start's
+// The camera's scale at most this many times the match start's (owner 2026-11-19: 1.5, was 2).
+export const ZOOM_CAP = 1.5;
 
 // The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
 // always on screen): the walled square as it is now, or sumo's arena as it is now — the server

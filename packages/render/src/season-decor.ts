@@ -1,8 +1,9 @@
 // Seasonal Sumo — what the season in play adds to the island's decoration (NIGHT 2026-11-19,
 // piece 3): blossoms on the tree crowns in spring, a few fallen leaves on the grass in autumn,
 // snow caps on the rim, the crowns and the pebbles in winter. Drawn over decor.ts at the same
-// places — none in the ground's keep-out (decor.ts freeOf) —, faded in and out with the season
-// (season.ts).
+// places — the caps and blossoms only where their tree or pebble stands (decor.ts freeOf); the
+// fallen leaves lie flat and anywhere, like the flowers (owner 2026-11-19) —, faded in and out
+// with the season (season.ts).
 
 import { PEBBLES, TREES, crownOf, freeOf, pebbleSize, sizeOn, spotOn } from './decor.js';
 import { outline, type OnScreen } from './island.js';
@@ -75,14 +76,14 @@ function blossoms(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
 // Autumn: a few leaves lying on the grass.
 function fallen(ctx: CanvasRenderingContext2D, o: OnScreen): void {
   const s = sizeOn(o, 0.02, 3, 7);
-  for (const { p, i } of freeOf(o, FALLEN)) {
+  FALLEN.forEach((p, i) => {
     const [x, y] = spotOn(o, p);
     ctx.fillStyle = ['#e8742c', '#d9442e', '#f2b33d'][i % 3] ?? '#e8742c';
     ctx.beginPath();
     ctx.ellipse(x, y, s, s * 0.55, i * 1.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-  }
+  });
 }
 
 // Winter: a white band of snow inside the rim, caps on the crowns and the pebbles.

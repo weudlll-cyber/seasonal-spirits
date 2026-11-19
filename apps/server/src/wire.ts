@@ -1,7 +1,7 @@
 // Seasonal Sumo — the game core's match state as the wire state every client receives.
 // One place turns the core's numbers into what clients show: the game mode, per ghost its
 // position, speed, score, lives, the time to its next dash and jump, its phase, whether it is in
-// the air and its bomb, the disc
+// the air, its bomb and its bomb's return lock, the disc
 // that halves (sumo's arena, the hill's zone) now and after the next halving, the walls of hill
 // and bomb where they are now, the score per team, sumo's variant and what the clock runs to (a
 // halving, the end, or nothing).
@@ -11,6 +11,7 @@ import {
   SEASONS,
   areaOf,
   inAir,
+  returnLocked,
   walled,
   nextDeadline,
   scoreOf,
@@ -28,6 +29,7 @@ import {
   GHOST_BOT,
   GHOST_DASHING,
   GHOST_FALLING,
+  GHOST_NO_RETURN,
   GHOST_OUT,
   GHOST_PROTECTED,
   STATE_HALVING_EVENT,
@@ -103,7 +105,8 @@ function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): Ghost
       (g.phase === 'in' && now < g.protectedUntilMs ? GHOST_PROTECTED : 0) |
       (s.bombs.some((b) => b.carrier === g.id) ? GHOST_BOMB : 0) |
       (inAir(g, now) ? GHOST_AIRBORNE : 0) |
-      (ctx.events.some((e) => e.type === 'dodge' && e.ghost === g.id) ? GHOST_DODGED : 0),
+      (ctx.events.some((e) => e.type === 'dodge' && e.ghost === g.id) ? GHOST_DODGED : 0) |
+      (returnLocked(s, g.id) ? GHOST_NO_RETURN : 0),
     lives: g.lives,
     jumpLeftMs: Math.max(0, g.jumpReadyMs - now),
     windUp: windAngle(g, now),

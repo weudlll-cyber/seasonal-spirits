@@ -1,11 +1,13 @@
 // Seasonal Sumo — "Halving Bomb": one bomb per 8 players on distinct carriers, the pass to a
-// touching opponent (never a teammate), the second without a pass back, and the explosion at
+// touching opponent (never a teammate), the second without a pass back — the giver marked as
+// locked for exactly that time (the clients' "no return" mark, 2026-11-19) — and the explosion at
 // the halving that halves each carrier's points and hands out new bombs.
 
 import { describe, expect, it } from 'vitest';
 import { botRoster } from '../simulation.js';
 import { ghost, matchOf, modeCfg, place, runTo } from '../test-helpers.js';
 import type { Match } from '../match.js';
+import { returnLocked } from './bomb.js';
 
 const cfg = modeCfg('bomb');
 // Ghosts 1 and 2 on Spring, 3 and 4 on Summer.
@@ -53,10 +55,14 @@ describe('bombs', () => {
     place(m, 4, 0, -300);
     runTo(m, 50); // 1 → 3; they keep touching
     expect(carrier(m)).toBe(3);
+    expect([returnLocked(m.state, 1), returnLocked(m.state, 3)]).toEqual([true, false]);
     runTo(m, 50 + cfg.bomb.passBackMs - 50);
     expect(carrier(m)).toBe(3);
+    expect(returnLocked(m.state, 1)).toBe(true);
     runTo(m, 50 + cfg.bomb.passBackMs);
     expect(carrier(m)).toBe(1);
+    // 1's lock ended as the bomb came back; now 3 gave it and is locked.
+    expect([returnLocked(m.state, 1), returnLocked(m.state, 3)]).toEqual([false, true]);
   });
 
   it('goes off at the halving: each carrier’s points halve, new bombs go out', () => {

@@ -94,14 +94,15 @@ One binary encoding, little endian:
   after the next halving, each x, y, r u16 (tenths of a field unit; r 0 = none, as in bomb),
   ghost count u8, every ghost's lives at the match start u8 (the hearts), the walls' half side
   now u16 (tenths; hill and bomb — they close in at a halving, 2026-11-19; 0 in sumo).
-- **Per ghost, 16 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
+- **Per ghost, 17 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
   prediction starts from it), team u8 (bits 0–1 the team, bit 2 a dash winding up, bits 3–7
   its direction in 32 steps), the mode's score u16, ms to its next dash u8 (in 20 ms
-  steps: the Dash button's ring), flags u8 (bot, dashing, falling, out, protected, carries a
-  bomb, in the air, a dash passed under it in the air in this tick — "Dodged!"), lives left u8 (0: out until the next match), ms to its next jump u8 (20 ms
+  steps: the Dash button's ring), flags u16 (bot, dashing, falling, out, protected, carries a
+  bomb, in the air, a dash passed under it in the air in this tick — "Dodged!", it just passed a
+  bomb on and may not take it back yet — the return lock, 2026-11-19), lives left u8 (0: out until the next match), ms to its next jump u8 (20 ms
   steps: the Jump button's ring).
 
-At 32 ghosts: 560 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
+At 32 ghosts: 592 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
 gone; the probe runs of docs/PHASE0.md were measured with older layouts).
 
 ## Bounds and checks

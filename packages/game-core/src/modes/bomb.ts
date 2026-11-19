@@ -50,6 +50,12 @@ function handOut(cfg: GameConfig, s: Readonly<MatchState>, rng: () => number): B
   return out;
 }
 
+// Whether ghost `id` just passed a bomb on and may not take that one back yet (the return lock,
+// bomb.passBackMs): the clients mark it "no return" for exactly that time (2026-11-19).
+export function returnLocked(s: Readonly<MatchState>, id: number): boolean {
+  return s.bombs.some((b) => b.from === id && s.elapsedMs < b.backAtMs);
+}
+
 // The bomb goes to the nearest opponent touching its carrier that may take it; nobody in the
 // air passes or takes one (a jump touches nobody).
 function pass(cfg: GameConfig, s: MatchState, b: Bomb): void {

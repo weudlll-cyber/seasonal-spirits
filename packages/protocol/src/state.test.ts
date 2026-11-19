@@ -9,6 +9,7 @@ import {
   GHOST_DODGED,
   GHOST_DASHING,
   GHOST_FALLING,
+  GHOST_NO_RETURN,
   GHOST_OUT,
   GHOST_PROTECTED,
   HEADER_BYTES,
@@ -73,7 +74,7 @@ describe('state encoding', () => {
   });
 
   it('stays well under 1 KB with 32 ghosts', () => {
-    expect(encodedSize(32)).toBe(560);
+    expect(encodedSize(32)).toBe(592);
   });
 
   it('sends a missing disc as none (bomb has no arena and no zone)', () => {
@@ -103,8 +104,15 @@ describe('state encoding', () => {
 
 describe('state flags', () => {
   it('keeps every ghost flag through a round trip', () => {
+    // The return lock is the first flag past the low byte (2026-11-19): the flags are 16 bits.
     const all =
-      GHOST_BOT | GHOST_DASHING | GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED | GHOST_BOMB;
+      GHOST_BOT |
+      GHOST_DASHING |
+      GHOST_FALLING |
+      GHOST_OUT |
+      GHOST_PROTECTED |
+      GHOST_BOMB |
+      GHOST_NO_RETURN;
     const s = sample(2);
     const [a, b] = s.ghosts;
     if (a) a.flags = all;
@@ -120,7 +128,7 @@ describe('state flags', () => {
   });
 });
 
-// NIGHT 2026-11-18, piece 6: the dash's wind-up shares the team byte, so a ghost stays 16 bytes.
+// NIGHT 2026-11-18, piece 6: the dash's wind-up shares the team byte, saving a ghost a byte.
 describe('a wind-up on the wire', () => {
   it('keeps the team and the direction to the nearest of 32 steps, and none as none', () => {
     const s = sample(4);

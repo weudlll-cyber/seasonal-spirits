@@ -78,23 +78,13 @@ when: the cause is found (the arena no longer halving
 there, or the banner of the previous halving matched) and the spec waits for a fresh match or
 reads the arena at the right moment, green ten runs in a row.
 
-aj. **The bomb pass touch** (measured NIGHT 2026-11-19 piece 7, recounted on the day chain of
-2026-11-19 piece 8; numbers in `reports/night-2026-11-19.md`, "Bomb touch"): counted per attempt
-(an approach to one target from the first drawn contact to a pass or 1 s without contact), a
-scripted carrier reacting 250 ms late to the browser's picture passed in 92 of 317 attempts on the
-LAN and 76 of 296 at +80 ms (N = 10 Bomb matches each, walls closing in); of the attempts without
-a pass about half were at the one who had just given the bomb (the return lock, which the picture
-does not show), about a third out of reach on the server at their closest. Done when: the owner
-has decided whether the client shows the giver's lock, the lock gets shorter, or the pass gets
-slack (a larger reach, or the reach measured from where the client saw it), or nothing changes.
-
 al. **The follow-up of 2026-11-19** (owner's decisions after the planner's look at the day
-chain's `p12`–`p16`): piece 1, the faults (the zone's flags outside the fence, the hint pill on
-the back fence, the minimap's contrast, the halving's words without the walls) — CLOSED; piece 2,
-the owner's choices (Bomb's walls off by default, zoom cap 1.5×, the bomb's return lock shown,
-King's small decor back); piece 3, King readable when the field is small (the smallest field and
-zone from the crowd, the zone's outline and crown over the characters, the fence in depth order).
-Done when: pieces 2 and 3 have landed with their screenshots looked at.
+chain's `p12`–`p16`): piece 1, the faults, and piece 2, the owner's choices of 2026-11-19
+(Halving Bomb's walls stay by default, zoom cap 1.5×, the bomb's return lock shown with a "no
+return" mark, King's flat decoration back) — CLOSED; piece 3, King readable when the field is
+small (the smallest field and zone from the crowd, the zone's outline and crown over the
+characters, the fence in depth order), open. Done when: piece 3 has landed with its screenshots
+of a whole 32-bot King match looked at.
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
@@ -1058,6 +1048,15 @@ Done when: the spec is green ten runs in a row.
   "and the walls close in" when they do (`halvingBanner`) — commit "fix: the zone inside the
   fence, the hint's own row".
 
+- 2026-11-19 — **Follow-up piece 2: the owner's choices of 2026-11-19** (OPEN al; OPEN aj
+  closed: the owner decided the client shows the giver's lock). Decisions of 2026-11-19: Halving
+  Bomb's "Walls close in at each halving" off by default (King's stays on); the zoom cap 1.5×
+  (was 2×); the return lock shown, no rule change; tufts, flowers and fallen leaves anywhere in
+  King, trees, pebbles and lanterns still off the zones. The ghost flags became 16 bits for
+  `GHOST_NO_RETURN` (592 bytes at 32 ghosts, was 560), set from game-core `returnLocked`; the
+  mark is render `no-return.ts`, with a line in the help — commit "feat: the owner's choices of
+  2026-11-19".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                                          | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                                                               | Evidence                                                                                       |
@@ -1458,3 +1457,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | unit: zone and its next place inside the walls over a whole seeded King match (seed 7, 8 bots); render zone, minimap, palette, modes; client scene                                                             | follow-up piece 1 working tree                                                                                                            | all green (the rule test green before the drawing fix: the rule was right)                                                                                                                                                                                           | this commit                                                                                    |
 | 2026-11-19 | `pnpm verify:changed` (format, lint, typecheck, related tests)                                                                                                                                                 | follow-up piece 1 working tree                                                                                                            | green; 60 files, 353 tests                                                                                                                                                                                                                                           | this commit                                                                                    |
 | 2026-11-19 | screenshots `p17-king-*` and `p17-king-first-*` on the dev server, desktop and phone, looked at                                                                                                                | follow-up piece 1 working tree                                                                                                            | flags inside the ring; hint in its row above the back fence, hidden under the banner; first halving's banner with the walls, third without (walls at 250); spring minimap readable; characters over the fences left for piece 3                                      | `reports/night-2026-11-19.md`, Follow-up piece 1                                               |
+| 2026-11-19 | unit: return lock (game-core bomb, server wire 20 s Bomb host), 16-bit flags round trip, no-return mark and label, zoom cap 1.5, decor in King, Bomb walls default                                             | follow-up piece 2 working tree                                                                                                            | all green; the lock on the wire at most 20 ticks (1 s), more than 3 locks in 20 s                                                                                                                                                                                    | this commit                                                                                    |
+| 2026-11-19 | `pnpm verify:changed`                                                                                                                                                                                          | follow-up piece 2 working tree                                                                                                            | first: format (one test file) and a whole-match wall test timed out under load beside the specs (957 ms alone); that test now with 8 bots; then green, 61 files, 358 tests                                                                                           | this commit                                                                                    |
+| 2026-11-19 | play and readability specs, desktop and phone                                                                                                                                                                  | follow-up piece 2 working tree                                                                                                            | 4 passed, 1 skipped, 1 failed: phone play, the arena stayed at 201.6 after the halving (OPEN ai)                                                                                                                                                                     | `reports/night-2026-11-19.md`, Follow-up piece 2                                               |
+| 2026-11-19 | screenshots `p17-bomb-*`, `p17-bomb-burst-*`, `p17-bomb-lock-*`, `p17-sumo-late-*` on the restarted dev server, looked at                                                                                      | follow-up piece 2 working tree                                                                                                            | marks drawn over the givers (2 players per bomb), one above a bomb, labels above them; none in the default-settings frames (few passes early); late Sumo smaller on screen at 1.5×                                                                                   | `reports/night-2026-11-19.md`, Follow-up piece 2                                               |

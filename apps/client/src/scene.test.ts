@@ -4,7 +4,7 @@
 
 import { DEFAULT_CONFIG, GAME_MODES, type GameMode } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';
-import { overlaps, type Rect } from '@seasonal-spirits/render';
+import { ZOOM_CAP, overlaps, type Rect } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { stickZone } from './hud.js';
 import { camera, fieldTop, playArea } from './scene.js';
@@ -67,23 +67,28 @@ describe('one camera for every mode', () => {
         expect(a.right, what).toBeLessThanOrEqual(width);
         expect(a.bottom, what).toBeLessThanOrEqual(height);
         for (const z of zones) expect(overlaps(a, z), `${what} under a control`).toBe(false);
-        expect(a.right - a.left, `${what} large enough to play`).toBeGreaterThan(200);
+        // Large enough to play — but late in Sumo the zoom cap keeps the characters' size and the
+        // smaller arena shrinks on screen with it (owner 2026-11-19: cap 1.5).
+        if (!what.startsWith('sumo after 3'))
+          expect(a.right - a.left, `${what} large enough to play`).toBeGreaterThan(200);
       }
     });
 
-    it(`keeps the shrunken arena as large on screen as the first, up to twice the start's scale, at ${String(width)}×${String(height)}`, () => {
+    it(`keeps the shrunken arena as large on screen as the first, up to 1.5 times the start's scale, at ${String(width)}×${String(height)}`, () => {
       const sizes = STATES.slice(0, 7).map(([, s]) => {
         const a = playArea(camera(ctx, s, zones), s);
         return a.right - a.left;
       });
       const first = sizes[0] ?? 0;
-      // Through two halvings nearly as large: only the room kept for a ghost on the edge (a ghost
-      // radius) is a larger share of the smaller arena. After that the zoom cap (2026-11-19, render
-      // ZOOM_CAP 2) holds the scale at twice the start's: the arena shrinks on screen.
-      for (const px of sizes.slice(0, 5)) expect(px).toBeGreaterThan(first * 0.9);
+      // Through the first halving nearly as large: only the room kept for a ghost on the edge (a
+      // ghost radius) is a larger share of the smaller arena. After that the zoom cap (render
+      // ZOOM_CAP, 1.5 since owner 2026-11-19) holds the scale: the arena shrinks on screen.
+      for (const px of sizes.slice(0, 3)) expect(px).toBeGreaterThan(first * 0.9);
       STATES.slice(0, 7).forEach(([, s], k) => {
         const r = s.area?.r ?? 0;
-        expect(sizes[k] ?? 0).toBeLessThanOrEqual((first * 2 * r) / DEFAULT_CONFIG.arenaRadius + 1);
+        expect(sizes[k] ?? 0).toBeLessThanOrEqual(
+          (first * ZOOM_CAP * r) / DEFAULT_CONFIG.arenaRadius + 1,
+        );
       });
     });
   }

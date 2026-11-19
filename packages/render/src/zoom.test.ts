@@ -1,5 +1,5 @@
 // Seasonal Sumo — the zoom cap (2026-11-19): late in a match the camera's scale never exceeds
-// twice its scale at the match start, in every mode — a late halving shows more sky round the
+// 1.5 times its scale at the match start (owner 2026-11-19; was twice), in every mode — a late halving shows more sky round the
 // island instead of ever larger characters; a falling character is never drawn larger than a
 // standing one.
 
@@ -22,7 +22,7 @@ describe('the zoom cap', () => {
     [1280, 800],
     [390, 844],
   ] as const) {
-    it(`never draws more than twice the start's scale, any mode (${String(w)}×${String(h)})`, () => {
+    it(`never draws more than 1.5 times the start's scale, any mode (${String(w)}×${String(h)})`, () => {
       const scale = (s: ServerState): number => fitBox(ctx(w, h), 104, cameraBox(s)).scale;
       const startSumo = scale(sumo(400));
       expect(scale(sumo(284))).toBeLessThan(ZOOM_CAP * startSumo);
@@ -30,7 +30,8 @@ describe('the zoom cap', () => {
       const startBomb = scale(walled(2, 700));
       expect(scale(walled(2, 150))).toBeCloseTo(ZOOM_CAP * startBomb, 6);
       const startKing = scale(walled(1, 450));
-      expect(scale(walled(1, 250))).toBeLessThan(ZOOM_CAP * startKing);
+      expect(ZOOM_CAP).toBe(1.5);
+      expect(scale(walled(1, 250))).toBeLessThanOrEqual(ZOOM_CAP * startKing + 1e-9);
     });
   }
 

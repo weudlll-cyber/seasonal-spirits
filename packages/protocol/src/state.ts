@@ -31,6 +31,9 @@ export const GHOST_AIRBORNE = 64; // a jump: in the air, nothing hits it (JUMP 2
 // A dash passed under it in the air in this tick: "Dodged!" (in exactly one state, like the
 // halving; NIGHT 2026-11-18).
 export const GHOST_DODGED = 128;
+// Halving Bomb: it just passed a bomb on and may not take it back yet — the return lock, shown
+// as a "no return" mark (2026-11-19; game-core bomb.ts returnLocked).
+export const GHOST_NO_RETURN = 256;
 
 // A disc on the field: sumo's arena, the hill's zone.
 export interface WireDisc {
@@ -82,9 +85,9 @@ export const STATE_OPEN_END = 32;
 // · ghost count u8 · livesAtStart u8 · wall u16 (tenths; 0 = none).
 // Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 (bits 0–1 the team, bit 2 a
 // wind-up, bits 3–7 its direction in 32 steps) · score u16 · dashLeft u8 (20 ms steps) · flags
-// u8 · lives u8 · jumpLeft u8 (20 ms steps). All little endian.
+// u16 · lives u8 · jumpLeft u8 (20 ms steps). All little endian.
 export const HEADER_BYTES = 48;
-export const GHOST_BYTES = 16;
+export const GHOST_BYTES = 17;
 const NO_COUNTDOWN = 0xffff;
 const DASH_STEP_MS = 20;
 const WIND_UP = 4; // the team byte's wind-up bit; its direction above it
@@ -163,9 +166,9 @@ function writeGhost(v: DataView, o: number, g: GhostState): number {
   v.setUint8(o + 9, teamByte(g.team, g.windUp));
   v.setUint16(o + 10, u16(g.score), true);
   v.setUint8(o + 12, u8(Math.ceil(g.dashLeftMs / DASH_STEP_MS)));
-  v.setUint8(o + 13, g.flags & 0xff);
-  v.setUint8(o + 14, u8(g.lives));
-  v.setUint8(o + 15, u8(Math.ceil(g.jumpLeftMs / DASH_STEP_MS)));
+  v.setUint16(o + 13, g.flags & 0xffff, true);
+  v.setUint8(o + 15, u8(g.lives));
+  v.setUint8(o + 16, u8(Math.ceil(g.jumpLeftMs / DASH_STEP_MS)));
   return o + GHOST_BYTES;
 }
 
@@ -214,9 +217,9 @@ function readGhost(v: DataView, o: number): GhostState {
     team: v.getUint8(o + 9) & 0x03,
     score: v.getUint16(o + 10, true),
     dashLeftMs: v.getUint8(o + 12) * DASH_STEP_MS,
-    flags: v.getUint8(o + 13),
-    lives: v.getUint8(o + 14),
-    jumpLeftMs: v.getUint8(o + 15) * DASH_STEP_MS,
+    flags: v.getUint16(o + 13, true),
+    lives: v.getUint8(o + 15),
+    jumpLeftMs: v.getUint8(o + 16) * DASH_STEP_MS,
     windUp: windOf(v.getUint8(o + 9)),
   };
 }

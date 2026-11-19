@@ -141,8 +141,10 @@ or touch (browsers allow sound only after a gesture).
   flags in it sized by the zone on screen (NIGHT 2026-11-19: on the phone they were hard to see),
   each hanging with its tip on the ring, never past it (the zone fits the walls exactly: flags
   hanging below the ring stood outside the near fence, 2026-11-19), with a small gold crown in its middle (2026-11-19: it reads as a place to go); in the countdown
-  a dashed ring with a faint fill shows where it jumps. No decoration stands inside the zone, its
-  next place or any quarter's middle at the zone's starting size (`OnScreen.keepOut`). While the
+  a dashed ring with a faint fill shows where it jumps. No tree, pebble or lantern stands inside
+  the zone, its next place or any quarter's middle at the zone's starting size
+  (`OnScreen.keepOut`); the flat decoration — tufts, flowers, fallen leaves — grows anywhere
+  (owner 2026-11-19: King's field had almost none left). While the
   own ghost stands outside the zone, a pill says "Stand in the zone to score" (client
   `zone-hint.ts`) in a row of its own under the band — in King the field starts 24 px lower
   (`scene.ts` `fieldTop`), so the pill never covers the back fence — hidden while a banner shows.
@@ -159,7 +161,11 @@ or touch (browsers allow sound only after a gesture).
   size — a large bomb above it (at least the body's size), black with a pale rim, a thick fuse
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,
   and the carrier's body pulsing in a hot halo, quicker as the fuse burns down; its label keeps
-  clear of it.
+  clear of it. **No return** (render `no-return.ts`, 2026-11-19: the return lock was invisible):
+  the ghost that just passed a bomb on wears a white pill with an ink outline above its hat — a
+  U-turn arrow crossed out in red — for exactly the lock (the server's `GHOST_NO_RETURN`), seen
+  by everybody; above its bomb if it carries one again; its label keeps clear of it; the help's
+  "What you see" has a line on it.
 - **Light and Dark** (Sky Island look, piece 3): a small pill switch in the client's band
   corner (NIGHT 2026-11-19: moved off the top right, where it left the clock's line too little
   room on a phone) and at the viewer's top right (render `look-switch.ts`), Light by default,
@@ -226,8 +232,8 @@ or touch (browsers allow sound only after a gesture).
   stay as large as the width allows: drawn larger than their body they would mislead about
   contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
   the smaller arena stays as large on screen; in hill and bomb it follows the walls as they close
-  in. **Zoom cap** (2026-11-19): the camera's scale never exceeds twice its scale at the match
-  start (render `cameraBox`, `ZOOM_CAP`), in every mode and on every screen; from Sumo's third
+  in. **Zoom cap** (2026-11-19): the camera's scale never exceeds 1.5 times its scale at the
+  match start (render `cameraBox`, `ZOOM_CAP`; owner 2026-11-19, was twice), in every mode and on every screen; from Sumo's third
   halving on the island shrinks on screen and more sky shows round it. A falling character is
   drawn at the scale of the field, never larger than a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
   fitted only a portrait phone's width, the characters were tiny): on a portrait screen, for a

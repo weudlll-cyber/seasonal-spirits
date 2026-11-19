@@ -3,7 +3,7 @@
 
 // Every mark the game draws (ghosts.ts, own.ts, field.ts).
 export type LegendMarker =
-  'team' | 'own' | 'fast' | 'protected' | 'edge' | 'nextEdge' | 'zone' | 'bomb';
+  'team' | 'own' | 'fast' | 'protected' | 'edge' | 'nextEdge' | 'zone' | 'bomb' | 'noReturn';
 
 // In reading order.
 export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
@@ -29,5 +29,9 @@ export const LEGEND: readonly { marker: LegendMarker; text: string }[] = [
   {
     marker: 'bomb',
     text: 'Halving Bomb: a ticking bomb above a ghost; its fuse is the time left.',
+  },
+  {
+    marker: 'noReturn',
+    text: 'Crossed-out arrow above a ghost: it just passed the bomb on and cannot take it back yet.',
   },
 ];

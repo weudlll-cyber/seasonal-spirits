@@ -2,9 +2,10 @@
 // few flowers, two small trees at the back, two pebbles, and at night three small lanterns with a
 // warm halo — at fixed places in the ground's own units, so they scale with the arena and shrink
 // with it at a halving; the tufts and the tree crowns sway a little (NIGHT 2026-11-19; still with
-// reduced motion). None stands in the ground's keep-out (King's zones and where they can jump,
-// 2026-11-19); what stands in front of a character is drawn again over it (decor-front.ts). Pure
-// decoration: nothing here touches a ghost.
+// reduced motion). No tree, pebble or lantern stands in the ground's keep-out (King's zones and
+// where they can jump, 2026-11-19); tufts and flowers lie flat and grow anywhere (owner
+// 2026-11-19: King's field had almost none left); what stands in front of a character is drawn
+// again over it (decor-front.ts). Pure decoration: nothing here touches a ghost.
 
 import type { OnScreen } from './island.js';
 import { ambientMs } from './motion.js';
@@ -92,7 +93,7 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
   ctx.lineWidth = 2;
   const tuft = size(0.035, 3, 10);
   ctx.beginPath();
-  for (const { p } of freeOf(o, TUFTS)) {
+  for (const p of TUFTS) {
     const [x, y] = at(p);
     const sway = Math.sin(t * 1.7 + p[0] * 4) * tuft * 0.3;
     for (const lean of [-0.6, 0, 0.6]) {
@@ -104,14 +105,14 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
   ctx.strokeStyle = l.ink;
   ctx.lineWidth = 1.5;
   const petal = size(0.014, 2, 5);
-  for (const { p, i } of freeOf(o, FLOWERS)) {
+  FLOWERS.forEach((p, i) => {
     const [x, y] = at(p);
     ctx.fillStyle = l.flowers[i % l.flowers.length] ?? l.cloud;
     ctx.beginPath();
     ctx.arc(x, y, petal, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-  }
+  });
   ctx.fillStyle = l.pebble;
   const pebble = pebbleSize(o);
   for (const { p } of freeOf(o, PEBBLES)) {

@@ -128,7 +128,7 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | `bombMatch`     | Match length                               | 60–600 s (step 15)    | 180     | bomb  | next match |
 | `bombBlast`     | Blast interval                             | 10–60 s (step 5)      | 20      | bomb  | next match |
 | `bombWall`      | Field size (half its side)                 | 400–900 u (step 10)   | 700     | bomb  | next match |
-| `bombClose`     | Walls close in at each halving             | off / on              | on      | bomb  | next match |
+| `bombClose`     | Walls close in at each halving             | off / on              | off     | bomb  | next match |
 | `bombCloseBy`   | Each halving: field side ×                 | 0.5–1 × (step 0.01)   | 0.71    | bomb  | next match |
 | `bombSmallest`  | Smallest field (half its side)             | 150–700 u (step 10)   | 250     | bomb  | next match |
 | `bombCountdown` | Countdown before a blast                   | 2–10 s (step 1)       | 5       | bomb  | now        |

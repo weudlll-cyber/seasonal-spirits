@@ -52,6 +52,11 @@ const bomb = (x: number, y: number): string =>
   `<circle cx="${x}" cy="${y}" r="6" fill="#3a3150" stroke="${INK}" stroke-width="1.5"/>` +
   `<path d="M${x + 3} ${y - 6} q1 -6 7 -7" fill="none" stroke="#c8a46e" stroke-width="2"/>` +
   `<circle cx="${x + 10}" cy="${y - 13}" r="3" fill="#ffd54a"/>`;
+// The "no return" mark as no-return.ts (render) draws it: a white pill, a U-turn arrow crossed out.
+const noReturn = (x: number, y: number): string =>
+  `<rect x="${x - 13}" y="${y - 8}" width="26" height="16" rx="8" fill="#fff" stroke="${INK}" stroke-width="1.5"/>` +
+  `<path d="M${x + 4} ${y + 3} v-3 a4 4 0 0 0 -8 0 v3 m-2 -2 l2 3 l2 -3" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` +
+  `<path d="M${x - 7} ${y + 5} L${x + 7} ${y - 5}" stroke="#d6334a" stroke-width="1.8" stroke-linecap="round"/>`;
 const svg = (body: string): string =>
   `<svg viewBox="0 0 120 60" width="120" height="60" aria-hidden="true">${body}</svg>`;
 
@@ -153,6 +158,7 @@ const MARKER_DRAWINGS: Record<LegendMarker, string> = {
     walls() + zone(18, SPRING) + `<g transform="translate(30 0)">${zone(12, SUMMER, '5 4')}</g>`,
   ),
   bomb: svg(ghost(60, 42, 9, WINTER) + bomb(60, 22)),
+  noReturn: svg(ghost(60, 42, 9, SUMMER) + noReturn(60, 22)),
 };
 
 const SEEN =

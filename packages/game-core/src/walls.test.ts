@@ -17,8 +17,9 @@ const roster = [
   { id: 2, team: 1 as const },
 ];
 
+// The walls closing in, in both modes (Bomb's switch is off by default, owner 2026-11-19).
 function cfgOf(mode: GameMode, more: Partial<Settings> = {}): GameConfig {
-  return configFrom({ ...DEFAULT_SETTINGS, ...more }, mode);
+  return configFrom({ ...DEFAULT_SETTINGS, bombClose: 1, ...more }, mode);
 }
 
 // The walls' half side right after each halving of a whole match, nobody acting.
@@ -129,8 +130,9 @@ describe('walls closing in, whole bot matches', () => {
       const quick = mode === 'hill' ? { hillMatch: 60, hillJump: 15 } : { bombMatch: 60 };
       const c = cfgOf(mode, { ...field, ...quick });
       const radii = new Set<number>();
-      const a = simulate(c, 3, undefined, (s) => radii.add(s.arena.radius));
-      const b = simulate(c, 3);
+      // Eight bots: enough to play, light enough for the suite under load (2026-11-19).
+      const a = simulate(c, 3, botRoster(8), (s) => radii.add(s.arena.radius));
+      const b = simulate(c, 3, botRoster(8));
       expect([...radii]).toEqual([c.wallHalf]);
       expect(a.result).toEqual(b.result);
     },

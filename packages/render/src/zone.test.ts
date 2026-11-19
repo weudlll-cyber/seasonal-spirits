@@ -1,11 +1,13 @@
 // Seasonal Sumo — King of the Season's zone on the island (2026-11-19): it carries a gold crown in
-// its middle, and no decoration stands inside it, inside its next place, or where it can jump.
+// its middle, its flags never hang past its ring, and no tree, pebble or lantern stands inside
+// it, inside its next place, or where it can jump — tufts and flowers grow anywhere (owner
+// 2026-11-19).
 
 import { configFrom, DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';
 import { afterEach, describe, expect, it } from 'vitest';
 import { recorder } from './canvas-recorder.js';
-import { FLOWERS, PEBBLES, TREES, freeOf, spotOn } from './decor.js';
+import { FLOWERS, LANTERNS, PEBBLES, TREES, drawDecor, freeOf, spotOn } from './decor.js';
 import { onScreen } from './island.js';
 import { useShape } from './shape.js';
 import { fitBox, sy } from './view.js';
@@ -45,8 +47,10 @@ describe("King of the Season's zone", () => {
     drawZone(v, z, '#3fa34d', 0);
     expect(Math.max(...ys)).toBeLessThanOrEqual(sy(v, z.y + z.r) + 1e-9);
   });
+});
 
-  it('keeps every decoration off the zone, its next place and the four places it can jump to', () => {
+describe("the island's decoration round King's zones", () => {
+  it('keeps trees, pebbles and lanterns off the zone, its next place and where it can jump', () => {
     useShape(hill);
     const r = recorder();
     const v = fitBox(r.ctx, 100, box);
@@ -61,7 +65,7 @@ describe("King of the Season's zone", () => {
     const places: readonly (readonly [number, number, ...unknown[]])[] = [
       ...TREES,
       ...PEBBLES,
-      ...FLOWERS,
+      ...LANTERNS,
     ];
     for (const { p } of freeOf(ground, places)) {
       const [x, y] = spotOn(ground, p);
@@ -73,5 +77,14 @@ describe("King of the Season's zone", () => {
       }
     }
     expect(freeOf(ground, TREES).length).toBeLessThan(TREES.length);
+  });
+
+  it('lets every flower grow, inside the zones too', () => {
+    const r = recorder();
+    const v = fitBox(r.ctx, 100, box);
+    const ground = onScreen(v, { x: C, y: C, r: hill.wallHalf * 1.05, square: true });
+    const everywhere = [{ x: ground.cx, y: ground.cy, rx: 1e6, ry: 1e6 }];
+    drawDecor(r.ctx, { ...ground, keepOut: everywhere }, 0);
+    expect(r.arcs).toHaveLength(FLOWERS.length); // and no tree crown: the trees keep out
   });
 });

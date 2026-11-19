@@ -6,7 +6,9 @@
 // tips over the edge into the sea (fall.ts); one out is not drawn; one just back (protected)
 // wears a white dashed ring; one in the air after a jump rises on an arc while its shadow stays
 // on the ground, with a ground ring at take-off and landing and "Dodged!" when a dash passed
-// under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts); a dash
+// under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts), one
+// that just passed a bomb on wears the "no return" mark while it may not take it back
+// (no-return.ts); a dash
 // winding up glows with its line (windup.ts). A dash's start stretches the body, a landing or a
 // respawn squashes it, a landing kicks up dust, a hit shows a white star and the knocked one
 // slides with spiral eyes (moments.ts, effects.ts). Labels: ghost-labels.ts. What the drawing
@@ -15,6 +17,7 @@
 import {
   GHOST_BOMB,
   GHOST_FALLING,
+  GHOST_NO_RETURN,
   GHOST_OUT,
   GHOST_PROTECTED,
   type GhostState,
@@ -24,6 +27,7 @@ import { inkWidth } from './character.js';
 import { drawDust, drawStar } from './effects.js';
 import { drawFall } from './fall.js';
 import { drawLabels } from './ghost-labels.js';
+import { drawNoReturn } from './no-return.js';
 import {
   airScale,
   arcHeight,
@@ -191,5 +195,6 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): number | null {
     ctx.setLineDash([]);
   }
   if (carrier) drawBomb(v, at, style.fuse, style.nowMs);
+  if (g.flags & GHOST_NO_RETURN) drawNoReturn(v, at, carrier);
   return r;
 }
