@@ -20,6 +20,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/settings.ts`         | The settings schema: reader, now-or-next, the numbers that are not settings    |
 | `src/settings-list.ts`    | Every setting: label, unit, range, step, default, modes, now or next           |
 | `src/settings-doc.ts`     | docs/SETTINGS.md generated from the schema (`pnpm settings:doc`)               |
+| `src/crowd.ts`            | Room for the crowd: King's smallest field and zone, their starting values      |
 | `src/seasons.ts`          | Season order and the season clock                                              |
 | `src/types.ts`            | Match state, ghosts and their phases, intents, events, result                  |
 | `src/match.ts`            | `Match`: one tick in a fixed order; `halt` for a ghost a player takes over     |
@@ -78,8 +79,8 @@ countdown.
   arena's radius there is the walls' half side. With `walls.close` (King's and Halving Bomb's
   "Walls close in at each halving", King's on and Halving Bomb's off by default; owner's
   decisions 2026-11-19 — closing in, the bomb changed hands about 6.7 times as often) every halving
-  sets it to max(`walls.smallest`, half × `walls.factor`) — 0.71 and 250 by default, never larger
-  than it was (`arena.ts` `wallsAfter`, `closeWalls`) — and the walls ease in over the edge
+  sets it to max(`walls.smallest`, half × `walls.factor`) — 0.71 by default, the smallest 260 in
+  King (from the crowd, below) and 250 in Bomb, never larger than it was (`arena.ts` `wallsAfter`, `closeWalls`) — and the walls ease in over the edge
   easing time like sumo's edge. The match moves every ghost against the walls where they are now
   (`Match.tick`), so a ghost they reach is pushed in with them: nobody falls, nobody is credited,
   nobody is stunned. Bots aim at the arena as it is (wander points, the middle), so they follow
@@ -90,7 +91,13 @@ countdown.
   radius never more than half the walls' half side (it fits its quarter). Every
   ghost in it earns 1 point per second for itself and its team (`scoreMs`, whole ms, so the sum
   is exact). At each halving it jumps to the new season's quarter of the walls as they will be and its area
-  halves (225 → 160 → 113 → 80; with the walls closing in 450 → 320 → 250 the zone still fits);
+  halves, never below `hill.smallest` (225 → 160 → 130 → 130; with the walls closing in
+  450 → 320 → 260 → 260 the zone still fits). **Room for the crowd** (`crowd.ts`, owner
+  2026-11-19: at the old smallest field all 32 characters piled up in one corner over the zone):
+  a crowd standing shoulder to shoulder takes 32 × (2 × 16)² = 32 768 square units; the smallest
+  field holds four crowds (half side ≥ 181) and the smallest zone one and a half (radius ≥
+  125.1), and the zone must fit its quarter (half side ≥ 2 × 125.1 = 250.2) — so King's "Smallest
+  field" starts at 260 and the new "Smallest zone (radius)" at 130, each rounded up to its step;
   during the countdown the clients draw where it goes (`areaOf(...).next`). A ghost that leaves
   the zone within `hill.bounceMs` (1 s) of an opponent's dash into it is a bounce for that
   opponent — its own dash, not a plain push (NIGHT 2026-11-18; `lastTouch.dash`); a jump is

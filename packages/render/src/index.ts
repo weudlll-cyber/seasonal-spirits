@@ -3,7 +3,15 @@
 
 export * from './palette.js';
 export * from './view.js';
-export { ZOOM_CAP, cameraBox, drawField, playBox, type FieldMemory } from './field.js';
+export {
+  ZOOM_CAP,
+  cameraBox,
+  drawField,
+  fieldFront,
+  playBox,
+  type FieldFront,
+  type FieldMemory,
+} from './field.js';
 export { Seasons, drawSeasonAir } from './season.js';
 export { HIT_REACH, isKnocked } from './moments.js';
 export { drawPodium, drawStartScene } from './podium.js';

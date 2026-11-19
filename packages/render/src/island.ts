@@ -182,9 +182,19 @@ export function drawGround(v: View, g: Ground): OnScreen {
 // above the back wall (field.ts cameraBox).
 export const FENCE_RISE = 0.07;
 
-// The walled modes' low wooden fence along the walls (half side `half` field units): posts and
-// two rails, drawn on the ground's edge.
-export function drawFence(v: View, centre: { x: number; y: number }, half: number): void {
+// The fence's walls by index: the back one (behind every character), and the right, near and left
+// ones (in front of a character beside them: drawn over the bodies, field.ts fieldFront).
+export const BACK_FENCE = [0] as const;
+export const NEAR_FENCE = [1, 2, 3] as const;
+
+// The walled modes' low wooden fence along the walls `sides` (half side `half` field units):
+// posts and two rails, drawn on the ground's edge.
+export function drawFence(
+  v: View,
+  centre: { x: number; y: number },
+  half: number,
+  sides: readonly number[],
+): void {
   const { ctx } = v;
   const l = look();
   const post = half * v.scale * FENCE_RISE; // px tall
@@ -213,7 +223,7 @@ export function drawFence(v: View, centre: { x: number; y: number }, half: numbe
     ctx.strokeStyle = colour;
     ctx.lineWidth = width;
     ctx.beginPath();
-    for (let i = 0; i < 4; i++) {
+    for (const i of sides) {
       const [x0, y0] = at(i, 0);
       const [x1, y1] = at(i, 1);
       ctx.moveTo(x0, y0 - post * height);
@@ -224,7 +234,7 @@ export function drawFence(v: View, centre: { x: number; y: number }, half: numbe
   ctx.fillStyle = l.roots;
   ctx.strokeStyle = l.ink;
   ctx.lineWidth = 1.5;
-  for (let i = 0; i < 4; i++) {
+  for (const i of sides) {
     for (let k = 0; k < posts; k++) {
       const [x, y] = at(i, k / posts);
       ctx.beginPath();

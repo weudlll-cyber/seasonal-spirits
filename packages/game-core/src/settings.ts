@@ -109,4 +109,10 @@ export const NOT_SETTINGS: Record<string, string> = {
   TICK_MS: "the bots' perception granularity, the server's tick",
   SIM_TICK_MS: "the simulation's step, the server's tick",
   TOUCH_SLACK: 'a numerical tolerance: two touching ghosts lie exactly two radii apart',
+  FIELD_CROWDS:
+    "the owner's rule (2026-11-19) for the smallest field's starting value; hillSmallest is the setting",
+  ZONE_CROWDS:
+    "the owner's rule (2026-11-19) for the smallest zone's starting value; zoneSmallest is the setting",
+  GHOST_RADIUS: "the ghostRadius setting's starting value, named for King's crowd numbers",
+  TEAM_SIZE: "the teamSize setting's starting value, named for King's crowd numbers",
 };

@@ -1,6 +1,7 @@
 // Seasonal Sumo — one full bot match of any mode in accelerated time, with its sanity list.
 // Used by `pnpm simulate`, the measurements and the tests; pure apart from the work it does.
 
+import { wallsAfter } from './arena.js';
 import { createBot, type Bot } from './bots/human.js';
 import type { GameConfig } from './config.js';
 import { Match, type Roster } from './match.js';
@@ -140,6 +141,20 @@ function sanityList(cfg: GameConfig, r: Seen): SanityCheck[] {
   ];
 }
 
+// The arena's or the zone's radius after each of `n` halvings: × the shrink setting; the zone
+// never below hill.smallest and never past its quarter of the walls as they close in (hill.ts).
+function halvedSizes(cfg: GameConfig, n: number): number[] {
+  const sumo = cfg.mode === 'sumo';
+  let size = sumo ? cfg.arenaRadius : cfg.hill.zoneRadius;
+  let half = cfg.wallHalf;
+  return Array.from({ length: n }, () => {
+    if (sumo) return (size *= cfg.sumo.shrink);
+    half = wallsAfter(cfg, half);
+    size = Math.min(half / 2, Math.max(cfg.hill.smallest, size * cfg.hill.shrink));
+    return size;
+  });
+}
+
 // What only one mode promises.
 function modeChecks(cfg: GameConfig, r: Seen): SanityCheck[] {
   const fell = r.falls.credited + r.falls.uncredited;
@@ -154,9 +169,8 @@ function modeChecks(cfg: GameConfig, r: Seen): SanityCheck[] {
     ];
   }
   const sumo = cfg.mode === 'sumo';
-  const start = sumo ? cfg.arenaRadius : cfg.hill.zoneRadius;
-  const shrink = sumo ? cfg.sumo.shrink : cfg.hill.shrink;
-  const off = r.halvings.map((h, k) => Math.abs((h.size ?? 0) - start * shrink ** (k + 1)));
+  const sizes = halvedSizes(cfg, r.halvings.length);
+  const off = r.halvings.map((h, k) => Math.abs((h.size ?? 0) - (sizes[k] ?? 0)));
   const halves = {
     name: `the ${sumo ? 'arena' : 'zone'} shrinks by its setting at each halving`,
     ok: off.every((d) => d < 1e-6),

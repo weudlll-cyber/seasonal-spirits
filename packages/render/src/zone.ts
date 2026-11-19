@@ -1,6 +1,7 @@
 // Seasonal Sumo — King of the Season's zone on the island (field.ts draws it in hill): a soft
-// glow in the season's colour, slowly pulsing, inside an ink ring and a string of flags, with a
-// gold crown in its middle (2026-11-19: the zone reads as a place to go); in the countdown its
+// glow in the season's colour, slowly pulsing, under the characters; over them an ink ring and a
+// string of flags, with a gold crown in its middle (2026-11-19: the zone reads as a place to go;
+// drawn over the bodies, a full zone still shows its outline and crown); in the countdown its
 // next place dashed with a faint fill. And where the island's trees, pebbles and lanterns keep
 // off: the zone, its next place and the four places it can jump to (zoneKeepOut).
 
@@ -17,12 +18,16 @@ const CROWN_GOLD = '#FFC23C';
 const PULSE_MS = 2400; // one slow breath of the glow
 const KEEP_OUT = 1.08; // decoration keeps this share of a zone's radius away from its middle
 
-// The zone now: the glow, the ring, the flags and the crown.
+// The zone now, under the characters: its glow, pulsing.
 export function drawZone(v: View, z: WireDisc, colour: string, nowMs: number): void {
-  const { ctx } = v;
-  const ink = look().ink;
   const beat = 0.5 + 0.5 * Math.sin((ambientMs(nowMs) / PULSE_MS) * Math.PI * 2);
   glow(v, z, colour, 0.85 + 0.3 * beat);
+}
+
+// The zone now, over the characters (field.ts fieldFront): the ring, the flags and the crown.
+export function drawZoneMarks(v: View, z: WireDisc, colour: string): void {
+  const { ctx } = v;
+  const ink = look().ink;
   groundCircle(v, z.x, z.y, z.r);
   ctx.strokeStyle = ink;
   ctx.lineWidth = 5;
@@ -92,8 +97,8 @@ function glow(v: View, z: WireDisc, colour: string, k: number): void {
 
 // The ring of flags, sized by the zone on screen, never smaller than a thumb's glance reads
 // (NIGHT 2026-11-19: on the phone they were hard to see). Each hangs with its tip on the ring,
-// never below it: the zone fits the walls exactly, so a flag hanging past the ring stood outside
-// the near fence (2026-11-19, p12).
+// never below it, and the side ones are moved in by their half width: the zone fits the walls
+// exactly, so a flag reaching past the ring stood outside the fence (2026-11-19, p12, p18).
 function flags(v: View, z: WireDisc, colour: string): void {
   const { ctx } = v;
   const rx = z.r * v.scale;
@@ -104,7 +109,7 @@ function flags(v: View, z: WireDisc, colour: string): void {
   ctx.strokeStyle = look().ink;
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2;
-    const x = sx(v, z.x + Math.cos(a) * z.r);
+    const x = sx(v, z.x + Math.cos(a) * z.r) - Math.cos(a) * w;
     const y = sy(v, z.y + Math.sin(a) * z.r) - 1.8 * w;
     ctx.beginPath();
     ctx.moveTo(x - w, y);

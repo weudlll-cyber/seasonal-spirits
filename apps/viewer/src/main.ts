@@ -31,6 +31,7 @@ import {
   drawClock,
   drawDecorInFront,
   drawField,
+  fieldFront,
   drawSky,
   drawSeasonAir,
   drawGhosts,
@@ -154,6 +155,7 @@ function frame(): void {
     fuse: latest ? fuseLeft(latest) : 1,
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),
+    front: fieldFront(view, latest),
   });
   drawDecorInFront(view, ground, ghosts, { nowMs: now, seasons: field.seasons });
   drawSeasonAir(view, field.seasons, now);

@@ -3,8 +3,11 @@
 // in the countdown) and its outer ring breaking off at a halving (breakoff.ts); hill and bomb a
 // rounded platform with a fence along the walls, in hill the zone ringed with bunting in the
 // season's colour and, in the countdown, its next place dashed (the server sends both discs,
-// protocol state.ts; zone.ts draws it). The season in play tints it and decorates it (season.ts,
-// season-decor.ts), never inside King's zones. The sky around it is sky.ts.
+// protocol state.ts; zone.ts draws it). The back fence and the zone's glow lie under the
+// characters; the zone's ring, flags and crown and the side and near fences stand over them,
+// and nothing of a character shows beyond those fences (fieldFront, 2026-11-19). The season in
+// play tints it and decorates it (season.ts, season-decor.ts), its trees never inside King's
+// zones. The sky around it is sky.ts.
 
 import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import {
@@ -16,15 +19,22 @@ import {
 } from '@seasonal-spirits/protocol';
 import type { BreakOff } from './breakoff.js';
 import { drawDecor } from './decor.js';
-import { FENCE_RISE, drawFence, drawGround, type OnScreen } from './island.js';
-import { clientConfig, liveConfig } from './modes.js';
+import {
+  BACK_FENCE,
+  FENCE_RISE,
+  NEAR_FENCE,
+  drawFence,
+  drawGround,
+  type OnScreen,
+} from './island.js';
+import { clientConfig, liveConfig, zoneOf } from './modes.js';
 import { look, seasonColour } from './palette.js';
 import { followSeason, type Seasons } from './season.js';
 import { drawSeasonOn } from './season-decor.js';
 import { shape } from './shape.js';
 import { drawFrontClouds } from './sky.js';
-import { VIEW_TILT, groundCircle, sx, sy, type Box, type View } from './view.js';
-import { drawNextZone, drawZone, zoneKeepOut } from './zone.js';
+import { VIEW_TILT, groundCircle, sx, sy, type Box, type Rect, type View } from './view.js';
+import { drawNextZone, drawZone, drawZoneMarks, zoneKeepOut } from './zone.js';
 
 const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
 // Before the first state: sumo's arena as it starts.
@@ -101,18 +111,46 @@ export function drawField(
   return ground;
 }
 
+// What of the field stands in front of the characters (ghosts.ts GhostStyle.front).
+export interface FieldFront {
+  clip: Rect; // the bodies are cut to it: nothing of a character beyond the side or near fence
+  draw: () => void; // over the bodies, under their labels
+}
+
+// Hill and bomb (owner 2026-11-19: characters stood over the fences, a full zone hid its
+// outline): over the bodies King's zone's ring, flags and crown, then the side and near fences —
+// every character inside the walls stands behind the near one —, the bodies cut at the side
+// and near walls; null in sumo.
+export function fieldFront(v: View, s: ServerState | undefined): FieldFront | null {
+  if (!walled(clientConfig(s?.mode ?? 0))) return null;
+  const box = playBox(s);
+  const zone = zoneOf(s);
+  return {
+    clip: {
+      left: sx(v, box.x - box.half),
+      top: 0,
+      right: sx(v, box.x + box.half),
+      bottom: sy(v, box.y + box.half),
+    },
+    draw: () => {
+      if (zone && s) drawZoneMarks(v, zone, seasonColour(s.season));
+      drawFence(v, box, box.half, NEAR_FENCE);
+    },
+  };
+}
+
 // A halving still comes (not the match end, not an open end, not the result pause).
 const ahead = (s: ServerState): boolean =>
   !(s.flags & (STATE_TO_END | STATE_OPEN_END | STATE_RESULT));
 
-// Hill and bomb: the fence; in hill the zone and, in the countdown before a halving, its next
-// place dashed.
+// Hill and bomb, under the characters: the back fence; in hill the zone's glow and, in the
+// countdown before a halving, its next place dashed.
 function drawWalled(
   v: View,
   s: ServerState | undefined,
   { box, nowMs }: { box: Box; nowMs: number },
 ): void {
-  drawFence(v, box, box.half);
+  drawFence(v, box, box.half, BACK_FENCE);
   if (!s?.area) return;
   drawZone(v, s.area, seasonColour(s.season), nowMs);
   if (s.next && s.countdownMs !== null && ahead(s))

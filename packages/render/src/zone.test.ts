@@ -10,8 +10,8 @@ import { recorder } from './canvas-recorder.js';
 import { FLOWERS, LANTERNS, PEBBLES, TREES, drawDecor, freeOf, spotOn } from './decor.js';
 import { onScreen } from './island.js';
 import { useShape } from './shape.js';
-import { fitBox, sy } from './view.js';
-import { drawZone, zoneKeepOut } from './zone.js';
+import { fitBox, sx, sy } from './view.js';
+import { drawZoneMarks, zoneKeepOut } from './zone.js';
 
 const hill = configFrom(DEFAULT_SETTINGS, 'hill');
 const C = hill.fieldSize / 2;
@@ -31,21 +31,26 @@ describe("King of the Season's zone", () => {
       fills.push(ctx.fillStyle);
     };
     Object.assign(ctx, { fill });
-    drawZone(v, { x: C - 300, y: C - 300, r: 200 }, '#3fa34d', 0);
+    drawZoneMarks(v, { x: C - 300, y: C - 300, r: 200 }, '#3fa34d');
     expect(fills).toContain('#FFC23C');
   });
 
-  it('hangs no flag below its ring: a zone fitting the walls keeps its flags inside the fence', () => {
+  it('hangs no flag past its ring: a zone fitting the walls keeps its flags inside the fence', () => {
     const r = recorder();
     const v = fitBox(r.ctx, 100, box);
+    const xs: number[] = [];
     const ys: number[] = [];
-    const lineTo = (_x: number, y: number): void => {
+    const lineTo = (x: number, y: number): void => {
+      xs.push(x);
       ys.push(y);
     };
     Object.assign(r.ctx, { lineTo });
     const z = { x: C + box.half / 2, y: C + box.half / 2, r: box.half / 2 }; // touches two walls
-    drawZone(v, z, '#3fa34d', 0);
+    drawZoneMarks(v, z, '#3fa34d');
+    xs.push(...r.closed.map((p) => p.x)); // where each flag's path began: its left corner
     expect(Math.max(...ys)).toBeLessThanOrEqual(sy(v, z.y + z.r) + 1e-9);
+    expect(Math.max(...xs)).toBeLessThanOrEqual(sx(v, z.x + z.r) + 1e-9);
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(sx(v, z.x - z.r) - 1e-9);
   });
 });
 

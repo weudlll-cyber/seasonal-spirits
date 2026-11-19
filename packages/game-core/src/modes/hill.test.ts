@@ -1,7 +1,10 @@
 // Seasonal Sumo — "King of the Season": a point per second in the zone for the ghost and its
-// team, the zone's jump and halving at every halving (shown before it), the bounce credit.
+// team, the zone's jump and halving at every halving (shown before it) down to its smallest
+// radius (owner 2026-11-19), the bounce credit.
 
 import { describe, expect, it } from 'vitest';
+import { configFrom } from '../config.js';
+import { DEFAULT_SETTINGS } from '../settings.js';
 import { ghost, matchOf, modeCfg, runTo } from '../test-helpers.js';
 import { quarterCentre } from '../arena.js';
 import { areaOf } from './rules.js';
@@ -82,6 +85,21 @@ describe('hill zone', () => {
     expect([z.x > c.x, z.y < c.y]).toEqual([true, true]);
     expect(z.r).toBeCloseTo(cfg.hill.zoneRadius * cfg.hill.shrink, 6);
     expect(shown).toEqual(z);
+  });
+
+  it('never shrinks the zone below its smallest radius, also in the countdown before a jump', () => {
+    // Walls that stay, so only the smallest radius stops the shrinking: 225 → 160 → 150 → 150.
+    const c = configFrom({ ...DEFAULT_SETTINGS, hillClose: 0, zoneSmallest: 150 }, 'hill');
+    const m = matchOf(c, two);
+    const radii: number[] = [];
+    for (let k = 1; k <= 3; k++) {
+      runTo(m, k * c.seasonDurationMs - 1000);
+      expect(areaOf(c, m.state).next?.r).toBeGreaterThanOrEqual(150);
+      runTo(m, k * c.seasonDurationMs + 100);
+      radii.push(m.state.zone?.r ?? 0);
+    }
+    expect(radii[0]).toBeCloseTo(225 * c.hill.shrink, 6);
+    expect(radii.slice(1)).toEqual([150, 150]);
   });
 
   // Owner's defaults 2026-11-19 (half side 450, zone 225): the zone at its starting size fits

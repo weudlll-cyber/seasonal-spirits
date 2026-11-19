@@ -19,6 +19,7 @@ import {
   drawClock,
   drawDecorInFront,
   drawField,
+  fieldFront,
   drawRespawnBand,
   drawGhosts,
   drawMinimap,
@@ -170,6 +171,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       ownPulseMs: f.marks.pulseMs,
       zone: zoneOf(f.latest),
       scoreTop: scoreTopOf(f.latest),
+      front: fieldFront(view, f.latest),
     });
     drawDecorInFront(view, ground, f.ghosts, { nowMs: now, seasons: memory.seasons });
     drawSeasonAir(view, memory.seasons, now);

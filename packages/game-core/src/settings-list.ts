@@ -4,6 +4,7 @@
 // that are not settings are settings.ts. All placeholders the owner sets in the admin panel.
 
 import type { GameMode } from './config.js';
+import { smallestField, smallestZone, upToStep } from './crowd.js';
 import type { Setting, SettingGroup } from './settings.js';
 
 type Entry<K extends string> = Omit<Setting, 'group'> & { key: K };
@@ -27,6 +28,14 @@ export const ROTATION_SLOTS = [
   'King of the Season',
   'Halving Bomb',
 ] as const;
+
+// The starting ghost size and team size, and from the crowd they make (4 teams) King's smallest
+// field and zone (crowd.ts; owner 2026-11-19: 250 left 32 characters piled in a corner): with
+// radius 16 and 32 characters 260 and 130.
+const GHOST_RADIUS = 16;
+const TEAM_SIZE = 8;
+const KING_SMALLEST = upToStep(smallestField(GHOST_RADIUS, 4 * TEAM_SIZE), 10);
+const ZONE_SMALLEST = upToStep(smallestZone(GHOST_RADIUS, 4 * TEAM_SIZE), 5);
 
 // A number; its key keeps its literal type, so Settings has exactly the schema's keys.
 const n = <K extends string>(key: K, label: string, spec: Spec, more: More = {}): Entry<K> => {
@@ -59,8 +68,13 @@ const rotation = <K extends `rotation${number}`>(key: K, value: number): Entry<K
   choice(key, `Match ${key.slice('rotation'.length)}`, ROTATION_SLOTS, { ...NEXT, value });
 
 // The walls closing in at each halving (owner's decision 2026-11-19), King's and Halving Bomb's
-// own: the switch (`on` its starting value), the factor on the side, the smallest field.
-const closing = <M extends 'hill' | 'bomb'>(mode: M, modes: More, on: 0 | 1) =>
+// own: the switch (`on` its starting value), the factor on the side, the smallest field
+// (`smallest` its starting value).
+const closing = <M extends 'hill' | 'bomb'>(
+  mode: M,
+  modes: More,
+  { on, smallest }: { on: 0 | 1; smallest: number },
+) =>
   [
     choice(`${mode}Close`, 'Walls close in at each halving', SWITCH, {
       ...modes,
@@ -71,7 +85,7 @@ const closing = <M extends 'hill' | 'bomb'>(mode: M, modes: More, on: 0 | 1) =>
       ...modes,
       ...NEXT,
     }),
-    n(`${mode}Smallest`, 'Smallest field (half its side)', ['u', 150, 700, 10, 250], {
+    n(`${mode}Smallest`, 'Smallest field (half its side)', ['u', 150, 700, 10, smallest], {
       ...modes,
       ...NEXT,
     }),
@@ -85,7 +99,7 @@ export const SETTINGS = [
     n('maxSpeed', 'Walking speed', ['u/s', 120, 480, 10, 240]),
     n('acceleration', 'Acceleration', ['u/s²', 300, 3000, 50, 2000]), // owner's choice 2026-11-18
     n('friction', 'Friction (speed lost per second)', ['/s', 0.5, 6, 0.1, 2.5]),
-    n('ghostRadius', 'Ghost size (radius)', ['u', 8, 32, 1, 16], NEXT),
+    n('ghostRadius', 'Ghost size (radius)', ['u', 8, 32, 1, GHOST_RADIUS], NEXT),
   ]),
   ...inGroup('dash', [
     n('dashSpeed', 'Dash strength', ['u/s', 160, 1200, 10, 480]),
@@ -115,7 +129,7 @@ export const SETTINGS = [
     n('edgeEase', 'Edge easing after a halving', ['s', 0.5, 5, 0.1, 2]),
   ]),
   ...inGroup('flow', [
-    n('teamSize', 'Team size (seats bots fill)', ['seats', 1, 12, 1, 8], NEXT),
+    n('teamSize', 'Team size (seats bots fill)', ['seats', 1, 12, 1, TEAM_SIZE], NEXT),
     n('countdown', 'Countdown before a deadline', ['s', 3, 20, 1, 10], ENDGAME),
     n('resultPause', 'Result pause', ['s', 3, 60, 1, 15], NEXT),
     n('reconnectGrace', 'Reconnect grace', ['s', 0, 60, 1, 12]),
@@ -183,8 +197,9 @@ export const SETTINGS = [
       ...HILL,
       ...NEXT,
     }),
-    ...closing('hill', HILL, 1),
+    ...closing('hill', HILL, { on: 1, smallest: KING_SMALLEST }),
     n('zoneShrink', 'Each jump: zone radius ×', ['×', 0.5, 1, 0.01, 0.71], HILL),
+    n('zoneSmallest', 'Smallest zone (radius)', ['u', 50, 300, 5, ZONE_SMALLEST], HILL),
     n('hillRate', 'Points per second in the zone', ['pts/s', 1, 5, 1, 1], HILL),
     n('bounce', 'Bounce: pushed out within', ['s', 0.2, 3, 0.1, 1], HILL),
     n(
@@ -199,7 +214,7 @@ export const SETTINGS = [
     n('bombBlast', 'Blast interval', ['s', 10, 60, 5, 20], { ...BOMB, ...NEXT }),
     n('bombWall', 'Field size (half its side)', ['u', 400, 900, 10, 700], { ...BOMB, ...NEXT }),
     // Owner's choice 2026-11-19: off — closing in, the bomb changed hands about 6.7 times as often.
-    ...closing('bomb', BOMB, 0),
+    ...closing('bomb', BOMB, { on: 0, smallest: 250 }),
     n('bombCountdown', 'Countdown before a blast', ['s', 2, 10, 1, 5], BOMB),
     n('perBomb', 'Players per bomb', ['players', 2, 16, 1, 8], BOMB),
     n('passBack', 'No pass back for', ['s', 0, 3, 0.1, 1], BOMB),

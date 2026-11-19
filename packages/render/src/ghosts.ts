@@ -11,7 +11,9 @@
 // (no-return.ts); a dash
 // winding up glows with its line (windup.ts). A dash's start stretches the body, a landing or a
 // respawn squashes it, a landing kicks up dust, a hit shows a white star and the knocked one
-// slides with spiral eyes (moments.ts, effects.ts). Labels: ghost-labels.ts. What the drawing
+// slides with spiral eyes (moments.ts, effects.ts). In hill and bomb what stands in front of every
+// character — the zone's marks, the side and near fences — comes over the bodies, cut to the
+// walls, and under the labels (field.ts fieldFront). Labels: ghost-labels.ts. What the drawing
 // remembers between frames is trails.ts.
 
 import {
@@ -26,6 +28,7 @@ import { drawBomb, drawCarrier } from './bomb.js';
 import { inkWidth } from './character.js';
 import { drawDust, drawStar } from './effects.js';
 import { drawFall } from './fall.js';
+import type { FieldFront } from './field.js';
 import { drawLabels } from './ghost-labels.js';
 import { drawNoReturn } from './no-return.js';
 import {
@@ -65,6 +68,9 @@ export interface GhostStyle {
   // Only the top N scorers and the own ghost show a score, every ghost its name (Halving Bomb:
   // 3, scoreTopOf in modes.ts); null: every score shows.
   scoreTop?: number | null;
+  // Hill and bomb: the field in front of the characters and the walls the bodies are cut to
+  // (field.ts fieldFront); null or absent in sumo.
+  front?: FieldFront | null;
 }
 
 const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
@@ -91,8 +97,15 @@ export function drawGhosts(
   style: GhostStyle,
 ): PlacedLabel[] {
   const shown = ghosts.filter(visible).map((g) => aloft(v, g, style));
-  for (const d of shown) drawGround(v, d, style);
-  drawBodies(v, shown, style);
+  behindFront(v.ctx, style.front ?? null, () => {
+    for (const d of shown) drawGround(v, d, style);
+    drawBodies(v, shown, style);
+    // A hit's star stays with the bodies: under King's crown (p18, 2026-11-19: stars hid it).
+    for (const { g } of shown) {
+      const star = style.trails.moments.star(g.id, style.nowMs);
+      if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
+    }
+  });
   const labels = drawLabels(
     v,
     shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),
@@ -107,10 +120,29 @@ export function drawGhosts(
       drawDodged(v.ctx, at, t);
       bubbles.push(at);
     }
-    const star = style.trails.moments.star(g.id, style.nowMs);
-    if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
   }
   return labels;
+}
+
+// `bodies` drawn cut to the walls, then the field in front of them (field.ts fieldFront); in
+// sumo (no front) just the bodies.
+function behindFront(
+  ctx: CanvasRenderingContext2D,
+  front: FieldFront | null,
+  bodies: () => void,
+): void {
+  if (!front) {
+    bodies();
+    return;
+  }
+  const c = front.clip;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(c.left, c.top, c.right - c.left, c.bottom - c.top);
+  ctx.clip();
+  bodies();
+  ctx.restore();
+  front.draw();
 }
 
 // On the ground under a character: its shadow, its puffs, the ring of a take-off or a landing,

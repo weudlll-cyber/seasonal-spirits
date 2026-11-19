@@ -15,6 +15,7 @@ export interface HillConfig {
   zoneRadius: number; // the zone at the start
   bounceMs: number; // leaving the zone within this of an opponent's touch: a bounce for it
   shrink: number; // each jump: the zone's radius × this
+  smallest: number; // … never below this radius (it still fits its quarter; crowd.ts)
   pointsPerSecond: number; // each ghost in the zone
 }
 
@@ -214,6 +215,7 @@ function rulesFrom(s: Settings): Pick<GameConfig, 'hill' | 'bomb' | 'sumo' | 'ju
       zoneRadius: s.zoneRadius,
       bounceMs: ms(s.bounce),
       shrink: s.zoneShrink,
+      smallest: s.zoneSmallest,
       pointsPerSecond: s.hillRate,
     },
     bomb: {

@@ -134,13 +134,18 @@ or touch (browsers allow sound only after a gesture).
   outer ring breaks into ten chunks that tumble, drop and shrink towards the sea over a second
   (render `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
   the same island with a low wooden fence along its walls (the camera keeps room for the back
-  fence's posts below the band, render `cameraBox`); when the walls close in at a halving
+  fence's posts below the band, render `cameraBox`); the back fence stands behind every
+  character, the side and near fences in front of them, and nothing of a character shows beyond
+  the side or near fence — the bodies are cut at the walls on screen (owner 2026-11-19: they
+  overlapped the fence; render `fieldFront`, used by client and viewer); when the walls close in at a halving
   (2026-11-19) the server sends their half side in every state (`wall`), and the platform, the
   fence, the camera and the own ghost's prediction follow it (render `liveConfig`); in hill the zone (render `zone.ts`) is a
   soft glow in the season's colour, slowly pulsing, inside an ink ring in that colour, ringed by
   flags in it sized by the zone on screen (NIGHT 2026-11-19: on the phone they were hard to see),
   each hanging with its tip on the ring, never past it (the zone fits the walls exactly: flags
-  hanging below the ring stood outside the near fence, 2026-11-19), with a small gold crown in its middle (2026-11-19: it reads as a place to go); in the countdown
+  hanging below the ring stood outside the near fence, 2026-11-19), with a small gold crown in its middle (2026-11-19: it reads as a place to go) — the glow lies under the characters, the
+  ring, the flags and the crown stand over them, so a full zone still shows its outline and crown
+  (owner 2026-11-19; render `fieldFront`, `drawZoneMarks`); in the countdown
   a dashed ring with a faint fill shows where it jumps. No tree, pebble or lantern stands inside
   the zone, its next place or any quarter's middle at the zone's starting size
   (`OnScreen.keepOut`); the flat decoration — tufts, flowers, fallen leaves — grows anywhere

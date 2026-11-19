@@ -115,8 +115,9 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | `zoneRadius`   | Zone size at the start (radius)              | 100–500 u (step 5)      | 225     | hill  | next match |
 | `hillClose`    | Walls close in at each halving               | off / on                | on      | hill  | next match |
 | `hillCloseBy`  | Each halving: field side ×                   | 0.5–1 × (step 0.01)     | 0.71    | hill  | next match |
-| `hillSmallest` | Smallest field (half its side)               | 150–700 u (step 10)     | 250     | hill  | next match |
+| `hillSmallest` | Smallest field (half its side)               | 150–700 u (step 10)     | 260     | hill  | next match |
 | `zoneShrink`   | Each jump: zone radius ×                     | 0.5–1 × (step 0.01)     | 0.71    | hill  | now        |
+| `zoneSmallest` | Smallest zone (radius)                       | 50–300 u (step 5)       | 130     | hill  | now        |
 | `hillRate`     | Points per second in the zone                | 1–5 pts/s (step 1)      | 1       | hill  | now        |
 | `bounce`       | Bounce: pushed out within                    | 0.2–3 s (step 0.1)      | 1       | hill  | now        |
 | `botHold`      | Bots: hold a spot within (share of the zone) | 0.1–1 share (step 0.05) | 0.5     | hill  | now        |
@@ -160,3 +161,7 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 - `TICK_MS`: the bots' perception granularity, the server's tick
 - `SIM_TICK_MS`: the simulation's step, the server's tick
 - `TOUCH_SLACK`: a numerical tolerance: two touching ghosts lie exactly two radii apart
+- `FIELD_CROWDS`: the owner's rule (2026-11-19) for the smallest field's starting value; hillSmallest is the setting
+- `ZONE_CROWDS`: the owner's rule (2026-11-19) for the smallest zone's starting value; zoneSmallest is the setting
+- `GHOST_RADIUS`: the ghostRadius setting's starting value, named for King's crowd numbers
+- `TEAM_SIZE`: the teamSize setting's starting value, named for King's crowd numbers
