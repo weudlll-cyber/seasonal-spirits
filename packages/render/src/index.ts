@@ -22,6 +22,7 @@ export { readSetting, writeSetting } from './storage.js';
 export {
   clientConfig,
   fuseLeft,
+  liveConfig,
   matchName,
   modeOf,
   modeWords,

@@ -106,16 +106,19 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 
 ## King of the Season
 
-| Key          | Setting                                      | Range                   | Default | Modes | Applies    |
-| ------------ | -------------------------------------------- | ----------------------- | ------- | ----- | ---------- |
-| `hillMatch`  | Match length                                 | 60–600 s (step 15)      | 180     | hill  | next match |
-| `hillJump`   | Zone jump interval                           | 15–120 s (step 5)       | 45      | hill  | next match |
-| `hillWall`   | Field size (half its side)                   | 400–900 u (step 10)     | 450     | hill  | next match |
-| `zoneRadius` | Zone size at the start (radius)              | 100–500 u (step 5)      | 225     | hill  | next match |
-| `zoneShrink` | Each jump: zone radius ×                     | 0.5–1 × (step 0.01)     | 0.71    | hill  | now        |
-| `hillRate`   | Points per second in the zone                | 1–5 pts/s (step 1)      | 1       | hill  | now        |
-| `bounce`     | Bounce: pushed out within                    | 0.2–3 s (step 0.1)      | 1       | hill  | now        |
-| `botHold`    | Bots: hold a spot within (share of the zone) | 0.1–1 share (step 0.05) | 0.5     | hill  | now        |
+| Key            | Setting                                      | Range                   | Default | Modes | Applies    |
+| -------------- | -------------------------------------------- | ----------------------- | ------- | ----- | ---------- |
+| `hillMatch`    | Match length                                 | 60–600 s (step 15)      | 180     | hill  | next match |
+| `hillJump`     | Zone jump interval                           | 15–120 s (step 5)       | 45      | hill  | next match |
+| `hillWall`     | Field size (half its side)                   | 400–900 u (step 10)     | 450     | hill  | next match |
+| `zoneRadius`   | Zone size at the start (radius)              | 100–500 u (step 5)      | 225     | hill  | next match |
+| `hillClose`    | Walls close in at each halving               | off / on                | on      | hill  | next match |
+| `hillCloseBy`  | Each halving: field side ×                   | 0.5–1 × (step 0.01)     | 0.71    | hill  | next match |
+| `hillSmallest` | Smallest field (half its side)               | 150–700 u (step 10)     | 250     | hill  | next match |
+| `zoneShrink`   | Each jump: zone radius ×                     | 0.5–1 × (step 0.01)     | 0.71    | hill  | now        |
+| `hillRate`     | Points per second in the zone                | 1–5 pts/s (step 1)      | 1       | hill  | now        |
+| `bounce`       | Bounce: pushed out within                    | 0.2–3 s (step 0.1)      | 1       | hill  | now        |
+| `botHold`      | Bots: hold a spot within (share of the zone) | 0.1–1 share (step 0.05) | 0.5     | hill  | now        |
 
 ## Halving Bomb
 
@@ -124,6 +127,9 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 | `bombMatch`     | Match length                               | 60–600 s (step 15)    | 180     | bomb  | next match |
 | `bombBlast`     | Blast interval                             | 10–60 s (step 5)      | 20      | bomb  | next match |
 | `bombWall`      | Field size (half its side)                 | 400–900 u (step 10)   | 700     | bomb  | next match |
+| `bombClose`     | Walls close in at each halving             | off / on              | on      | bomb  | next match |
+| `bombCloseBy`   | Each halving: field side ×                 | 0.5–1 × (step 0.01)   | 0.71    | bomb  | next match |
+| `bombSmallest`  | Smallest field (half its side)             | 150–700 u (step 10)   | 250     | bomb  | next match |
 | `bombCountdown` | Countdown before a blast                   | 2–10 s (step 1)       | 5       | bomb  | now        |
 | `perBomb`       | Players per bomb                           | 2–16 players (step 1) | 8       | bomb  | now        |
 | `passBack`      | No pass back for                           | 0–3 s (step 0.1)      | 1       | bomb  | now        |

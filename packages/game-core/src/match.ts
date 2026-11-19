@@ -98,8 +98,11 @@ export class Match {
     // Sub-steps: every ghost moves a short way, then the contacts are resolved — so a ghost that
     // reaches another always touches it, however fast it goes (FIX 2026-11-17-3).
     const n = subSteps(this.cfg, dtMs);
+    // The walls where they are now: in hill and bomb they close in at a halving (arena.ts
+    // closeWalls) and push every ghost they reach inside with them.
+    const walls = walled(this.cfg) ? { ...this.cfg, wallHalf: s.arena.radius } : this.cfg;
     for (let i = 0; i < n; i++) {
-      for (const g of s.ghosts) this.move(g, intents.get(g.id) ?? IDLE, dtMs / n);
+      for (const g of s.ghosts) this.move(g, intents.get(g.id) ?? IDLE, { dtMs: dtMs / n, walls });
       collideGhosts(this.cfg, s);
       noteDodges(this.cfg, s);
     }
@@ -216,13 +219,14 @@ export class Match {
   }
 
   // One sub-step: a ghost on the arena runs (in the air it barely steers); a falling ghost
-  // drifts without control; an out ghost waits.
-  private move(g: Ghost, intent: Intent, dtMs: number): void {
+  // drifts without control; an out ghost waits. `walls`: the config with the walls now.
+  private move(g: Ghost, intent: Intent, step: { dtMs: number; walls: GameConfig }): void {
+    const { dtMs, walls } = step;
     if (g.phase === 'out') return;
     // Winding up, it holds: no steering until the dash goes.
     const held = g.phase === 'in' && !windingUp(g, this.s.elapsedMs) ? intent : IDLE;
     const dir = inAir(g, this.s.elapsedMs) ? airSteer(this.cfg, held) : held;
-    Object.assign(g, moveOnce(this.cfg, g, dir, dtMs));
+    Object.assign(g, moveOnce(walls, g, dir, dtMs));
   }
 }
 

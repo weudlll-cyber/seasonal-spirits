@@ -17,7 +17,7 @@ import {
 import type { BreakOff } from './breakoff.js';
 import { drawDecor } from './decor.js';
 import { FENCE_RISE, drawFence, drawGround } from './island.js';
-import { clientConfig } from './modes.js';
+import { clientConfig, liveConfig } from './modes.js';
 import { look, seasonColour } from './palette.js';
 import { followSeason, type Seasons } from './season.js';
 import { drawSeasonOn } from './season-decor.js';
@@ -33,10 +33,10 @@ const PLATFORM = 1.05; // the platform reaches a little past the walls: the fenc
 const CRACK_TICKS = 18;
 
 // The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
-// always on screen): the walled square, or sumo's arena as it is now — the server eases its edge
-// in after a halving, so the camera follows it in.
+// always on screen): the walled square as it is now, or sumo's arena as it is now — the server
+// eases the walls and the edge in after a halving, so the camera follows them in.
 export function playBox(s: ServerState | undefined): Box {
-  const cfg = clientConfig(s?.mode ?? 0);
+  const cfg = s ? liveConfig(s) : clientConfig(0);
   if (walled(cfg)) return { x: CENTRE, y: CENTRE, half: cfg.wallHalf };
   const a = s?.area ?? START;
   return { x: a.x, y: a.y, half: a.r };

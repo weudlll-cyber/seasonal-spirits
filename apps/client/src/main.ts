@@ -32,6 +32,7 @@ import {
   Trails,
   bindLookSwitch,
   clientConfig,
+  liveConfig,
   matchName,
   modeOf,
   useShape,
@@ -170,9 +171,9 @@ const AWAY = GHOST_FALLING | GHOST_OUT | GHOST_PROTECTED | GHOST_AIRBORNE;
 function drawnGhosts(now: number, target: number | null, ownId: number | null): GhostState[] {
   // The running match's rules (the server's tuning, or the defaults): for the prediction and the
   // drawing alike.
-  const mode = conn.buffer.at(-1)?.state.mode;
-  if (mode !== undefined) {
-    const cfg = clientConfig(mode, conn.tuning);
+  const newest = conn.buffer.at(-1)?.state;
+  if (newest) {
+    const cfg = liveConfig(newest, conn.tuning);
     prediction.useConfig(cfg);
     useShape(cfg);
   }

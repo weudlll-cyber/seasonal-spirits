@@ -54,11 +54,12 @@ export function drawNextZone(v: View, z: WireDisc, colour: string): void {
 }
 
 // Where no decoration stands in hill: the zone, its next place, and each quarter's middle at the
-// zone's starting size (wherever it can jump), on screen; nothing in the other modes.
+// zone's starting size, at most half the quarter's side (wherever it can jump), on screen;
+// nothing in the other modes.
 export function zoneKeepOut(v: View, box: Box, s: ServerState | undefined): Ellipse[] {
   const zone = zoneOf(s);
   if (!zone) return [];
-  const r = shape().hill.zoneRadius;
+  const r = Math.min(shape().hill.zoneRadius, box.half / 2);
   const quarters = ([0, 1, 2, 3] as const).map((t: Team) => ({
     ...quarterCentre(box, box.half, t),
     r,

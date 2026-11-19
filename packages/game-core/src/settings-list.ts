@@ -57,6 +57,25 @@ const choice = <K extends string>(
 const rotation = <K extends `rotation${number}`>(key: K, value: number): Entry<K> =>
   choice(key, `Match ${key.slice('rotation'.length)}`, ROTATION_SLOTS, { ...NEXT, value });
 
+// The walls closing in at each halving (owner's decision 2026-11-19), King's and Halving Bomb's
+// own: the switch, the factor on the side, the smallest field.
+const closing = <M extends 'hill' | 'bomb'>(mode: M, modes: More) =>
+  [
+    choice(`${mode}Close`, 'Walls close in at each halving', SWITCH, {
+      ...modes,
+      ...NEXT,
+      value: 1,
+    }),
+    n(`${mode}CloseBy`, 'Each halving: field side ×', ['×', 0.5, 1, 0.01, 0.71], {
+      ...modes,
+      ...NEXT,
+    }),
+    n(`${mode}Smallest`, 'Smallest field (half its side)', ['u', 150, 700, 10, 250], {
+      ...modes,
+      ...NEXT,
+    }),
+  ] as const;
+
 const inGroup = <E extends Entry<string>>(group: SettingGroup, entries: readonly E[]) =>
   entries.map((e) => ({ ...e, group }));
 
@@ -160,6 +179,7 @@ export const SETTINGS = [
       ...HILL,
       ...NEXT,
     }),
+    ...closing('hill', HILL),
     n('zoneShrink', 'Each jump: zone radius ×', ['×', 0.5, 1, 0.01, 0.71], HILL),
     n('hillRate', 'Points per second in the zone', ['pts/s', 1, 5, 1, 1], HILL),
     n('bounce', 'Bounce: pushed out within', ['s', 0.2, 3, 0.1, 1], HILL),
@@ -174,6 +194,7 @@ export const SETTINGS = [
     n('bombMatch', 'Match length', ['s', 60, 600, 15, 180], { ...BOMB, ...NEXT }),
     n('bombBlast', 'Blast interval', ['s', 10, 60, 5, 20], { ...BOMB, ...NEXT }),
     n('bombWall', 'Field size (half its side)', ['u', 400, 900, 10, 700], { ...BOMB, ...NEXT }),
+    ...closing('bomb', BOMB),
     n('bombCountdown', 'Countdown before a blast', ['s', 2, 10, 1, 5], BOMB),
     n('perBomb', 'Players per bomb', ['players', 2, 16, 1, 8], BOMB),
     n('passBack', 'No pass back for', ['s', 0, 3, 0.1, 1], BOMB),

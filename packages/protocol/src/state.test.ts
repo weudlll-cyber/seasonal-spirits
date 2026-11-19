@@ -36,6 +36,7 @@ function sample(ghosts: number): ServerState {
     teamScore: [12, 0, 33, 7],
     mode: 1,
     livesAtStart: 3,
+    wall: 319.5,
     area: { x: 1350, y: 650, r: 212.1 },
     next: { x: 1350, y: 1350, r: 150 },
     ghosts: Array.from({ length: ghosts }, (_, i) => ({
@@ -72,7 +73,7 @@ describe('state encoding', () => {
   });
 
   it('stays well under 1 KB with 32 ghosts', () => {
-    expect(encodedSize(32)).toBe(558);
+    expect(encodedSize(32)).toBe(560);
   });
 
   it('sends a missing disc as none (bomb has no arena and no zone)', () => {

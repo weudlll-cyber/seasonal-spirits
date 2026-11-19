@@ -3,7 +3,7 @@
 // and is a placeholder the owner sets with the admin panel; nothing here holds one.
 
 import type { Season } from './seasons.js';
-import { DEFAULT_SETTINGS, ROTATION_SLOTS, type Settings } from './settings.js';
+import { DEFAULT_SETTINGS, type Settings } from './settings.js';
 
 // The game mode of a match, chosen by the server per match (NIGHT 2026-11-17, piece 5):
 // "sumo" — push them off a shrinking disc; "hill" — King of the Season, hold the zone;
@@ -16,6 +16,15 @@ export interface HillConfig {
   bounceMs: number; // leaving the zone within this of an opponent's touch: a bounce for it
   shrink: number; // each jump: the zone's radius × this
   pointsPerSecond: number; // each ghost in the zone
+}
+
+// The walls of King and Halving Bomb closing in at each halving (owner's decision 2026-11-19):
+// the half side becomes max(smallest, half × factor), never larger than it was (arena.ts
+// closeWalls). Sumo has no walls: closed off there.
+export interface WallsConfig {
+  close: boolean;
+  factor: number; // each halving: the half side × this
+  smallest: number; // half side the walls never close past
 }
 
 export interface BombConfig {
@@ -96,7 +105,8 @@ export interface GameConfig {
   seasonDurationMs: number;
   startSeason: Season;
   fieldSize: number;
-  wallHalf: number; // hill and bomb: half the side of the walled square around the middle
+  wallHalf: number; // hill and bomb: half the side of the walled square around the middle at the start
+  walls: WallsConfig;
   arenaRadius: number; // at the start; every halving shrinks it (sumo.shrink)
   arenaShrinkMs: number; // how long the edge takes to ease in after a halving
   ghostRadius: number;
@@ -141,9 +151,22 @@ export function configFrom(s: Settings, mode: GameMode): GameConfig {
       season: s.sumoSeason,
       countdown: s.countdown,
       wall: FIELD_SIZE / 2,
+      walls: { close: false, factor: 1, smallest: FIELD_SIZE / 2 },
     },
-    hill: { match: s.hillMatch, season: s.hillJump, countdown: s.countdown, wall: s.hillWall },
-    bomb: { match: s.bombMatch, season: s.bombBlast, countdown: s.bombCountdown, wall: s.bombWall },
+    hill: {
+      match: s.hillMatch,
+      season: s.hillJump,
+      countdown: s.countdown,
+      wall: s.hillWall,
+      walls: { close: s.hillClose === 1, factor: s.hillCloseBy, smallest: s.hillSmallest },
+    },
+    bomb: {
+      match: s.bombMatch,
+      season: s.bombBlast,
+      countdown: s.bombCountdown,
+      wall: s.bombWall,
+      walls: { close: s.bombClose === 1, factor: s.bombCloseBy, smallest: s.bombSmallest },
+    },
   }[mode];
   return {
     mode,
@@ -152,6 +175,7 @@ export function configFrom(s: Settings, mode: GameMode): GameConfig {
     startSeason: 'spring', // the website's season clock later
     fieldSize: FIELD_SIZE,
     wallHalf: times.wall,
+    walls: times.walls,
     arenaRadius: s.arenaRadius,
     arenaShrinkMs: ms(s.edgeEase),
     ghostRadius: s.ghostRadius,
@@ -243,40 +267,6 @@ function botsFrom(s: Settings): BotConfig {
     formStep: s.botFormStep,
     formEveryMs: ms(s.botFormEvery),
   };
-}
-
-// One match of the rotation (settings rotation1…6, ROTATION_SLOTS): its mode and, for sumo, the
-// variant — or the Sumo variant setting's choice ("Sumo", which may alternate).
-export interface RotationSlot {
-  mode: GameMode;
-  variant: VariantChoice;
-}
-
-// The rotation slots that name one game outright, by their index in ROTATION_SLOTS; slot 1,
-// "Sumo", takes the Sumo variant setting's choice; slot 0 is off.
-const GAME_SLOTS: Readonly<Record<number, RotationSlot>> = {
-  2: { mode: 'sumo', variant: 'points' },
-  3: { mode: 'sumo', variant: 'last-standing' },
-  4: { mode: 'hill', variant: 'points' },
-  5: { mode: 'bomb', variant: 'points' },
-};
-
-// The matches in turn, from the rotation settings; every slot off: Sumo alone.
-export function rotationOf(s: Settings): RotationSlot[] {
-  const own: RotationSlot = { mode: 'sumo', variant: VARIANT_CHOICES[s.variant] ?? 'points' };
-  const picked = [s.rotation1, s.rotation2, s.rotation3, s.rotation4, s.rotation5, s.rotation6]
-    .map((v) => (v === 1 ? own : GAME_SLOTS[v]))
-    .filter((x): x is RotationSlot => x !== undefined);
-  return picked.length > 0 ? picked : [own];
-}
-
-// The games the admin panel can start next, by their rotation slot's name (Sumo · Points, Sumo ·
-// Last One Standing, King of the Season, Halving Bomb).
-export const STARTABLE_GAMES: readonly string[] = ROTATION_SLOTS.filter((_, i) => i in GAME_SLOTS);
-
-// The game a name stands for; null for anything that is not one of STARTABLE_GAMES.
-export function startableGame(name: unknown): RotationSlot | null {
-  return GAME_SLOTS[(ROTATION_SLOTS as readonly unknown[]).indexOf(name)] ?? null;
 }
 
 // The coordinate space every position lives in (the wire carries it as u16): not a play size.

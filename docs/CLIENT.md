@@ -128,7 +128,9 @@ or touch (browsers allow sound only after a gesture).
   outer ring breaks into ten chunks that tumble, drop and shrink towards the sea over a second
   (render `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
   the same island with a low wooden fence along its walls (the camera keeps room for the back
-  fence's posts below the band, render `cameraBox`); in hill the zone (render `zone.ts`) is a
+  fence's posts below the band, render `cameraBox`); when the walls close in at a halving
+  (2026-11-19) the server sends their half side in every state (`wall`), and the platform, the
+  fence, the camera and the own ghost's prediction follow it (render `liveConfig`); in hill the zone (render `zone.ts`) is a
   soft glow in the season's colour, slowly pulsing, inside an ink ring in that colour, ringed by
   flags in it sized by the zone on screen (NIGHT 2026-11-19: on the phone they were hard to see),
   with a small gold crown in its middle (2026-11-19: it reads as a place to go); in the countdown

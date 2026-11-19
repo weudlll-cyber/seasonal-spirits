@@ -84,6 +84,17 @@ export function clientConfig(index: number, tuning: Settings | null = null): Gam
   return configFrom(tuning ?? DEFAULT_SETTINGS, modeOf(index));
 }
 
+// The running match's config as the client knows it, with the walls where the newest state has
+// them: in hill and bomb they close in at a halving (2026-11-19) — the prediction's bounds, the
+// fence and the camera follow them.
+export function liveConfig(
+  s: { mode: number; wall: number },
+  tuning: Settings | null = null,
+): GameConfig {
+  const cfg = clientConfig(s.mode, tuning);
+  return s.wall > 0 ? { ...cfg, wallHalf: s.wall } : cfg;
+}
+
 // The bombs' fuse: the share of the season left — 1 just handed out … 0 going off.
 export function fuseLeft(s: { mode: number; seasonLeftMs: number }): number {
   return s.seasonLeftMs / clientConfig(s.mode).seasonDurationMs;

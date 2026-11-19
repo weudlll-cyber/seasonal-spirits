@@ -3,6 +3,7 @@
 // types.
 
 export * from './config.js';
+export * from './rotation.js';
 export * from './seasons.js';
 export * from './types.js';
 export { Match, type Roster } from './match.js';

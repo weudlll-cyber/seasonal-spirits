@@ -1,7 +1,8 @@
 // Seasonal Sumo — the arena: a disc in the middle of the field. At every halving its radius
 // shrinks (× sumo.shrink, 0.71 by default: half the area) and the edge eases in over arenaShrinkMs; a ghost whose centre is
 // outside the edge falls. Also where ghosts start and respawn: each team on its own quarter.
-// In the walled modes the arena is the disc inside the walls and never halves (no falls).
+// In the walled modes the arena's radius is the walls' half side: with walls.close on they close
+// in at each halving the same way (closeWalls), and nobody falls.
 
 import { walled, type GameConfig } from './config.js';
 import { distance } from './geometry.js';
@@ -26,6 +27,21 @@ export function scaleArena(a: Arena, factor: number, atMs: number, carry: boolea
   a.target = a.target * factor;
   a.shrinkFromMs = atMs;
   a.carry = carry;
+}
+
+// The walls' half side after the next halving (hill and bomb): × walls.factor, never below
+// walls.smallest and never larger than now; unchanged with walls.close off.
+export function wallsAfter(cfg: GameConfig, half: number): number {
+  const w = cfg.walls;
+  return w.close ? Math.min(half, Math.max(w.smallest, half * w.factor)) : half;
+}
+
+// The halving in hill and bomb: the walls ease in to wallsAfter, like sumo's edge; the ghosts are
+// not carried — the walls push those they reach (Match.tick: the movement's bounds are the
+// walls now), so nobody falls, scores or is stunned by it.
+export function closeWalls(cfg: GameConfig, a: Arena, atMs: number): void {
+  const half = wallsAfter(cfg, a.target);
+  if (half !== a.target) scaleArena(a, half / a.target, atMs, false);
 }
 
 // After updateArena: while the edge carries them, every ghost on the arena moves by the same

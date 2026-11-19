@@ -32,9 +32,10 @@ function nudged(key: (typeof SETTINGS)[number]): Settings {
   return { ...DEFAULT_SETTINGS, [key.key]: up <= key.max ? up : key.default - key.step };
 }
 
-// Not settings, and not per mode: the coordinate space; sumo has no walls (its field's edge).
+// Not settings, and not per mode: the coordinate space; sumo has no walls (its field's edge), so
+// none close in.
 const FIXED: Record<GameMode, string[]> = {
-  sumo: ['.fieldSize', '.wallHalf'],
+  sumo: ['.fieldSize', '.wallHalf', '.walls.factor', '.walls.smallest'],
   hill: ['.fieldSize'],
   bomb: ['.fieldSize'],
 };

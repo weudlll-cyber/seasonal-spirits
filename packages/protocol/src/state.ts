@@ -2,7 +2,7 @@
 // One encoding only: viewer, client and probe decode it, and everything a client shows comes
 // from it. Seasons travel as their index in the real order (0 Spring … 3 Winter), the game
 // mode as its index in game-core's GAME_MODES (0 sumo, 1 hill, 2 bomb); the discs (the arena,
-// the zone) in tenths of a field unit.
+// the zone) and the walls' half side in tenths of a field unit.
 
 export interface GhostState {
   id: number; // 0..255
@@ -56,6 +56,9 @@ export interface ServerState {
   livesAtStart: number; // 0..255: every ghost's lives when the match began (the hearts)
   area: WireDisc | null; // drawn glowing: sumo's arena, the hill's zone; null in bomb
   next: WireDisc | null; // after the next halving: the dashed outline of its countdown
+  // Hill and bomb: half the side of the walled square now — the walls close in at a halving
+  // (2026-11-19); 0 in sumo (no walls).
+  wall: number;
   ghosts: GhostState[]; // up to 255
 }
 
@@ -76,11 +79,11 @@ export const STATE_OPEN_END = 32;
 // Header: tick u32 · serverMs u32 · matchMs u32 · season u8 · seasonNumber u8 ·
 // seasonLeftMs u32 · countdownMs u16 (0xffff = none) · flags u8 · nextMatchMs u16 ·
 // teamScore 4×u16 · mode u8 · area x, y, r 3×u16 · next x, y, r 3×u16 (tenths; r 0 = none)
-// · ghost count u8 · livesAtStart u8.
+// · ghost count u8 · livesAtStart u8 · wall u16 (tenths; 0 = none).
 // Ghost: id u8 · x u16 · y u16 · vx i16 · vy i16 · team u8 (bits 0–1 the team, bit 2 a
 // wind-up, bits 3–7 its direction in 32 steps) · score u16 · dashLeft u8 (20 ms steps) · flags
 // u8 · lives u8 · jumpLeft u8 (20 ms steps). All little endian.
-export const HEADER_BYTES = 46;
+export const HEADER_BYTES = 48;
 export const GHOST_BYTES = 16;
 const NO_COUNTDOWN = 0xffff;
 const DASH_STEP_MS = 20;
@@ -135,6 +138,7 @@ function writeHeader(v: DataView, s: ServerState): void {
   writeDisc(v, 38, s.next);
   v.setUint8(44, s.ghosts.length);
   v.setUint8(45, u8(s.livesAtStart));
+  v.setUint16(46, tenths(s.wall), true);
 }
 
 // A missing disc travels as zeros; a radius of 0 reads back as none.
@@ -194,6 +198,7 @@ function readHeader(v: DataView): Omit<ServerState, 'ghosts'> {
     teamScore: [team(0), team(1), team(2), team(3)],
     mode: v.getUint8(31),
     livesAtStart: v.getUint8(45),
+    wall: v.getUint16(46, true) / 10,
     area: readDisc(v, 32),
     next: readDisc(v, 38),
   };

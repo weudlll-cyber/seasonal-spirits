@@ -15,7 +15,8 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 
 | File                      | What it holds                                                                  |
 | ------------------------- | ------------------------------------------------------------------------------ |
-| `src/config.ts`           | The config's shape, built from the settings (`configFrom`), the rotation       |
+| `src/config.ts`           | The config's shape, built from the settings (`configFrom`)                     |
+| `src/rotation.ts`         | The rotation (`rotationOf`) and the games the admin panel starts               |
 | `src/settings.ts`         | The settings schema: reader, now-or-next, the numbers that are not settings    |
 | `src/settings-list.ts`    | Every setting: label, unit, range, step, default, modes, now or next           |
 | `src/settings-doc.ts`     | docs/SETTINGS.md generated from the schema (`pnpm settings:doc`)               |
@@ -27,7 +28,7 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/modes/hill.ts`       | King of the Season: the zone, its points, its jump and halving, bounces        |
 | `src/modes/bomb.ts`       | Halving Bomb: points, the bombs, passing, the explosion                        |
 | `src/geometry.ts`         | Distances, `stepGhost` in `subSteps` (momentum, walls), `dashVelocity`         |
-| `src/arena.ts`            | The arena disc, its halving and easing, start and respawn spots, quarters      |
+| `src/arena.ts`            | The arena disc, its halving and easing, the walls closing in, spots, quarters  |
 | `src/collisions.ts`       | Ghosts bump: apart, bounce, the dash hit's throw, the in-season push, credit   |
 | `src/falls.ts`            | Falling off, the credit, out time, respawn                                     |
 | `src/recap.ts`            | The recap's awards, two per mode (`awardsOf`)                                  |
@@ -72,15 +73,23 @@ countdown.
   missing; `nowPart` gives a running match the values that apply at once. `settings.test.ts`
   fails when a number of a config comes from no setting, or when game-core holds another numeric
   constant than those listed in `NOT_SETTINGS` (with the reason each is not gameplay).
-- **Walls** (hill, bomb). A square of `wallHalf` around the middle; `stepGhost` keeps a ghost
-  inside it and takes the speed into a wall away (the speed along it stays). The arena there is
-  the disc inside the walls and never halves; nobody falls.
+- **Walls** (hill, bomb). A square of `wallHalf` around the middle at the start; `stepGhost`
+  keeps a ghost inside it and takes the speed into a wall away (the speed along it stays). The
+  arena's radius there is the walls' half side. With `walls.close` (King's and Halving Bomb's
+  "Walls close in at each halving", on by default; owner's decision 2026-11-19) every halving
+  sets it to max(`walls.smallest`, half × `walls.factor`) — 0.71 and 250 by default, never larger
+  than it was (`arena.ts` `wallsAfter`, `closeWalls`) — and the walls ease in over the edge
+  easing time like sumo's edge. The match moves every ghost against the walls where they are now
+  (`Match.tick`), so a ghost they reach is pushed in with them: nobody falls, nobody is credited,
+  nobody is stunned. Bots aim at the arena as it is (wander points, the middle), so they follow
+  the walls. With the switch off the walls never move and a seed plays as before.
 - **King of the Season** (`modes/hill.ts`). A zone (`hill.zoneRadius` 225 at the start, in walls
   of half side 450 — the owner's choice 2026-11-19; at these sizes it fills its quarter exactly)
-  sits in the quarter of the season in season, half way to its corner (`quarterCentre`). Every
+  sits in the quarter of the season in season, half way to its corner (`quarterCentre`), its
+  radius never more than half the walls' half side (it fits its quarter). Every
   ghost in it earns 1 point per second for itself and its team (`scoreMs`, whole ms, so the sum
-  is exact). At each halving it jumps to the new season's quarter and its area halves (225 → 160
-  → 113 → 80);
+  is exact). At each halving it jumps to the new season's quarter of the walls as they will be and its area
+  halves (225 → 160 → 113 → 80; with the walls closing in 450 → 320 → 250 the zone still fits);
   during the countdown the clients draw where it goes (`areaOf(...).next`). A ghost that leaves
   the zone within `hill.bounceMs` (1 s) of an opponent's dash into it is a bounce for that
   opponent — its own dash, not a plain push (NIGHT 2026-11-18; `lastTouch.dash`); a jump is

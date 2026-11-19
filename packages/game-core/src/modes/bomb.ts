@@ -2,9 +2,10 @@
 // bomb.pointsPerSecond. One bomb per bomb.playersPerBomb players goes to random players; a
 // carrier passes it on by touching an opponent that holds none — never a teammate, and not back
 // to the one that just gave it before bomb.passBackMs. At every halving all bombs go off: each
-// carrier loses bomb.blastShare of its points (half by default), and new bombs go to random
-// players.
+// carrier loses bomb.blastShare of its points (half by default), new bombs go to random players,
+// and the walls may close in (arena.ts closeWalls; 2026-11-19).
 
+import { closeWalls } from '../arena.js';
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';
 import { inAir } from '../jump.js';
@@ -29,6 +30,7 @@ export function bombRules(cfg: GameConfig): ModeRules {
         if (g) g.scoreMs = Math.round(g.scoreMs * (1 - cfg.bomb.blastShare));
       }
       s.bombs = handOut(cfg, s, rng);
+      closeWalls(cfg, s.arena, s.elapsedMs);
     },
     after: (s, dtMs) => {
       for (const g of s.ghosts) g.scoreMs += dtMs * cfg.bomb.pointsPerSecond;

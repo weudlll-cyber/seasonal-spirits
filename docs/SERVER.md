@@ -83,7 +83,7 @@ field checked, at most 64 players and 8 awards, at most 4096 characters; THREATS
 
 One binary encoding, little endian:
 
-- **Header, 46 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
+- **Header, 48 bytes:** tick u32, server ms u32, match ms u32, current season u8 (0 Spring …
   3 Winter; the next is +1), season number within the match u8, ms left in the season u32,
   countdown to the next deadline u16 (0xffff = none; the 10 s before every halving and the
   match end), flags u8 (a halving in this tick, result, the next deadline is the match end
@@ -92,7 +92,8 @@ One binary encoding, little endian:
   u16 (during the result), the mode's score per team 4×u16, the game mode u8 (its index in
   game-core's `GAME_MODES`), the disc that halves now — sumo's arena, the hill's zone — and
   after the next halving, each x, y, r u16 (tenths of a field unit; r 0 = none, as in bomb),
-  ghost count u8, every ghost's lives at the match start u8 (the hearts).
+  ghost count u8, every ghost's lives at the match start u8 (the hearts), the walls' half side
+  now u16 (tenths; hill and bomb — they close in at a halving, 2026-11-19; 0 in sumo).
 - **Per ghost, 16 bytes:** id u8, x u16, y u16, speed vx and vy i16 (units/s: the own ghost's
   prediction starts from it), team u8 (bits 0–1 the team, bit 2 a dash winding up, bits 3–7
   its direction in 32 steps), the mode's score u16, ms to its next dash u8 (in 20 ms
@@ -100,7 +101,7 @@ One binary encoding, little endian:
   bomb, in the air, a dash passed under it in the air in this tick — "Dodged!"), lives left u8 (0: out until the next match), ms to its next jump u8 (20 ms
   steps: the Jump button's ring).
 
-At 32 ghosts: 558 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
+At 32 ghosts: 560 bytes, every tick — under 1 KB (Seasonal Spirits' coins and offers are
 gone; the probe runs of docs/PHASE0.md were measured with older layouts).
 
 ## Bounds and checks

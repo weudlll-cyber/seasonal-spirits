@@ -2,14 +2,16 @@
 // One place turns the core's numbers into what clients show: the game mode, per ghost its
 // position, speed, score, lives, the time to its next dash and jump, its phase, whether it is in
 // the air and its bomb, the disc
-// that halves (sumo's arena, the hill's zone) now and after the next halving, the score per
-// team, sumo's variant and what the clock runs to (a halving, the end, or nothing).
+// that halves (sumo's arena, the hill's zone) now and after the next halving, the walls of hill
+// and bomb where they are now, the score per team, sumo's variant and what the clock runs to (a
+// halving, the end, or nothing).
 
 import {
   GAME_MODES,
   SEASONS,
   areaOf,
   inAir,
+  walled,
   nextDeadline,
   scoreOf,
   windAngle,
@@ -72,8 +74,14 @@ export function toWire(s: Readonly<MatchState>, ctx: WireContext): WireState {
     livesAtStart: s.livesAtStart,
     area: area.now,
     next: area.next,
+    wall: wallOf(ctx.cfg, s),
     ghosts: s.ghosts.map((g) => ghostOnWire(ctx, s, g)),
   };
+}
+
+// Hill and bomb: the walls' half side now (the arena's radius there); sumo has none.
+function wallOf(cfg: GameConfig, s: Readonly<MatchState>): number {
+  return walled(cfg) ? s.arena.radius : 0;
 }
 
 function ghostOnWire(ctx: WireContext, s: Readonly<MatchState>, g: Ghost): GhostState {

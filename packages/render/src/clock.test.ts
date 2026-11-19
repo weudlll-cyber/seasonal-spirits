@@ -26,6 +26,7 @@ const state = (over: Partial<ServerState>): ServerState => ({
   teamScore: [0, 0, 0, 0],
   mode: 0,
   livesAtStart: 3,
+  wall: 0,
   area: { x: 1000, y: 1000, r: 900 },
   next: { x: 1000, y: 1000, r: 636.4 },
   ghosts: [],
