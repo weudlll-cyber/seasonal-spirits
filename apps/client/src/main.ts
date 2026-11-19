@@ -34,22 +34,22 @@ import {
   clientConfig,
   matchName,
   modeOf,
-  seasonColour,
-  seasonName,
   useShape,
 } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
 import { Help, variantRule } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
-import { Hearts, OUT_LINE, heartsOf, ownOut } from './lives.js';
-import { OwnMarker, fellLine } from './own-marker.js';
+import { Hearts, heartsOf, ownOut } from './lives.js';
+import { OwnMarker } from './own-marker.js';
 import { OwnPrediction, type ServerOwn } from './prediction.js';
 import { ResultScreen } from './result.js';
 import { NO_MARKS, drawScene, type Drawn, type Frame } from './scene.js';
 import { ScoreBoard } from './scores.js';
 import { StartScreen } from './start.js';
 import { Sound } from './sound.js';
+import { TeamLine } from './team-line.js';
+import { ZoneHint } from './zone-hint.js';
 
 // Render this far behind the newest state: one server tick, so other ghosts are drawn about a
 // ghost radius from where they are (FIX 2026-11-17-2: at 100 ms they lagged 2.7 radii at a
@@ -77,7 +77,8 @@ bindLookSwitch(el('look', HTMLButtonElement));
 const sound = new Sound();
 bindMute(() => sound.toggleMute(), sound.muted);
 
-const teamLine = el('team');
+const teamLine = new TeamLine();
+const zoneHint = new ZoneHint();
 const memory = { trails: new Trails(), breaks: new BreakOff(), seasons: new Seasons() };
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
@@ -211,27 +212,6 @@ function snapshot(now: number): Frame {
   };
 }
 
-// "You are Team <Season>" behind the team's colour dot, for players only (owner's play test 2026-11-15).
-// On a narrow phone "You are " is hidden (index.html), so the team's name is never cut off.
-// While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3);
-// out of lives, that it watches until the next match (LIVES 2026-11-17).
-function showTeam(team: number | null, backInMs: number | null, out: boolean): void {
-  teamLine.hidden = team === null;
-  if (team !== null && (out || backInMs !== null)) {
-    teamLine.textContent = out ? OUT_LINE : fellLine(backInMs ?? 0);
-    teamLine.style.setProperty('--team', seasonColour(team));
-    delete teamLine.dataset.team;
-    return;
-  }
-  if (team === null || teamLine.dataset.team === String(team)) return;
-  const lead = document.createElement('span');
-  lead.className = 'lead';
-  lead.textContent = 'You are ';
-  teamLine.replaceChildren(lead, `Team ${seasonName(team)}`);
-  teamLine.style.setProperty('--team', seasonColour(team));
-  teamLine.dataset.team = String(team);
-}
-
 // The own lives as the band shows them (hearts) and whether it is out until the next match;
 // nothing while watching.
 function livesOf(f: Frame): { hearts: boolean[] | null; out: boolean } {
@@ -244,7 +224,8 @@ function draw(f: Frame): Drawn {
   if (f.latest) help.show(modeOf(f.latest.mode), matchName(f.latest), variantRule(f.latest));
   const drawn = drawScene(ctx, f, memory);
   const lives = livesOf(f);
-  showTeam(f.ownTeam, f.marks.backInMs, lives.out);
+  teamLine.show(f.ownTeam, f.marks.backInMs, lives.out);
+  zoneHint.update(f.latest, f.own, f.playing);
   hearts.update(lives.hearts);
   const own = f.latest?.ghosts.find((g) => g.id === f.ownId);
   // Out of lives: nothing to steer until the next match, so no buttons. Jump only while the

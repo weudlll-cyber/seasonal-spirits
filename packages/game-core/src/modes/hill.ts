@@ -12,7 +12,7 @@ import type { Disc, Ghost, MatchState, Team, Vec } from '../types.js';
 import type { ModeRules } from './rules.js';
 
 function zoneFor(cfg: GameConfig, s: Readonly<MatchState>, season: Season, r: number): Disc {
-  const p = quarterCentre(cfg, s.arena, SEASONS.indexOf(season) as Team);
+  const p = quarterCentre(s.arena.centre, s.arena.target, SEASONS.indexOf(season) as Team);
   return { x: p.x, y: p.y, r };
 }
 

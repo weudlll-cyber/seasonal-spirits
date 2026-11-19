@@ -128,10 +128,14 @@ or touch (browsers allow sound only after a gesture).
   outer ring breaks into ten chunks that tumble, drop and shrink towards the sea over a second
   (render `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
   the same island with a low wooden fence along its walls (the camera keeps room for the back
-  fence's posts below the band, render `cameraBox`); in hill the zone is tinted grass inside an
-  ink ring in the season's colour, ringed by flags in that colour sized by the zone on screen
-  (NIGHT 2026-11-19: on the phone they were hard to see), and in the countdown a dashed ring
-  shows where it jumps.
+  fence's posts below the band, render `cameraBox`); in hill the zone (render `zone.ts`) is a
+  soft glow in the season's colour, slowly pulsing, inside an ink ring in that colour, ringed by
+  flags in it sized by the zone on screen (NIGHT 2026-11-19: on the phone they were hard to see),
+  with a small gold crown in its middle (2026-11-19: it reads as a place to go); in the countdown
+  a dashed ring with a faint fill shows where it jumps. No decoration stands inside the zone, its
+  next place or any quarter's middle at the zone's starting size (`OnScreen.keepOut`). While the
+  own ghost stands outside the zone, a pill under the team scores says "Stand in the zone to
+  score" (client `zone-hint.ts`).
 - **The season on the island** (render `season.ts`, `season-decor.ts`, NIGHT 2026-11-19): the
   season in play, as the HUD names it, colours the grass, the tufts and the tree crowns (Light
   and Dark each; the palette's tint, render `palette.ts` `tintLook`) and decorates the island —

@@ -40,7 +40,8 @@ const PROFILE: readonly (readonly [number, number])[] = [
 ];
 const ROOTS = [-0.7, -0.38, 0.28, 0.62]; // where roots hang from the dirt edge
 
-// The ground on screen: centre, half width and half depth in pixels, and the dirt's height.
+// The ground on screen: centre, half width and half depth in pixels, and the dirt's height; and
+// where no decoration stands (decor.ts), ellipses in pixels.
 export interface OnScreen {
   cx: number;
   cy: number;
@@ -48,6 +49,15 @@ export interface OnScreen {
   ry: number;
   dirt: number;
   square: boolean;
+  keepOut?: readonly Ellipse[];
+}
+
+// An ellipse on screen: centre and half axes in pixels.
+export interface Ellipse {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
 }
 
 export function onScreen(v: View, g: Ground): OnScreen {

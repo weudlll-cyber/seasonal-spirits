@@ -349,6 +349,23 @@
       #hearts .heart.lost {
         background: #ffffff;
       }
+      /* King of the Season: "Stand in the zone to score" while the own ghost is outside the zone
+         (zone-hint.ts), a small pill under the team scores in the team line's style. */
+      #hint {
+        position: fixed;
+        top: 108px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 1px 10px;
+        background: var(--panel);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: var(--drop);
+        pointer-events: none;
+      }
       #notice {
         position: fixed;
         top: 168px; /* below the banner (#announce) */
@@ -527,6 +544,7 @@
         </div>
       </div>
       <div id="scores" aria-label="Per team" hidden></div>
+      <div id="hint" role="status" hidden></div>
     </div>
     <div id="help" role="dialog" aria-label="How to play" hidden></div>
     <div id="start" aria-hidden="true">

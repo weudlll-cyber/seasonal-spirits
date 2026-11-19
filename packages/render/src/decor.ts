@@ -2,7 +2,8 @@
 // few flowers, two small trees at the back, two pebbles, and at night three small lanterns with a
 // warm halo — at fixed places in the ground's own units, so they scale with the arena and shrink
 // with it at a halving; the tufts and the tree crowns sway a little (NIGHT 2026-11-19; still with
-// reduced motion). Pure decoration: nothing here touches a ghost.
+// reduced motion). None stands in the ground's keep-out (King's zones and where they can jump,
+// 2026-11-19). Pure decoration: nothing here touches a ghost.
 
 import type { OnScreen } from './island.js';
 import { ambientMs } from './motion.js';
@@ -23,7 +24,7 @@ const TUFTS = [
   [0.3, -0.7],
   [-0.05, 0.05],
 ] as const;
-const FLOWERS = [
+export const FLOWERS = [
   [-0.3, 0.2],
   [0.15, -0.35],
   [0.62, -0.3],
@@ -48,6 +49,20 @@ export const TREES = [
 // A place (u, w) on the top in pixels.
 export function spotOn(o: OnScreen, p: readonly [number, number, ...unknown[]]): [number, number] {
   return [o.cx + p[0] * o.rx * 0.82, o.cy + p[1] * o.ry * 0.82];
+}
+
+// Whether a place (u, w) is clear of the ground's keep-out (OnScreen.keepOut).
+export function standsFree(o: OnScreen, p: readonly [number, number, ...unknown[]]): boolean {
+  const [x, y] = spotOn(o, p);
+  return (o.keepOut ?? []).every((e) => ((x - e.x) / e.rx) ** 2 + ((y - e.y) / e.ry) ** 2 > 1);
+}
+
+// The places of `list` clear of the keep-out, with their index in it.
+export function freeOf<T extends readonly [number, number, ...unknown[]]>(
+  o: OnScreen,
+  list: readonly T[],
+): { p: T; i: number }[] {
+  return list.map((p, i) => ({ p, i })).filter(({ p }) => standsFree(o, p));
 }
 
 // A decoration's size: `k` of the ground's half width, between `min` and `max` px.
@@ -75,7 +90,7 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
   ctx.lineWidth = 2;
   const tuft = size(0.035, 3, 10);
   ctx.beginPath();
-  for (const p of TUFTS) {
+  for (const { p } of freeOf(o, TUFTS)) {
     const [x, y] = at(p);
     const sway = Math.sin(t * 1.7 + p[0] * 4) * tuft * 0.3;
     for (const lean of [-0.6, 0, 0.6]) {
@@ -87,17 +102,17 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
   ctx.strokeStyle = l.ink;
   ctx.lineWidth = 1.5;
   const petal = size(0.014, 2, 5);
-  FLOWERS.forEach((p, i) => {
+  for (const { p, i } of freeOf(o, FLOWERS)) {
     const [x, y] = at(p);
     ctx.fillStyle = l.flowers[i % l.flowers.length] ?? l.cloud;
     ctx.beginPath();
     ctx.arc(x, y, petal, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-  });
+  }
   ctx.fillStyle = l.pebble;
   const pebble = pebbleSize(o);
-  for (const p of PEBBLES) {
+  for (const { p } of freeOf(o, PEBBLES)) {
     const [x, y] = at(p);
     ctx.beginPath();
     ctx.ellipse(x, y, pebble, pebble * 0.6, 0, 0, Math.PI * 2);
@@ -105,7 +120,12 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
     ctx.stroke();
   }
   trees(ctx, o, t);
-  if (l.night) lanterns(ctx, LANTERNS.map(at), size(0.03, 3, 8));
+  if (l.night)
+    lanterns(
+      ctx,
+      freeOf(o, LANTERNS).map(({ p }) => at(p)),
+      size(0.03, 3, 8),
+    );
 }
 
 // The two trees, their crowns swaying a little (`t` seconds).
@@ -113,7 +133,7 @@ function trees(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
   const l = look();
   ctx.lineWidth = 2.5;
   ctx.strokeStyle = l.ink;
-  TREES.forEach((tree, i) => {
+  for (const { p: tree, i } of freeOf(o, TREES)) {
     const [x, y] = spotOn(o, tree);
     const crown = crownOf(o, i, t);
     ctx.fillStyle = l.roots;
@@ -126,7 +146,7 @@ function trees(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
     ctx.arc(crown.x, crown.y, crown.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-  });
+  }
 }
 
 // Small lanterns on posts, each in a warm halo.

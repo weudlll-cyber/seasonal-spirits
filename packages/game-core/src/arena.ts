@@ -69,10 +69,13 @@ const at = (a: Readonly<Arena>, angle: number, r: number): Vec => ({
   y: a.centre.y + Math.sin(angle) * r,
 });
 
-// The middle of a team's (or its season's) quarter of the walled square: on the diagonal, half
-// way to the corner — the hill's zone sits there.
-export function quarterCentre(cfg: GameConfig, a: Readonly<Arena>, team: Team): Vec {
-  return at(a, teamAngle(team), cfg.wallHalf * Math.SQRT2 * 0.5);
+// The middle of a team's (or its season's) quarter of a walled square around `centre` (half its
+// side `half`): on the diagonal, half way to the corner — the hill's zone sits there; the client
+// keeps its decoration off it (render field.ts).
+export function quarterCentre(centre: Vec, half: number, team: Team): Vec {
+  const angle = teamAngle(team);
+  const r = half * Math.SQRT2 * 0.5;
+  return { x: centre.x + Math.cos(angle) * r, y: centre.y + Math.sin(angle) * r };
 }
 
 // The start: each team's ghosts spread over its quarter on a ring at startSpread of the

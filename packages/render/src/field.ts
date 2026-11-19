@@ -3,8 +3,8 @@
 // in the countdown) and its outer ring breaking off at a halving (breakoff.ts); hill and bomb a
 // rounded platform with a fence along the walls, in hill the zone ringed with bunting in the
 // season's colour and, in the countdown, its next place dashed (the server sends both discs,
-// protocol state.ts). The season in play tints it and decorates it (season.ts, season-decor.ts).
-// The sky around it is sky.ts.
+// protocol state.ts; zone.ts draws it). The season in play tints it and decorates it (season.ts,
+// season-decor.ts), never inside King's zones. The sky around it is sky.ts.
 
 import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import {
@@ -24,6 +24,7 @@ import { drawSeasonOn } from './season-decor.js';
 import { shape } from './shape.js';
 import { drawFrontClouds } from './sky.js';
 import { VIEW_TILT, groundCircle, sx, sy, type Box, type View } from './view.js';
+import { drawNextZone, drawZone, zoneKeepOut } from './zone.js';
 
 const CENTRE = DEFAULT_CONFIG.fieldSize / 2;
 // Before the first state: sumo's arena as it starts.
@@ -72,10 +73,13 @@ export function drawField(
   breaks.observe(walls ? null : (s?.area ?? START), nowMs, shape().sumo.shrink);
   breaks.draw(v, nowMs, 'behind');
   const r = walls ? box.half * PLATFORM : box.half;
-  const ground = drawGround(v, { x: box.x, y: box.y, r, square: walls });
+  const ground = {
+    ...drawGround(v, { x: box.x, y: box.y, r, square: walls }),
+    keepOut: zoneKeepOut(v, box, s),
+  };
   drawDecor(v.ctx, ground, nowMs);
   drawSeasonOn(v.ctx, ground, seasons, nowMs);
-  if (walls) drawWalled(v, s, box);
+  if (walls) drawWalled(v, s, { box, nowMs });
   else if (s?.next && ahead(s)) drawCrack(v, s.next, s.countdownMs === null ? null : nowMs);
   breaks.draw(v, nowMs, 'front');
   drawFrontClouds(v.ctx);
@@ -87,54 +91,16 @@ const ahead = (s: ServerState): boolean =>
 
 // Hill and bomb: the fence; in hill the zone and, in the countdown before a halving, its next
 // place dashed.
-function drawWalled(v: View, s: ServerState | undefined, box: Box): void {
+function drawWalled(
+  v: View,
+  s: ServerState | undefined,
+  { box, nowMs }: { box: Box; nowMs: number },
+): void {
   drawFence(v, box, box.half);
   if (!s?.area) return;
-  drawZone(v, s.area, seasonColour(s.season));
-  if (!s.next || s.countdownMs === null || !ahead(s)) return;
-  groundCircle(v, s.next.x, s.next.y, s.next.r);
-  v.ctx.setLineDash([12, 9]);
-  v.ctx.strokeStyle = seasonColour(s.season + 1);
-  v.ctx.lineWidth = 3;
-  v.ctx.stroke();
-  v.ctx.setLineDash([]);
-}
-
-// King of the Season's zone: tinted grass inside an ink ring with its colour on it, ringed by a
-// string of flags in its colour — the flags sized by the zone on screen, never smaller than a
-// thumb's glance reads (NIGHT 2026-11-19: on the phone they were hard to see).
-function drawZone(v: View, z: WireDisc, colour: string): void {
-  const { ctx } = v;
-  const ink = look().ink;
-  groundCircle(v, z.x, z.y, z.r);
-  ctx.globalAlpha = 0.4;
-  ctx.fillStyle = colour;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 5;
-  ctx.stroke();
-  ctx.strokeStyle = colour;
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
-  const rx = z.r * v.scale;
-  const w = Math.max(5, Math.min(9, rx / 9)); // half a flag's width, px
-  const flags = Math.max(8, Math.min(40, Math.round((2 * Math.PI * rx) / (3.2 * w))));
-  ctx.fillStyle = colour;
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = ink;
-  for (let i = 0; i < flags; i++) {
-    const a = (i / flags) * Math.PI * 2;
-    const x = sx(v, z.x + Math.cos(a) * z.r);
-    const y = sy(v, z.y + Math.sin(a) * z.r) - 2;
-    ctx.beginPath();
-    ctx.moveTo(x - w, y);
-    ctx.lineTo(x + w, y);
-    ctx.lineTo(x, y + 1.8 * w);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
+  drawZone(v, s.area, seasonColour(s.season), nowMs);
+  if (s.next && s.countdownMs !== null && ahead(s))
+    drawNextZone(v, s.next, seasonColour(s.season + 1));
 }
 
 // Where the next halving breaks the island: a dashed crack with small ticks across it; in the
