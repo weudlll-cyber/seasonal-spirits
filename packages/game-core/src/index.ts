@@ -7,7 +7,7 @@ export * from './rotation.js';
 export * from './seasons.js';
 export * from './types.js';
 export { Match, type Roster } from './match.js';
-export { QUARTER, quarterCentre, teamAngle } from './arena.js';
+export { QUARTER, quarterCentre, teamAngle, wallsAfter } from './arena.js';
 export * from './settings.js';
 export { nextDeadline } from './standing.js';
 export { airSteer, inAir } from './jump.js';

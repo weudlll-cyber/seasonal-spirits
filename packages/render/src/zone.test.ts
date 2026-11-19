@@ -8,7 +8,7 @@ import { recorder } from './canvas-recorder.js';
 import { FLOWERS, PEBBLES, TREES, freeOf, spotOn } from './decor.js';
 import { onScreen } from './island.js';
 import { useShape } from './shape.js';
-import { fitBox } from './view.js';
+import { fitBox, sy } from './view.js';
 import { drawZone, zoneKeepOut } from './zone.js';
 
 const hill = configFrom(DEFAULT_SETTINGS, 'hill');
@@ -31,6 +31,19 @@ describe("King of the Season's zone", () => {
     Object.assign(ctx, { fill });
     drawZone(v, { x: C - 300, y: C - 300, r: 200 }, '#3fa34d', 0);
     expect(fills).toContain('#FFC23C');
+  });
+
+  it('hangs no flag below its ring: a zone fitting the walls keeps its flags inside the fence', () => {
+    const r = recorder();
+    const v = fitBox(r.ctx, 100, box);
+    const ys: number[] = [];
+    const lineTo = (_x: number, y: number): void => {
+      ys.push(y);
+    };
+    Object.assign(r.ctx, { lineTo });
+    const z = { x: C + box.half / 2, y: C + box.half / 2, r: box.half / 2 }; // touches two walls
+    drawZone(v, z, '#3fa34d', 0);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(sy(v, z.y + z.r) + 1e-9);
   });
 
   it('keeps every decoration off the zone, its next place and the four places it can jump to', () => {

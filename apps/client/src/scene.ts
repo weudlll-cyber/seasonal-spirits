@@ -44,6 +44,9 @@ import type { HudOnField } from './hud.js';
 // Pixels of the band under the season clock: the team line, the corner buttons and the team
 // scores (index.html #band). Every client has it, so no control sits on the field.
 export const BAND_HEIGHT = 68;
+// In King a row under the band for the hint pill (zone-hint.ts, index.html #hint), kept whether
+// it shows or not so the camera never jumps: the pill over the back fence hid it (2026-11-19).
+const HINT_ROW = 24;
 const MARGIN_PX = 8; // between the playing area (and a ghost on its edge) and the screen's edge
 
 export interface Frame {
@@ -98,10 +101,16 @@ export function camera(
   s: ServerState | undefined,
   zones: readonly Rect[],
 ): View {
-  return fitBox(ctx, CLOCK_HEIGHT + BAND_HEIGHT, cameraBox(s), {
+  return fitBox(ctx, fieldTop(s), cameraBox(s), {
     keepOut: zones,
     marginPx: MARGIN_PX,
   });
+}
+
+// Pixels from the screen's top to where the field may begin: below the clock and the band, and
+// in King below the hint's row.
+export function fieldTop(s: ServerState | undefined): number {
+  return CLOCK_HEIGHT + BAND_HEIGHT + (zoneOf(s) ? HINT_ROW : 0);
 }
 
 // The playing area's square on screen.
@@ -137,8 +146,7 @@ function viewOf(
     return { view: whole, follow: false };
   }
   const room = { keepOut: f.hud.zones, marginPx: MARGIN_PX };
-  const top = CLOCK_HEIGHT + BAND_HEIGHT;
-  const followed = followView(ctx, top, room, { s: f.latest, own: f.own });
+  const followed = followView(ctx, fieldTop(f.latest), room, { s: f.latest, own: f.own });
   return { view: memory.camera.ease(followed ?? whole, now), follow: followed !== null };
 }
 

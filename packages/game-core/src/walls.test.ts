@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { quarterCentre } from './arena.js';
 import { configFrom, type GameConfig, type GameMode } from './config.js';
 import { DEFAULT_SETTINGS, type Settings } from './settings.js';
-import { simulate } from './simulation.js';
+import { botRoster, simulate } from './simulation.js';
 import { ghost, matchOf, place, runTo } from './test-helpers.js';
 import { areaOf } from './modes/rules.js';
 import type { MatchState, Team } from './types.js';
@@ -105,6 +105,19 @@ describe('the King zone in closing walls', () => {
       expect(fits(s)).toBe(true);
       expect(shown).toEqual(s.zone);
     }
+  });
+
+  it('never has the zone or its next place outside the walls now, also while they move', () => {
+    const c = cfgOf('hill');
+    const outside: string[] = [];
+    simulate(c, 7, botRoster(8), (s) => {
+      const { x, y } = s.arena.centre;
+      for (const d of [s.zone, areaOf(c, s).next]) {
+        const far = d ? Math.max(Math.abs(d.x - x), Math.abs(d.y - y)) + d.r : 0;
+        if (far > s.arena.radius + 1e-9) outside.push(`${String(s.elapsedMs)} ms`);
+      }
+    });
+    expect(outside).toEqual([]);
   });
 });
 

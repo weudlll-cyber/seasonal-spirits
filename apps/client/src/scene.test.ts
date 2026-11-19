@@ -7,7 +7,7 @@ import type { ServerState } from '@seasonal-spirits/protocol';
 import { overlaps, type Rect } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { stickZone } from './hud.js';
-import { camera, playArea } from './scene.js';
+import { camera, fieldTop, playArea } from './scene.js';
 
 const C = DEFAULT_CONFIG.fieldSize / 2;
 const HALVED = DEFAULT_CONFIG.sumo.shrink; // a halving's radius factor (the setting)
@@ -43,6 +43,16 @@ const STATES: [string, ServerState][] = [
   ['hill', stateOf('hill', 300)],
   ['bomb', stateOf('bomb', 0)],
 ];
+
+describe("King's hint row", () => {
+  it('starts the field below the hint pill in King only, so the pill never covers the back fence', () => {
+    const ctx = { canvas: { width: 1280, height: 800 } } as CanvasRenderingContext2D;
+    const hill = stateOf('hill', 300);
+    expect(fieldTop(hill)).toBeGreaterThan(fieldTop(stateOf('sumo', 900)));
+    expect(fieldTop(stateOf('bomb', 0))).toBe(fieldTop(stateOf('sumo', 900)));
+    expect(camera(ctx, hill, []).top).toBe(fieldTop(hill));
+  });
+});
 
 describe('one camera for every mode', () => {
   for (const { width, height, touch } of SCREENS) {

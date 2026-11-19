@@ -88,6 +88,14 @@ does not show), about a third out of reach on the server at their closest. Done 
 has decided whether the client shows the giver's lock, the lock gets shorter, or the pass gets
 slack (a larger reach, or the reach measured from where the client saw it), or nothing changes.
 
+al. **The follow-up of 2026-11-19** (owner's decisions after the planner's look at the day
+chain's `p12`–`p16`): piece 1, the faults (the zone's flags outside the fence, the hint pill on
+the back fence, the minimap's contrast, the halving's words without the walls) — CLOSED; piece 2,
+the owner's choices (Bomb's walls off by default, zoom cap 1.5×, the bomb's return lock shown,
+King's small decor back); piece 3, King readable when the field is small (the smallest field and
+zone from the crowd, the zone's outline and crown over the characters, the fence in depth order).
+Done when: pieces 2 and 3 have landed with their screenshots looked at.
+
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
@@ -1042,6 +1050,14 @@ Done when: the spec is green ten runs in a row.
   (N = 10 each); about half of those without a pass were the return lock — commit "docs: the
   bomb pass touch, recounted".
 
+- 2026-11-19 — **Follow-up piece 1: faults from the planner's look** (OPEN al). The rule kept
+  the King zone inside the walls at every tick (new whole-match test); the drawing hung the flags
+  below the ring, outside the near fence — now their tips stand on the ring. The hint pill has a
+  row of its own under the band in King (`fieldTop`) and hides under a banner; the minimap's marks
+  are outlined in ink (3:1 at least on every season ground, tested); the halving's banner says
+  "and the walls close in" when they do (`halvingBanner`) — commit "fix: the zone inside the
+  fence, the hint's own row".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                                          | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                                                               | Evidence                                                                                       |
@@ -1439,3 +1455,6 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | play and readability specs, desktop and phone                                                                                                                                                                  | day piece 7 working tree                                                                                                                  | 4 passed, 1 skipped, 1 failed: phone play, arena 201.6 after the halving (OPEN ai)                                                                                                                                                                                   | this commit                                                                                    |
 | 2026-11-19 | bomb pass touch recounted per attempt: scripted carrier (browser-like picture, 250 ms reaction, chase with dash), Halving Bomb seeds 1–10 with the walls closing in, in-process server, LAN and +80 ms one way | `2c96e8c`                                                                                                                                 | LAN: 317 attempts, 92 passed, 225 not (97 no contact for 1 s, 119 bomb to another, 9 blast; return lock 111, out of reach 72, in the air 14, carrying 4, other 24); +80 ms: 296, 76 passed, 220 not (return lock 117, out of reach 64) (N 10 each)                   | `reports/night-2026-11-19.md`, "Bomb touch"                                                    |
 | 2026-11-19 | `pnpm dev --lan` restarted on the head; the client on the LAN address                                                                                                                                          | the day chain's head                                                                                                                      | HTTP 200; rotation sumo points → hill → bomb → sumo last-standing                                                                                                                                                                                                    | `reports/night-2026-11-19.md`, "Day chain"                                                     |
+| 2026-11-19 | unit: zone and its next place inside the walls over a whole seeded King match (seed 7, 8 bots); render zone, minimap, palette, modes; client scene                                                             | follow-up piece 1 working tree                                                                                                            | all green (the rule test green before the drawing fix: the rule was right)                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-19 | `pnpm verify:changed` (format, lint, typecheck, related tests)                                                                                                                                                 | follow-up piece 1 working tree                                                                                                            | green; 60 files, 353 tests                                                                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-19 | screenshots `p17-king-*` and `p17-king-first-*` on the dev server, desktop and phone, looked at                                                                                                                | follow-up piece 1 working tree                                                                                                            | flags inside the ring; hint in its row above the back fence, hidden under the banner; first halving's banner with the walls, third without (walls at 250); spring minimap readable; characters over the fences left for piece 3                                      | `reports/night-2026-11-19.md`, Follow-up piece 1                                               |

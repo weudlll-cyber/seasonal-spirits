@@ -350,10 +350,14 @@
         background: #ffffff;
       }
       /* King of the Season: "Stand in the zone to score" while the own ghost is outside the zone
-         (zone-hint.ts), a small pill under the team scores in the team line's style. */
+         (zone-hint.ts), a small pill in its own row under the band (the field starts below it,
+         scene.ts fieldTop) in the team line's style; hidden while a banner shows. */
+      #announce:not([hidden]) ~ #band #hint {
+        visibility: hidden;
+      }
       #hint {
         position: fixed;
-        top: 108px;
+        top: 105px;
         left: 50%;
         transform: translateX(-50%);
         white-space: nowrap;

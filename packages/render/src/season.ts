@@ -14,8 +14,9 @@ const FADE_MS = 1000;
 const PARTICLES = 28; // on a desktop; a phone-sized canvas half
 const BUTTERFLIES = 3;
 
-// The island's colours per season, Light then Dark: grass, tufts, the two tree crowns.
-const TINTS: readonly (readonly [SeasonTint, SeasonTint])[] = [
+// The island's colours per season, Light then Dark: grass, tufts, the two tree crowns (the
+// minimap's ink outlines are tested against each grass, palette.test.ts).
+export const TINTS: readonly (readonly [SeasonTint, SeasonTint])[] = [
   [
     { grass: '#8ED36A', tuft: '#5ea845', crowns: ['#6cbf4b', '#7fcf5a'] },
     { grass: '#4f8f5a', tuft: '#3c7a4a', crowns: ['#3f7d55', '#4a8a5a'] },

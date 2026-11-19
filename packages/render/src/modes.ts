@@ -1,22 +1,25 @@
 // Seasonal Sumo — what the clients say about each game mode, in one place: its name in the
 // band (sumo's with its variant), its halving in the countdown and the banner, its last-chance
 // call, what a ghost's score counts. The wire carries the mode as its index in game-core's
-// GAME_MODES, sumo's variant as STATE_LAST_STANDING.
+// GAME_MODES, sumo's variant as STATE_LAST_STANDING. In King and Bomb the halving's banner says
+// when the walls close in (2026-11-19).
 
 import {
   DEFAULT_SETTINGS,
   GAME_MODES,
   configFrom,
+  wallsAfter,
   type GameConfig,
   type GameMode,
   type Settings,
 } from '@seasonal-spirits/game-core';
 import { STATE_LAST_STANDING, type WireDisc } from '@seasonal-spirits/protocol';
+import { seasonName } from './palette.js';
 
 export interface ModeWords {
   name: string;
   countdown: (next: string) => string; // "HALVING in 0:07 — …"
-  banner: (season: string) => string; // "HALVING — …"
+  banner: (season: string, walls: boolean) => string; // "HALVING — …"; `walls`: they close in
   lastChance: string; // "LAST CHANCE — … · 0:05"
   unit: string; // what a score counts, plural
 }
@@ -32,14 +35,15 @@ const WORDS: Record<GameMode, ModeWords> = {
   hill: {
     name: 'King of the Season',
     countdown: (next) => `the zone jumps to ${next} and halves`,
-    banner: (season) => `the zone halves · ${season} is in season`,
+    banner: (season, walls) =>
+      `the zone halves${walls ? ' and the walls close in' : ''} · ${season} is in season`,
     lastChance: 'hold the zone',
     unit: 'points',
   },
   bomb: {
     name: 'Halving Bomb',
     countdown: () => 'the bomb goes off',
-    banner: () => 'the bomb goes off',
+    banner: (_, walls) => `the bomb goes off${walls ? ' and the walls close in' : ''}`,
     lastChance: 'pass the bomb',
     unit: 'points',
   },
@@ -82,6 +86,17 @@ export function matchName(s: { mode: number; flags: number }): string {
 // owner's live tuning when the server sent one (development only).
 export function clientConfig(index: number, tuning: Settings | null = null): GameConfig {
   return configFrom(tuning ?? DEFAULT_SETTINGS, modeOf(index));
+}
+
+// The halving's banner (after "HALVING — "): the mode's words, in King and Bomb saying when the
+// walls close in — in the halving's state they still stand where they were (the server eases
+// them in from there), so they close in when the walls after it are smaller than these.
+export function halvingBanner(
+  s: { mode: number; season: number; wall: number },
+  tuning: Settings | null,
+): string {
+  const walls = s.wall > 0 && wallsAfter(clientConfig(s.mode, tuning), s.wall) < s.wall;
+  return modeWords(s.mode).banner(seasonName(s.season), walls);
 }
 
 // The running match's config as the client knows it, with the walls where the newest state has

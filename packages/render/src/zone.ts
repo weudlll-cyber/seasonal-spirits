@@ -91,7 +91,9 @@ function glow(v: View, z: WireDisc, colour: string, k: number): void {
 }
 
 // The ring of flags, sized by the zone on screen, never smaller than a thumb's glance reads
-// (NIGHT 2026-11-19: on the phone they were hard to see).
+// (NIGHT 2026-11-19: on the phone they were hard to see). Each hangs with its tip on the ring,
+// never below it: the zone fits the walls exactly, so a flag hanging past the ring stood outside
+// the near fence (2026-11-19, p12).
 function flags(v: View, z: WireDisc, colour: string): void {
   const { ctx } = v;
   const rx = z.r * v.scale;
@@ -103,7 +105,7 @@ function flags(v: View, z: WireDisc, colour: string): void {
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2;
     const x = sx(v, z.x + Math.cos(a) * z.r);
-    const y = sy(v, z.y + Math.sin(a) * z.r) - 2;
+    const y = sy(v, z.y + Math.sin(a) * z.r) - 1.8 * w;
     ctx.beginPath();
     ctx.moveTo(x - w, y);
     ctx.lineTo(x + w, y);

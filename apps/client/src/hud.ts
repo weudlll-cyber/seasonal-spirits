@@ -3,12 +3,13 @@
 // owner's switch has it off — JUMP 2026-11-17), the HALVING and MATCH OVER announcements (a red
 // banner under the band, index.html) with their flash, and notices.
 
+import type { Settings } from '@seasonal-spirits/game-core';
 import {
   STATE_MATCH_END_EVENT,
   type GameAction,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { modeWords, seasonName, type Rect } from '@seasonal-spirits/render';
+import { halvingBanner, type Rect } from '@seasonal-spirits/render';
 
 const ANNOUNCE_MS = 3500;
 // "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
@@ -68,12 +69,10 @@ export class Hud {
 
   // An announcement on the banner under the band and a short flash at every deadline — the
   // mode's halving ("HALVING — the arena halves · <Season> is in season", "HALVING — the bomb
-  // goes off") or "MATCH OVER".
-  deadline(s: ServerState): void {
+  // goes off and the walls close in") or "MATCH OVER"; `tuning` the server's settings, if sent.
+  deadline(s: ServerState, tuning: Settings | null): void {
     const end = (s.flags & STATE_MATCH_END_EVENT) !== 0;
-    this.announce.textContent = end
-      ? 'MATCH OVER'
-      : `HALVING — ${modeWords(s.mode).banner(seasonName(s.season))}`;
+    this.announce.textContent = end ? 'MATCH OVER' : `HALVING — ${halvingBanner(s, tuning)}`;
     this.announce.hidden = false;
     this.flash.classList.remove('go');
     this.flash.getBoundingClientRect(); // a reflow restarts the CSS animation

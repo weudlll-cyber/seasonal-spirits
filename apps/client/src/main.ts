@@ -118,7 +118,7 @@ const conn = new Connection(spectate ? 'spectator' : 'player', {
     if (s.flags & STATE_HALVING_EVENT) halvings++;
     // The result screen waits until "MATCH OVER" has been seen.
     if (s.flags & STATE_MATCH_END_EVENT) resultFrom = performance.now() + MATCH_OVER_MS;
-    hud.deadline(s);
+    hud.deadline(s, conn.tuning);
   },
   onMode: (mode, reason) => {
     hud.say(

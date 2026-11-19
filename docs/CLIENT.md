@@ -139,11 +139,13 @@ or touch (browsers allow sound only after a gesture).
   fence, the camera and the own ghost's prediction follow it (render `liveConfig`); in hill the zone (render `zone.ts`) is a
   soft glow in the season's colour, slowly pulsing, inside an ink ring in that colour, ringed by
   flags in it sized by the zone on screen (NIGHT 2026-11-19: on the phone they were hard to see),
-  with a small gold crown in its middle (2026-11-19: it reads as a place to go); in the countdown
+  each hanging with its tip on the ring, never past it (the zone fits the walls exactly: flags
+  hanging below the ring stood outside the near fence, 2026-11-19), with a small gold crown in its middle (2026-11-19: it reads as a place to go); in the countdown
   a dashed ring with a faint fill shows where it jumps. No decoration stands inside the zone, its
   next place or any quarter's middle at the zone's starting size (`OnScreen.keepOut`). While the
-  own ghost stands outside the zone, a pill under the team scores says "Stand in the zone to
-  score" (client `zone-hint.ts`).
+  own ghost stands outside the zone, a pill says "Stand in the zone to score" (client
+  `zone-hint.ts`) in a row of its own under the band — in King the field starts 24 px lower
+  (`scene.ts` `fieldTop`), so the pill never covers the back fence — hidden while a banner shows.
 - **The season on the island** (render `season.ts`, `season-decor.ts`, NIGHT 2026-11-19): the
   season in play, as the HUD names it, colours the grass, the tufts and the tree crowns (Light
   and Dark each; the palette's tint, render `palette.ts` `tintLook`) and decorates the island —
@@ -232,8 +234,9 @@ or touch (browsers allow sound only after a gesture).
   player in King or Bomb, the camera follows the own character at the scale Sumo's starting arena
   has on that screen, clamped so it shows no more beyond the walls than the middle would, and
   eased over about 150 ms (scale, slant and offset; `CameraEase`); a minimap in the top right
-  corner below the band shows the walls now, King's zone or the bombs' carriers and the own dot
-  (render `minimap.ts`). Once the walls have closed in so far that the whole field fits at that
+  corner below the band shows the walls now, King's zone or the bombs' carriers and the own dot,
+  each outlined in ink so it reads on every season's ground (3:1 at least, render
+  `palette.test.ts`; render `minimap.ts`). Once the walls have closed in so far that the whole field fits at that
   scale, the whole field shows. The owner's setting "Phone: follow camera in walled modes"
   (Match flow, on, applies at once) switches it; desktop, landscape and spectators keep the whole
   field. There is no view choice.
@@ -245,7 +248,9 @@ or touch (browsers allow sound only after a gesture).
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena
-  halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; 3.5 s) on a red
+  halves · <Season> is in season" ("the zone halves · …", "the bomb goes off"; when the walls
+  close in "the zone halves and the walls close in · …", "the bomb goes off and the walls close
+  in", render `halvingBanner`; 3.5 s) on a red
   banner (#CC4858), slightly tilted, white text with an ink edge, right under the band at the top edge of
   the play area — never over its middle (NIGHT 2026-11-18) — with a short flash and its sound. The match end the same way: "LAST CHANCE — push them
   off" ("hold the zone", "pass the bomb"), then "MATCH OVER".
