@@ -1,9 +1,12 @@
-// Seasonal Sumo — the start and result screens' small scenes in the Sky Island look (NIGHT
-// 2026-11-19, piece 4): a floating island in a small canvas — on the start screen the four
-// seasons' characters idling on it, on the result screen a podium with the best three teams'
-// characters on their steps and a confetti burst in the winner's colour. The same island
-// (island.ts) and the same cached characters (sprites.ts) as the game; no second drawing path.
+// Seasonal Sumo — the start and result screens' scenes in the Sky Island look (NIGHT 2026-11-19,
+// piece 4): a floating island — on the start screen, over the whole screen, the game's own sky
+// (ambient.ts: sun or moon, drifting clouds, far islands, the sea band; 2026-11-19) with the four
+// seasons' characters idling on the island, on the result screen, in a small canvas, a podium
+// with the best three teams' characters on their steps and a confetti burst in the winner's
+// colour. The same sky, island (island.ts) and cached characters (sprites.ts) as the game; no
+// second drawing path.
 
+import { drawSky } from './ambient.js';
 import { drawGround } from './island.js';
 import { ambientMs } from './motion.js';
 import { look, seasonColour } from './palette.js';
@@ -24,11 +27,13 @@ function islandView(ctx: CanvasRenderingContext2D): View {
 // The idle bob of character `i` at `t` seconds.
 const bob = (i: number, t: number): number => Math.sin(t * 2.4 + i * 1.3) * 2;
 
-// The start screen: the island with the four seasons' characters idling on it.
+// The start screen over the whole screen: the game's sky, and below the title the island with the
+// four seasons' characters idling on it, at most a phone's width wide.
 export function drawStartScene(ctx: CanvasRenderingContext2D, nowMs: number): void {
   const { width, height } = ctx.canvas;
-  ctx.clearRect(0, 0, width, height);
-  const v = islandView(ctx);
+  drawSky(ctx, nowMs);
+  const scale = Math.min(width * 0.36, height * 0.22, 170);
+  const v: View = { ctx, scale, tilt: VIEW_TILT, ox: width / 2, oy: height * 0.52, top: 0 };
   drawGround(v, { x: 0, y: 0, r: 1, square: false });
   const t = ambientMs(nowMs) / 1000;
   const r = v.scale * 0.15;

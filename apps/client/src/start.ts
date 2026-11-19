@@ -1,6 +1,7 @@
 // Seasonal Sumo — the start screen (NIGHT 2026-11-19, piece 4): "Seasonal Party" over a small
-// floating island with the four seasons' characters idling on it (render podium.ts), while the
-// client connects and joins. It never blocks: no input waits on it, it lets every touch through,
+// floating island with the four seasons' characters idling on it, in the game's own sky — sun or
+// moon as the Light/Dark switch has it, drifting clouds, far islands, the sea band (2026-11-19;
+// render podium.ts) — while the client connects and joins. It never blocks: no input waits on it, it lets every touch through,
 // and it fades out once the first state is in and it has shown for a moment. There is no name
 // entry and no team choice — the server seats a player on a team (connection.ts).
 
@@ -18,7 +19,13 @@ export class StartScreen {
   // Once a frame: draws the island while shown; fades out when `ready` (a state is in).
   update(ready: boolean, nowMs: number): void {
     if (this.gone) return;
-    if (this.ctx) drawStartScene(this.ctx, nowMs);
+    const c = this.ctx;
+    if (c) {
+      // The whole screen, like the game's canvas.
+      if (c.canvas.width !== window.innerWidth) c.canvas.width = window.innerWidth;
+      if (c.canvas.height !== window.innerHeight) c.canvas.height = window.innerHeight;
+      drawStartScene(c, nowMs);
+    }
     if (!ready || nowMs - this.since < MIN_MS) return;
     this.gone = true;
     this.root.classList.add('gone');

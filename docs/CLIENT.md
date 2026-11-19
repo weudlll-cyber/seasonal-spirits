@@ -90,7 +90,9 @@ or touch (browsers allow sound only after a gesture).
 ## Screen
 
 - **Start screen** (`start.ts`, render `podium.ts`, NIGHT 2026-11-19): "Seasonal Party" in a
-  white pill over a small floating island with the four seasons' characters idling on it, and
+  white pill over a small floating island with the four seasons' characters idling on it (a small
+  bob), in the game's own sky over the whole screen — sun or moon as the Light/Dark switch has
+  it, drifting clouds, far islands, the sea band (render `drawSky`, 2026-11-19) — and
   "Joining the match …", while the client connects and joins; it lets every touch through and
   fades out once the first state is in and it has shown for 1.2 s. There is no name entry and no
   team choice: the server seats a player on a team.

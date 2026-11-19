@@ -437,8 +437,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 12px;
+        justify-content: space-around;
         background: var(--sky);
         pointer-events: none;
         transition: opacity 0.4s;
@@ -457,7 +456,12 @@
         border-radius: 999px;
         box-shadow: var(--drop);
       }
-      #start canvas,
+      /* The start screen's canvas fills the screen behind its title (start.ts). */
+      #start canvas {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+      }
       #podium {
         display: block;
         margin: 0 auto;
