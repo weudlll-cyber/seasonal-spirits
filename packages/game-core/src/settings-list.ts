@@ -16,6 +16,7 @@ const SUMO = { modes: ['sumo'] } as const;
 const HILL = { modes: ['hill'] } as const;
 const BOMB = { modes: ['bomb'] } as const;
 const ENDGAME = { modes: ['sumo', 'hill'] } as const;
+const WALLED = { modes: ['hill', 'bomb'] } as const;
 const NEXT = { apply: 'next' } as const;
 const SWITCH = ['off', 'on'] as const;
 export const ROTATION_SLOTS = [
@@ -118,6 +119,9 @@ export const SETTINGS = [
     n('countdown', 'Countdown before a deadline', ['s', 3, 20, 1, 10], ENDGAME),
     n('resultPause', 'Result pause', ['s', 3, 60, 1, 15], NEXT),
     n('reconnectGrace', 'Reconnect grace', ['s', 0, 60, 1, 12]),
+    // The client's camera, not a rule (2026-11-19): a portrait phone follows its own character in
+    // King and Bomb at Sumo's scale (apps/client follow.ts).
+    choice('phoneFollow', 'Phone: follow camera in walled modes', SWITCH, { ...WALLED, value: 1 }),
   ]),
   ...inGroup('bots', [
     n('botReactionMin', 'Reaction: fastest', ['s', 0.1, 1, 0.05, 0.25]),

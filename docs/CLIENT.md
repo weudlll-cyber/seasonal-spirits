@@ -24,6 +24,9 @@ Spirits' client is on `master`.
 | `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute |
 | `src/result.ts`            | Result screen: the podium, the mode's awards, scores per team and player, bridge  |
 | `src/start.ts`             | The start screen while the client joins                                           |
+| `src/follow.ts`            | The phone's follow camera in King and Bomb, eased                                 |
+| `src/team-line.ts`         | The band's team line: "You are Team …", the fall's countdown, out                 |
+| `src/zone-hint.ts`         | King's hint "Stand in the zone to score" while outside the zone                   |
 | `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                   |
 | `src/sound-events.ts`      | Which sounds a new state calls for                                                |
 | `src/config.ts`            | Bridge box on/off and its links                                                   |
@@ -216,7 +219,17 @@ or touch (browsers allow sound only after a gesture).
   surface, and the view turns steeper, up to `MAX_TILT` 0.9, to fill the height. The characters
   stay as large as the width allows: drawn larger than their body they would mislead about
   contact. In sumo it follows the arena's edge as the server eases it in after a halving, so
-  the smaller arena stays as large on screen. There is no view choice and no minimap.
+  the smaller arena stays as large on screen; in hill and bomb it follows the walls as they close
+  in. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
+  fitted only a portrait phone's width, the characters were tiny): on a portrait screen, for a
+  player in King or Bomb, the camera follows the own character at the scale Sumo's starting arena
+  has on that screen, clamped so it shows no more beyond the walls than the middle would, and
+  eased over about 150 ms (scale, slant and offset; `CameraEase`); a minimap in the top right
+  corner below the band shows the walls now, King's zone or the bombs' carriers and the own dot
+  (render `minimap.ts`). Once the walls have closed in so far that the whole field fits at that
+  scale, the whole field shows. The owner's setting "Phone: follow camera in walled modes"
+  (Match flow, on, applies at once) switches it; desktop, landscape and spectators keep the whole
+  field. There is no view choice.
 - **Result screen** (`result.ts`): over the result a podium on a small floating island —
   the winning team's character on the middle step, the second and third on the lower ones — with
   a confetti burst in the winner's colour (render `podium.ts`, NIGHT 2026-11-19), the same for

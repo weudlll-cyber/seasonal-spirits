@@ -1,8 +1,9 @@
 // Seasonal Sumo — one frame of the canvas: the sky, the whole playing area — the island —
-// fitted below the band, its ghosts and labels, the own ghost's marks (its pulse; its respawn
-// band while out), and the season clock. Returns what it drew, for the browser specs.
+// fitted below the band (on a portrait phone in King and Bomb the follow camera and its minimap,
+// follow.ts), its ghosts and labels, the own ghost's marks (its pulse; its respawn band while
+// out), and the season clock. Returns what it drew, for the browser specs.
 
-import type { Team } from '@seasonal-spirits/game-core';
+import type { Settings, Team } from '@seasonal-spirits/game-core';
 import {
   GHOST_BOT,
   GHOST_FALLING,
@@ -19,6 +20,7 @@ import {
   drawField,
   drawRespawnBand,
   drawGhosts,
+  drawMinimap,
   fitBox,
   fuseLeft,
   scoreTopOf,
@@ -35,6 +37,7 @@ import {
   type Trails,
   type View,
 } from '@seasonal-spirits/render';
+import { CameraEase, followView, followWanted } from './follow.js';
 import type { HudOnField } from './hud.js';
 
 // Pixels of the band under the season clock: the team line, the corner buttons and the team
@@ -52,6 +55,7 @@ export interface Frame {
   over: boolean;
   hud: HudOnField; // the HUD controls and thumb zones on the field (hud.ts)
   marks: OwnMarks;
+  tuning: Settings | null; // the server's settings in force (development), for the follow camera
 }
 
 // When the own ghost needs finding (own-marker.ts): its pulse, and while it is out after a
@@ -114,11 +118,32 @@ export function playArea(view: View, s: ServerState | undefined): Rect {
 // halving (render breakoff.ts) and the season's fade (render season.ts).
 export interface Memory extends FieldMemory {
   trails: Trails;
+  camera: CameraEase;
+}
+
+// The frame's view: the whole playing area (camera), or on a portrait phone in King and Bomb the
+// follow camera, eased (follow.ts); `follow` whether it follows the own character.
+function viewOf(
+  ctx: CanvasRenderingContext2D,
+  f: Frame,
+  memory: Memory,
+  now: number,
+): { view: View; follow: boolean } {
+  const whole = camera(ctx, f.latest, f.hud.zones);
+  const input = { s: f.latest, own: f.own, tuning: f.tuning };
+  if (!f.latest || !f.own || !followWanted(ctx, input)) {
+    memory.camera.reset();
+    return { view: whole, follow: false };
+  }
+  const room = { keepOut: f.hud.zones, marginPx: MARGIN_PX };
+  const top = CLOCK_HEIGHT + BAND_HEIGHT;
+  const followed = followView(ctx, top, room, { s: f.latest, own: f.own });
+  return { view: memory.camera.ease(followed ?? whole, now), follow: followed !== null };
 }
 
 export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memory): Drawn {
-  const view = camera(ctx, f.latest, f.hud.zones);
   const now = performance.now();
+  const { view, follow } = viewOf(ctx, f, memory, now);
   const { trails } = memory;
   drawSky(ctx, now, f.latest?.season);
   trails.record(f.ghosts, now);
@@ -139,6 +164,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
     });
     drawSeasonAir(view, memory.seasons, now);
   });
+  if (follow && f.latest) {
+    const at = { right: ctx.canvas.width - MARGIN_PX, top: view.top + MARGIN_PX };
+    drawMinimap(ctx, at, f.latest, { field: playBox(f.latest), ownId: f.ownId });
+  }
   drawClock(ctx, f.latest);
   return {
     barBottom: view.top,

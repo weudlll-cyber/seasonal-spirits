@@ -50,12 +50,13 @@ hand. Every number that shapes play; all placeholders the owner sets in the admi
 
 ## Match flow
 
-| Key              | Setting                     | Range               | Default | Modes            | Applies    |
-| ---------------- | --------------------------- | ------------------- | ------- | ---------------- | ---------- |
-| `teamSize`       | Team size (seats bots fill) | 1–12 seats (step 1) | 8       | sumo, hill, bomb | next match |
-| `countdown`      | Countdown before a deadline | 3–20 s (step 1)     | 10      | sumo, hill       | now        |
-| `resultPause`    | Result pause                | 3–60 s (step 1)     | 15      | sumo, hill, bomb | next match |
-| `reconnectGrace` | Reconnect grace             | 0–60 s (step 1)     | 12      | sumo, hill, bomb | now        |
+| Key              | Setting                              | Range               | Default | Modes            | Applies    |
+| ---------------- | ------------------------------------ | ------------------- | ------- | ---------------- | ---------- |
+| `teamSize`       | Team size (seats bots fill)          | 1–12 seats (step 1) | 8       | sumo, hill, bomb | next match |
+| `countdown`      | Countdown before a deadline          | 3–20 s (step 1)     | 10      | sumo, hill       | now        |
+| `resultPause`    | Result pause                         | 3–60 s (step 1)     | 15      | sumo, hill, bomb | next match |
+| `reconnectGrace` | Reconnect grace                      | 0–60 s (step 1)     | 12      | sumo, hill, bomb | now        |
+| `phoneFollow`    | Phone: follow camera in walled modes | off / on            | on      | hill, bomb       | now        |
 
 ## Bots — general
 

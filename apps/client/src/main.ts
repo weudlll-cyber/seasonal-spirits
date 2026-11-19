@@ -38,6 +38,7 @@ import {
   useShape,
 } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
+import { CameraEase } from './follow.js';
 import { Help, variantRule } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
@@ -80,7 +81,12 @@ bindMute(() => sound.toggleMute(), sound.muted);
 
 const teamLine = new TeamLine();
 const zoneHint = new ZoneHint();
-const memory = { trails: new Trails(), breaks: new BreakOff(), seasons: new Seasons() };
+const memory = {
+  trails: new Trails(),
+  breaks: new BreakOff(),
+  seasons: new Seasons(),
+  camera: new CameraEase(),
+};
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS }); // every ghost but the own one
 const prediction = new OwnPrediction();
 const result = new ResultScreen();
@@ -210,6 +216,7 @@ function snapshot(now: number): Frame {
     over: latest !== undefined && (latest.flags & STATE_RESULT) !== 0,
     hud: hudOnField(),
     marks: playing ? { pulseMs: marker.pulseMs(now), backInMs: marker.backInMs() } : NO_MARKS,
+    tuning: conn.tuning,
   };
 }
 

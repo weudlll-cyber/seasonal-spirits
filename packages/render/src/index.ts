@@ -12,6 +12,7 @@ export { drawSky } from './ambient.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 export { drawGhosts, type GhostStyle } from './ghosts.js';
 export { ghostRadiusPx } from './reach.js';
+export { MINIMAP_PX, drawMinimap } from './minimap.js';
 export { Trails } from './trails.js';
 export { shape, useShape } from './shape.js';
 export { PULSE_MS, drawRespawnBand } from './own.js';
