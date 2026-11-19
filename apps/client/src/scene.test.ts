@@ -1,6 +1,7 @@
 // Seasonal Sumo — the client's one camera (owner 2026-11-17: only half the arena showed): the
 // whole playing area on screen at desktop and phone sizes, before and after every halving, below
-// the band and clear of the Dash button and the joystick.
+// the band and clear of the Dash button and the joystick; the follow camera's minimap never under
+// the halving's banner.
 
 import {
   DEFAULT_CONFIG,
@@ -12,7 +13,7 @@ import type { ServerState } from '@seasonal-spirits/protocol';
 import { BODY_SHARE, CAP_FROM_PX, overlaps, type Rect } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { stickZone } from './hud.js';
-import { camera, fieldTop, playArea } from './scene.js';
+import { camera, fieldTop, minimapAt, playArea } from './scene.js';
 
 const C = DEFAULT_CONFIG.fieldSize / 2;
 const HALVED = DEFAULT_CONFIG.sumo.shrink; // a halving's radius factor (the setting)
@@ -64,6 +65,13 @@ describe("the hint's and the notice's row", () => {
       expect(fieldTop(s, false)).toBe(fieldTop(stateOf('hill', 300)));
       expect(camera(ctx, s, [], false).top).toBe(fieldTop(s, false));
     }
+  });
+});
+
+describe("the follow camera's minimap", () => {
+  it("stands under the band, and below the halving's banner while it shows", () => {
+    expect(minimapAt(390, 160, null)).toEqual({ right: 382, top: 168 });
+    expect(minimapAt(390, 160, 233).top).toBeGreaterThan(233);
   });
 });
 

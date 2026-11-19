@@ -1,6 +1,6 @@
 // Seasonal Sumo — the ground the ghosts stand on, as a floating island (Sky Island look,
 // 2026-11-18): sumo's arena is its round grass top, the walled modes' square a rounded platform
-// with a low wooden fence along its walls; under the top a dirt edge and a hanging rock body
+// (its fence stands on it, fence.ts); under the top a dirt edge and a hanging rock body
 // with strata and roots, tapering to three jagged points. Scales with the ground, so the rock
 // shrinks with the arena at a halving.
 
@@ -176,71 +176,4 @@ export function drawGround(v: View, g: Ground): OnScreen {
   ctx.fill();
   ctx.stroke();
   return o;
-}
-
-// How tall the fence's posts stand, in the walls' half side: the camera keeps room for them
-// above the back wall (field.ts cameraBox).
-export const FENCE_RISE = 0.07;
-
-// The fence's walls by index: the back one (behind every character), and the right, near and left
-// ones (in front of a character beside them: drawn over the bodies, field.ts fieldFront).
-export const BACK_FENCE = [0] as const;
-export const NEAR_FENCE = [1, 2, 3] as const;
-
-// The walled modes' low wooden fence along the walls `sides` (half side `half` field units):
-// posts and two rails, drawn on the ground's edge.
-export function drawFence(
-  v: View,
-  centre: { x: number; y: number },
-  half: number,
-  sides: readonly number[],
-): void {
-  const { ctx } = v;
-  const l = look();
-  const post = half * v.scale * FENCE_RISE; // px tall
-  const corners = [
-    [-1, -1],
-    [1, -1],
-    [1, 1],
-    [-1, 1],
-  ] as const;
-  const at = (i: number, t: number): [number, number] => {
-    const a = corners[i % 4] ?? corners[0];
-    const b = corners[(i + 1) % 4] ?? corners[0];
-    return [
-      sx(v, centre.x + half * (a[0] + (b[0] - a[0]) * t)),
-      sy(v, centre.y + half * (a[1] + (b[1] - a[1]) * t)),
-    ];
-  };
-  const posts = 8; // per wall
-  ctx.lineCap = 'round';
-  for (const [height, colour, width] of [
-    [0.45, l.ink, 6],
-    [0.45, l.roots, 3],
-    [0.85, l.ink, 6],
-    [0.85, l.roots, 3],
-  ] as const) {
-    ctx.strokeStyle = colour;
-    ctx.lineWidth = width;
-    ctx.beginPath();
-    for (const i of sides) {
-      const [x0, y0] = at(i, 0);
-      const [x1, y1] = at(i, 1);
-      ctx.moveTo(x0, y0 - post * height);
-      ctx.lineTo(x1, y1 - post * height);
-    }
-    ctx.stroke();
-  }
-  ctx.fillStyle = l.roots;
-  ctx.strokeStyle = l.ink;
-  ctx.lineWidth = 1.5;
-  for (const i of sides) {
-    for (let k = 0; k < posts; k++) {
-      const [x, y] = at(i, k / posts);
-      ctx.beginPath();
-      ctx.rect(x - 2.5, y - post, 5, post);
-      ctx.fill();
-      ctx.stroke();
-    }
-  }
 }

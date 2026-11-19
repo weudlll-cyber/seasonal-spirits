@@ -8,7 +8,8 @@ import type { ServerState } from '@seasonal-spirits/protocol';
 import { modeOf } from '@seasonal-spirits/render';
 import { el } from './hud.js';
 
-export const OUT_LINE = 'You are out — watching';
+// Short enough for a 390 px phone next to the hearts (p20, 2026-11-19: the longer one was cut).
+export const OUT_LINE = 'Out — watching';
 const MAX_HEARTS = 5; // up to this many lives one each; more: one and "×7"
 
 // The band's hearts: one per life, a lost one false — or, past MAX_HEARTS, one heart (false

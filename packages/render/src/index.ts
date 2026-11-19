@@ -8,10 +8,8 @@ export {
   CAP_FROM_PX,
   cameraBox,
   drawField,
-  fieldFront,
   halfPx,
   playBox,
-  type FieldFront,
   type FieldMemory,
   type Screen,
 } from './field.js';
@@ -22,7 +20,7 @@ export { BreakOff } from './breakoff.js';
 export { drawSky } from './ambient.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
 export { drawGhosts, type GhostStyle } from './ghosts.js';
-export { drawDecorInFront } from './decor-front.js';
+export { fieldStanding, type FieldStanding } from './standing.js';
 export { ghostRadiusPx } from './reach.js';
 export { MINIMAP_PX, drawMinimap } from './minimap.js';
 export { Trails } from './trails.js';

@@ -29,9 +29,8 @@ import {
   Trails,
   bindLookSwitch,
   drawClock,
-  drawDecorInFront,
   drawField,
-  fieldFront,
+  fieldStanding,
   drawSky,
   drawSeasonAir,
   drawGhosts,
@@ -156,9 +155,8 @@ function frame(): void {
     fuse: latest ? fuseLeft(latest) : 1,
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),
-    front: fieldFront(view, latest),
+    field: fieldStanding(view, latest, ground, { nowMs: now, seasons: field.seasons }),
   });
-  drawDecorInFront(view, ground, ghosts, { nowMs: now, seasons: field.seasons });
   drawSeasonAir(view, field.seasons, now);
   drawClock(ctx, latest, SWITCH_ROOM);
 

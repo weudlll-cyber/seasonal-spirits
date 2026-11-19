@@ -17,9 +17,8 @@ import {
   drawSky,
   drawSeasonAir,
   drawClock,
-  drawDecorInFront,
   drawField,
-  fieldFront,
+  fieldStanding,
   drawRespawnBand,
   drawGhosts,
   drawMinimap,
@@ -153,6 +152,16 @@ function viewOf(
   return { view: memory.camera.ease(followed ?? whole, now), follow: followed !== null };
 }
 
+// Where the follow camera's minimap stands: top right under the band, and below the halving's
+// banner (its bottom `banner`) while it shows, never under it (p20, 2026-11-19).
+export function minimapAt(
+  width: number,
+  top: number,
+  banner: number | null,
+): { right: number; top: number } {
+  return { right: width - MARGIN_PX, top: Math.max(top, banner ?? 0) + MARGIN_PX };
+}
+
 export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memory): Drawn {
   const now = performance.now();
   const { view, follow } = viewOf(ctx, f, memory, now);
@@ -173,13 +182,12 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       ownPulseMs: f.marks.pulseMs,
       zone: zoneOf(f.latest),
       scoreTop: scoreTopOf(f.latest),
-      front: fieldFront(view, f.latest),
+      field: fieldStanding(view, f.latest, ground, { nowMs: now, seasons: memory.seasons }),
     });
-    drawDecorInFront(view, ground, f.ghosts, { nowMs: now, seasons: memory.seasons });
     drawSeasonAir(view, memory.seasons, now);
   });
   if (follow && f.latest) {
-    const at = { right: ctx.canvas.width - MARGIN_PX, top: view.top + MARGIN_PX };
+    const at = minimapAt(ctx.canvas.width, view.top, f.hud.banner);
     drawMinimap(ctx, at, f.latest, { field: playBox(f.latest), ownId: f.ownId });
   }
   drawClock(ctx, f.latest);

@@ -1,11 +1,11 @@
 // Seasonal Sumo — what the season in play adds to the island's decoration (NIGHT 2026-11-19,
 // piece 3): blossoms on the tree crowns in spring, a few fallen leaves on the grass in autumn,
-// snow caps on the rim, the crowns and the pebbles in winter. Drawn over decor.ts at the same
-// places — the caps and blossoms only where their tree or pebble stands (decor.ts freeOf); the
-// fallen leaves lie flat and anywhere, like the flowers (owner 2026-11-19) —, faded in and out
-// with the season (season.ts).
+// snow caps on the rim, the crowns and the pebbles in winter, faded in and out with the season
+// (season.ts). The fallen leaves and the rim's snow lie flat with the ground (drawSeasonGround;
+// anywhere, like the flowers, owner 2026-11-19); the blossoms and caps go with their tree or
+// pebble in the depth order (standing.ts).
 
-import { PEBBLES, TREES, crownOf, freeOf, pebbleSize, sizeOn, spotOn } from './decor.js';
+import { crownOf, pebbleSize, sizeOn, spotOn } from './decor.js';
 import { outline, type OnScreen } from './island.js';
 import { ambientMs } from './motion.js';
 import { look } from './palette.js';
@@ -21,55 +21,95 @@ const FALLEN = [
 ] as const;
 const SNOW = '#ffffff';
 
-// The season in play's decoration, the one before fading out while the new one fades in.
-export function drawSeasonOn(
+// What the season in play adds to the ground, under everything that stands.
+export function drawSeasonGround(
   ctx: CanvasRenderingContext2D,
   o: OnScreen,
   seasons: Seasons,
   nowMs: number,
 ): void {
-  const fade = seasons.at(nowMs);
-  if (fade.before !== fade.now) {
-    drawSeasonDecor(ctx, o, { season: fade.before, alpha: 1 - fade.k, nowMs });
-  }
-  drawSeasonDecor(ctx, o, { season: fade.now, alpha: fade.k, nowMs });
+  faded(ctx, seasons, nowMs, (season) => {
+    if (season === 2) fallen(ctx, o);
+    if (season === 3) snowRim(ctx, o);
+  });
 }
 
-function drawSeasonDecor(
+// Spring's blossoms or winter's cap on tree `i`'s crown.
+export function drawSeasonOnTree(
   ctx: CanvasRenderingContext2D,
   o: OnScreen,
-  { season, alpha, nowMs }: { season: number; alpha: number; nowMs: number },
+  { seasons, nowMs, i }: { seasons: Seasons; nowMs: number; i: number },
 ): void {
-  if (alpha <= 0) return;
-  const t = ambientMs(nowMs) / 1000;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = look().ink;
-  ctx.lineWidth = 1.2;
-  if (season === 0) blossoms(ctx, o, t);
-  if (season === 2) fallen(ctx, o);
-  if (season === 3) snow(ctx, o, t);
-  ctx.restore();
+  const c = crownOf(o, i, ambientMs(nowMs) / 1000);
+  faded(ctx, seasons, nowMs, (season) => {
+    if (season === 0) blossoms(ctx, c, i);
+    if (season !== 3) return;
+    ctx.fillStyle = SNOW;
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y - c.r * 0.45, c.r * 0.8, c.r * 0.5, 0, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  });
 }
 
-// Spring: pink and white blossoms on both crowns.
-function blossoms(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
-  for (const { i } of freeOf(o, TREES)) {
-    const c = crownOf(o, i, t);
-    for (let k = 0; k < 6; k++) {
-      const a = k * 2.4 + i;
-      ctx.fillStyle = k % 2 ? '#ffffff' : '#ff9ec0';
-      ctx.beginPath();
-      ctx.arc(
-        c.x + Math.cos(a) * c.r * 0.55,
-        c.y + Math.sin(a) * c.r * 0.5,
-        c.r * 0.16,
-        0,
-        Math.PI * 2,
-      );
-      ctx.fill();
-      ctx.stroke();
-    }
+// Winter's cap on the pebble at `p`.
+export function drawSeasonOnPebble(
+  ctx: CanvasRenderingContext2D,
+  o: OnScreen,
+  { seasons, nowMs, p }: { seasons: Seasons; nowMs: number; p: readonly [number, number] },
+): void {
+  const s = pebbleSize(o);
+  const [x, y] = spotOn(o, p);
+  faded(ctx, seasons, nowMs, (season) => {
+    if (season !== 3) return;
+    ctx.fillStyle = SNOW;
+    ctx.beginPath();
+    ctx.ellipse(x, y - s * 0.2, s * 0.8, s * 0.4, 0, Math.PI, 0);
+    ctx.fill();
+  });
+}
+
+// `draw` for the season in play, and for the one before while it fades out.
+function faded(
+  ctx: CanvasRenderingContext2D,
+  seasons: Seasons,
+  nowMs: number,
+  draw: (season: number) => void,
+): void {
+  const fade = seasons.at(nowMs);
+  const layers: [number, number][] = [[fade.now, fade.k]];
+  if (fade.before !== fade.now) layers.unshift([fade.before, 1 - fade.k]);
+  for (const [season, alpha] of layers) {
+    if (alpha <= 0) continue;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = look().ink;
+    ctx.lineWidth = 1.2;
+    draw(season);
+    ctx.restore();
+  }
+}
+
+// Spring: pink and white blossoms on a crown.
+function blossoms(
+  ctx: CanvasRenderingContext2D,
+  c: { x: number; y: number; r: number },
+  i: number,
+): void {
+  for (let k = 0; k < 6; k++) {
+    const a = k * 2.4 + i;
+    ctx.fillStyle = k % 2 ? '#ffffff' : '#ff9ec0';
+    ctx.beginPath();
+    ctx.arc(
+      c.x + Math.cos(a) * c.r * 0.55,
+      c.y + Math.sin(a) * c.r * 0.5,
+      c.r * 0.16,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
+    ctx.stroke();
   }
 }
 
@@ -86,8 +126,8 @@ function fallen(ctx: CanvasRenderingContext2D, o: OnScreen): void {
   });
 }
 
-// Winter: a white band of snow inside the rim, caps on the crowns and the pebbles.
-function snow(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
+// Winter: a white band of snow inside the rim.
+function snowRim(ctx: CanvasRenderingContext2D, o: OnScreen): void {
   ctx.save();
   outline(ctx, o, o.cy);
   ctx.clip();
@@ -96,20 +136,4 @@ function snow(ctx: CanvasRenderingContext2D, o: OnScreen, t: number): void {
   outline(ctx, o, o.cy);
   ctx.stroke();
   ctx.restore();
-  ctx.fillStyle = SNOW;
-  for (const { i } of freeOf(o, TREES)) {
-    const c = crownOf(o, i, t);
-    ctx.beginPath();
-    ctx.ellipse(c.x, c.y - c.r * 0.45, c.r * 0.8, c.r * 0.5, 0, Math.PI, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-  const p = pebbleSize(o);
-  for (const { p: spot } of freeOf(o, PEBBLES)) {
-    const [x, y] = spotOn(o, spot);
-    ctx.beginPath();
-    ctx.ellipse(x, y - p * 0.2, p * 0.8, p * 0.4, 0, Math.PI, 0);
-    ctx.fill();
-  }
 }

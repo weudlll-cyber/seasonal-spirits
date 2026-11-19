@@ -1,4 +1,4 @@
-// Seasonal Sumo — the band in sumo's variants (LIVES 2026-11-17): the hearts and "You are out —
+// Seasonal Sumo — the band in sumo's variants (LIVES 2026-11-17): the hearts and "Out —
 // watching" only for the own ghost and only in sumo; per team the ghosts still in (with the score
 // in Points); Last One Standing's result table; the variant's rule in the help.
 

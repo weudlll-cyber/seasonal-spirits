@@ -116,14 +116,20 @@ or touch (browsers allow sound only after a gesture).
   white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
   still in; Last One Standing "Spring 7 in"; hill and bomb "Spring 12"; the leader outlined in
   its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the
-  team line says "You are out — watching" until
+  team line says "Out — watching" (short enough for a 390 px phone, 2026-11-19) until
   the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 68 px
   (`BAND_HEIGHT`).
 - **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
   quarters above: screen y = field y × the view's tilt (`VIEW_TILT` 0.55, steeper on a portrait
   phone up to `MAX_TILT` 0.9 — see Camera; render `view.ts`; input directions stay screen =
-  field), ghosts drawn back to front by where they stand (`byDepth`); a tree, pebble or lantern
-  standing in front of a character is drawn again over it (render `decor-front.ts`, 2026-11-19). Around it
+  field). Three layers (owner 2026-11-19: the crack lay over the trees, the fence over the
+  characters): the ground — the top, the flat decoration (tufts, flowers, the lanterns' halos,
+  the season's fallen leaves and snow), Sumo's crack, King's glow, ring and next place, and every
+  character's shadow and ground rings —, under one depth order (`byDepth`, by the ground y of each
+  foot) of the characters with everything that stands: each tree, pebble and lantern, each
+  fence post and each stretch of rail between two posts, King's flag poles (render
+  `standing.ts`, `fence.ts`); over everything King's crown, the own triangle, hit stars and
+  puffs, the labels and "Dodged!". Nothing of a character is cut anywhere. Around it
   the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, small far
   islands, the sea band at the bottom, two big clouds low in front; over it what moves slowly
   (render `ambient.ts`, NIGHT 2026-11-19): the far clouds drift and wrap round, the waves move
@@ -137,19 +143,21 @@ or touch (browsers allow sound only after a gesture).
   dashed crack with small ticks the whole match, pulsing in the countdown; at the halving the
   outer ring breaks into ten chunks that tumble, drop and shrink towards the sea over a second
   (render `breakoff.ts`) while the edge eases in over 2 s. Hill and bomb: a rounded-square platform of
-  the same island with a low wooden fence along its walls (the camera keeps room for the back
-  fence's posts below the band, render `cameraBox`); the back fence stands behind every
-  character, the side and near fences in front of them, and nothing of a character shows beyond
-  the side or near fence — the bodies are cut at the walls on screen (owner 2026-11-19: they
-  overlapped the fence; render `fieldFront`, used by client and viewer); when the walls close in at a halving
+  the same island with a low wooden fence along its walls, its posts one body radius tall (the top
+  rail at about a third of a character's height, so the near fence hides only the feet of one
+  right behind it; render `fence.ts` `POST_RISE`; the camera keeps room for the back fence's posts
+  and King's flags below the band, render `cameraBox`); every post and rail stretch stands in the
+  depth order, so a character beside a side fence is in front of the posts behind it and behind
+  those in front of it; when the walls close in at a halving
   (2026-11-19) the server sends their half side in every state (`wall`), and the platform, the
   fence, the camera and the own ghost's prediction follow it (render `liveConfig`); in hill the zone (render `zone.ts`) is a
-  soft glow in the season's colour, slowly pulsing, inside an ink ring in that colour, ringed by
-  flags in it sized by the zone on screen (NIGHT 2026-11-19: on the phone they were hard to see),
-  each hanging with its tip on the ring, never past it (the zone fits the walls exactly: flags
-  hanging below the ring stood outside the near fence, 2026-11-19), with a small gold crown in its middle (2026-11-19: it reads as a place to go) — the glow lies under the characters, the
-  ring, the flags and the crown stand over them, so a full zone still shows its outline and crown
-  (owner 2026-11-19; render `fieldFront`, `drawZoneMarks`); in the countdown
+  soft glow in the season's colour, slowly pulsing, inside an ink ring in that colour, both on
+  the ground; on the ring small flags on poles in it, sized by the zone on screen (NIGHT
+  2026-11-19: on the phone they were hard to see), each pole in the depth order, its flag flying
+  inwards, never past the ring (the zone fits the walls exactly, 2026-11-19), and its flag above
+  the hat of a character on the ring (render `FLAG_RISE`), so a full zone still shows its flags
+  over the crowd; a small gold crown floats over its middle, over everything (2026-11-19: it
+  reads as a place to go; render `zonePoles`, `drawZoneCrown`); in the countdown
   a dashed ring with a faint fill shows where it jumps. No tree, pebble or lantern stands inside
   the zone, its next place or any quarter's middle at the zone's starting size
   (`OnScreen.keepOut`); the flat decoration — tufts, flowers, fallen leaves — grows anywhere
@@ -254,7 +262,8 @@ or touch (browsers allow sound only after a gesture).
   player in King or Bomb, the camera follows the own character at a scale where a body is 22 px
   wide (`FOLLOW_BODY_PX`, decision 2026-11-19; was Sumo's starting scale, about 14 px), clamped so it shows no more beyond the walls than the middle would, and
   eased over about 150 ms (scale, slant and offset; `CameraEase`); a minimap in the top right
-  corner below the band shows the walls now, King's zone or the bombs' carriers and the own dot,
+  corner below the band — below the halving's banner while it shows, never under it (`scene.ts`
+  `minimapAt`, 2026-11-19) — shows the walls now, King's zone or the bombs' carriers and the own dot,
   each outlined in ink so it reads on every season's ground (3:1 at least, render
   `palette.test.ts`; render `minimap.ts`). Once the walls have closed in so far that the whole field fits at that
   scale, the whole field shows. The owner's setting "Phone: follow camera in walled modes"

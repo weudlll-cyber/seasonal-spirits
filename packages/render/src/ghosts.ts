@@ -11,10 +11,12 @@
 // (no-return.ts); a dash
 // winding up glows with its line (windup.ts). A dash's start stretches the body, a landing or a
 // respawn squashes it, a landing kicks up dust, a hit shows a white star and the knocked one
-// slides with spiral eyes (moments.ts, effects.ts). In hill and bomb what stands in front of every
-// character — the zone's marks, the side and near fences — comes over the bodies, cut to the
-// walls, and under the labels (field.ts fieldFront). Labels: ghost-labels.ts. What the drawing
-// remembers between frames is trails.ts.
+// slides with spiral eyes (moments.ts, effects.ts). Layers (owner 2026-11-19): the ground marks
+// under every character (shadows, rings, dust); the bodies in one depth order with what stands on
+// the island — trees, pebbles, lanterns, fence posts and rails, King's flag poles (standing.ts),
+// no body cut anywhere; over everything the own triangle, the hit stars and the puffs, King's
+// crown, the labels (ghost-labels.ts) and "Dodged!". What the drawing remembers between frames is
+// trails.ts.
 
 import {
   GHOST_BOMB,
@@ -28,7 +30,6 @@ import { drawBomb, drawCarrier } from './bomb.js';
 import { inkWidth } from './character.js';
 import { drawDust, drawStar } from './effects.js';
 import { drawFall } from './fall.js';
-import type { FieldFront } from './field.js';
 import { drawLabels } from './ghost-labels.js';
 import { drawNoReturn } from './no-return.js';
 import {
@@ -48,6 +49,7 @@ import { look } from './palette.js';
 import { PROTECT_RING, ghostRadiusPx, ghostReach } from './reach.js';
 import { shape } from './shape.js';
 import { drawSprite } from './sprites.js';
+import type { FieldStanding, Standing } from './standing.js';
 import type { Trails } from './trails.js';
 import { byDepth, circle, sx, sy, type View } from './view.js';
 import { drawWindUp } from './windup.js';
@@ -68,9 +70,9 @@ export interface GhostStyle {
   // Only the top N scorers and the own ghost show a score, every ghost its name (Halving Bomb:
   // 3, scoreTopOf in modes.ts); null: every score shows.
   scoreTop?: number | null;
-  // Hill and bomb: the field in front of the characters and the walls the bodies are cut to
-  // (field.ts fieldFront); null or absent in sumo.
-  front?: FieldFront | null;
+  // What stands on the island, sorted in with the bodies, and what floats over all of it
+  // (standing.ts fieldStanding); absent: the bodies alone.
+  field?: FieldStanding | null;
 }
 
 const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
@@ -97,15 +99,15 @@ export function drawGhosts(
   style: GhostStyle,
 ): PlacedLabel[] {
   const shown = ghosts.filter(visible).map((g) => aloft(v, g, style));
-  behindFront(v.ctx, style.front ?? null, () => {
-    for (const d of shown) drawGround(v, d, style);
-    drawBodies(v, shown, style);
-    // A hit's star stays with the bodies: under King's crown (p18, 2026-11-19: stars hid it).
-    for (const { g } of shown) {
-      const star = style.trails.moments.star(g.id, style.nowMs);
-      if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
-    }
-  });
+  for (const d of shown) drawGround(v, d, style);
+  drawStanding(v, shown, style);
+  for (const { g, real } of shown) {
+    const star = style.trails.moments.star(g.id, style.nowMs);
+    if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
+    if (!(real.flags & GHOST_FALLING) && Math.hypot(real.vx, real.vy) > fastSpeed())
+      drawPuffs(v, real, style.trails, ghostRadiusPx(v));
+  }
+  style.field?.over(); // King's crown: over the stars (p18, 2026-11-19: stars hid it)
   const labels = drawLabels(
     v,
     shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),
@@ -124,34 +126,12 @@ export function drawGhosts(
   return labels;
 }
 
-// `bodies` drawn cut to the walls, then the field in front of them (field.ts fieldFront); in
-// sumo (no front) just the bodies.
-function behindFront(
-  ctx: CanvasRenderingContext2D,
-  front: FieldFront | null,
-  bodies: () => void,
-): void {
-  if (!front) {
-    bodies();
-    return;
-  }
-  const c = front.clip;
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(c.left, c.top, c.right - c.left, c.bottom - c.top);
-  ctx.clip();
-  bodies();
-  ctx.restore();
-  front.draw();
-}
-
-// On the ground under a character: its shadow, its puffs, the ring of a take-off or a landing,
-// and for the own one its ring.
+// On the ground under a character: its shadow, the ring of a take-off or a landing, its dust, and
+// for the own one its ring.
 function drawGround(v: View, { real, h }: Aloft, style: GhostStyle): void {
   if (real.flags & GHOST_FALLING) return;
   const r = ghostRadiusPx(v);
   drawShadow(v, real, r, h);
-  if (Math.hypot(real.vx, real.vy) > fastSpeed()) drawPuffs(v, real, style.trails, r);
   const ring = style.trails.ring(real.id, style.nowMs);
   if (ring !== null) drawGroundRing(v, real, r, ring);
   const dust = style.trails.moments.dust(real.id, style.nowMs);
@@ -179,17 +159,22 @@ function drawPuffs(v: View, g: GhostState, trails: Trails, r: number): void {
   ctx.globalAlpha = 1;
 }
 
-// Back to front by where they stand; the own one's triangle over all of them, so it is always
-// found (FIX 2026-11-17-3).
-function drawBodies(v: View, shown: readonly Aloft[], style: GhostStyle): void {
-  let own: { x: number; y: number; top: number } | null = null;
-  for (const d of byDepth(shown.map((a) => ({ ...a, y: a.real.y })))) {
-    const r = drawBody(v, d, style);
-    if (d.g.id === style.ownId && r !== null) {
-      own = { x: d.g.x, y: d.g.y, top: ghostReach(r, d.g, null) };
-    }
-  }
-  if (own) drawOwnPointer(v, own);
+// The bodies and the island's standing pieces back to front by where they stand on the ground (a
+// body by its centre, where it stands even in the air); the own one's triangle over all of them,
+// so it is always found (FIX 2026-11-17-3).
+function drawStanding(v: View, shown: readonly Aloft[], style: GhostStyle): void {
+  const own: { at: { x: number; y: number; top: number } | null } = { at: null };
+  const bodies = shown.map((d): Standing => ({
+    y: sy(v, d.real.y),
+    draw: () => {
+      const r = drawBody(v, d, style);
+      if (d.g.id === style.ownId && r !== null) {
+        own.at = { x: d.g.x, y: d.g.y, top: ghostReach(r, d.g, null) };
+      }
+    },
+  }));
+  for (const piece of byDepth([...(style.field?.pieces ?? []), ...bodies])) piece.draw();
+  if (own.at) drawOwnPointer(v, own.at);
 }
 
 // Returns the body's drawn radius, or null while it falls (no marks then).

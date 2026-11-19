@@ -138,7 +138,8 @@ export function groundCircle(v: View, x: number, y: number, r: number): void {
   v.ctx.ellipse(sx(v, x), sy(v, y), r * v.scale, r * v.scale * v.tilt, 0, 0, Math.PI * 2);
 }
 
-// Back to front: what stands further down the field is drawn later, over what stands behind it.
+// Back to front: what stands further down the field is drawn later, over what stands behind it;
+// things on one y keep their order (the sort is stable: a fence's posts over their rails).
 export function byDepth<T extends { y: number }>(items: readonly T[]): T[] {
   return [...items].sort((a, b) => a.y - b.y);
 }
