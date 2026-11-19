@@ -138,7 +138,6 @@ function frame(): void {
   if (underrun) underrunCounter.record(now);
   const jumps = jumpDetector.observe(now, ghosts);
   if (jumps > 0) jumpCounter.record(now, jumps);
-
   // Ghosts are interpolated; the field, the bombs' fuse and the clock come from the newest state.
   const latest = buffer.at(-1)?.state;
   if (latest) useShape(clientConfig(latest.mode, settings));
@@ -156,8 +155,10 @@ function frame(): void {
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),
     field: fieldStanding(view, latest, ground, { nowMs: now, seasons: field.seasons }),
+    air: () => {
+      drawSeasonAir(view, field.seasons, now);
+    },
   });
-  drawSeasonAir(view, field.seasons, now);
   drawClock(ctx, latest, SWITCH_ROOM);
 
   // Expose for Playwright / probe self-check.

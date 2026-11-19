@@ -43,6 +43,7 @@ function showButton(button: HTMLButtonElement, b: ActionButton): void {
 export class Hud {
   private readonly dash = el('dash', HTMLButtonElement);
   private readonly jump = el('jump', HTMLButtonElement);
+  private readonly stick = el('stick');
   private readonly announce = el('announce');
   private readonly flash = el('flash');
   private readonly notice = el('notice');
@@ -62,8 +63,10 @@ export class Hud {
   }
 
   // Players only: the Dash and Jump buttons, their rings filling up while the server's
-  // cooldowns run (the match's settings).
+  // cooldowns run (the match's settings), and on a touch screen the joystick — all gone while
+  // there is nothing to steer (out of lives, the result; review 2026-11-20: the ring stayed).
   showControls(playing: boolean, dash: ActionButton, jump: ActionButton): void {
+    this.stick.hidden = !playing;
     showButton(this.dash, { ...dash, shown: playing && dash.shown });
     showButton(this.jump, { ...jump, shown: playing && jump.shown });
   }

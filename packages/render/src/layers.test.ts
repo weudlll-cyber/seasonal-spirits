@@ -1,8 +1,8 @@
 // Seasonal Sumo — the layers of the island (owner 2026-11-19: the crack lay over the trees, the
 // fence over the characters): what lies flat is under every tree and character, a character and
 // what stands on the island are in one depth order — a tree or a fence post in front of a
-// character covers it, one behind it does not —, the crown floats over the crowd; two
-// "Dodged!" bubbles never stand over each other.
+// character covers it, one behind it does not —, the crown floats over the crowd, the season's
+// particles fly under the labels; two "Dodged!" bubbles never stand over each other.
 
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
 import { describe, expect, it, vi } from 'vitest';
@@ -182,6 +182,25 @@ describe('the depth order inside the walls', () => {
     const marks = frame(hill, crowd, hb);
     const kinds = marks.map((m) => m.kind);
     expect(kinds.lastIndexOf('gold')).toBeGreaterThan(kinds.lastIndexOf('body')); // the crown
+  });
+});
+
+describe('what flies over the island', () => {
+  it("draws the season's particles before the labels, so no name is hidden (review 2026-11-20)", () => {
+    const r = recorder();
+    const v = fitBox(r.ctx, 100, { x: 1000, y: 1000, half: 416 });
+    let textsBefore = -1;
+    drawGhosts(v, [ghost(1, 1000, 1000)], {
+      ownId: 1,
+      trails: new Trails(),
+      nowMs: 0,
+      fuse: 1,
+      air: () => {
+        textsBefore = r.texts.length;
+      },
+    });
+    expect(textsBefore).toBe(0);
+    expect(r.texts.length).toBeGreaterThan(0); // "You", after them
   });
 });
 

@@ -15,7 +15,7 @@
 // under every character (shadows, rings, dust); the bodies in one depth order with what stands on
 // the island — trees, pebbles, lanterns, fence posts and rails, King's flag poles (standing.ts),
 // no body cut anywhere; over everything the own triangle, the hit stars and the puffs, King's
-// crown, the labels (ghost-labels.ts) and "Dodged!". What the drawing remembers between frames is
+// crown, the season's particles, the labels (ghost-labels.ts) and "Dodged!". What the drawing remembers between frames is
 // trails.ts.
 
 import {
@@ -73,6 +73,9 @@ export interface GhostStyle {
   // What stands on the island, sorted in with the bodies, and what floats over all of it
   // (standing.ts fieldStanding); absent: the bodies alone.
   field?: FieldStanding | null;
+  // What flies over the island — the season's particles (season.ts drawSeasonAir) —, drawn
+  // under the labels (review 2026-11-20: butterflies hid the own name).
+  air?: () => void;
 }
 
 const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
@@ -108,6 +111,7 @@ export function drawGhosts(
       drawPuffs(v, real, style.trails, ghostRadiusPx(v));
   }
   style.field?.over(); // King's crown: over the stars (p18, 2026-11-19: stars hid it)
+  style.air?.();
   const labels = drawLabels(
     v,
     shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),

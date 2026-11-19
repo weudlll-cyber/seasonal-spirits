@@ -183,8 +183,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       zone: zoneOf(f.latest),
       scoreTop: scoreTopOf(f.latest),
       field: fieldStanding(view, f.latest, ground, { nowMs: now, seasons: memory.seasons }),
+      air: () => {
+        drawSeasonAir(view, memory.seasons, now);
+      },
     });
-    drawSeasonAir(view, memory.seasons, now);
   });
   if (follow && f.latest) {
     const at = minimapAt(ctx.canvas.width, view.top, f.hud.banner);

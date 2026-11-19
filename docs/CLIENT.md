@@ -59,8 +59,9 @@ jump's arc, the respawn band), so it does not drift from the server after a chan
   big and round with an ink outline and drop shadow, their colour filling round them while the
   server's cooldown runs; Jump hidden while the owner's switch has the jump off
   (the settings). The camera keeps the arena clear of both.
-- Touch: a joystick where the left thumb touches the left half; the round **Dash** button
-  under the right thumb. Its colour fills round it while the server's cooldown runs
+- Touch: a joystick where the left thumb touches the left half — gone with the buttons while
+  there is nothing to steer (out of lives, the result; review 2026-11-20) —; the round **Dash**
+  button under the right thumb. Its colour fills round it while the server's cooldown runs
   (`dashLeftMs` in the state) and it is fully lit when a dash is ready.
 - The direction goes out at once when it changes, at most every 60 ms (`SEND_GAP_MS`), never
   twice the same.
@@ -173,7 +174,8 @@ or touch (browsers allow sound only after a gesture).
   tumbling and a few lying on the grass; winter paler grass, snowflakes and snow on the rim, the
   crowns and the pebbles. At a halving the new season fades in over about a second (half that
   with reduced motion). The particles are a function of their index and the time — no memory —
-  at most 28 on a desktop, 14 on a phone, drawn below the band.
+  at most 28 on a desktop, 14 on a phone, drawn below the band and under the labels (render
+  `GhostStyle.air`; review 2026-11-20: butterflies hid the own name).
 - **Bomb** (render `bomb.ts`, NIGHT 2026-11-18 piece 5): a carrier is unmistakable at any
   size — a large bomb above it (at least the body's size), black with a pale rim, a thick fuse
   as long as the share of the time left before the bombs go off, a glowing spark at its tip,
