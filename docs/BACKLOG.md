@@ -71,7 +71,9 @@ pieces 1 and 2, as on 2026-11-18 piece 2; green on the rerun): it waits for a ha
 then for the arena to shrink below 0.75 of its size within 5 s — and saw it stay at 284 field
 units. The phone run starts on the stack the desktop run has been playing for about a minute, so
 it may land in the late seasons. CI ran it green on `43e4566`; on the dev server every halving
-shrinks the arena (400 → 284 → 202) and a phone client threw no page error over a match. Done
+shrinks the arena (400 → 284 → 202) and a phone client threw no page error over a match. Seen
+again on the day chain of 2026-11-19 (pieces 5 and 6): the arena stayed at 201.6, the size after
+the second halving. Done
 when: the cause is found (the arena no longer halving
 there, or the banner of the previous halving matched) and the spec waits for a fresh match or
 reads the arena at the right moment, green ten runs in a row.
@@ -90,7 +92,7 @@ at King on the desktop (the zone covered about 14 % of the field at the start, 7
 the next jumps): King's field smaller by default — half side 450, zone radius 225 — and the walls
 close in at each halving in King and Bomb, switchable. Pieces 1 (the King zone reads as a place to
 go), 2 (King's smaller default field) 3 (the walls close in at each halving) 4 (the phone's
-follow camera in King and Bomb), 5 (the zoom cap) and 6 (the start screen's sky) landed (CLOSED). Still to do, in this order: 7 small picture faults, 8 the bomb pass touch recounted. Done when: every piece is
+follow camera in King and Bomb), 5 (the zoom cap) 6 (the start screen's sky) and 7 (small picture faults) landed (CLOSED). Still to do: 8 the bomb pass touch recounted. Done when: every piece is
 committed and pushed, or the dropped ones are recorded here.
 
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
@@ -1035,6 +1037,10 @@ Done when: the spec is green ten runs in a row.
   screen draws the game's own sky over the whole screen (render `drawSky`, reused) in the chosen
   look, with the island and its four idling characters below the title — commit "feat: the start
   screen in the game's sky".
+- 2026-11-19 — **Day chain piece 7: small picture faults** (OPEN ak). A tree, pebble or lantern
+  in front of a character is drawn again over it (render `decor-front.ts`); "Dodged!" bubbles
+  never overlap (`clearBubble`); the viewer's admin panel folds to a small tab and remembers it
+  (`panel-fold.ts`) — commit "fix: depth, bubbles and the folding admin panel".
 
 ## CHECKS DONE
 
@@ -1427,3 +1433,7 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-19 | screenshots `p15-start-*` (500 ms after the page opened; desktop and phone, Light and Dark)                                                                                               | day piece 6 working tree                                                                                                                  | the game's sky, sun or moon, clouds, far islands and sea band behind title and island; nothing overlaps                                                                                                                                                              | `reports/night-2026-11-19.md`, "Day chain"                                                     |
 | 2026-11-19 | typecheck and lint of render and client                                                                                                                                                   | day piece 6 working tree                                                                                                                  | green                                                                                                                                                                                                                                                                | this commit                                                                                    |
 | 2026-11-19 | play and readability specs, desktop and phone (pieces 5 and 6)                                                                                                                            | day piece 6 working tree                                                                                                                  | 4 passed, 1 skipped, 1 failed: the phone play spec, the arena 201.6 after the halving (OPEN ai)                                                                                                                                                                      | this commit                                                                                    |
+| 2026-11-19 | render and client unit tests (`decor-front.test.ts` new)                                                                                                                                  | day piece 7 working tree                                                                                                                  | 22 files, 115 tests passed                                                                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-19 | lint and typecheck of render, client and viewer                                                                                                                                           | day piece 7 working tree                                                                                                                  | one arrow-return lint finding fixed; green                                                                                                                                                                                                                           | this commit                                                                                    |
+| 2026-11-19 | screenshots `p16-viewer-*` and `p16-bomb-*`                                                                                                                                               | day piece 7 working tree                                                                                                                  | panel folds, stays folded after a reload, opens again; a character behind a tree peeks over its crown                                                                                                                                                                | `reports/night-2026-11-19.md`, "Day chain"                                                     |
+| 2026-11-19 | play and readability specs, desktop and phone                                                                                                                                             | day piece 7 working tree                                                                                                                  | 4 passed, 1 skipped, 1 failed: phone play, arena 201.6 after the halving (OPEN ai)                                                                                                                                                                                   | this commit                                                                                    |

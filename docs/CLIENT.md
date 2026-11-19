@@ -118,7 +118,8 @@ or touch (browsers allow sound only after a gesture).
 - **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
   quarters above: screen y = field y × the view's tilt (`VIEW_TILT` 0.55, steeper on a portrait
   phone up to `MAX_TILT` 0.9 — see Camera; render `view.ts`; input directions stay screen =
-  field), ghosts drawn back to front by where they stand (`byDepth`). Around it
+  field), ghosts drawn back to front by where they stand (`byDepth`); a tree, pebble or lantern
+  standing in front of a character is drawn again over it (render `decor-front.ts`, 2026-11-19). Around it
   the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, small far
   islands, the sea band at the bottom, two big clouds low in front; over it what moves slowly
   (render `ambient.ts`, NIGHT 2026-11-19): the far clouds drift and wrap round, the waves move
@@ -185,7 +186,8 @@ or touch (browsers allow sound only after a gesture).
   size and one ghost diameter up on screen at the top, its label and triangle with it — while
   its shadow stays on the ground at its real position, smaller and darker the higher it is; a
   short ring spreads on the ground at the take-off and the landing; "Dodged!" shows in a pill
-  above it for a second when the server flags a dash passing under (`GHOST_DODGED`). The own one
+  above it for a second when the server flags a dash passing under (`GHOST_DODGED`) — moved up
+  out of another bubble's way, or left out when there is no room (render `clearBubble`). The own one
   jumps from the press on (the prediction), not from the server's echo. A dash winding up (the
   owner's option, render `windup.ts`) glows white with an ink-edged line on the ground in its
   direction; the own ghost holds through its wind-up from the press on (the prediction). What

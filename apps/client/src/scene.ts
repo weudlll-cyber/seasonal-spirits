@@ -17,6 +17,7 @@ import {
   drawSky,
   drawSeasonAir,
   drawClock,
+  drawDecorInFront,
   drawField,
   drawRespawnBand,
   drawGhosts,
@@ -149,7 +150,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
   trails.record(f.ghosts, now);
   let labels: PlacedLabel[] = [];
   belowBar(view, () => {
-    drawField(view, f.latest, now, memory);
+    const ground = drawField(view, f.latest, now, memory);
     const area = f.latest?.area;
     if (f.marks.backInMs !== null && f.ownTeam !== null && area)
       drawRespawnBand(view, area, f.ownTeam as Team);
@@ -162,6 +163,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       zone: zoneOf(f.latest),
       scoreTop: scoreTopOf(f.latest),
     });
+    drawDecorInFront(view, ground, f.ghosts, { nowMs: now, seasons: memory.seasons });
     drawSeasonAir(view, memory.seasons, now);
   });
   if (follow && f.latest) {

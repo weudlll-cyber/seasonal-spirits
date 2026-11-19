@@ -24,7 +24,16 @@ import { inkWidth } from './character.js';
 import { drawDust, drawStar } from './effects.js';
 import { drawFall } from './fall.js';
 import { drawLabels } from './ghost-labels.js';
-import { airScale, arcHeight, drawDodged, drawGroundRing, drawShadow, lifted } from './jump.js';
+import {
+  airScale,
+  arcHeight,
+  clearBubble,
+  dodgedAt,
+  drawDodged,
+  drawGroundRing,
+  drawShadow,
+  lifted,
+} from './jump.js';
 import type { PlacedLabel } from './labels.js';
 import { fastSpeed } from './moments.js';
 import { drawOwnPointer, drawOwnRing } from './own.js';
@@ -85,9 +94,15 @@ export function drawGhosts(
     shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),
     style,
   );
+  const bubbles: { x: number; y: number }[] = []; // "Dodged!" never over another one
   for (const { g, h } of shown) {
     const t = style.trails.dodged(g.id, style.nowMs);
-    if (t !== null) drawDodged(v, g, ghostRadiusPx(v) * airScale(h), t);
+    const at =
+      t === null ? null : clearBubble(dodgedAt(v, g, ghostRadiusPx(v) * airScale(h), t), bubbles);
+    if (t !== null && at) {
+      drawDodged(v.ctx, at, t);
+      bubbles.push(at);
+    }
     const star = style.trails.moments.star(g.id, style.nowMs);
     if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
   }

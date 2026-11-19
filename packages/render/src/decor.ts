@@ -3,7 +3,8 @@
 // warm halo — at fixed places in the ground's own units, so they scale with the arena and shrink
 // with it at a halving; the tufts and the tree crowns sway a little (NIGHT 2026-11-19; still with
 // reduced motion). None stands in the ground's keep-out (King's zones and where they can jump,
-// 2026-11-19). Pure decoration: nothing here touches a ghost.
+// 2026-11-19); what stands in front of a character is drawn again over it (decor-front.ts). Pure
+// decoration: nothing here touches a ghost.
 
 import type { OnScreen } from './island.js';
 import { ambientMs } from './motion.js';
@@ -36,7 +37,7 @@ export const PEBBLES = [
   [0.3, 0.45],
   [-0.38, 0.72],
 ] as const;
-const LANTERNS = [
+export const LANTERNS = [
   [-0.75, 0.3],
   [0.05, -0.8],
   [0.78, -0.05],
@@ -71,6 +72,7 @@ export function sizeOn(o: OnScreen, k: number, min: number, max: number): number
 }
 
 export const pebbleSize = (o: OnScreen): number => sizeOn(o, 0.03, 3, 9);
+export const lanternSize = (o: OnScreen): number => sizeOn(o, 0.03, 3, 8);
 
 // Tree `i`'s crown on screen: centre and radius, swaying a little (`t` seconds).
 export function crownOf(o: OnScreen, i: number, t: number): { x: number; y: number; r: number } {
@@ -124,7 +126,7 @@ export function drawDecor(ctx: CanvasRenderingContext2D, o: OnScreen, nowMs: num
     lanterns(
       ctx,
       freeOf(o, LANTERNS).map(({ p }) => at(p)),
-      size(0.03, 3, 8),
+      lanternSize(o),
     );
 }
 

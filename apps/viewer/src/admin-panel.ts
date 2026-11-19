@@ -7,7 +7,8 @@
 // - "Running match": the running game's name and time left and its values live — 'now' rows at
 //   once, 'next' rows from the next match —, the rotation, presets loaded into it.
 // It talks to one server endpoint (admin-api.ts), which decides who may; shown only when that
-// endpoint answers (DEV_TUNING today). Scrolls inside the window at any size (index.html).
+// endpoint answers (DEV_TUNING today). Scrolls inside the window at any size (index.html); folds to
+// a small tab that is remembered (panel-fold.ts).
 
 import {
   STARTABLE_GAMES,
@@ -19,6 +20,7 @@ import { PRESET_NAME, STATE_OPEN_END, type ServerState } from '@seasonal-spirits
 import { clientConfig, matchName, mmss, modeOf } from '@seasonal-spirits/render';
 import { call, type AdminView, type Command } from './admin-api.js';
 import { button, el, settingsForm, type Form } from './admin-form.js';
+import { foldable } from './panel-fold.js';
 
 const SEND_GAP_MS = 100; // a dragged slider sends the newest settings at most this often
 const HEADER_EVERY_MS = 500; // the running match's name and time left
@@ -272,5 +274,6 @@ export async function startAdminPanel(
   for (const part of parts) part.answered(first);
   onChange(first.current);
   show('next');
+  foldable(root);
   root.hidden = false;
 }

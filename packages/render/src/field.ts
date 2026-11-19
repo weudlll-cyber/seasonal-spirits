@@ -16,7 +16,7 @@ import {
 } from '@seasonal-spirits/protocol';
 import type { BreakOff } from './breakoff.js';
 import { drawDecor } from './decor.js';
-import { FENCE_RISE, drawFence, drawGround } from './island.js';
+import { FENCE_RISE, drawFence, drawGround, type OnScreen } from './island.js';
 import { clientConfig, liveConfig } from './modes.js';
 import { look, seasonColour } from './palette.js';
 import { followSeason, type Seasons } from './season.js';
@@ -73,13 +73,14 @@ export interface FieldMemory {
   seasons: Seasons;
 }
 
-// The island under the ghosts.
+// The island under the ghosts; returns the ground on screen, for what stands in front of a
+// character (decor-front.ts).
 export function drawField(
   v: View,
   s: ServerState | undefined,
   nowMs: number,
   { breaks, seasons }: FieldMemory,
-): void {
+): OnScreen {
   followSeason(seasons, s, nowMs);
   const box = playBox(s);
   const walls = walled(clientConfig(s?.mode ?? 0));
@@ -96,6 +97,7 @@ export function drawField(
   else if (s?.next && ahead(s)) drawCrack(v, s.next, s.countdownMs === null ? null : nowMs);
   breaks.draw(v, nowMs, 'front');
   drawFrontClouds(v.ctx);
+  return ground;
 }
 
 // A halving still comes (not the match end, not an open end, not the result pause).

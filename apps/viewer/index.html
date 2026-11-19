@@ -184,6 +184,17 @@
       #tuning .running {
         font-weight: bold;
       }
+      /* Folded (panel-fold.ts, 2026-11-19): only the small tab shows, the field's corner is free. */
+      #tuning .fold {
+        float: right;
+      }
+      #tuning.folded {
+        width: auto;
+        padding: 4px;
+      }
+      #tuning.folded > :not(.fold) {
+        display: none;
+      }
     </style>
   </head>
   <body>

@@ -55,17 +55,43 @@ export function drawGroundRing(v: View, g: { x: number; y: number }, r: number, 
   ctx.globalAlpha = 1;
 }
 
-// "Dodged!" in a pill above a body of radius `r` px at (x, y) field units, rising and fading over
-// `t`.
-export function drawDodged(v: View, g: { x: number; y: number }, r: number, t: number): void {
-  const { ctx } = v;
+// Where "Dodged!" stands above a body of radius `r` px at (x, y) field units, `t` into its rise
+// (0 … 1): its pill's centre in pixels.
+export function dodgedAt(
+  v: View,
+  g: { x: number; y: number },
+  r: number,
+  t: number,
+): { x: number; y: number } {
+  return { x: sx(v, g.x), y: sy(v, g.y) - r * REACH.top - 16 - 10 * t };
+}
+
+// A "Dodged!" pill's size on screen, pixels (its text at 13 px bold, with room).
+export const DODGED_BOX = { width: 62, height: 20 };
+const DODGED_LIFTS = 3; // how often a bubble moves up out of another's way before it is left out
+
+// Never two "Dodged!" bubbles over each other (2026-11-19): `at` moved up a bubble's height at a
+// time until it is clear of every one in `placed`; null when it stays covered (left out).
+export function clearBubble(
+  at: { x: number; y: number },
+  placed: readonly { x: number; y: number }[],
+): { x: number; y: number } | null {
+  const hits = (p: { x: number; y: number }, y: number): boolean =>
+    Math.abs(p.x - at.x) < DODGED_BOX.width && Math.abs(p.y - y) < DODGED_BOX.height;
+  for (let k = 0; k <= DODGED_LIFTS; k++) {
+    const y = at.y - k * DODGED_BOX.height;
+    if (!placed.some((p) => hits(p, y))) return { x: at.x, y };
+  }
+  return null;
+}
+
+// "Dodged!" in a pill centred on `at` (pixels), fading over `t`.
+export function drawDodged(
+  ctx: CanvasRenderingContext2D,
+  at: { x: number; y: number },
+  t: number,
+): void {
   ctx.globalAlpha = 1 - t * t;
-  const y = sy(v, g.y) - r * REACH.top - 16 - 10 * t;
-  pill(ctx, {
-    x: sx(v, g.x),
-    y,
-    text: 'Dodged!',
-    font: 'bold 13px Fredoka, system-ui, sans-serif',
-  });
+  pill(ctx, { ...at, text: 'Dodged!', font: 'bold 13px Fredoka, system-ui, sans-serif' });
   ctx.globalAlpha = 1;
 }

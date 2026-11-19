@@ -162,7 +162,9 @@ The admin panel (the viewer's, http://localhost:5931, with `DEV_TUNING=1`, which
 sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`) is built around one flow —
 choose the game, see and set its values, start — and generated from the schema, its groups
 Movement, Dash & push, Jump, Falling & respawn, Match flow, Bots — general, Bots — endgame, Sumo,
-King of the Season, Halving Bomb, Rotation. Two tabs:
+King of the Season, Halving Bomb, Rotation. It folds to a small "◂ Admin" tab in the top right
+corner, so the field's corner is free, and remembers that across reloads (`panel-fold.ts`,
+2026-11-19). Two tabs:
 
 - **Next match** (opens first): four large buttons — Sumo · Points, Sumo · Last One Standing,
   King of the Season, Halving Bomb; nothing below until one is chosen. Then a draft of its values,

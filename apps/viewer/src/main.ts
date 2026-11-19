@@ -29,6 +29,7 @@ import {
   Trails,
   bindLookSwitch,
   drawClock,
+  drawDecorInFront,
   drawField,
   drawSky,
   drawSeasonAir,
@@ -145,7 +146,7 @@ function frame(): void {
   drawSky(ctx, now, latest?.season);
   // The client's camera: the playing area as large as it goes (sumo's arena follows its halving).
   const view = fitBox(ctx, CLOCK_HEIGHT, cameraBox(latest), { keepOut: [], marginPx: 8 });
-  drawField(view, latest, now, field);
+  const ground = drawField(view, latest, now, field);
   drawGhosts(view, ghosts, {
     ownId: null,
     trails,
@@ -154,6 +155,7 @@ function frame(): void {
     zone: zoneOf(latest),
     scoreTop: scoreTopOf(latest),
   });
+  drawDecorInFront(view, ground, ghosts, { nowMs: now, seasons: field.seasons });
   drawSeasonAir(view, field.seasons, now);
   drawClock(ctx, latest, SWITCH_ROOM);
 
