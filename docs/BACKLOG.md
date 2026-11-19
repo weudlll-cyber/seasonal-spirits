@@ -88,15 +88,6 @@ does not show), about a third out of reach on the server at their closest. Done 
 has decided whether the client shows the giver's lock, the lock gets shorter, or the pass gets
 slack (a larger reach, or the reach measured from where the client saw it), or nothing changes.
 
-ak. **The day chain of 2026-11-19** (on `proto/sumo` from `f959db3`, not merged; the sheet is
-`reports/night-2026-11-19.md`, "Day chain"). The owner's decisions of 2026-11-19, after looking
-at King on the desktop (the zone covered about 14 % of the field at the start, 7 % and 3.6 % after
-the next jumps): King's field smaller by default — half side 450, zone radius 225 — and the walls
-close in at each halving in King and Bomb, switchable. Pieces 1 (the King zone reads as a place to
-go), 2 (King's smaller default field) 3 (the walls close in at each halving) 4 (the phone's
-follow camera in King and Bomb), 5 (the zoom cap) 6 (the start screen's sky) and 7 (small picture faults) landed (CLOSED). Still to do: 8 the bomb pass touch recounted. Done when: every piece is
-committed and pushed, or the dropped ones are recorded here.
-
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
