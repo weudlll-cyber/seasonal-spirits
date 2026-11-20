@@ -5,8 +5,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import type { CDPSession, Page } from '@playwright/test';
+import type { CDPSession, Page, TestInfo } from '@playwright/test';
 import type { Rect } from '@seasonal-spirits/render';
+import { clearOncePerRun } from '../../../scripts/review-capture/src/topics.js';
 
 export const SERVER_PORT = 3932;
 export const CLIENT_PORT = 5932;
@@ -31,7 +32,19 @@ export const HELP_SEEN = (
 });
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-export const SCREENS = path.join(ROOT, 'reports', 'screens', 'latest');
+const SCREENS = path.join(ROOT, 'reports', 'screens', 'latest');
+
+// Where a spec's screenshot `name` goes: reports/screens/latest/<spec>/<name>.png, git-ignored.
+// The spec's folder holds only the latest run's shots (owner decision 2026-11-21: screenshots do
+// not pile up): it is cleared on the run's first shot of it (scripts/review-capture topics.ts, the
+// review images' rule; the run's id comes from playwright.config.ts).
+export function screenshotPath(info: TestInfo, name: string): string {
+  const spec = path.basename(info.file, '.e2e.ts');
+  return path.join(
+    clearOncePerRun(SCREENS, spec, process.env.E2E_RUN ?? 'no-run-id'),
+    `${name}.png`,
+  );
+}
 
 // window.__client, written by apps/client/src/main.ts every frame.
 export interface ClientView {

@@ -1,11 +1,12 @@
 // Seasonal Sumo review capture — review images do not pile up (owner decision 2026-11-21): a run
-// first removes its topic's previous images and sheets, and nothing of another topic.
+// first removes its topic's previous images and sheets, and nothing of another topic; an e2e
+// spec's screenshots are cleared once per run, not again by a later worker of the same run.
 
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearTopic } from './topics.js';
+import { clearOncePerRun, clearTopic } from './topics.js';
 
 let root = '';
 const put = (file: string): void => {
@@ -50,5 +51,21 @@ describe('review images: only the latest run of a topic', () => {
     expect(has('minimap/phone-light-player-01-halving-bomb-start.png')).toBe(false);
     expect(has('minimap/phone-light-player-01-king-of-the-season-start.png')).toBe(true);
     expect(has('sheet-minimap.png')).toBe(false);
+  });
+});
+
+describe('e2e screenshots: only the latest run of a spec', () => {
+  it("clears a spec's shots on the run's first shot, then never again in that run", () => {
+    put('help/desktop-help.png'); // an earlier run's
+    put('play/desktop-match.png');
+    const dir = clearOncePerRun(root, 'help', 'run-2');
+    expect(dir).toBe(path.join(root, 'help'));
+    expect(has('help/desktop-help.png')).toBe(false);
+    put('help/desktop-help.png'); // this run's first shot
+    clearOncePerRun(root, 'help', 'run-2'); // a later worker of the same run
+    expect(has('help/desktop-help.png')).toBe(true);
+    expect(has('play/desktop-match.png')).toBe(true); // another spec
+    clearOncePerRun(root, 'help', 'run-3'); // the next run
+    expect(has('help/desktop-help.png')).toBe(false);
   });
 });

@@ -2,9 +2,8 @@
 // with the season clock, a HALVING and the result, shows no controls, and sends nothing but
 // its hello — not even when keys are pressed.
 
-import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import { SCREENS, SERVER_PORT, view } from './stack.js';
+import { screenshotPath, SERVER_PORT, view } from './stack.js';
 
 test('a spectator watches a halving and the result and sends nothing after its hello', async ({
   page,
@@ -37,12 +36,12 @@ test('a spectator watches a halving and the result and sends nothing after its h
     },
   );
   await expect(announce).toBeVisible();
-  await page.screenshot({ path: path.join(SCREENS, 'spectator-halving.png') });
+  await page.screenshot({ path: screenshotPath(info, 'spectator-halving') });
 
   await expect(page.locator('#result')).toBeVisible({ timeout: 70_000 });
   await expect(page.locator('#result-place')).toBeHidden();
   await expect(page.locator('#bridge-text')).toBeVisible();
-  await page.screenshot({ path: path.join(SCREENS, 'spectator-result.png') });
+  await page.screenshot({ path: screenshotPath(info, 'spectator-result') });
 
   expect(sent).toEqual(['{"kind":"spectator"}']);
 });

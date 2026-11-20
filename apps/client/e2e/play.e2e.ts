@@ -2,17 +2,24 @@
 // jump (the own ghost in the air), dash (the button's cooldown ring runs), live through a
 // HALVING with the arena halving, the last-chance countdown and "MATCH OVER", and see the result
 // screen with the awards and the bridge box. Screenshots of each step go to
-// reports/screens/latest/ (git-ignored).
+// reports/screens/latest/play/ (git-ignored, the latest run only: stack.ts screenshotPath).
 
-import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { GHOST_AIRBORNE } from '@seasonal-spirits/protocol';
-import { CENTRE, SCREENS, joystick, keyboard, steerTo, view, type Steering } from './stack.js';
+import {
+  CENTRE,
+  screenshotPath,
+  joystick,
+  keyboard,
+  steerTo,
+  view,
+  type Steering,
+} from './stack.js';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
 
 async function shot(page: Page, info: TestInfo, name: string): Promise<void> {
-  await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-${name}.png`) });
+  await page.screenshot({ path: screenshotPath(info, `${info.project.name}-${name}`) });
 }
 
 // The last 10 s of the match: the countdown runs to the end ("LAST CHANCE"), then "MATCH OVER"

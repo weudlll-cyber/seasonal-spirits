@@ -11,6 +11,10 @@ import { CLIENT_PORT, HELP_SEEN, MODE_STACKS, SERVER_PORT, VIEWER_PORT } from '.
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const CI = process.env.CI !== undefined;
+// The run's id, set once in the main process before any worker starts; the workers inherit it and
+// load this file again, keeping it. A spec's screenshot folder is cleared once per run (stack.ts
+// screenshotPath).
+process.env.E2E_RUN ??= new Date().toISOString();
 
 export default defineConfig({
   testDir: '.',

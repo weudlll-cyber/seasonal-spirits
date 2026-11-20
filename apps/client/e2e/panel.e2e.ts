@@ -3,12 +3,11 @@
 // and Bomb's; a Bomb value changed in the draft leaves the running match alone; "Start Halving
 // Bomb" ends the running match and Bomb's begins with that value. The stack's Sumo and its
 // settings are started again at the end, for the specs after this one. Screenshots go to
-// reports/screens/latest/ (git-ignored).
+// reports/screens/latest/panel/ (git-ignored, the latest run only: stack.ts screenshotPath).
 
-import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { ADMIN_SETTINGS_PATH } from '@seasonal-spirits/protocol';
-import { SCREENS, SERVER_PORT, VIEWER_PORT } from './stack.js';
+import { screenshotPath, SERVER_PORT, VIEWER_PORT } from './stack.js';
 
 const URL = `http://localhost:${String(SERVER_PORT)}${ADMIN_SETTINGS_PATH}`;
 const SHARED = ['movement', 'dash', 'jump', 'falling', 'flow', 'bots', 'botsEndgame'];
@@ -82,12 +81,12 @@ test('choose Halving Bomb, set a Bomb value, start: Bomb begins with it', async 
   await expect(next.locator('[data-key="perBomb"] output')).toHaveText('4 players');
   expect((await admin(page)).current?.perBomb).toBe(before.perBomb);
   expect(await gameMode(page)).toBe('sumo');
-  await page.screenshot({ path: path.join(SCREENS, 'desktop-admin-next.png') });
+  await page.screenshot({ path: screenshotPath(info, 'desktop-admin-next') });
   await panel.getByRole('button', { name: 'Start Halving Bomb' }).click();
   await expect.poll(() => gameMode(page), { timeout: 5000 }).toBe('bomb');
   expect((await admin(page)).current?.perBomb).toBe(4);
   await expect(panel.locator('p.running')).toContainText('Halving Bomb');
-  await page.screenshot({ path: path.join(SCREENS, 'desktop-admin-running.png') });
+  await page.screenshot({ path: screenshotPath(info, 'desktop-admin-running') });
   // The stack's own game and settings again.
   const back = await admin(page, {
     action: 'start',
@@ -104,5 +103,5 @@ test('the panel on a phone: choose a game, its values readable', async ({ page }
   await openPanel(page);
   await page.locator('#tuning').getByRole('button', { name: 'Halving Bomb', exact: true }).click();
   await expect(page.locator('#tuning [data-tab="next"] [data-key="perBomb"]')).toBeVisible();
-  await page.screenshot({ path: path.join(SCREENS, 'phone-admin-next.png') });
+  await page.screenshot({ path: screenshotPath(info, 'phone-admin-next') });
 });

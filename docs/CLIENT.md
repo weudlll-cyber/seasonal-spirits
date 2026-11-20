@@ -366,6 +366,10 @@ touch):
   card and closed with "×", a key or a tap beside it;
 - `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello.
 
-Screenshots go to `reports/screens/latest/` (git-ignored). Seasonal Spirits' latency tool,
+Screenshots go to `reports/screens/latest/<spec>/` (git-ignored, like every screenshot under
+`reports/screens/`). Each spec's folder holds only its latest run (owner decision 2026-11-21:
+screenshots do not pile up): it is cleared on the run's first shot of that spec (`e2e/stack.ts`
+`screenshotPath`, the review images' rule `scripts/review-capture/src/topics.ts`
+`clearOncePerRun`). Seasonal Spirits' latency tool,
 picture tool (`pnpm looks`) and response spec were removed on this branch: they measured
 coins and shrines.

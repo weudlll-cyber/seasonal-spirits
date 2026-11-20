@@ -2,12 +2,11 @@
 // size (NIGHT 2026-11-18, piece 7), each on its own short-match stack: join, move, dash, jump
 // (the own ghost in the air), in Bomb the carriers and the labels' score rule, live to "MATCH
 // OVER" and see the result with the mode's awards and the bridge box. Screenshots go to
-// reports/screens/latest/ (git-ignored).
+// reports/screens/latest/modes/ (git-ignored, the latest run only: stack.ts screenshotPath).
 
-import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { GHOST_AIRBORNE } from '@seasonal-spirits/protocol';
-import { CENTRE, MODE_STACKS, SCREENS, joystick, keyboard, steerTo, view } from './stack.js';
+import { CENTRE, MODE_STACKS, screenshotPath, joystick, keyboard, steerTo, view } from './stack.js';
 
 const AWARDS = {
   hill: /^(King.+, \d+ s in the zone|Bouncer.+, \d+ pushed out of the zone)$/,
@@ -22,7 +21,7 @@ async function act(page: Page, info: TestInfo, action: 'dash' | 'jump'): Promise
 for (const mode of ['hill', 'bomb'] as const) {
   test(`${mode}: join, move, dash, jump, the end and the recap`, async ({ page }, info) => {
     const shot = (name: string) =>
-      page.screenshot({ path: path.join(SCREENS, `${info.project.name}-${mode}-${name}.png`) });
+      page.screenshot({ path: screenshotPath(info, `${info.project.name}-${mode}-${name}`) });
     await page.addInitScript(() => {
       localStorage.setItem('seasonal-spirits.help-seen', '1');
     });

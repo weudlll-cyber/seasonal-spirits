@@ -3,7 +3,8 @@
 // and do not pile up): before a run writes a topic's images, that topic's previous images and
 // sheets go, so each topic holds only its latest run. A topic is a folder under
 // reports/screens/review/ (a game, `own-marker`, `minimap`) and its sheets beside it,
-// sheet-<topic>.png and sheet-<topic>-….png.
+// sheet-<topic>.png and sheet-<topic>-….png. The browser e2e specs keep their screenshots by the
+// same rule, one topic per spec under reports/screens/latest/ (apps/client/e2e stack.ts).
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,4 +28,18 @@ export function clearTopic(root: string, topic: string, games: readonly string[]
     for (const f of fs.readdirSync(dir))
       if (games.some((g) => f.includes(`-${g}-`))) fs.rmSync(path.join(dir, f));
   fs.mkdirSync(dir, { recursive: true });
+}
+
+const RUN_FILE = '.run'; // in a topic's folder: the run that last cleared it
+
+// For a topic written over a run of several processes (the e2e specs: Playwright may start a new
+// worker within a run): cleared on its first write in run `runId` and never again in that run —
+// the marker file holds the run that cleared it. Returns the topic's folder.
+export function clearOncePerRun(root: string, topic: string, runId: string): string {
+  const dir = path.join(root, topic);
+  const marker = path.join(dir, RUN_FILE);
+  if (fs.existsSync(marker) && fs.readFileSync(marker, 'utf8') === runId) return dir;
+  clearTopic(root, topic, null);
+  fs.writeFileSync(marker, runId);
+  return dir;
 }

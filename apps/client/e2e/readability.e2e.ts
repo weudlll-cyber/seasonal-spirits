@@ -4,14 +4,13 @@
 // own ghost named "You", no bot named outside the top three (NIGHT 2026-11-19), every name label
 // wholly inside the view (not under the top bar, not past a screen edge), none on another label;
 // the corner buttons and the scores sit in the band, not on the field. Screenshot:
-// <size>-field.png in reports/screens/latest/.
+// <size>-field.png in reports/screens/latest/readability/ (the latest run only).
 
-import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { overlaps, type Rect } from '@seasonal-spirits/render';
 import {
   CENTRE,
-  SCREENS,
+  screenshotPath,
   joystick,
   keyboard,
   steerTo,
@@ -107,7 +106,7 @@ test('team line, scores, the whole playing area on screen, labels never in the w
   page,
 }, info) => {
   const shot = (name: string): Promise<Buffer> =>
-    page.screenshot({ path: path.join(SCREENS, `${info.project.name}-${name}.png`) });
+    page.screenshot({ path: screenshotPath(info, `${info.project.name}-${name}`) });
   // Every frame the spec samples is checked; the faults are reported together at the end.
   const faults = new Set<string>();
   await page.goto('/');

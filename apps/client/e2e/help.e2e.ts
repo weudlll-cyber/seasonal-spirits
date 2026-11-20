@@ -3,10 +3,9 @@
 // and closed with "×" or a key (owner 2026-11-20); "What you see" names every marker on the field
 // with its drawing (session 2026-11-16-LOOK-B). Screenshot <size>-help.png.
 
-import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';
-import { SCREENS } from './stack.js';
+import { screenshotPath } from './stack.js';
 
 const RULES = 4; // the numbered rules above "What you see" — three and the jump —, one drawing each
 
@@ -27,7 +26,7 @@ test('help appears on the first visit, not on the second, and opens again with "
   await expect(help).toContainText('What you see');
   for (const { text } of LEGEND) await expect(help).toContainText(text);
   await expect(help.locator('svg')).toHaveCount(RULES + LEGEND.length);
-  await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-help.png`) });
+  await page.screenshot({ path: screenshotPath(info, `${info.project.name}-help`) });
   const phone = info.project.name === 'phone';
   // On the card a touch or the wheel scrolls it and leaves it open (owner 2026-11-20).
   const card = help.locator('.card');
