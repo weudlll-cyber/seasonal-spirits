@@ -1,8 +1,7 @@
 // Seasonal Sumo — the own ghost is always labelled "You": also with the respawn protection's
-// dashed ring around it and in a crowd (owner 2026-11-17: no ghost showed "You"); and only the
-// own character wears the ground ring, the triangle and the pulse (FIX 2026-11-17-3; Sky Island
-// look 2026-11-18); who carries a label at all — the own one, the players and the top three
-// (NIGHT 2026-11-19).
+// dashed ring around it and in a crowd (owner 2026-11-17: no ghost showed "You"); who carries a
+// label at all — the own one, the players and the top three (NIGHT 2026-11-19). The own marks:
+// own.test.ts.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -113,52 +112,6 @@ describe('who is named', () => {
       'Player 8',
       'You',
     ]);
-  });
-});
-
-describe('own marks', () => {
-  const draw = (ownId: number | null, ownPulseMs: number | null) => {
-    const r = recorder();
-    const v = fitField(r.ctx, 132);
-    drawGhosts(v, [ghost(3, 1000, 0), ghost(5, 1300, 0)], {
-      ownId,
-      trails: new Trails(),
-      nowMs: 0,
-      fuse: 1,
-      ownPulseMs,
-    });
-    const body = ghostRadiusPx(v);
-    const at = (x: number) => ({ x: sx(v, x), y: sy(v, 1000) });
-    // The rings on the ground under a character, wider than its shadow.
-    const rings = (x: number) =>
-      r.ellipses
-        .filter((e) => e.x === at(x).x && e.y > at(x).y && e.rx > body * 1.2)
-        .map((e) => e.rx);
-    const pointers = r.closed.filter((c) => c.x === at(1000).x || c.x === at(1300).x);
-    return { at, rings, pointers };
-  };
-
-  it('rings the own character on the ground and points a triangle down at it, and no other', () => {
-    const { at, rings, pointers } = draw(3, null);
-    expect(rings(1000).length).toBeGreaterThan(0);
-    expect(rings(1300)).toEqual([]);
-    expect(pointers).toHaveLength(1);
-    expect(pointers[0]?.x).toBe(at(1000).x);
-    expect(pointers[0]?.y).toBeLessThan(at(1000).y);
-  });
-
-  it('pulses a growing ring round the own character only, while the pulse runs', () => {
-    const still = draw(3, null).rings(1000);
-    const pulsing = draw(3, 250);
-    expect(Math.max(...pulsing.rings(1000))).toBeGreaterThan(Math.max(...still));
-    expect(pulsing.rings(1300)).toEqual([]);
-    expect(draw(3, 5000).rings(1000)).toEqual(still); // over after 1.5 s
-  });
-
-  it('marks nothing when the client watches', () => {
-    const { rings, pointers } = draw(null, 250);
-    expect(rings(1000)).toEqual([]);
-    expect(pointers).toEqual([]);
   });
 });
 

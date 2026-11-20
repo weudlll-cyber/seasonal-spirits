@@ -2,9 +2,11 @@
 // understood): the mode's three short rules in plain words and the jump (JUMP 2026-11-17), each
 // with a small drawing made in code; in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
 // mark on the field, as the game draws it (LEGEND); and the controls. Shown once on the first
-// visit, any time with "?" or the band's "?" button; one tap or any key closes it. It follows
-// the match on screen. While more of the card lies below its bottom edge a fade shows there,
-// gone at the end (owner 2026-11-20: its last line was cut in half with no hint of more).
+// visit, any time with "?" or the band's "?" button. The card scrolls with a finger or the mouse
+// wheel; the "×" at its top right, a tap outside it or any key closes it (owner 2026-11-20: on a
+// phone every touch closed it, so its end was out of reach). It follows the match on screen.
+// While more of the card lies below its bottom edge a fade shows there, gone at the end (owner
+// 2026-11-20: its last line was cut in half with no hint of more).
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
@@ -30,11 +32,22 @@ const ghost = (x: number, y: number, r: number, fill: string): string =>
   `<circle cx="${x + r * 0.33}" cy="${y - r * 0.2}" r="${r * 0.22}" fill="#fff"/>`;
 const label = (x: number, y: number, text: string): string =>
   `<text x="${x}" y="${y}" fill="currentColor" font-size="13" text-anchor="middle">${text}</text>`;
-const groundRing = (x: number, y: number, r: number): string =>
-  `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.42}" fill="none" stroke="${INK}" stroke-width="5"/>` +
-  `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.42}" fill="none" stroke="#fff" stroke-width="3"/>`;
-const pointer = (x: number, y: number): string =>
-  `<path d="M${x} ${y} l-6 -9 h12 z" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`;
+// The own marks as own.ts (render) draws them: the ring in the team's colour, white-edged and
+// ink-outlined; the arrow in the team's colour with "YOU" above it.
+const groundRing = (x: number, y: number, r: number, colour: string): string =>
+  [
+    [INK, 7],
+    ['#fff', 5],
+    [colour, 3],
+  ]
+    .map(
+      ([stroke, width]) =>
+        `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.42}" fill="none" stroke="${stroke}" stroke-width="${width}"/>`,
+    )
+    .join('');
+const arrow = (x: number, y: number, colour: string): string =>
+  `<path d="M${x} ${y} l-9 -8 h5 v-6 h8 v6 h5 z" fill="${colour}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/>` +
+  `<text x="${x}" y="${y - 16}" fill="#fff" stroke="${INK}" stroke-width="2.5" paint-order="stroke" font-size="9" font-weight="700" text-anchor="middle">YOU</text>`;
 const dashedRing = (x: number, y: number, r: number): string =>
   `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>`;
 // The island's grass top, and the dashed crack where it breaks next.
@@ -149,7 +162,10 @@ const MARKER_DRAWINGS: Record<LegendMarker, string> = {
       label(85, 20, '7'),
   ),
   own: svg(
-    groundRing(60, 48, 14) + ghost(60, 38, 10, WINTER) + pointer(60, 24) + label(84, 30, 'You'),
+    groundRing(60, 48, 16, WINTER) +
+      ghost(60, 38, 10, WINTER) +
+      arrow(60, 25, WINTER) +
+      label(88, 14, 'You'),
   ),
   fast: svg(puffs() + ghost(80, 30, 10, AUTUMN)),
   protected: svg(ghost(60, 30, 10, SPRING) + dashedRing(60, 30, 19)),
@@ -186,9 +202,10 @@ export function variantRule(s: {
 }
 
 const content = (mode: GameMode, name: string, rule: string | null): string =>
-  `<div class="card"><h2>How to play: ${name}</h2>${rule ? `<p>${rule}</p>` : ''}<ol>` +
+  `<div class="card"><button class="close" type="button" aria-label="Close help">×</button>` +
+  `<h2>How to play: ${name}</h2>${rule ? `<p>${rule}</p>` : ''}<ol>` +
   RULES[mode].map((r) => `<li>${r.drawing}<span>${r.text}</span></li>`).join('') +
-  `</ol>${SEEN}${CONTROLS}<p class="small">Tap anywhere or press any key to close.</p></div>`;
+  `</ol>${SEEN}${CONTROLS}<p class="small">Scroll for more. Close with ×, a tap outside the card or any key.</p></div>`;
 
 // Whether more of a scrolled box lies below what it shows (a pixel of rounding is none).
 export function moreBelow(box: {
@@ -206,9 +223,14 @@ export class Help {
   constructor(overlay: HTMLElement, button: HTMLButtonElement) {
     this.overlay = overlay;
     this.show('sumo', 'Seasonal Sumo', null);
+    // Outside the card closes it; on the card a touch scrolls (and reaches no game control).
     overlay.addEventListener('pointerdown', (e) => {
+      if (e.target !== overlay) return;
       e.preventDefault();
       this.close();
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target instanceof Element && e.target.closest('.close')) this.close();
     });
     button.addEventListener('click', () => {
       this.open();

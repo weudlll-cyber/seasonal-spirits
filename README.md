@@ -61,6 +61,8 @@ pnpm viewer       # just the viewer on http://localhost:5931, in the foreground
 pnpm e2e          # Playwright: the client at desktop and phone size on a short match
 pnpm review:capture [game …]  # every moment of a full match per mode, player and spectator,
                   # desktop and phone, Light and Dark, the viewer; contact sheets (about 45 min)
+pnpm review:own-marker        # the own marker where it is densest: Sumo, King, Bomb, desktop and
+                  # phone players, Light and Dark, every season; sheet-own-marker.png (about 15 min)
 pnpm review:sheets [game …]   # the contact sheets again from the shots
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master

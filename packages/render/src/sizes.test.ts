@@ -20,15 +20,11 @@ describe('drawn sizes', () => {
     expect(ghostRadiusPx({ ...NEAR, scale: 0.01 })).toBe(4);
   });
 
-  it('counts the hat, the rings and the own triangle into the room its label keeps clear of', () => {
+  it('counts the hat and the rings into the room its label keeps clear of', () => {
     // The hat reaches 1.5 body radii up (character.ts REACH).
-    expect(ghostReach(10, { id: 1, flags: 0 }, null)).toBe(15);
-    // Own: the triangle above the hat — a 6 px gap, 12 px tall, 1 px for its edge.
-    expect(ghostReach(10, { id: 1, flags: 0 }, 1)).toBe(34);
-    // Protected, not own: the protection ring at +9, 2 px wide; own and protected: the triangle
-    // above that ring.
-    expect(ghostReach(10, { id: 1, flags: GHOST_PROTECTED }, null)).toBe(20);
-    expect(ghostReach(10, { id: 1, flags: GHOST_PROTECTED }, 1)).toBe(39);
+    expect(ghostReach(10, { flags: 0 })).toBe(15);
+    // Protected: the protection ring at +9, 2 px wide.
+    expect(ghostReach(10, { flags: GHOST_PROTECTED })).toBe(20);
   });
 
   // CI 2026-11-18: counting the hat on every side left a crowd's labels no room.

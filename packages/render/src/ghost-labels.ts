@@ -2,7 +2,8 @@
 // look, 2026-11-18): the own character, the real players and the top three by score named in a
 // white pill with an ink outline, bots otherwise not (NIGHT 2026-11-19: a label on almost every
 // character), the tag as the fallback in a crowd, placed by labels.ts; inside King of the
-// Season's zone only the tags, in Halving Bomb a score only for the top scorers and the own one.
+// Season's zone only the tags, in Halving Bomb a score only for the top scorers and the own one;
+// the own label beside the own arrow, every other label out of the arrow's box (owner 2026-11-20).
 
 import { GHOST_BOT, type GhostState } from '@seasonal-spirits/protocol';
 import type { GhostStyle } from './ghosts.js';
@@ -16,7 +17,7 @@ import {
 import { look } from './palette.js';
 import { PILL_PAD, pillBox } from './pill.js';
 import { ghostRadiusPx, ghostReach, ghostSide } from './reach.js';
-import { sx, sy, visibleArea, type View } from './view.js';
+import { sx, sy, visibleArea, type Rect, type View } from './view.js';
 
 const labelFont = (own: boolean): string =>
   `${own ? '600' : '500'} 10px Fredoka, system-ui, sans-serif`;
@@ -28,7 +29,7 @@ function candidateOf(
   v: View,
   g: GhostState,
   style: GhostStyle,
-  scored: ReadonlySet<number> | null,
+  { scored, marker }: { scored: ReadonlySet<number> | null; marker: Rect | null },
 ): LabelCandidate {
   const { ctx } = v;
   const own = g.id === style.ownId;
@@ -43,13 +44,14 @@ function candidateOf(
     x: sx(v, g.x),
     y: sy(v, g.y),
     r: ghostSide(ghostRadiusPx(v), g),
-    up: ghostReach(ghostRadiusPx(v), g, style.ownId),
+    up: ghostReach(ghostRadiusPx(v), g),
     full,
     fullWidth: ctx.measureText(full).width + 2 * PILL_PAD,
     tag,
     tagWidth: ctx.measureText(tag).width + 2 * PILL_PAD,
     own,
     score: g.score,
+    ...(own && marker ? { beside: marker } : {}),
   };
 }
 
@@ -59,10 +61,12 @@ function topScorers(ghosts: readonly GhostState[], n: number): Set<number> {
   return new Set(ranked.slice(0, n).map((g) => g.id));
 }
 
+// `marker`: the own arrow's box (own.ts ownMarkerBox), null when it is not drawn.
 export function drawLabels(
   v: View,
   ghosts: readonly GhostState[],
   style: GhostStyle,
+  marker: Rect | null = null,
 ): PlacedLabel[] {
   const { ctx } = v;
   const l = look();
@@ -75,9 +79,9 @@ export function drawLabels(
     g.id === style.ownId || !(g.flags & GHOST_BOT) || top.has(g.id);
   const candidates = ghosts
     .filter(named)
-    .map((g) => candidateOf(v, g, style, scored))
+    .map((g) => candidateOf(v, g, style, { scored, marker }))
     .filter(shown);
-  const placed = placeLabels(candidates, area);
+  const placed = placeLabels(candidates, area, marker ? [marker] : []);
   ctx.strokeStyle = l.ink;
   ctx.lineWidth = 1.5;
   for (const p of placed) {

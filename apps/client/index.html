@@ -129,6 +129,30 @@
       #help li svg {
         flex-shrink: 0;
       }
+      /* The card scrolls with a finger (the page itself takes no touch gestures) and keeps its
+         scroll to itself; "×" at its top right stays there as it scrolls (help.ts). */
+      #help .card {
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+      }
+      #help .close {
+        position: sticky;
+        top: 0;
+        float: right;
+        z-index: 1;
+        width: 40px;
+        height: 40px;
+        margin: -8px -10px 0 8px;
+        border: 3px solid var(--ink);
+        border-radius: 50%;
+        background: var(--panel);
+        color: var(--panel-text);
+        font:
+          600 24px/1 Fredoka,
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
       /* The help card while more of it lies below: a fade over its bottom edge, held there as the
          card scrolls, gone at the end (help.ts; owner 2026-11-20). It spans the card's padding. */
       #help .card.more::after {

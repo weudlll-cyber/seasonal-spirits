@@ -1,12 +1,13 @@
 // Seasonal Sumo review capture — the contact sheets (`pnpm review:sheets [mode …]` alone, or at
 // the end of a capture): per mode and size one grid of every shot in moment order, each labelled
 // with its number, moment, look and role — the player's run first, then the spectator's —, large enough to read the HUD (desktop and big screen
-// 640 px wide, phone 260 px), split into -1, -2 … past about 4000 px. Drawn by the browser from
-// a page of <img>s, so no image library is needed.
+// 640 px wide, phone 260 px), split into -1, -2 … past about 4000 px; or one sheet of a folder's
+// every shot, all sizes in one flow (the own marker's sheet, own-marker.ts). Drawn by the browser
+// from a page of <img>s, so no image library is needed.
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { chromium } from '@playwright/test';
+import { chromium, type Browser } from '@playwright/test';
 import { REVIEW_DIR } from './shoot.js';
 
 const MAX_HEIGHT = 4000;
@@ -34,12 +35,29 @@ function parse(
 const cell = (file: string, label: string, w: number): string =>
   `<figure><img src="${file}" width="${String(w)}"><figcaption>${label}</figcaption></figure>`;
 
-function page(cells: string[], columns: number, w: number): string {
-  return `<!doctype html><meta charset="utf-8"><style>
+// `main` laid out by `layout` (CSS).
+const page = (cells: string[], layout: string): string =>
+  `<!doctype html><meta charset="utf-8"><style>
 body{margin:0;padding:${String(GAP)}px;background:#20242c;font:600 15px system-ui,sans-serif;color:#fff}
-main{display:grid;grid-template-columns:repeat(${String(columns)},${String(w)}px);gap:${String(GAP)}px}
+main{${layout};gap:${String(GAP)}px}
 figure{margin:0}img{display:block;border:1px solid #556}figcaption{height:${String(LABEL_PX)}px;line-height:${String(LABEL_PX)}px;white-space:nowrap;overflow:hidden}
 </style><main>${cells.join('')}</main>`;
+
+const grid = (columns: number, w: number): string =>
+  `display:grid;grid-template-columns:repeat(${String(columns)},${String(w)}px)`;
+
+// The page at `html` shot whole into `png`.
+async function shootPage(
+  browser: Browser,
+  html: string,
+  width: number,
+  png: string,
+): Promise<void> {
+  const tab = await browser.newPage({ viewport: { width, height: 600 } });
+  await tab.goto(`file:///${html.replaceAll('\\', '/')}`);
+  await tab.screenshot({ path: png, fullPage: true });
+  await tab.close();
+  fs.rmSync(html);
 }
 
 // The sheets of `modes` (folder names under reports/screens/review/); returns their files.
@@ -82,14 +100,9 @@ export async function makeSheets(modes: readonly string[]): Promise<string[]> {
             );
           const name = `sheet-${mode}-${size}${parts > 1 ? `-${String(k + 1)}` : ''}`;
           const html = path.join(REVIEW_DIR, `${name}.html`);
-          fs.writeFileSync(html, page(cells, l.columns, l.width));
-          const tab = await browser.newPage({
-            viewport: { width: l.columns * (l.width + GAP) + 3 * GAP, height: 600 },
-          });
-          await tab.goto(`file:///${html.replaceAll('\\', '/')}`);
-          await tab.screenshot({ path: path.join(REVIEW_DIR, `${name}.png`), fullPage: true });
-          await tab.close();
-          fs.rmSync(html);
+          fs.writeFileSync(html, page(cells, grid(l.columns, l.width)));
+          const width = l.columns * (l.width + GAP) + 3 * GAP;
+          await shootPage(browser, html, width, path.join(REVIEW_DIR, `${name}.png`));
           out.push(`${name}.png`);
         }
       }
@@ -99,6 +112,45 @@ export async function makeSheets(modes: readonly string[]): Promise<string[]> {
   }
   console.log(`sheets: ${out.join(', ')}`);
   return out;
+}
+
+// One sheet of every shot in the folder `mode`, as sheet-<mode>.png: the desktop's at their width
+// first, then the phone's, each by moment (its game first) with Light before Dark, wrapped into
+// rows four desktop shots wide.
+export async function makeFlowSheet(mode: string): Promise<string> {
+  const dir = path.join(REVIEW_DIR, mode);
+  const sizes = Object.keys(LAYOUT);
+  // Size, moment, look of a shot: what it is sorted by (Light before Dark).
+  const key = (p: ReturnType<typeof parse>): [number, string, string] => [
+    sizes.indexOf(p?.size ?? ''),
+    p?.moment ?? '',
+    p?.look === 'light' ? '0' : '1',
+  ];
+  const shots = fs
+    .readdirSync(dir)
+    .map((f) => ({ f, k: key(parse(f)), p: parse(f) }))
+    .filter((x) => x.p !== null)
+    .sort(
+      ({ k: a }, { k: b }) =>
+        a[0] - b[0] ||
+        a[1].localeCompare(b[1], 'en', { numeric: true }) ||
+        a[2].localeCompare(b[2]),
+    );
+  const cells = shots.map(({ f, p }) => {
+    const w = LAYOUT[(p?.size ?? 'desktop') as keyof typeof LAYOUT].width;
+    return cell(`${mode}/${f}`, `${p?.moment ?? ''} · ${p?.look ?? ''} · ${p?.size ?? ''}`, w);
+  });
+  const width = LAYOUT.desktop.columns * (LAYOUT.desktop.width + GAP);
+  const html = path.join(REVIEW_DIR, `sheet-${mode}.html`);
+  fs.writeFileSync(html, page(cells, `display:flex;flex-wrap:wrap;width:${String(width)}px`));
+  const browser = await chromium.launch();
+  try {
+    await shootPage(browser, html, width + 3 * GAP, path.join(REVIEW_DIR, `sheet-${mode}.png`));
+  } finally {
+    await browser.close();
+  }
+  console.log(`sheet: sheet-${mode}.png`);
+  return `sheet-${mode}.png`;
 }
 
 // Alone: the named modes, or every mode with shots.

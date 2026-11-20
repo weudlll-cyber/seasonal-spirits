@@ -10,7 +10,7 @@ import { REACH } from './character.js';
 import { look } from './palette.js';
 import { pill } from './pill.js';
 import { shape } from './shape.js';
-import { sx, sy, type View } from './view.js';
+import { sx, sy, type Rect, type View } from './view.js';
 
 export const AIR_TOP_SCALE = 1.5; // the body's size at the top of the arc
 export const RING_MS = 350; // how long the ground ring spreads at take-off and landing
@@ -57,6 +57,14 @@ export function drawGroundRing(v: View, g: { x: number; y: number }, r: number, 
 
 // A "Dodged!" pill's size on screen, pixels (its text at 13 px bold, with room).
 export const DODGED_BOX = { width: 62, height: 20 };
+
+// The pill's box round its centre `at`, pixels.
+export const dodgedBox = (at: { x: number; y: number }): Rect => ({
+  left: at.x - DODGED_BOX.width / 2,
+  right: at.x + DODGED_BOX.width / 2,
+  top: at.y - DODGED_BOX.height / 2,
+  bottom: at.y + DODGED_BOX.height / 2,
+});
 
 // Where "Dodged!" stands above a body of radius `r` px at (x, y) field units, `t` into its rise
 // (0 … 1): its pill's centre in pixels, kept inside the canvas's sides and below the bar

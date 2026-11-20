@@ -1,7 +1,8 @@
 // Seasonal Sumo — the Sky Island look's text reads in both looks (owner 2026-11-18: contrast at
 // least 4.5:1): the panels' text and the clock's countdown on the panel. (The season names on
 // their colours went with the clock's season cells, NIGHT 2026-11-19.) And the ink outlines stand
-// out on every season's ground at 3:1 at least: the minimap's marks (2026-11-19, minimap.ts).
+// out on every season's ground at 3:1 at least: the minimap's marks (2026-11-19, minimap.ts) and
+// the own ring's outer edge (owner 2026-11-20, own.ts).
 
 import { describe, expect, it } from 'vitest';
 import { DARK, LIGHT, SEASON_NAMES, type Look } from './palette.js';
@@ -33,7 +34,7 @@ describe.each([
 
 describe('ink on the season grounds', () => {
   it.each(SEASON_NAMES.map((name, i) => [name, i] as const))(
-    "outlines the minimap's marks at 3:1 or more on %s's ground, in Light and Dark",
+    "outlines the minimap's marks and the own ring at 3:1 or more on %s's ground, in Light and Dark",
     (_, i) => {
       const [light, dark] = TINTS[i] ?? [];
       expect(contrast(LIGHT.ink, light?.grass ?? LIGHT.ink)).toBeGreaterThanOrEqual(3);

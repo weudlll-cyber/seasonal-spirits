@@ -1,6 +1,6 @@
 // Seasonal Sumo — a canvas for the render unit tests that draws nothing and records what was
 // drawn where, in screen pixels: circles, ellipses (with the fill colour at the time), the paths
-// closed (where they began) and the texts filled. It follows translate and scale (the sprites'
+// closed (where they began) and the texts filled, with where. It follows translate and scale (the sprites'
 // mirroring), not rotate; text measures 6 px per character. Used by the tests only.
 
 export interface Recorded {
@@ -9,10 +9,17 @@ export interface Recorded {
   ellipses: { x: number; y: number; rx: number; ry: number; fill: string }[];
   closed: { x: number; y: number }[];
   texts: string[];
+  textsAt: { text: string; x: number; y: number }[];
 }
 
 export function recorder(width = 1280, height = 800): Recorded {
-  const rec: Omit<Recorded, 'ctx'> = { arcs: [], ellipses: [], closed: [], texts: [] };
+  const rec: Omit<Recorded, 'ctx'> = {
+    arcs: [],
+    ellipses: [],
+    closed: [],
+    texts: [],
+    textsAt: [],
+  };
   let t = { x: 0, y: 0, k: 1, ky: 1 };
   const stack: (typeof t)[] = [];
   let start = { x: 0, y: 0 };
@@ -36,7 +43,10 @@ export function recorder(width = 1280, height = 800): Recorded {
       }),
     moveTo: (x: number, y: number) => (start = at(x, y)),
     closePath: () => rec.closed.push(start),
-    fillText: (s: string) => rec.texts.push(s),
+    fillText: (s: string, x: number, y: number) => {
+      rec.texts.push(s);
+      rec.textsAt.push({ text: s, ...at(x, y) });
+    },
     measureText: (s: string) => ({ width: 6 * s.length }),
     createRadialGradient: () => ({ addColorStop: () => undefined }),
   };

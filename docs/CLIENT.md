@@ -129,8 +129,9 @@ or touch (browsers allow sound only after a gesture).
   character's shadow and ground rings —, under one depth order (`byDepth`, by the ground y of each
   foot) of the characters with everything that stands: each tree, pebble and lantern, each
   fence post and each stretch of rail between two posts, King's flag poles (render
-  `standing.ts`, `fence.ts`); over everything King's crown, the own triangle, hit stars and
-  puffs, the labels and "Dodged!". Nothing of a character is cut anywhere. Around it
+  `standing.ts`, `fence.ts`), the own character after all of them; over them hit stars and
+  puffs, King's crown, the labels and "Dodged!", and over everything the own arrow. Nothing of a
+  character is cut anywhere. Around it
   the sky (render `sky.ts`, drawn once per canvas size into offscreen canvases): sun, small far
   islands, the sea band at the bottom, two big clouds low in front; over it what moves slowly
   (render `ambient.ts`, NIGHT 2026-11-19): the far clouds drift and wrap round, the waves move
@@ -203,14 +204,30 @@ or touch (browsers allow sound only after a gesture).
   with a leaf, winter a wool hat with a pompom), each over a soft shadow, facing the side it last
   walked to, bobbing with stepping feet while it moves. Each team's character in each pose is
   painted once per size into offscreen canvases and copied every frame (render `sprites.ts`).
-  The own one (render `own.ts`, FIX 2026-11-17-3) has a white ring on the ground under it and a
-  white triangle with an ink outline above it, over all others, and "You"; after a respawn, at
-  every match start and on joining, the ring pulses outwards three times (1.5 s). While it is
+  The own one (render `own.ts`, FIX 2026-11-17-3; owner 2026-11-20: in a crowd it was still
+  lost) is drawn after every other character, at their size, with a soft white glow round its
+  outline (3 px, painted into its own sprites). Under it a thick ring in its team's colour with a
+  white edge and an ink outline, 1.6 × its width, breathing between 1.0 and 1.12 × once a second,
+  drawn right before its body, over the feet of those standing in front (a crowd hid it);
+  the ink outline stands out at 3:1 or more on every season's ground in both looks (render
+  `palette.test.ts`: 8.2–11.5:1 in Light, 4.1–5.9:1 in Dark). Above it, over its hat, a bomb or
+  a "no return" mark (render `ghostReach`), a large arrow in its team's colour with an ink
+  outline and a white edge inside it (as the ring; Spring green on Spring grass needed it), a white
+  "YOU" over it, bobbing 3 px once a second, drawn over everything of the
+  field (only the HUD and the banners come over it), and never so high that "YOU" goes under the
+  top bar (then it stands lower, over the hat); no other label or "Dodged!" goes in the
+  arrow's box (render `ownMarkerBox`) — they move or are left out —, the own "Dodged!" stands to
+  its left and the own label "You · n" to its right, or left when the screen's edge is there —
+  clear of other characters if one side has room, else over a character there; never under another
+  label. When the own
+  character is outside the visible field, a small arrow in its team's colour at that edge points
+  to it (render `drawOwnOffScreen`). After a respawn, at every match start and on joining, the
+  ring pulses outwards three times (1.5 s). While it is
   out after a fall, the band's team line says "You fell — back in 3 … 1" (server time of the
   fall plus `outMs`) and its team's respawn band is drawn faintly on the arena
   (`own-marker.ts`; not after the last life). A character in the air after a jump (render
   `jump.ts`, NIGHT 2026-11-18) rises on a smooth arc over its time in the air — up to 1.5× its
-  size and one ghost diameter up on screen at the top, its label and triangle with it — while
+  size and one ghost diameter up on screen at the top, its label and arrow with it — while
   its shadow stays on the ground at its real position, smaller and darker the higher it is; a
   short ring spreads on the ground at the take-off and the landing; "Dodged!" shows in a pill
   above it for a second when the server flags a dash passing under (`GHOST_DODGED`) — moved up
@@ -242,8 +259,8 @@ or touch (browsers allow sound only after a gesture).
   the own ghost (render `scoreTopOf`, `GhostStyle.scoreTop`). A label sits beside its character
   or on a leader line no longer than about the character's height (render `labels.ts`); one that
   finds no room there is left out — "You" never; never on another label, under the bar or past
-  the screen edge; they keep clear of the hat, a bomb, the rings and the triangle (render
-  `reach.ts`).
+  the screen edge; they keep clear of the hat, a bomb, the rings and the own arrow (render
+  `reach.ts`, `ownMarkerBox`).
 - **Camera** (owner 2026-11-17, one for all modes and every client): the whole playing area —
   sumo's arena disc as it is now, the walled square of hill and bomb (render `playBox`) — fits
   below the band with a ghost's radius and 8 px to spare (and the fence's posts, render
@@ -302,7 +319,9 @@ or touch (browsers allow sound only after a gesture).
   goes off and halves the carrier's points), the jump in every mode (a ghost over its shadow, a
   dash passing below), in sumo the variant's rule in one sentence with the
   match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
-  controls. It follows the match on screen. While more of the card lies below its bottom edge a
+  controls. It follows the match on screen. The card scrolls with a finger or the mouse wheel; its
+  "×" at the top right, a tap outside it or any key closes it (owner 2026-11-20: on a phone
+  every touch closed it). While more of the card lies below its bottom edge a
   fade shows there, held as the card scrolls and gone at its end (`moreBelow`, `#help .card.more`;
   owner 2026-11-20).
 - **Result**: the mode's two awards ("Best pusher"/"Survivor", "Last one standing"/"Best
@@ -337,7 +356,8 @@ touch):
 - `e2e/readability.e2e.ts`: the team line, the scores readable in the band, every sampled
   frame's playing area wholly on screen and clear of the controls, its labels in view and
   apart, the own one "You", no bot named outside the top three;
-- `e2e/help.e2e.ts`: the help on the first visit with its rules and drawings;
+- `e2e/help.e2e.ts`: the help on the first visit with its rules and drawings, scrolled on the
+  card and closed with "×", a key or a tap beside it;
 - `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello.
 
 Screenshots go to `reports/screens/latest/` (git-ignored). Seasonal Spirits' latency tool,

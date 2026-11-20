@@ -1,9 +1,11 @@
 // Seasonal Sumo review capture — the browser pages watching a match on the review stack: the
 // player's or a spectator's client at desktop (1280 × 800) or phone (390 × 844, touch) size, the
-// help overlay counted as seen; the viewer (big screen, 1920 × 1080) with its admin panel; and
-// the panel's "Next match" flow: choose the game, its values shown, start it.
+// help overlay counted as seen; the viewer (big screen, 1920 × 1080) with its admin panel; the
+// panel's "Next match" flow: choose the game, its values shown, start it; waiting on a client for
+// that match; and a game's folder name.
 
 import type { Browser, Page } from '@playwright/test';
+import { startableGame } from '@seasonal-spirits/game-core';
 import { HELP_SEEN, type ClientView } from '../../../apps/client/e2e/stack.js';
 import type { Camera } from './shoot.js';
 import { PORTS } from './stack.js';
@@ -36,6 +38,25 @@ export async function openViewer(browser: Browser): Promise<Page> {
   await page.goto(`http://localhost:${String(PORTS.viewer)}/`);
   await page.locator('#tuning:not([hidden])').waitFor({ timeout: 30_000 });
   return page;
+}
+
+// The mode's folder name for a startable game: "Sumo · Last One Standing" → "sumo-last-one-standing".
+export const slug = (game: string): string =>
+  game
+    .toLowerCase()
+    .replace(/[^a-z]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+// Until the client on `page` plays `game`'s match (its mode drawn, no result over it).
+export async function waitForMatch(page: Page, game: string): Promise<void> {
+  await page.waitForFunction(
+    (m) => {
+      const c = (window as unknown as { __client?: ClientView }).__client;
+      return !!c && c.gameMode === m && !c.result;
+    },
+    startableGame(game)?.mode,
+    { timeout: 30_000 },
+  );
 }
 
 // The client's newest frame (apps/client/src/main.ts), null before the first one.

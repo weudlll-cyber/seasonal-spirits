@@ -1,7 +1,7 @@
 // Seasonal Spirits — the help overlay (owner's observation 2026-11-15): shown on the first
-// visit, not on the second, opened any time with "?" (key or band button), closed with one
-// key or tap; "What you see" names every marker on the field with its drawing (session
-// 2026-11-16-LOOK-B). Screenshot <size>-help.png.
+// visit, not on the second, opened any time with "?" (key or band button), scrolled on the card
+// and closed with "×" or a key (owner 2026-11-20); "What you see" names every marker on the field
+// with its drawing (session 2026-11-16-LOOK-B). Screenshot <size>-help.png.
 
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -29,7 +29,16 @@ test('help appears on the first visit, not on the second, and opens again with "
   await expect(help.locator('svg')).toHaveCount(RULES + LEGEND.length);
   await page.screenshot({ path: path.join(SCREENS, `${info.project.name}-help.png`) });
   const phone = info.project.name === 'phone';
-  if (phone) await help.tap();
+  // On the card a touch or the wheel scrolls it and leaves it open (owner 2026-11-20).
+  const card = help.locator('.card');
+  if (phone) await card.tap({ position: { x: 100, y: 200 } });
+  else {
+    await card.hover();
+    await page.mouse.wheel(0, 300);
+    await expect.poll(() => card.evaluate((c) => c.scrollTop)).toBeGreaterThan(0);
+  }
+  await expect(help).toBeVisible();
+  if (phone) await help.locator('.close').tap();
   else await page.keyboard.press('Escape');
   await expect(help).toBeHidden();
 
@@ -40,4 +49,7 @@ test('help appears on the first visit, not on the second, and opens again with "
   if (phone) await page.locator('#help-open').tap();
   else await page.keyboard.press('?');
   await expect(help).toBeVisible();
+  // A tap or a click beside the card closes it.
+  await help.click({ position: { x: 4, y: 300 } });
+  await expect(help).toBeHidden();
 });

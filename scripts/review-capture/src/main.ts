@@ -9,11 +9,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { STARTABLE_GAMES, startableGame } from '@seasonal-spirits/game-core';
+import { STARTABLE_GAMES } from '@seasonal-spirits/game-core';
 import { chromium, type Browser, type Page } from '@playwright/test';
-import type { ClientView } from '../../../apps/client/e2e/stack.js';
 import { Director } from './moments.js';
-import { fold, openClient, openViewer, readClient, startGame, type Size } from './pages.js';
+import {
+  fold,
+  openClient,
+  openViewer,
+  readClient,
+  slug,
+  startGame,
+  waitForMatch,
+  type Size,
+} from './pages.js';
 import { startPlayer } from './player.js';
 import { makeSheets } from './sheets.js';
 import { Camera, REVIEW_DIR, type Watcher } from './shoot.js';
@@ -21,13 +29,6 @@ import { startStack } from './stack.js';
 
 const MATCH_LIMIT_MS = 12 * 60_000; // a match that never ends (Last One Standing kept halving)
 const POLL_MS = 100;
-
-// The mode's folder name for a startable game: "Sumo · Last One Standing" → "sumo-last-one-standing".
-export const slug = (game: string): string =>
-  game
-    .toLowerCase()
-    .replace(/[^a-z]+/g, '-')
-    .replace(/^-|-$/g, '');
 
 if (process.env.NODE_ENV === 'production') throw new Error('review-capture is development only');
 
@@ -66,15 +67,7 @@ async function run(browser: Browser, game: string, size: Size): Promise<void> {
   const camera = new Camera(slug(game), watchers);
   await camera.shootStart(['player', 'spectator']);
   await startGame(viewer, game, camera);
-  const mode = startableGame(game)?.mode;
-  await player.waitForFunction(
-    (m) => {
-      const c = (window as unknown as { __client?: ClientView }).__client;
-      return !!c && c.gameMode === m && !c.result;
-    },
-    mode,
-    { timeout: 30_000 },
-  );
+  await waitForMatch(player, game);
   await player.waitForTimeout(2000);
   await camera.shoot('first-seconds');
   await extras(player, viewer, camera);

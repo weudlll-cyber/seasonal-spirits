@@ -2,7 +2,8 @@
 // tests 2026-11-15 and 2026-11-16; NIGHT 2026-11-19: fewer, and near their character). A label
 // sits near its character or not at all — the own one always shows; never two on top of each
 // other, never on another character, never under the top bar or past the screen edge. Also the
-// label's words: name and the mode's score. Pure: positions and widths in, placements out,
+// label's words: name and the mode's score. The own label goes beside the own arrow first (owner
+// 2026-11-20). Pure: positions and widths in, placements out,
 // tested without a canvas.
 
 import { GHOST_BOT, ghostName, ghostTag, type GhostState } from '@seasonal-spirits/protocol';
@@ -25,7 +26,7 @@ export interface LabelCandidate {
   // the ring hid its last letter).
   r: number;
   // Pixels above the centre what is drawn reaches when that is more than `r` (a character's hat,
-  // a bomb, the own triangle: Sky Island look); `r` when absent.
+  // a bomb: Sky Island look); `r` when absent.
   up?: number;
   full: string; // the name (with the score once it has some)
   fullWidth: number;
@@ -33,6 +34,7 @@ export interface LabelCandidate {
   tagWidth: number;
   own: boolean;
   score: number; // a higher score, a better spot
+  beside?: Rect; // the own arrow's box: the own label tries its right, then its left side first
 }
 
 export interface PlacedLabel {
@@ -72,9 +74,10 @@ function insideX(area: Rect, x: number, half: number): number {
   return Math.min(Math.max(x, area.left + half + GAP), area.right - half - GAP);
 }
 
-// The places to try, best first: the full text above and below the character, then the tag
-// above, below, right and left of it, then the tag a little further out on a short leader line
-// (the own one keeps its full text everywhere).
+// The places to try, best first: beside the own arrow when there is one (twice: clear of every
+// character first, then over one — choose), the full text above and below the character, then
+// the tag above, below, right and left of it, then the tag a little further out on a short leader
+// line (the own one keeps its full text everywhere).
 function spotsFor(c: LabelCandidate): Spot[] {
   const full = { text: c.full, width: c.fullWidth };
   const short = c.own ? full : { text: c.tag, width: c.tagWidth };
@@ -83,7 +86,7 @@ function spotsFor(c: LabelCandidate): Spot[] {
     { ...t, x: c.x, y: c.y - (c.up ?? c.r) - 6, leader: false },
     { ...t, x: c.x, y: c.y + c.r + 6 + LABEL_HEIGHT, leader: false },
   ];
-  const spots = [...near(full), ...near(short)];
+  const spots = [...beside(c), ...beside(c), ...near(full), ...near(short)];
   spots.push({ ...short, x: c.x + c.r + 4 + short.width / 2, y: middle, leader: false });
   spots.push({ ...short, x: c.x - c.r - 4 - short.width / 2, y: middle, leader: false });
   const tall = (c.up ?? c.r) + c.r; // the character's drawn height
@@ -97,6 +100,18 @@ function spotsFor(c: LabelCandidate): Spot[] {
   return spots;
 }
 
+// Right, then left of the own arrow's box, the label's middle at the box's middle.
+function beside(c: LabelCandidate): Spot[] {
+  const b = c.beside;
+  if (!b) return [];
+  const y = (b.top + b.bottom) / 2 + LABEL_HEIGHT / 2;
+  const half = c.fullWidth / 2;
+  return [
+    { text: c.full, width: c.fullWidth, x: b.right + 4 + half, y, leader: false },
+    { text: c.full, width: c.fullWidth, x: b.left - 4 - half, y, leader: false },
+  ];
+}
+
 // The spot's box, moved inside the area's left and right edge; null if it reaches under the
 // bar or below the screen.
 function boxIn(area: Rect, s: Spot): Rect | null {
@@ -108,14 +123,24 @@ function boxIn(area: Rect, s: Spot): Rect | null {
 
 // The first free spot; when every spot is taken, none — except for the own character: then the
 // first one inside the area (it may overlap), and when no spot fits between the bar and the
-// bottom, the tag at its height, still inside the left and right edge.
-function choose(c: LabelCandidate, area: Rect, taken: readonly Rect[]): PlacedLabel | null {
+// bottom, the tag at its height, still inside the left and right edge. Beside the own arrow the
+// own label first looks for room clear of every character, then minds only `avoid` — the arrow's
+// box — and goes over a character there (2026-11-20 capture: with a character beside the arrow
+// it went below its own one; over one it had hidden another carrier's bomb).
+function choose(
+  c: LabelCandidate,
+  area: Rect,
+  { taken, avoid }: { taken: readonly Rect[]; avoid: readonly Rect[] },
+): PlacedLabel | null {
   let fallback: { s: Spot; box: Rect } | null = null;
-  for (const s of spotsFor(c)) {
+  // The second pair beside the arrow (spotsFor) minds the arrow's box alone.
+  const loose = (i: number): boolean => c.beside !== undefined && (i === 2 || i === 3);
+  for (const [i, s] of spotsFor(c).entries()) {
     const box = boxIn(area, s);
     if (!box) continue;
     fallback ??= { s, box };
-    if (!taken.some((t) => overlaps(t, box, GAP))) return toPlaced(c, s, box);
+    const against = loose(i) ? avoid : taken;
+    if (!against.some((t) => overlaps(t, box, GAP))) return toPlaced(c, s, box);
   }
   if (!c.own) return null;
   if (fallback) return toPlaced(c, fallback.s, fallback.box);
@@ -160,7 +185,7 @@ export function placeLabels(
   const taken: Rect[] = [...avoid, ...candidates.map(bodyBox)];
   const placed: PlacedLabel[] = [];
   for (const c of order) {
-    const p = choose(c, area, taken);
+    const p = choose(c, area, { taken, avoid });
     if (!p) continue;
     placed.push(p);
     taken.push({

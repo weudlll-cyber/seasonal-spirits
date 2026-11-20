@@ -54,13 +54,11 @@ describe('the "no return" mark', () => {
 
   it('stands above the hat, or above the bomb of a ghost that carries one again', () => {
     const r = 12;
-    const plain = ghostReach(r, ghost(1, 0, 0), null);
-    expect(ghostReach(r, ghost(1, 0, GHOST_NO_RETURN), null)).toBe(noReturnReach(r, false));
+    const plain = ghostReach(r, ghost(1, 0, 0));
+    expect(ghostReach(r, ghost(1, 0, GHOST_NO_RETURN))).toBe(noReturnReach(r, false));
     expect(noReturnReach(r, false)).toBeGreaterThan(plain);
     expect(noReturnReach(r, true)).toBeGreaterThan(bombReach(r));
-    expect(ghostReach(r, ghost(1, 0, GHOST_NO_RETURN | GHOST_BOMB), null)).toBe(
-      noReturnReach(r, true),
-    );
+    expect(ghostReach(r, ghost(1, 0, GHOST_NO_RETURN | GHOST_BOMB))).toBe(noReturnReach(r, true));
   });
 
   it("keeps the ghost's label above the mark", () => {

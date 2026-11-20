@@ -1,8 +1,9 @@
 // Seasonal Sumo review capture — the one scripted player among 31 bots, playing as a person might:
 // in Sumo it circles inside the arena and dashes at whoever comes close, so it can be knocked off;
 // in King it makes for the zone; in Bomb for the nearest character (to take a bomb or pass one
-// on) and dashes at it; everywhere it jumps now and then. Keyboard on the desktop, the joystick
-// on the phone, both the browser specs' helpers (apps/client/e2e/stack.ts).
+// on) and dashes at it; everywhere it jumps now and then. A calm player (the own marker's capture,
+// own-marker.ts) heads for Sumo's middle, where the crowd is, and never dashes. Keyboard on the
+// desktop, the joystick on the phone, both the browser specs' helpers (apps/client/e2e/stack.ts).
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import type { Page } from '@playwright/test';
@@ -26,7 +27,7 @@ const press = (page: Page, id: 'dash' | 'jump'): Promise<void> =>
 function aim(
   v: ClientView,
   mode: GameMode,
-  nowMs: number,
+  { nowMs, calm }: { nowMs: number; calm: boolean },
 ): { dx: number; dy: number; near: boolean } {
   const me = v.ghostsShown.find((g) => g.id === v.ghost);
   const others = v.ghostsShown.filter((g) => g.id !== v.ghost);
@@ -45,7 +46,7 @@ function aim(
   const area = v.area;
   if (!own || !area) return { dx: 0, dy: 0, near };
   const turn = mode === 'sumo' ? nowMs / 4000 : 0;
-  const reach = mode === 'sumo' ? area.r * 0.45 : 0;
+  const reach = mode === 'sumo' && !calm ? area.r * 0.45 : 0;
   const tx = area.x + Math.cos(turn) * reach;
   const ty = area.y + Math.sin(turn) * reach;
   return { dx: tx - own.x, dy: ty - own.y, near };
@@ -58,6 +59,7 @@ export async function startPlayer(
   page: Page,
   touch: boolean,
   read: () => ClientView | null,
+  calm = false,
 ): Promise<{ stop: () => void }> {
   const steering: Steering = touch ? await joystick(page) : keyboard(page);
   let tick = 0;
@@ -68,9 +70,9 @@ export async function startPlayer(
       const v = read();
       tick++;
       if (v?.own && !v.result && v.gameMode) {
-        const a = aim(v, v.gameMode, Date.now());
+        const a = aim(v, v.gameMode, { nowMs: Date.now(), calm });
         await steering.hold(axis(a.dx, 20), axis(a.dy, 20));
-        if (a.near && tick - lastDash > DASH_EVERY) {
+        if (a.near && !calm && tick - lastDash > DASH_EVERY) {
           lastDash = tick;
           await press(page, 'dash');
         }

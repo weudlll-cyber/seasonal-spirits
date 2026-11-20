@@ -30,7 +30,6 @@ export interface Look {
   pebble: string;
   crack: string; // the next halving's line
   feet: readonly string[]; // per team: the shade of its colour the feet wear
-  marker: string; // the own character's ring and triangle
   puff: string; // dash puffs, fall streaks, the splash
   panel: string; // labels, the clock, bubbles
   panelText: string;
@@ -59,7 +58,6 @@ export const LIGHT: Look = {
   pebble: '#d8d0c4',
   crack: '#6e4c34',
   feet: ['#7fb446', '#e2702a', '#e8a82a', '#2ea6e4'],
-  marker: '#ffffff',
   puff: '#ffffff',
   panel: '#ffffff',
   panelText: '#2b2140',
@@ -88,7 +86,6 @@ export const DARK: Look = {
   pebble: '#6d6480',
   crack: '#ffcf6e',
   feet: ['#6f9a3c', '#c25a1c', '#c98c1a', '#1f86c0'],
-  marker: '#ffe27a',
   puff: '#c9c3ff',
   panel: '#2b2550',
   panelText: '#f3f0ff',

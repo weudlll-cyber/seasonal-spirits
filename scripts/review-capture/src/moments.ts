@@ -36,7 +36,7 @@ const OWN: readonly { moment: string; test: (flags: number, was: number) => bool
 ];
 
 // The player stands in King's zone.
-function inZone(v: ClientView): boolean {
+export function inZone(v: ClientView): boolean {
   const z = v.gameMode === 'hill' ? v.area : null;
   return !!(z && v.own && Math.hypot(v.own.x - z.x, v.own.y - z.y) < z.r);
 }

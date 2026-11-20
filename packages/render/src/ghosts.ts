@@ -1,8 +1,9 @@
 // Seasonal Sumo — the ghosts as the Sky Island look's characters (owner's choice 2026-11-18): a
 // character in its team's colour and season hat (character.ts, cached by sprites.ts), players
 // and bots alike, back to front by where they stand, each over a soft shadow, facing the side it
-// walks to with a bob and stepping feet; the own one's ring on the ground and triangle above
-// (own.ts). A fast one — dashing or knocked flying — leaves three white puffs; one falling off
+// walks to with a bob and stepping feet; the own one drawn after every other character, glowing,
+// its ring on the ground, its arrow above all of the field and an arrow at the screen's edge when
+// it is off screen (own.ts; owner 2026-11-20). A fast one — dashing or knocked flying — leaves three white puffs; one falling off
 // tips over the edge into the sea (fall.ts); one out is not drawn; one just back (protected)
 // wears a white dashed ring; one in the air after a jump rises on an arc while its shadow stays
 // on the ground, with a ground ring at take-off and landing and "Dodged!" when a dash passed
@@ -14,8 +15,9 @@
 // slides with spiral eyes (moments.ts, effects.ts). Layers (owner 2026-11-19): the ground marks
 // under every character (shadows, rings, dust); the bodies in one depth order with what stands on
 // the island — trees, pebbles, lanterns, fence posts and rails, King's flag poles (standing.ts),
-// no body cut anywhere; over everything the own triangle, the hit stars and the puffs, King's
-// crown, the season's particles, the labels (ghost-labels.ts) and "Dodged!". A character off
+// no body cut anywhere, the own one last; over them the hit stars and the puffs, King's crown, the
+// season's particles, the labels (ghost-labels.ts) and "Dodged!" — none in the own arrow's box —
+// and over everything the own arrow. A character off
 // Sumo's island — falling, or in the air beyond its edge — has its standing size and no marks on
 // the ground; one off its back is drawn behind the island's body (drawFallsBehind, before the
 // island; planner 2026-11-20). What the drawing remembers between frames is trails.ts.
@@ -38,8 +40,10 @@ import { drawNoReturn } from './no-return.js';
 import {
   airScale,
   arcHeight,
+  DODGED_BOX,
   clearBubble,
   dodgedAt,
+  dodgedBox,
   drawDodged,
   drawGroundRing,
   drawShadow,
@@ -47,14 +51,14 @@ import {
 } from './jump.js';
 import type { PlacedLabel } from './labels.js';
 import { fastSpeed } from './moments.js';
-import { drawOwnPointer, drawOwnRing } from './own.js';
+import { drawOwnMarker, drawOwnOffScreen, drawOwnRing, ownMarkerBox } from './own.js';
 import { look } from './palette.js';
 import { PROTECT_RING, ghostRadiusPx, ghostReach } from './reach.js';
 import { shape } from './shape.js';
 import { drawSprite } from './sprites.js';
 import type { FieldStanding, Standing } from './standing.js';
 import type { Trails } from './trails.js';
-import { byDepth, circle, sx, sy, type View } from './view.js';
+import { byDepth, circle, overlaps, sx, sy, type Rect, type View } from './view.js';
 import { drawWindUp } from './windup.js';
 
 const WALK_SPEED = 20; // field units per second before the feet step
@@ -111,7 +115,27 @@ export function drawGhosts(
   const front = (g: GhostState): boolean => visible(g) && !offBack(g, style.island ?? null);
   const shown = ghosts.filter(front).map((g) => aloft(v, g, style));
   for (const d of shown) drawGround(v, d, style);
-  drawStanding(v, shown, style);
+  const own = shown.find((d) => d.g.id === style.ownId) ?? null;
+  const top = drawStanding(v, shown, style);
+  drawOverBodies(v, shown, style);
+  const mark = own && top !== null ? { x: own.g.x, y: own.g.y, top, team: own.g.team } : null;
+  const box = mark ? ownMarkerBox(v, mark) : null;
+  const labels = drawLabels(
+    v,
+    shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),
+    style,
+    box,
+  );
+  drawBubbles(v, shown, style, box);
+  // The own arrow over everything of the field: only the HUD and the banners come over it.
+  if (mark) drawOwnMarker(v, mark, mark.team, style.nowMs);
+  const ownGhost = ghosts.find((g) => g.id === style.ownId && visible(g));
+  if (ownGhost) drawOwnOffScreen(v, ownGhost, ownGhost.team);
+  return labels;
+}
+
+// Over the bodies: the hit stars and the puffs, King's crown, the season's particles.
+function drawOverBodies(v: View, shown: readonly Aloft[], style: GhostStyle): void {
   for (const { g, real } of shown) {
     const star = style.trails.moments.star(g.id, style.nowMs);
     if (star) drawStar(v, star, ghostRadiusPx(v), star.t);
@@ -120,35 +144,41 @@ export function drawGhosts(
   }
   style.field?.over(); // King's crown: over the stars (p18, 2026-11-19: stars hid it)
   style.air?.();
-  const labels = drawLabels(
-    v,
-    shown.map((d) => d.g).filter((g) => !(g.flags & GHOST_FALLING)),
-    style,
-  );
-  const bubbles: { x: number; y: number }[] = []; // "Dodged!" never over another one
-  for (const { g, h } of shown) {
-    const t = style.trails.dodged(g.id, style.nowMs);
-    const at =
-      t === null ? null : clearBubble(dodgedAt(v, g, ghostRadiusPx(v) * airScale(h), t), bubbles);
-    if (t !== null && at) {
-      drawDodged(v.ctx, at, t);
-      bubbles.push(at);
-    }
-  }
-  return labels;
 }
 
-// On the ground under a character: its shadow, the ring of a take-off or a landing, its dust, and
-// for the own one its ring.
+// "Dodged!" never over another one, and none in the own arrow's `box` (left out when it would
+// be); the own one beside the arrow, on its left (the own label sits on its right).
+function drawBubbles(v: View, shown: readonly Aloft[], style: GhostStyle, box: Rect | null): void {
+  const bubbles: { x: number; y: number }[] = [];
+  const ownFirst = [...shown].sort(
+    (a, b) => Number(b.g.id === style.ownId) - Number(a.g.id === style.ownId),
+  );
+  for (const { g, h } of ownFirst) {
+    const t = style.trails.dodged(g.id, style.nowMs);
+    if (t === null) continue;
+    const own = box !== null && g.id === style.ownId;
+    const at = own
+      ? { x: box.left - DODGED_BOX.width / 2 - 4, y: (box.top + box.bottom) / 2 }
+      : clearBubble(dodgedAt(v, g, ghostRadiusPx(v) * airScale(h), t), bubbles);
+    if (!at || (!own && box && overlaps(box, dodgedBox(at)))) continue;
+    drawDodged(v.ctx, at, t);
+    bubbles.push(at);
+  }
+}
+
+// Whether a character stands on the ground it is over: not falling, not off Sumo's island.
+const onGround = (g: GhostState, style: GhostStyle): boolean =>
+  !(g.flags & GHOST_FALLING) && !offIsland(g, style.island ?? null);
+
+// On the ground under a character: its shadow, the ring of a take-off or a landing, its dust.
 function drawGround(v: View, { real, h }: Aloft, style: GhostStyle): void {
-  if (real.flags & GHOST_FALLING || offIsland(real, style.island ?? null)) return;
+  if (!onGround(real, style)) return;
   const r = ghostRadiusPx(v);
   drawShadow(v, real, r, h);
   const ring = style.trails.ring(real.id, style.nowMs);
   if (ring !== null) drawGroundRing(v, real, r, ring);
   const dust = style.trails.moments.dust(real.id, style.nowMs);
   if (dust !== null) drawDust(v, real, r, dust);
-  if (real.id === style.ownId) drawOwnRing(v, { ...real, r }, style.ownPulseMs ?? null);
 }
 
 // The characters off the back of Sumo's island, back to front: drawn before the island's body
@@ -179,21 +209,29 @@ function drawPuffs(v: View, g: GhostState, trails: Trails, r: number): void {
 }
 
 // The bodies and the island's standing pieces back to front by where they stand on the ground (a
-// body by its centre, where it stands even in the air); the own one's triangle over all of them,
-// so it is always found (FIX 2026-11-17-3).
-function drawStanding(v: View, shown: readonly Aloft[], style: GhostStyle): void {
-  const own: { at: { x: number; y: number; top: number } | null } = { at: null };
-  const bodies = shown.map((d): Standing => ({
-    y: sy(v, d.real.y),
-    draw: () => {
-      const r = drawBody(v, d, style);
-      if (d.g.id === style.ownId && r !== null) {
-        own.at = { x: d.g.x, y: d.g.y, top: ghostReach(r, d.g, null) };
-      }
-    },
-  }));
+// body by its centre, where it stands even in the air); the own one after all of them, so no
+// other character or piece ever covers it (owner 2026-11-20), its ring right before it, over the
+// others' feet (2026-11-20 capture: in a crowd those standing in front hid it). Returns how far the own drawing
+// reaches above its centre (its arrow goes over that), null when it is not drawn standing.
+function drawStanding(v: View, shown: readonly Aloft[], style: GhostStyle): number | null {
+  const bodies = shown
+    .filter((d) => d.g.id !== style.ownId)
+    .map((d): Standing => ({
+      y: sy(v, d.real.y),
+      draw: () => {
+        drawBody(v, d, style);
+      },
+    }));
   for (const piece of byDepth([...(style.field?.pieces ?? []), ...bodies])) piece.draw();
-  if (own.at) drawOwnPointer(v, own.at);
+  const own = shown.find((d) => d.g.id === style.ownId);
+  if (!own) return null;
+  if (onGround(own.real, style)) {
+    const at = { ...own.real, r: ghostRadiusPx(v) };
+    drawOwnRing(v, at, style.nowMs, style.ownPulseMs ?? null);
+  }
+  if (drawBody(v, own, style) === null) return null;
+  // The size on the ground, not a carrier's pulse: the arrow holds still over the bomb.
+  return ghostReach(ghostRadiusPx(v) * airScale(own.h), own.g);
 }
 
 // Returns the body's drawn radius, or null while it falls (no marks then).
@@ -221,7 +259,8 @@ function drawBody(v: View, d: Aloft, style: GhostStyle): number | null {
   const pose = moments.dizzy(g.id) ? 'dizzy' : walking ? step : 'idle';
   const y = sy(v, g.y) - Math.abs(bob);
   const squash = moments.squash(g.id, style.nowMs);
-  drawSprite(ctx, { x: sx(v, g.x), y, r, base, left, squash }, g.team, pose);
+  const glow = g.id === style.ownId;
+  drawSprite(ctx, { x: sx(v, g.x), y, r, base, left, squash, glow }, g.team, pose);
   if (g.flags & GHOST_PROTECTED) {
     ctx.strokeStyle = look().puff;
     ctx.lineWidth = 2;

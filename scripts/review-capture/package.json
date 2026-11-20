@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/main.ts",
+    "own-marker": "tsx src/own-marker.ts",
     "sheets": "tsx src/sheets.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
