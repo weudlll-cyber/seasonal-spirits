@@ -64,7 +64,7 @@ async function run(browser: Browser, game: string, size: Size): Promise<void> {
   ];
   if (size === 'desktop') watchers.push({ page: viewer, size: 'big', role: 'viewer' });
   const camera = new Camera(slug(game), watchers);
-  await camera.shoot('start-screen', ['player', 'spectator']);
+  await camera.shootStart(['player', 'spectator']);
   await startGame(viewer, game, camera);
   const mode = startableGame(game)?.mode;
   await player.waitForFunction(
