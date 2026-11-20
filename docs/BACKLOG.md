@@ -89,14 +89,29 @@ Avalanche, Halving Run (coins halve again and again), Sun Core (the carrier scor
 slower), Seasonal Swap (close to the paused Spirits rules — caution). Done when: the owner
 has decided whether to build it, and which minigames.
 
-ak. **Shared kit across games — inventory done, decision pending owner** (2026-11-20; Seasonal
-Party stays a standalone game): one place for the shell, UI and platform parts every game
-uses. The read-only inventory of Bingo, Mini Games, the website and this repository is
-[reports/shared-kit-inventory-2026-11-20.md](../reports/shared-kit-inventory-2026-11-20.md)
-(recommended: a separate public kit repository taken as a git dependency pinned to a tag;
-fonts, core tokens, motion, theme init and the sign-in/chat-embed client helpers first). Done
-when: the owner has decided the eight questions at the end of that report; nothing is built
-before.
+ak. **Shared kit across games — kit v0.1.0 created** (2026-11-20; Seasonal Party stays a
+standalone game). The inventory is
+[reports/shared-kit-inventory-2026-11-20.md](../reports/shared-kit-inventory-2026-11-20.md);
+the owner decided on 2026-11-20 (kit `docs/DECISIONS.md` K1–K7). The kit is the public repository
+`weudlll-cyber/seasonal-kit`, `@seasonal/kit`, which a game pins as a git dependency on a tag. Its
+tag v0.1.0 (merge commit `920f983`) holds:
+
+- the 49 shared tokens;
+- the website's season colours, checked against the site's master in CI;
+- `sk-` motion;
+- the theme logic, with its early script and Vite plugin.
+
+Fonts stay in the games until their licence is confirmed (kit BACKLOG 7). Still open:
+
+- the sign-in helpers and the chat embed, client side;
+- the call-view slot (waits for the website);
+- the server sign-in and 2FA merge;
+- adopting the kit in Mini Games, then Bingo Royale, then Seasonal Party.
+
+For Seasonal Party, the kit gives the frame around the play field: bars, chat, start card,
+result page and fonts. The island look and its round font stay inside the field (kit DECISIONS
+K4). Done when: all three games pin a kit tag and have dropped their own copies; each later kit
+step is in its own task.
 
 In the order decided on 2026-11-14.
 
@@ -1613,3 +1628,4 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-20 | `pnpm e2e help` (the card scrolls on a touch or the wheel, "×" and a click beside it close it)                                                                                                                                                                                                                 | own-marker working tree                                                                                                                   | 2 passed (desktop, phone)                                                                                                                                                                                                                                                                               | this commit                                                                                    |
 | 2026-11-20 | `pnpm review:own-marker`, final run (King again after the top-edge fix)                                                                                                                                                                                                                                        | own-marker working tree                                                                                                                   | 60 pictures, every one looked at: own character at a glance in all, no label or "Dodged!" over the arrow in any (the minimap once over "YOU" on the phone); bomb, fuse, spark and arrow all visible when carrying                                                                                       | `reports/own-marker-2026-11-20.md`, `sheet-own-marker.png`                                     |
 | 2026-11-20 | format check of the shared-kit inventory and the backlog (docs only: no tests, no typecheck)                                                                                                                                                                                                                   | shared-kit working tree                                                                                                                   | clean                                                                                                                                                                                                                                                                                                   | this commit                                                                                    |
+| 2026-11-20 | format check of the backlog (docs only: no tests, no typecheck)                                                                                                                                                                                                                                                | shared-kit v0.1.0 backlog update                                                                                                          | clean                                                                                                                                                                                                                                                                                                   | this commit                                                                                    |
