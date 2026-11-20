@@ -12,6 +12,8 @@
 
 import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import {
+  GHOST_FALLING,
+  GHOST_OUT,
   STATE_OPEN_END,
   STATE_RESULT,
   STATE_TO_END,
@@ -39,9 +41,14 @@ const CRACK_TICKS = 18;
 // The zoom cap (planner 2026-11-19): a character's body diameter on screen at most this share
 // of the screen's shorter side — 48 px at 1280×800 — on screens whose shorter side is at least
 // CAP_FROM_PX (desktop, tablet). A phone has no cap (decision 2026-11-19, BACKLOG am: late
-// Sumo's island was 210 of 390 px wide): there the camera always fits the field.
+// Sumo's island was 210 of 390 px wide): there the camera always fits the field. The cap holds
+// only while more than FEW_STANDING characters stand; with fewer the camera comes closer until the
+// island fills CLOSE_FILL of the room fitBox fits it into (planner 2026-11-20: late Sumo's island
+// was a third of a desktop's width).
 export const BODY_SHARE = 0.06;
 export const CAP_FROM_PX = 600;
+export const FEW_STANDING = 8;
+export const CLOSE_FILL = 2 / 3;
 
 // The playing area, the square the client's camera fits (owner 2026-11-17: the whole of it
 // always on screen): the walled square as it is now, or sumo's arena as it is now — the server
@@ -56,17 +63,27 @@ export function playBox(s: ServerState | undefined): Box {
 // The square the client's camera fits around the playing area: room for a character standing on
 // its edge and, in the walled modes, for the back fence's posts above the back wall (NIGHT
 // 2026-11-19: they reached under the band) and in hill for the zone's flag poles there — their
-// height in field depth at the usual slant, the most a steeper view needs. On a screen of CAP_FROM_PX and more never so small that a body is
-// drawn larger than BODY_SHARE allows (2026-11-19: late in a match the characters grew huge),
-// so a late halving there shows more sky round the island instead.
+// height in field depth at the usual slant, the most a steeper view needs. On a screen of
+// CAP_FROM_PX and more never so small that a body is drawn larger than BODY_SHARE allows
+// (2026-11-19: late in a match the characters grew huge), so a late halving there shows more sky
+// round the island instead — while more than FEW_STANDING stand; with fewer the camera comes
+// closer, never past the playing area at CLOSE_FILL of the room and never past the fit a phone
+// gets.
 export function cameraBox(s: ServerState | undefined, screen: Screen): Box {
-  const box = around(playBox(s), rise(s));
+  const play = playBox(s);
+  const box = around(play, rise(s));
   const { width, height } = screen.ctx.canvas;
   const shorter = Math.min(width, height);
   if (shorter < CAP_FROM_PX) return box;
   const maxScale = (BODY_SHARE * shorter) / (2 * shape().ghostRadius);
-  return { ...box, half: Math.max(box.half, halfPx(screen) / maxScale) };
+  const capped = halfPx(screen) / maxScale;
+  const far = standing(s) > FEW_STANDING ? capped : Math.min(capped, play.half / CLOSE_FILL);
+  return { ...box, half: Math.max(box.half, far) };
 }
+
+// How many characters stand in the playing area: neither falling nor out.
+const standing = (s: ServerState | undefined): number =>
+  s?.ghosts.filter((g) => !(g.flags & (GHOST_FALLING | GHOST_OUT))).length ?? 0;
 
 // The pixels `screen` gives half of any box the camera fits: fitBox's scale for a half side of 1.
 export function halfPx(screen: Screen): number {

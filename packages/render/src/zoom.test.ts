@@ -2,23 +2,43 @@
 // shorter side is at least 600 px the camera never comes so close that a character's body
 // diameter exceeds 6 % of that side (48 px at 1280×800) — a late halving shows more sky round the
 // island instead of ever larger characters; below 600 px (a phone) there is no cap and the
-// camera always fits the field, so late Sumo, King and Bomb fill the width to the end. A falling
+// camera always fits the field, so late Sumo, King and Bomb fill the width to the end. The cap
+// holds only while more than 8 characters stand (planner 2026-11-20): with 8 or fewer the camera
+// comes closer, client and viewer alike, until the island fills two thirds of its room. A falling
 // character is never drawn larger than a standing one.
 
-import type { ServerState } from '@seasonal-spirits/protocol';
+import { GHOST_FALLING, GHOST_OUT, type ServerState } from '@seasonal-spirits/protocol';
 import { describe, expect, it } from 'vitest';
 import { bodies, recorder } from './canvas-recorder.js';
 import { drawFall } from './fall.js';
-import { BODY_SHARE, CAP_FROM_PX, cameraBox, playBox } from './field.js';
+import {
+  BODY_SHARE,
+  CAP_FROM_PX,
+  CLOSE_FILL,
+  FEW_STANDING,
+  cameraBox,
+  halfPx,
+  playBox,
+} from './field.js';
 import { ghostRadiusPx } from './reach.js';
 import { fitBox, sx } from './view.js';
 
 const ctx = (width: number, height: number): CanvasRenderingContext2D =>
   ({ canvas: { width, height } }) as CanvasRenderingContext2D;
-const sumo = (r: number): ServerState =>
-  ({ mode: 0, wall: 0, area: { x: 1000, y: 1000, r }, next: null }) as unknown as ServerState;
-const walled = (mode: number, wall: number): ServerState =>
-  ({ mode, wall, area: null, next: null }) as unknown as ServerState;
+// `n` characters standing (the zoom cap's crowd), `flags` more beside them falling or out.
+const crowd = (n: number, ...flags: number[]) =>
+  [...Array<number>(n).fill(0), ...flags].map((f) => ({ flags: f }));
+const CROWD = crowd(FEW_STANDING + 1);
+const sumo = (r: number, ghosts = CROWD): ServerState =>
+  ({
+    mode: 0,
+    wall: 0,
+    area: { x: 1000, y: 1000, r },
+    next: null,
+    ghosts,
+  }) as unknown as ServerState;
+const walled = (mode: number, wall: number, ghosts = CROWD): ServerState =>
+  ({ mode, wall, area: null, next: null, ghosts }) as unknown as ServerState;
 
 const TOP = 128;
 const room = { keepOut: [], marginPx: 8 };
@@ -81,5 +101,40 @@ describe('the zoom cap', () => {
       drawFall(r.ctx, { x: 400, y: 300, r: 12, team: 1, left: false }, t);
       for (const b of bodies(r)) expect(b.r).toBeLessThanOrEqual(12);
     }
+  });
+});
+
+describe('the zoom cap with 8 or fewer standing', () => {
+  // The island's share of the room the camera fits it into (halfPx: half of that room).
+  const share = (w: number, h: number, s: ServerState): number =>
+    fieldWidth(w, h, s) / (2 * halfPx({ ctx: ctx(w, h), top: TOP, room }));
+
+  it('comes closer with 8 or fewer standing: late Sumo fills two thirds, on the desktop and in the viewer', () => {
+    for (const [w, h] of [
+      [1280, 800],
+      [1920, 1080],
+    ] as const) {
+      const few = sumo(143, crowd(FEW_STANDING));
+      expect(share(w, h, sumo(143))).toBeLessThan(0.55); // more than 8: the cap, about half
+      expect(share(w, h, few)).toBeCloseTo(CLOSE_FILL, 6);
+      expect(diameter(w, h, few)).toBeGreaterThan(BODY_SHARE * Math.min(w, h));
+      // Falling and fallen characters do not count: 8 standing among 10.
+      expect(share(w, h, sumo(143, crowd(8, GHOST_FALLING, GHOST_OUT)))).toBeCloseTo(CLOSE_FILL, 6);
+    }
+  });
+
+  it('with 8 or fewer never comes closer than a phone would, nor goes further out than the cap', () => {
+    const tiny = sumo(50, crowd(2));
+    const half = cameraBox(tiny, { ctx: ctx(1280, 800), top: TOP, room }).half;
+    expect(half).toBeGreaterThanOrEqual(50 / CLOSE_FILL - 1e-9);
+    expect(half).toBeGreaterThanOrEqual(
+      cameraBox(tiny, { ctx: ctx(390, 844), top: TOP, room }).half,
+    );
+    // A small match at the start: no further out than with the crowd.
+    expect(diameter(1280, 800, sumo(400, crowd(6)))).toBeCloseTo(diameter(1280, 800, sumo(400)), 6);
+    expect(diameter(1280, 800, walled(2, 700, crowd(6)))).toBeCloseTo(
+      diameter(1280, 800, walled(2, 700)),
+      6,
+    );
   });
 });

@@ -256,7 +256,11 @@ or touch (browsers allow sound only after a gesture).
   shorter side is at least 600 px (desktop, tablet) the camera never comes so close that a
   character's body diameter on screen exceeds 6 % of that side — 48 px at 1280 × 800 (render
   `cameraBox`, `BODY_SHARE`, `CAP_FROM_PX`) — so late Sumo arenas shrink on screen there and
-  more sky shows round them. Below 600 px (a phone) there is no cap: the camera always fits the
+  more sky shows round them — while more than 8 characters stand (planner 2026-11-20: late
+  Sumo's island was a third of a desktop's width); with 8 or fewer (`FEW_STANDING`) the camera
+  comes closer until the island or field with its rock fills two thirds of the room it is fitted
+  into (`CLOSE_FILL`, on a desktop the usable height), never closer than a phone's fit and never
+  further out than the cap. Below 600 px (a phone) there is no cap: the camera always fits the
   island or field, so late Sumo, King and Bomb fill the width to the end. The same for players,
   spectators and the viewer. A falling character is
   drawn at the scale of the field, never larger than a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields

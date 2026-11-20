@@ -35,8 +35,14 @@ function zonesOf(width: number, height: number, touch: boolean): Rect[] {
   return touch ? [dash, stickZone(width, height)] : [dash];
 }
 
+// A full match: 32 characters standing, so the zoom cap holds (render cameraBox, FEW_STANDING).
 function stateOf(mode: GameMode, r: number): ServerState {
-  return { mode: GAME_MODES.indexOf(mode), area: { x: C, y: C, r } } as unknown as ServerState;
+  const ghosts = Array.from({ length: 32 }, () => ({ flags: 0 }));
+  return {
+    mode: GAME_MODES.indexOf(mode),
+    area: { x: C, y: C, r },
+    ghosts,
+  } as unknown as ServerState;
 }
 
 // Sumo's arena from the start through three halvings, halfway through an easing too; the walled
