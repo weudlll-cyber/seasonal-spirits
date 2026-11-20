@@ -6,8 +6,6 @@
 // and a spectator on a desktop — every moment (moments.ts) in Light and Dark (shoot.ts); then
 // the contact sheets (sheets.ts). Development only: it starts the dev admin endpoint.
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { STARTABLE_GAMES } from '@seasonal-spirits/game-core';
 import { chromium, type Browser, type Page } from '@playwright/test';
@@ -26,6 +24,7 @@ import { startPlayer } from './player.js';
 import { makeSheets } from './sheets.js';
 import { Camera, REVIEW_DIR, type Watcher } from './shoot.js';
 import { startStack } from './stack.js';
+import { clearTopic } from './topics.js';
 
 const MATCH_LIMIT_MS = 12 * 60_000; // a match that never ends (Last One Standing kept halving)
 const POLL_MS = 100;
@@ -39,7 +38,7 @@ async function main(): Promise<void> {
   const browser = await chromium.launch();
   try {
     for (const game of games) {
-      fs.rmSync(path.join(REVIEW_DIR, slug(game)), { recursive: true, force: true });
+      clearTopic(REVIEW_DIR, slug(game), null); // only the latest run of a game (topics.ts)
       for (const size of ['desktop', 'phone'] as const) await run(browser, game, size);
     }
   } finally {

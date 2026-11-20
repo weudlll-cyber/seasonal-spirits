@@ -101,7 +101,8 @@ densest moment once per season, so every season's ground shows.
 - Bomb: the own character carrying a bomb in a crowd. When none came in a season, its last
   seconds were shot instead ("late").
 
-The final run has 60 pictures; the sheet is `reports/screens/review/sheet-own-marker.png`.
+The final run has 60 pictures; the sheet is `reports/screens/review/sheet-own-marker.png`,
+written locally and not committed (since 2026-11-21, owner decision).
 
 - **Earlier runs.** The first full run, a second run and a Bomb-only run each led to a fix (ring
   order, arrow edge, label side). King was shot again after the top-edge fix. The sheet holds
@@ -175,7 +176,7 @@ Lines before → after, `4eb0e51` → this commit:
 | `scripts/review-capture/src/pages.ts` | 63 → 84 |
 | `scripts/review-capture/src/player.ts` | 89 → 91 (a calm player) |
 | `scripts/review-capture/src/sheets.ts` | 111 → 163 (`makeFlowSheet`, `shootPage` shared) |
-| `reports/screens/review/sheet-own-marker.png` | new |
+| `reports/screens/review/sheet-own-marker.png` | new (removed from git 2026-11-21: local only) |
 
 Reused:
 

@@ -1187,7 +1187,8 @@ Done when: the spec is green ten runs in a row.
   the wheel and closes with its "×", a tap outside it or a key (client `help.ts`, index.html);
   this point stood in the last report's "noticed" list, not in OPEN. The review capture shoots
   the own marker where it is densest (`pnpm review:own-marker`, `own-marker.ts`,
-  `own-moments.ts`), sheet `reports/screens/review/sheet-own-marker.png`; report
+  `own-moments.ts`), sheet `reports/screens/review/sheet-own-marker.png` (written locally, not
+  committed since 2026-11-21); report
   `reports/own-marker-2026-11-20.md` — commit "feat: the own character found at a glance, the
   help card scrolls".
 
@@ -1212,8 +1213,22 @@ Done when: the spec is green ten runs in a row.
   `follow.test.ts` (the frame is the followed view's box; sabotaged once by dropping the tilt in
   `fieldSeen`: failed, restored), `palette.test.ts` (the frame on every ground and the panel, the
   bomb dot on its ring, 3:1). Review capture `pnpm review:minimap` (`minimap.ts`,
-  `minimap-moments.ts`), sheet `reports/screens/review/sheet-minimap.png` — commit "feat: the
+  `minimap-moments.ts`), sheet `reports/screens/review/sheet-minimap.png` (written locally, not
+  committed since 2026-11-21) — commit "feat: the
   phone's minimap shows the edge, the screen's frame and the carriers".
+
+- 2026-11-21 — **Review images out of git, no pile-up** (owner decision 2026-11-21: review
+  screenshots and contact sheets are not kept in the repository and do not pile up; the planner
+  reads them on the owner's PC; opened and closed in this commit). `.gitignore` ignores
+  `reports/screens/` whole; the 32 committed contact sheets (70.0 MB) are removed from the index
+  with `git rm --cached` and stay on disk — history is not rewritten. Before a run writes a
+  topic's images (a game of `pnpm review:capture`, `own-marker`, `minimap`), it deletes that
+  topic's previous images and sheets (`scripts/review-capture/src/topics.ts` `clearTopic`, used by
+  `main.ts`, `own-marker.ts`, `minimap.ts`; `clearSheets` also by `sheets.ts`), so each topic
+  holds only its latest run; with named games only those are shot again and the rest of the run
+  kept. Test `topics.test.ts`. The README, this backlog and the reports that named a committed
+  sheet now say it is written locally and not committed — commit "chore: review images out of
+  git, each topic keeps only its latest run".
 
 ## CHECKS DONE
 
@@ -1657,3 +1672,5 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-20 | `pnpm review:minimap`, first run                                                                                                                                                                                                                                                                               | minimap working tree                                                                                                                      | 28 pictures looked at: King's first halving not shot (a new match seated the player again; the director now starts over on a team change); the own dot nearly lost in spring's zone on spring grass and outshone by the carriers' rings (fixed: larger, a white ink-edged halo)                                                                                                                                       | `reports/screens/review/minimap/` (not committed)                                              |
 | 2026-11-20 | `pnpm review:minimap`, final run, sheet regenerated after the crop fix                                                                                                                                                                                                                                         | minimap working tree                                                                                                                      | 30 pictures, every one looked at: King start, three halvings (walls 450 → 320 → 260 → 260 on the map), last seconds; Bomb start, eight blasts, last seconds; edge, frame, zone or carriers and the own dot readable in Light and Dark on all four grounds; no other player in Bomb. The sheet's Dark crops first missed the map (the banner gone 250 ms after the Light shot): the crop now reaches up under the band | `reports/screens/review/sheet-minimap.png`                                                     |
 | 2026-11-20 | `pnpm verify:changed`                                                                                                                                                                                                                                                                                          | minimap working tree                                                                                                                      | format, lint (after splitting the director's `observe`, the sheet's cells and the minimap test's `describe`), typecheck clean; 421 tests passed                                                                                                                                                                                                                                                                       | this commit                                                                                    |
+| 2026-11-21 | unit: review-capture tests (new `topics.test.ts`: a run removes its topic's images and sheets and no other topic's, a topic with a name that starts the same included; named games alone)                                                                                                                      | review-images working tree                                                                                                                | 5 files, 14 tests passed                                                                                                                                                                                                                                                                                                                                                                                              | this commit                                                                                    |
+| 2026-11-21 | format check and ESLint of the changed files (no browser run, no client suite: tooling and docs only)                                                                                                                                                                                                          | review-images working tree                                                                                                                | clean                                                                                                                                                                                                                                                                                                                                                                                                                 | this commit                                                                                    |

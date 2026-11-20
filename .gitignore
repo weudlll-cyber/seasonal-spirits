@@ -5,9 +5,9 @@ tmp/
 # Dev data: the admin panel's saved presets (apps/server presets.ts), never committed.
 data/
 night-task.md
-reports/screens/latest/
-# The review capture's single shots and measurements; its contact sheets stay.
-reports/screens/review/*/
+# Every screenshot and contact sheet (owner decision 2026-11-21): written locally on the owner's
+# PC, read there, never committed (scripts/review-capture topics.ts keeps only the latest run).
+reports/screens/
 # Raw per-run outputs above 200 KB stay out of the repository (docs/BALANCE.md "Raw data"
 # names the command that regenerates each); new ones go to reports/raw/.
 reports/raw/

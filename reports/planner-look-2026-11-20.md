@@ -59,7 +59,8 @@ panel 10.8 px. The values are the same as in the last capture.
 | 4 an | `sumo-points/desktop-light-player-05-help-open`: the last line fades into the card's white at its bottom edge |
 | 4 ao | `sumo-last-one-standing/desktop-light-spectator-21-result`: "1. Bot 18 still in", then "out at 3:49" … "out at 2:35"; `desktop-*-player-23-result`: "Your place: 31 of 32 — out at 1:21" |
 
-Sheets (`reports/screens/review/`):
+Sheets (`reports/screens/review/`, written locally and not committed since 2026-11-21, owner
+decision):
 
 - Sumo · Points: `sheet-sumo-points-desktop-1…2`, `-phone-1…2`, `-big`. The match was shorter
   than in the night's capture, so there is no `desktop-3` any more.

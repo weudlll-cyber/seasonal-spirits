@@ -18,6 +18,7 @@ import { startPlayer } from './player.js';
 import { MAPS_FILE, makeMinimapSheet } from './sheets.js';
 import { Camera, REVIEW_DIR } from './shoot.js';
 import { startStack } from './stack.js';
+import { clearTopic } from './topics.js';
 
 const GAMES = ['King of the Season', 'Halving Bomb'] as const;
 const DIR = 'minimap';
@@ -29,11 +30,9 @@ if (process.env.NODE_ENV === 'production') throw new Error('review-capture is de
 async function main(): Promise<void> {
   const wanted = process.argv.slice(2);
   const games = GAMES.filter((g) => wanted.length === 0 || wanted.includes(slug(g)));
-  const dir = path.join(REVIEW_DIR, DIR);
-  fs.mkdirSync(dir, { recursive: true });
-  for (const f of fs.readdirSync(dir))
-    if (games.some((g) => f.includes(`-${slug(g)}-`))) fs.rmSync(path.join(dir, f));
-  const maps = path.join(dir, MAPS_FILE);
+  // Only the latest run (topics.ts): all of it, or the named games shot again.
+  clearTopic(REVIEW_DIR, DIR, wanted.length === 0 ? null : games.map(slug));
+  const maps = path.join(REVIEW_DIR, DIR, MAPS_FILE);
   const kept = fs.existsSync(maps) ? fs.readFileSync(maps, 'utf8').split('\n') : [];
   const others = kept.filter((l) => l && !games.some((g) => l.includes(`-${slug(g)}-`)));
   fs.writeFileSync(maps, others.map((l) => `${l}\n`).join(''));

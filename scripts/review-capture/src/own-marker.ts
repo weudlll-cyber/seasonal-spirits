@@ -8,8 +8,6 @@
 // again, the others' shots kept. Then one contact sheet of all, sheet-own-marker.png (sheets.ts).
 // Development only: it starts the dev admin endpoint.
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium, type Browser, type Page } from '@playwright/test';
 import { OwnDirector } from './own-moments.js';
@@ -26,6 +24,7 @@ import { startPlayer } from './player.js';
 import { makeFlowSheet } from './sheets.js';
 import { Camera, REVIEW_DIR } from './shoot.js';
 import { startStack } from './stack.js';
+import { clearTopic } from './topics.js';
 
 const GAMES = ['Sumo · Points', 'King of the Season', 'Halving Bomb'] as const;
 const DIR = 'own-marker';
@@ -38,10 +37,8 @@ if (process.env.NODE_ENV === 'production') throw new Error('review-capture is de
 async function main(): Promise<void> {
   const wanted = process.argv.slice(2);
   const games = GAMES.filter((g) => wanted.length === 0 || wanted.includes(slug(g)));
-  const dir = path.join(REVIEW_DIR, DIR);
-  fs.mkdirSync(dir, { recursive: true });
-  for (const f of fs.readdirSync(dir))
-    if (games.some((g) => f.includes(`-${slug(g)}-`))) fs.rmSync(path.join(dir, f));
+  // Only the latest run (topics.ts): all of it, or the named games shot again.
+  clearTopic(REVIEW_DIR, DIR, wanted.length === 0 ? null : games.map(slug));
   const stack = await startStack();
   const browser = await chromium.launch();
   try {

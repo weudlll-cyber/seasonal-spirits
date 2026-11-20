@@ -63,10 +63,17 @@ pnpm review:capture [game …]  # every moment of a full match per mode, player 
                   # desktop and phone, Light and Dark, the viewer; contact sheets (about 45 min)
 pnpm review:own-marker        # the own marker where it is densest: Sumo, King, Bomb, desktop and
                   # phone players, Light and Dark, every season; sheet-own-marker.png (about 15 min)
+pnpm review:minimap [game …]  # the phone's minimap in King and Bomb, Light and Dark, at the start,
+                  # after each halving and in the last seconds; sheet-minimap.png (about 8 min)
 pnpm review:sheets [game …]   # the contact sheets again from the shots
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```
+
+The review commands write their shots and contact sheets locally to `reports/screens/review/`
+(owner decision 2026-11-21): they are read on the owner's PC and never committed, and each run
+first deletes its topic's previous images and sheets, so only the latest run is kept
+(`scripts/review-capture/src/topics.ts`).
 
 `pnpm dev` starts the three processes hidden (no windows on Windows; the same on Linux and
 macOS), writes their output to `logs/dev-*.log` and their PIDs to `tmp/dev-pids.json`, and

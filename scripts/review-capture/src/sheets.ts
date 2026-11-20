@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium, type Browser } from '@playwright/test';
 import { REVIEW_DIR } from './shoot.js';
+import { clearSheets } from './topics.js';
 
 const MAX_HEIGHT = 4000;
 const ROLES = ['player', 'spectator', 'viewer'];
@@ -69,8 +70,7 @@ export async function makeSheets(modes: readonly string[]): Promise<string[]> {
     for (const mode of modes) {
       const dir = path.join(REVIEW_DIR, mode);
       if (!fs.existsSync(dir)) continue;
-      for (const old of fs.readdirSync(REVIEW_DIR).filter((f) => f.startsWith(`sheet-${mode}-`)))
-        fs.rmSync(path.join(REVIEW_DIR, old)); // a shorter run leaves no sheet of the last behind
+      clearSheets(REVIEW_DIR, mode); // a shorter run leaves no sheet of the last behind
       const shots = fs
         .readdirSync(dir)
         .map((f) => ({ f, p: parse(f) }))
