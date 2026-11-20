@@ -129,6 +129,18 @@
       #help li svg {
         flex-shrink: 0;
       }
+      /* The help card while more of it lies below: a fade over its bottom edge, held there as the
+         card scrolls, gone at the end (help.ts; owner 2026-11-20). It spans the card's padding. */
+      #help .card.more::after {
+        content: '';
+        position: sticky;
+        bottom: -18px;
+        display: block;
+        height: 48px;
+        margin: -48px -20px 0;
+        background: linear-gradient(transparent, var(--panel));
+        pointer-events: none;
+      }
       /* The left half belongs to the joystick thumb; the buttons stay in the right half. */
       body.touch #actions {
         max-width: calc(50vw - 24px);

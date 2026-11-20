@@ -1,7 +1,8 @@
 // Seasonal Sumo — the result screen after a match: the mode's awards, the mode's score
 // (knockouts or points) per team — in Last One Standing the teams in their final order, the
-// winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player,
-// the own place and the time to the next match at the top (review 2026-11-20: below the list it
+// winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player
+// (in Last One Standing with when each went out, "out at 1:42" or "still in", not its knockouts:
+// owner 2026-11-20), the own place and the time to the next match at the top (review 2026-11-20: below the list it
 // was out of view on a desktop), and the bridge box of CONCEPT.md §8 (on by default, switched off
 // in config.ts). Over it a podium on a floating island with the best three teams'
 // characters and a confetti burst in the winner's colour (render podium.ts, NIGHT 2026-11-19),
@@ -10,6 +11,7 @@
 
 import {
   GHOST_BOT,
+  STATE_LAST_STANDING,
   ghostName,
   type ServerRecap,
   type ServerState,
@@ -75,13 +77,17 @@ export class ResultScreen {
     this.shown = recap;
     this.shownAt = now;
     this.order = teamLines(recap).map(([team]) => team);
-    this.fill(recap, (ghost) => nameIn(s, ghost, ownId), { ownId, unit: modeWords(s.mode).unit });
+    this.fill(recap, (ghost) => nameIn(s, ghost, ownId), {
+      ownId,
+      unit: modeWords(s.mode).unit,
+      lastStanding: (s.flags & STATE_LAST_STANDING) !== 0,
+    });
   }
 
   private fill(
     r: ServerRecap,
     name: (ghost: number) => string,
-    me: { ownId: number | null; unit: ModeWords['unit'] },
+    me: { ownId: number | null; unit: ModeWords['unit']; lastStanding: boolean },
   ): void {
     const lines = awardLines(r, name);
     this.awardsBox.hidden = lines.length === 0;
@@ -96,16 +102,28 @@ export class ResultScreen {
     this.players.replaceChildren(
       ...ranked
         .slice(0, SHOWN_PLAYERS)
-        .map((p, i) => row(`${i + 1}. ${name(p.ghost)}`, String(p.score), seasonColour(p.team))),
+        .map((p, i) =>
+          row(`${i + 1}. ${name(p.ghost)}`, playerText(p, me.lastStanding), seasonColour(p.team)),
+        ),
     );
     const own = ranked.findIndex((p) => p.ghost === me.ownId);
     this.place.hidden = own === -1;
-    if (own !== -1) {
-      const p = ranked[own];
-      const score = p?.score ?? 0;
-      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${counted(score, me.unit.one, me.unit.many)}`;
+    const p = ranked[own];
+    if (p) {
+      const text = me.lastStanding
+        ? playerText(p, true)
+        : counted(p.score, me.unit.one, me.unit.many);
+      this.place.textContent = `Your place: ${own + 1} of ${ranked.length} — ${text}`;
     }
   }
+}
+
+// A player's amount in the list: in Last One Standing when it went out — "out at 1:42" in match
+// time, "still in" — (owner 2026-11-20: the knockouts beside the survival order read as unsorted;
+// they stay in the awards), else its score.
+export function playerText(p: ServerRecap['players'][number], lastStanding: boolean): string {
+  if (!lastStanding) return String(p.score);
+  return p.outMs === null ? 'still in' : `out at ${mmss(p.outMs)}`;
 }
 
 const ORDINALS = ['1st', '2nd', '3rd', '4th'];

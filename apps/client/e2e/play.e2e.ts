@@ -123,12 +123,12 @@ async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
   const result = page.locator('#result');
   await expect(result).toBeVisible({ timeout: 10_000 });
   await expect(page.locator('#result-place')).toHaveText(
-    /^Your place: \d+ of \d+ — \d+ knockouts$/,
+    /^Your place: \d+ of \d+ — \d+ knockouts?$/,
   );
   const awards = page.locator('#result-awards li');
   await expect(awards.first()).toBeVisible();
   for (const text of await awards.allTextContents()) {
-    expect(text).toMatch(/^(Best pusher.+, \d+ knockouts|Survivor.+, \d+:\d\d without a fall)$/);
+    expect(text).toMatch(/^(Best pusher.+, \d+ knockouts?|Survivor.+, \d+:\d\d without a fall)$/);
   }
   await expect(page.locator('#bridge-text')).toHaveText(
     'This is how Seasonal Tokens work: every halving cuts in half — here it cuts the arena.',

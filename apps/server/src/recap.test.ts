@@ -48,8 +48,8 @@ const row = (id: number, knockouts: number, longestAliveMs: number): PlayerResul
 });
 
 describe('match recap', () => {
-  it("carries the scores and the mode's awards, in whole numbers", () => {
-    const players = [row(3, 2, 40_000), row(4, 0, 90_400.5)];
+  it("carries the scores, when each went out and the mode's awards, in whole numbers", () => {
+    const players = [row(3, 2, 40_000), { ...row(4, 0, 90_400.5), lives: 0, outAtMs: 101_200.4 }];
     const result: MatchResult = {
       mode: 'sumo',
       variant: 'points',
@@ -67,8 +67,8 @@ describe('match recap', () => {
       knockedOut: [],
       winner: null,
       players: [
-        { ghost: 3, team: 1, score: 2 },
-        { ghost: 4, team: 1, score: 0 },
+        { ghost: 3, team: 1, score: 2, outMs: null },
+        { ghost: 4, team: 1, score: 0, outMs: 101_200 }, // when it went out, in whole ms
       ],
       awards: [
         { kind: 'best-pusher', ghost: 3, value: 2 },

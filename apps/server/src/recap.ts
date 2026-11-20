@@ -1,6 +1,7 @@
 // Seasonal Sumo — the match recap as the message every client gets when a match ends: the
 // core's result — the mode's score per team and player, the ghosts still in per team, the teams
-// knocked out in order, Last One Standing's winner — and the mode's awards (game-core recap.ts).
+// knocked out in order, Last One Standing's winner, when each player went out — and the mode's
+// awards (game-core recap.ts).
 // An award nobody earned is left out; the client names the ghosts.
 
 import { awardsOf, ranked, type MatchResult } from '@seasonal-spirits/game-core';
@@ -20,7 +21,12 @@ export function recapOf(result: MatchResult): ServerRecap {
     knockedOut: [...result.knockedOut],
     winner: result.winner,
     // In their final places (game-core ranked): the client shows them in this order.
-    players: ranked(result).map((p) => ({ ghost: p.id, team: p.team, score: p.score })),
+    players: ranked(result).map((p) => ({
+      ghost: p.id,
+      team: p.team,
+      score: p.score,
+      outMs: p.outAtMs === null ? null : Math.round(p.outAtMs),
+    })),
     awards: awardsOf(result).map((a) => ({ ...a, value: Math.round(a.value) })),
   };
 }

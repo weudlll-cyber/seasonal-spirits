@@ -70,9 +70,10 @@ new mode's brain. A server restart loses the running match (CONCEPT.md §7).
 
 **Match recap**: in the tick a match ends every client — players and spectators — gets one
 text message `{"kind":"recap","teams":[…4],"left":[…4],"knockedOut":[team,…],"winner":team|null,
-"players":[{ghost,team,score},…],"awards":[{kind,ghost,value},…]}`: the core's result — the
-mode's score, the ghosts still in per team, the teams knocked out in order, Last One Standing's
-winning team (null in Points: the scores rank) — and the mode's two awards (`awardsOf`,
+"players":[{ghost,team,score,outMs},…],"awards":[{kind,ghost,value},…]}`: the core's result —
+the mode's score, the ghosts still in per team, the teams knocked out in order, Last One
+Standing's winning team (null in Points: the scores rank), each player's match time when it lost
+its last life (`outMs`, whole ms, null while still in; 2026-11-20) — and the mode's two awards (`awardsOf`,
 docs/GAME-CORE.md); an award nobody earned is left out, and a client
 shows the kinds it knows. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every

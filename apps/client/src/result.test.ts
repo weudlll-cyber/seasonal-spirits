@@ -1,10 +1,11 @@
 // Seasonal Sumo — the result screen's words (review 2026-11-20: "1 knockouts"): a count of one
-// takes the singular, in the own place line and in every award.
+// takes the singular, in the own place line and in every award; Last One Standing's players list
+// says when each went out, not its knockouts (owner 2026-11-20).
 
 import type { ServerRecap } from '@seasonal-spirits/protocol';
 import { modeWords } from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
-import { awardLines, counted } from './result.js';
+import { awardLines, counted, playerText } from './result.js';
 
 describe('the result screen counts in words', () => {
   it('says "1 knockout" and "2 knockouts", "1 point" and "0 points"', () => {
@@ -27,5 +28,13 @@ describe('the result screen counts in words', () => {
       ['Best pusher', 'Bot 4, 1 knockout'],
       ['Hot hands', 'Bot 5, 1 bomb passed'],
     ]);
+  });
+
+  it('lists Last One Standing by when each went out, Points by its score', () => {
+    const out = { ghost: 3, team: 1, score: 7, outMs: 102_000 };
+    const stillIn = { ghost: 4, team: 2, score: 2, outMs: null };
+    expect(playerText(out, true)).toBe('out at 1:42');
+    expect(playerText(stillIn, true)).toBe('still in');
+    expect(playerText(out, false)).toBe('7');
   });
 });

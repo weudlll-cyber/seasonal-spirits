@@ -94,6 +94,7 @@ describe('parseServerMessage: recap', () => {
     ghost: i + 1,
     team: i % 4,
     score: 4,
+    outMs: i < 8 ? null : 60_000 + i * 1000, // the first 8 still in, the rest out
   }));
   const recap = {
     kind: 'recap',
@@ -124,9 +125,9 @@ describe('parseServerMessage: recap', () => {
       { ...recap, teams: [1, 2, 3] },
       { ...recap, teams: [1, 2, 3, -1] },
       { ...recap, teams: [1, 2, 3, 0.25] },
-      { ...recap, players: [{ ghost: 300, team: 0, score: 1 }] },
-      { ...recap, players: [{ ghost: 1, team: 4, score: 1 }] },
-      { ...recap, players: [{ ghost: 1, team: 0, score: 1.5 }] },
+      { ...recap, players: [{ ghost: 300, team: 0, score: 1, outMs: null }] },
+      { ...recap, players: [{ ghost: 1, team: 4, score: 1, outMs: null }] },
+      { ...recap, players: [{ ghost: 1, team: 0, score: 1.5, outMs: null }] },
       { ...recap, players: 'all' },
       { ...recap, awards: null },
       { ...recap, awards: [{ kind: 'survivor', ghost: 2, value: -1 }] },
@@ -140,10 +141,35 @@ describe('parseServerMessage: recap', () => {
       { ...recap, awards: [{ kind: 'survivor', ghost: 2, value: 'long' }] },
       { ...recap, awards: [{ kind: '<b>King</b>', ghost: 2, value: 3 }] },
       { ...recap, awards: Array.from({ length: 9 }, () => recap.awards[0]) },
-      { ...recap, players: [...players, ...players, { ghost: 1, team: 0, score: 0 }] },
+      { ...recap, players: [...players, ...players, { ghost: 1, team: 0, score: 0, outMs: null }] },
       { ...recap, pad: 'x'.repeat(4096) },
     ];
     for (const r of bad)
       expect(parseServerMessage(JSON.stringify(r)), JSON.stringify(r).slice(0, 80)).toBeNull();
+  });
+});
+
+// Each player's time out (Last One Standing's players list, owner 2026-11-20): a match time in
+// whole ms up to an hour, or null while still in; anything else drops the recap.
+describe("parseServerMessage: a player's time out", () => {
+  const recap = (outMs: unknown) =>
+    JSON.stringify({
+      kind: 'recap',
+      teams: [0, 0, 0, 0],
+      left: [1, 0, 0, 0],
+      knockedOut: [],
+      winner: 0,
+      players: [{ ghost: 1, team: 0, score: 1, outMs }],
+      awards: [],
+    });
+
+  it('reads a time out or null', () => {
+    expect(parseServerMessage(recap(102_000))).toMatchObject({ players: [{ outMs: 102_000 }] });
+    expect(parseServerMessage(recap(null))).toMatchObject({ players: [{ outMs: null }] });
+  });
+
+  it('drops a recap whose time out is missing, negative, over an hour or not a number', () => {
+    for (const bad of [undefined, -5, 3_600_001, 1.5, '1:42'])
+      expect(parseServerMessage(recap(bad)), String(bad)).toBeNull();
   });
 });

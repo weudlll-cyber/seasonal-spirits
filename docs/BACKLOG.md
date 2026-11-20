@@ -80,18 +80,6 @@ when: the cause is found (the arena no longer halving
 there, or the banner of the previous halving matched) and the spec waits for a fresh match or
 reads the arena at the right moment, green ten runs in a row.
 
-an. **The help card scrolls without a hint** (review 2026-11-20,
-`sumo-points/desktop-dark-player-05-help-open`): on a desktop and a phone the help card is
-longer than the screen; it scrolls, its last visible line is cut in half and nothing says there
-is more. Proposal: a soft fade at the card's bottom edge while more lies below, or the "What you
-see" part folded behind a "More" button. Done when: the owner has chosen one (or neither).
-
-ao. **Last One Standing's players list** (review 2026-11-20,
-`sumo-last-one-standing/*-player-*-result`): the players are listed by survival (game-core
-`ranked`), each with its knockouts, so the numbers jump (8, 5, 7, 6, 3, 2, 6) and the list reads
-as unsorted. Proposal: show when each went out ("out 2:41", the winner "last standing") instead
-of the knockouts, the knockouts in the awards only. Done when: the owner has decided.
-
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
@@ -1135,6 +1123,17 @@ Done when: the spec is green ten runs in a row.
   front. A falling character no longer shrinks as it drops (fall.ts) — commit "fix: off the
   island at world scale, behind the island at its back".
 
+- 2026-11-20 — **Planner's look piece 4: the help card's fade and Last One Standing's players
+  list** (OPEN an and ao, closed; both decided by the owner on 2026-11-20 on the planner's
+  proposal). **an**: while more of the help card lies below its bottom edge a fade shows there,
+  held as the card scrolls and gone at its end (client `help.ts` `moreBelow`, index.html
+  `#help .card.more`). **ao**: Last One Standing's players list says when each went out — "out at
+  1:42" in match time, "still in" — instead of the knockouts, the own place line the same
+  (client `playerText`); the knockouts stay in the awards. For it the recap carries each player's
+  `outMs` (game-core `outAtMs`, whole ms, null while still in; protocol `readRecap` checks it,
+  THREATS row 33). The play spec accepts "1 knockout" since the singular came in (`7f193fa`) —
+  commit "feat: the help card's fade, Last One Standing's list by time out".
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                                                 | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                                                               | Evidence                                                                                       |
@@ -1565,3 +1564,4 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-20 | spectator start screen on the dev server, Light and Dark, `#start` sampled at 0.2–3 s                                                                                                                                 | dev server on `409d70e` (the start screen unchanged since)                                                                                | both looks: shown whole to 1.3 s, a 0.4 s fade, hidden by 2 s                                                                                                                                                                                                        | this commit                                                                                    |
 | 2026-11-20 | lint, prettier and typecheck of `scripts/review-capture`                                                                                                                                                              | planner's look piece 2 working tree                                                                                                       | clean                                                                                                                                                                                                                                                                | this commit                                                                                    |
 | 2026-11-20 | `pnpm verify:changed` (new `falls.test.ts`: the back before the island's body, sides and front after, standing size off the island; `fall.test.ts` at standing size)                                                  | planner's look piece 3 working tree                                                                                                       | 393 tests passed; lint (after splitting `drawField` and the viewer's frame), format and typecheck clean                                                                                                                                                              | this commit                                                                                    |
+| 2026-11-20 | `pnpm verify:changed` (new `help.test.ts`; `result.test.ts` time out; protocol "a player's time out"; server recap with `outMs`)                                                                                      | planner's look piece 4 working tree                                                                                                       | 398 tests passed; lint (a long describe split, two arrow bodies braced), format and typecheck clean                                                                                                                                                                  | this commit                                                                                    |

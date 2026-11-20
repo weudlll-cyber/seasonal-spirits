@@ -5,12 +5,14 @@
 import { isIntIn, isObject } from './checks.js';
 import type { ServerRecap } from './messages.js';
 
-// 32 players with the result and the awards stay near 1.5 KB; this bounds anything bigger.
+// 32 players with the result, their times out and the awards stay near 2 KB; this bounds anything
+// bigger.
 export const MAX_RECAP_BYTES = 4096;
 const MAX_PLAYERS = 64;
 const MAX_AWARDS = 8; // two per mode today
 const MAX_COUNT = 65535; // a score per team or player
-const MAX_VALUE = 3_600_000; // an award's value: at most an hour in ms; 0 lives left is one
+// An award's value or a player's time out: at most an hour in ms; 0 lives left is one.
+const MAX_VALUE = 3_600_000;
 const KIND = /^[a-z-]{1,16}$/; // an award kind; the client shows the kinds it knows
 
 export function readRecap(fields: Record<string, unknown>): ServerRecap | null {
@@ -51,9 +53,12 @@ function list<T>(
 }
 
 function readPlayer(p: Record<string, unknown>): ServerRecap['players'][number] | null {
-  const { ghost, team, score } = p;
+  const { ghost, team, score, outMs } = p;
   if (!isIntIn(ghost, 0, 255) || !isIntIn(team, 0, 3) || !isCount(score)) return null;
-  return { ghost, team, score };
+  // When it went out: a match time, or null while still in.
+  const out = outMs === null ? null : isIntIn(outMs, 0, MAX_VALUE) ? outMs : undefined;
+  if (out === undefined) return null;
+  return { ghost, team, score, outMs: out };
 }
 
 function readAward(a: Record<string, unknown>): ServerRecap['awards'][number] | null {

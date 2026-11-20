@@ -302,13 +302,18 @@ or touch (browsers allow sound only after a gesture).
   goes off and halves the carrier's points), the jump in every mode (a ghost over its shadow, a
   dash passing below), in sumo the variant's rule in one sentence with the
   match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
-  controls. It follows the match on screen.
+  controls. It follows the match on screen. While more of the card lies below its bottom edge a
+  fade shows there, held as the card scrolls and gone at its end (`moreBelow`, `#help .card.more`;
+  owner 2026-11-20).
 - **Result**: the mode's two awards ("Best pusher"/"Survivor", "Last one standing"/"Best
   pusher", "King"/"Bouncer", "Hot hands"/"Cool head"), the score per team — in Last One
   Standing the teams in their final order instead: the winner, the teams still in at the time
   limit ("5 still in"), then those knocked out, last out first ("out 2nd") — and the top eight
   players and the own place in the server's order (game-core `ranked`: by score; in Last One
-  Standing by survival, FIX 2026-11-17) — the own place ("1 knockout", "8 knockouts") and the
+  Standing by survival, FIX 2026-11-17), each with its score — in Last One Standing with when it
+  went out instead, "out at 1:42" in match time or "still in" (`playerText`, the recap's `outMs`;
+  owner 2026-11-20: the knockouts beside the survival order read as unsorted) — the own place
+  ("1 knockout", "8 knockouts"; in Last One Standing "out at 1:42") and the
   time to the next match at the top, under the podium, so a desktop never has them below the
   card's fold (review 2026-11-20) —, and the bridge box: "This is how Seasonal Tokens
   work: every halving cuts in half — here it cuts the arena.", "Start here", "Try the

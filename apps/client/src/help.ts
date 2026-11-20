@@ -3,7 +3,8 @@
 // with a small drawing made in code; in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
 // mark on the field, as the game draws it (LEGEND); and the controls. Shown once on the first
 // visit, any time with "?" or the band's "?" button; one tap or any key closes it. It follows
-// the match on screen.
+// the match on screen. While more of the card lies below its bottom edge a fade shows there,
+// gone at the end (owner 2026-11-20: its last line was cut in half with no hint of more).
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
@@ -189,6 +190,15 @@ const content = (mode: GameMode, name: string, rule: string | null): string =>
   RULES[mode].map((r) => `<li>${r.drawing}<span>${r.text}</span></li>`).join('') +
   `</ol>${SEEN}${CONTROLS}<p class="small">Tap anywhere or press any key to close.</p></div>`;
 
+// Whether more of a scrolled box lies below what it shows (a pixel of rounding is none).
+export function moreBelow(box: {
+  scrollTop: number;
+  clientHeight: number;
+  scrollHeight: number;
+}): boolean {
+  return box.scrollHeight - box.scrollTop - box.clientHeight > 1;
+}
+
 export class Help {
   private readonly overlay: HTMLElement;
   private shown: string | null = null; // the mode, name and rule on screen
@@ -215,6 +225,12 @@ export class Help {
       },
       { capture: true },
     );
+    // Scrolling the card (its scroll does not bubble: caught on the way down) and a new size.
+    const hint = (): void => {
+      this.hint();
+    };
+    overlay.addEventListener('scroll', hint, { capture: true });
+    window.addEventListener('resize', hint);
     if (readSetting(SEEN_KEY) !== '1') this.open();
   }
 
@@ -225,10 +241,18 @@ export class Help {
     if (key === this.shown) return;
     this.shown = key;
     this.overlay.innerHTML = content(mode, name, rule);
+    this.hint();
   }
 
   open(): void {
     this.overlay.hidden = false;
+    this.hint();
+  }
+
+  // The fade at the card's bottom edge while more follows (index.html `#help .card.more`).
+  private hint(): void {
+    const card = this.overlay.firstElementChild;
+    if (card instanceof HTMLElement) card.classList.toggle('more', moreBelow(card));
   }
 
   private close(): void {
