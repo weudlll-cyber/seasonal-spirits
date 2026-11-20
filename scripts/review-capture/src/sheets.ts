@@ -2,8 +2,9 @@
 // the end of a capture): per mode and size one grid of every shot in moment order, each labelled
 // with its number, moment, look and role — the player's run first, then the spectator's —, large enough to read the HUD (desktop and big screen
 // 640 px wide, phone 260 px), split into -1, -2 … past about 4000 px; or one sheet of a folder's
-// every shot, all sizes in one flow (the own marker's sheet, own-marker.ts). Drawn by the browser
-// from a page of <img>s, so no image library is needed.
+// every shot, all sizes in one flow (the own marker's sheet, own-marker.ts); or the minimap's sheet,
+// each phone shot under its map enlarged (minimap.ts). Drawn by the browser from a page of <img>s,
+// so no image library is needed.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -151,6 +152,69 @@ export async function makeFlowSheet(mode: string): Promise<string> {
   }
   console.log(`sheet: sheet-${mode}.png`);
   return `sheet-${mode}.png`;
+}
+
+// Where the minimap stood at each moment (minimap.ts writes it): one JSON line per moment.
+export const MAPS_FILE = 'minimap.jsonl';
+const MAP_ZOOM = 3; // the map's crop, enlarged so its marks can be read
+const MAP_PAD = 6; // px round the map in its crop
+const PHONE_WIDTH = 390; // the phone's viewport (pages.ts SIZES)
+const UNDER_BAND = 8; // the map's top below the band without a banner (client scene.ts minimapAt)
+
+// One sheet of the minimap folder's shots, sheet-minimap.png: per shot its map enlarged
+// MAP_ZOOM times over the whole phone screen, by game and moment, Light before Dark.
+export async function makeMinimapSheet(mode: string): Promise<string> {
+  const dir = path.join(REVIEW_DIR, mode);
+  type Box = { left: number; top: number; right: number; bottom: number };
+  type Line = { moment: string; minimap: Box | null; barBottom: number };
+  const maps = new Map<string, Box | null>();
+  for (const line of fs.readFileSync(path.join(dir, MAPS_FILE), 'utf8').split('\n'))
+    if (line) {
+      const { moment, minimap: m, barBottom } = JSON.parse(line) as Line;
+      // The Dark shot follows the Light one by a moment: the halving's banner may have gone and
+      // the map moved up under the band (client minimapAt), so the crop reaches up to there.
+      maps.set(moment, m && { ...m, top: Math.min(m.top, barBottom + UNDER_BAND) });
+    }
+  type Shot = { f: string; p: NonNullable<ReturnType<typeof parse>> };
+  const lightFirst = (s: Shot): number => (s.p.look === 'light' ? 0 : 1);
+  const shots = fs
+    .readdirSync(dir)
+    .map((f) => ({ f, p: parse(f) }))
+    .filter((x): x is Shot => x.p !== null)
+    .sort(
+      (a, b) =>
+        (a.p.moment.split('-')[0] ?? '').localeCompare(b.p.moment.split('-')[0] ?? '') ||
+        a.p.nn.localeCompare(b.p.nn) ||
+        lightFirst(a) - lightFirst(b),
+    );
+  const w = LAYOUT.phone.width;
+  const cells = shots.map(({ f, p }) => {
+    const m = maps.get(p.moment) ?? null;
+    const crop = m ? mapCrop(`${mode}/${f}`, m) : '<div style="height:40px">no minimap drawn</div>';
+    return `<figure style="width:${String(w + 20)}px">${crop}<img src="${mode}/${f}" width="${String(w)}"><figcaption>${p.moment} · ${p.look}</figcaption></figure>`;
+  });
+  const width = 6 * (w + 20 + GAP);
+  const html = path.join(REVIEW_DIR, `sheet-${mode}.html`);
+  fs.writeFileSync(html, page(cells, `display:flex;flex-wrap:wrap;width:${String(width)}px`));
+  const browser = await chromium.launch();
+  try {
+    await shootPage(browser, html, width + 3 * GAP, path.join(REVIEW_DIR, `sheet-${mode}.png`));
+  } finally {
+    await browser.close();
+  }
+  console.log(`sheet: sheet-${mode}.png`);
+  return `sheet-${mode}.png`;
+}
+
+// The map's part of the shot `src`, enlarged MAP_ZOOM times: the box `m` with MAP_PAD round it.
+function mapCrop(
+  src: string,
+  m: { left: number; top: number; right: number; bottom: number },
+): string {
+  const px = (n: number): string => `${String(n * MAP_ZOOM)}px`;
+  const box = `width:${px(m.right - m.left + 2 * MAP_PAD)};height:${px(m.bottom - m.top + 2 * MAP_PAD)}`;
+  const shift = `margin-left:${px(MAP_PAD - m.left)};margin-top:${px(MAP_PAD - m.top)}`;
+  return `<div style="${box};overflow:hidden;margin:0 auto 6px"><img src="${src}" style="width:${px(PHONE_WIDTH)};max-width:none;border:0;${shift}"></div>`;
 }
 
 // Alone: the named modes, or every mode with shots.

@@ -8,7 +8,8 @@ import { look } from './palette.js';
 import { sx, sy, type View } from './view.js';
 
 const LIFT = 4; // pixels between the character's hat and the bomb
-const BOMB = '#3a3150';
+export const BOMB = '#3a3150'; // also the carrier's dot on the minimap
+export const HOT = '#ff6b2e'; // the carrier's halo and the spark; the carrier's ring on the minimap
 const CARRIER_PULSE = 1.12; // the body's largest size while it pulses
 
 // The bomb's radius and the full fuse's length for a ghost of body radius `r` pixels: large
@@ -36,7 +37,7 @@ export function drawCarrier(
   const r = at.r * (1 + (CARRIER_PULSE - 1) * pulse);
   const { ctx } = v;
   ctx.globalAlpha = 0.25 + 0.35 * pulse;
-  ctx.fillStyle = '#ff6b2e';
+  ctx.fillStyle = HOT;
   ctx.beginPath();
   ctx.arc(sx(v, at.x), sy(v, at.y), r + 4 + 3 * pulse, 0, 2 * Math.PI);
   ctx.fill();
@@ -104,7 +105,7 @@ function spark(ctx: CanvasRenderingContext2D, at: { x: number; y: number }, flic
   ctx.arc(at.x, at.y, 6 + 3 * flicker, 0, 2 * Math.PI);
   ctx.fill();
   ctx.globalAlpha = 1;
-  ctx.fillStyle = flicker > 0.5 ? '#fff3b0' : '#ff6b2e';
+  ctx.fillStyle = flicker > 0.5 ? '#fff3b0' : HOT;
   ctx.beginPath();
   ctx.arc(at.x, at.y, 3 + 2 * flicker, 0, 2 * Math.PI);
   ctx.fill();

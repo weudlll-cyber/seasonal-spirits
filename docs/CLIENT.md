@@ -291,9 +291,15 @@ or touch (browsers allow sound only after a gesture).
   wide (`FOLLOW_BODY_PX`, decision 2026-11-19; was Sumo's starting scale, about 14 px), clamped so it shows no more beyond the walls than the middle would, and
   eased over about 150 ms (scale, slant and offset; `CameraEase`); a minimap in the top right
   corner below the band — below the halving's banner while it shows, never under it (`scene.ts`
-  `minimapAt`, 2026-11-19) — shows the walls now, King's zone or the bombs' carriers and the own dot,
-  each outlined in ink so it reads on every season's ground (3:1 at least, render
-  `palette.test.ts`; render `minimap.ts`). Once the walls have closed in so far that the whole field fits at that
+  `minimapAt`, 2026-11-19). It is drawn to the scale of the walls at the match's start (game-core's
+  config) and shows (owner decision 2026-11-20): the field's edge — the walls as they stand now,
+  the grass inside them, closing in on the map at each King halving; in Bomb with closing off it
+  stays put (in King and Bomb nobody falls, game-core `walled`: the walls are where a character
+  stops) —; a frame round the part of the field the screen shows, from the drawn view (render
+  `fieldSeen`), a white line on an ink line; King's zone; Bomb's carriers as a dark bomb dot in a
+  hot ring, and no other player; the own dot in its team's colour on top. Every mark reads on
+  every season's ground in Light and Dark (3:1 at least, render `palette.test.ts`; render
+  `minimap.ts`). Once the walls have closed in so far that the whole field fits at that
   scale, the whole field shows. The owner's setting "Phone: follow camera in walled modes"
   (Match flow, on, applies at once) switches it; desktop, landscape and spectators keep the whole
   field. There is no view choice.

@@ -178,3 +178,12 @@ export function overlaps(a: Rect, b: Rect, gap = 0): boolean {
 export function visibleArea(v: View): Rect {
   return { left: 0, top: v.top, right: v.ctx.canvas.width, bottom: v.ctx.canvas.height };
 }
+
+// The part of the field the view shows, in field units: visibleArea mapped back through sx and sy
+// (x undoes the scale, y the scale and the tilt), the follow camera's frame on the minimap.
+export function fieldSeen(v: View): Rect {
+  const a = visibleArea(v);
+  const fx = (px: number): number => (px - v.ox) / v.scale;
+  const fy = (py: number): number => (py - v.oy) / (v.scale * v.tilt);
+  return { left: fx(a.left), top: fy(a.top), right: fx(a.right), bottom: fy(a.bottom) };
+}

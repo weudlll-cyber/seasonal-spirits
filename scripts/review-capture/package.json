@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/main.ts",
     "own-marker": "tsx src/own-marker.ts",
+    "minimap": "tsx src/minimap.ts",
     "sheets": "tsx src/sheets.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

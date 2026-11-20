@@ -28,6 +28,7 @@
     "dev:stop": "node scripts/dev.mjs stop",
     "review:capture": "pnpm --filter @seasonal-spirits/review-capture start",
     "review:own-marker": "pnpm --filter @seasonal-spirits/review-capture own-marker",
+    "review:minimap": "pnpm --filter @seasonal-spirits/review-capture minimap",
     "review:sheets": "pnpm --filter @seasonal-spirits/review-capture sheets"
   },
   "devDependencies": {

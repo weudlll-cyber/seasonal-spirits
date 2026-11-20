@@ -49,6 +49,7 @@ export interface ClientView {
   result: boolean;
   // What the frame drew (apps/client/src/scene.ts, Drawn).
   barBottom: number;
+  minimap: Rect | null; // the follow camera's minimap, null while it is not drawn
   playArea: Rect; // the playing area's square in pixels
   controls: Rect[];
   zones: Rect[];

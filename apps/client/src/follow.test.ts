@@ -5,7 +5,17 @@
 
 import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
-import { cameraBox, fitBox, ghostRadiusPx, halfPx, shape, sx, sy } from '@seasonal-spirits/render';
+import {
+  cameraBox,
+  fitBox,
+  ghostRadiusPx,
+  halfPx,
+  minimapMarks,
+  shape,
+  sx,
+  sy,
+  type Rect,
+} from '@seasonal-spirits/render';
 import { describe, expect, it } from 'vitest';
 import { CameraEase, FOLLOW_BODY_PX, followView, followWanted } from './follow.js';
 
@@ -67,6 +77,40 @@ describe('the follow camera: where', () => {
     // than the followed square on this phone.
     expect(followView(phone, TOP, room, { s: state(240), own: own(1000, 1000) })).toBeNull();
     expect(followView(phone, TOP, room, { s: state(450), own: own(1000, 1000) })).not.toBeNull();
+  });
+});
+
+describe("the follow camera: the minimap's frame", () => {
+  // The map's pixels back to the field: at the start the walls are the map's square (the edge).
+  const toField = (e: Rect, px: number, wall: number, lo: number): number =>
+    1000 - wall + ((px - lo) / (e.right - e.left)) * 2 * wall;
+
+  it('frames on the map the part of the field the followed view shows', () => {
+    const s = state(700, 2);
+    for (const at of [own(1000, 1000), own(500, 1400), own(1600, 450)]) {
+      const v = followView(phone, TOP, room, { s, own: at });
+      if (!v) throw new Error('the follow camera should follow here');
+      const m = minimapMarks({ right: 382, top: 112 }, s, { view: v, own: at, tuning: null });
+      const f = m.frame;
+      if (!f) throw new Error('the frame should show');
+      const e = m.edge;
+      // Each side of the frame, back through the map and the view, is the screen's side — unless
+      // the map's square cut it there.
+      const x = (px: number): number => sx(v, toField(e, px, 700, e.left));
+      const y = (py: number): number => sy(v, toField(e, py, 700, e.top));
+      const sides = [
+        [f.left, e.left, x(f.left), 0],
+        [f.right, e.right, x(f.right), 390],
+        [f.top, e.top, y(f.top), TOP],
+        [f.bottom, e.bottom, y(f.bottom), 844],
+      ] as const;
+      const uncut = sides.filter(([px, edge]) => Math.abs(px - edge) > 1e-9);
+      expect(uncut.length).toBeGreaterThanOrEqual(2);
+      for (const [, , screenPx, want] of uncut) expect(screenPx).toBeCloseTo(want, 6);
+      // And the own dot inside it.
+      expect(m.own && m.own.x > f.left && m.own.x < f.right).toBe(true);
+      expect(m.own && m.own.y > f.top && m.own.y < f.bottom).toBe(true);
+    }
   });
 });
 

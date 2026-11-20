@@ -2,9 +2,13 @@
 // least 4.5:1): the panels' text and the clock's countdown on the panel. (The season names on
 // their colours went with the clock's season cells, NIGHT 2026-11-19.) And the ink outlines stand
 // out on every season's ground at 3:1 at least: the minimap's marks (2026-11-19, minimap.ts) and
-// the own ring's outer edge (owner 2026-11-20, own.ts).
+// the own ring's outer edge (owner 2026-11-20, own.ts). The minimap's frame of the screen reads on
+// every ground and on the panel round the walls, and a carrier's bomb dot on its hot ring (owner
+// 2026-11-20).
 
 import { describe, expect, it } from 'vitest';
+import { BOMB, HOT } from './bomb.js';
+import { FRAME_LIGHT } from './minimap.js';
 import { DARK, LIGHT, SEASON_NAMES, type Look } from './palette.js';
 import { TINTS } from './season.js';
 
@@ -41,4 +45,23 @@ describe('ink on the season grounds', () => {
       expect(contrast(DARK.ink, dark?.grass ?? DARK.ink)).toBeGreaterThanOrEqual(3);
     },
   );
+});
+
+describe("the minimap's frame and carriers", () => {
+  it.each([
+    ['Light', LIGHT, 0],
+    ['Dark', DARK, 1],
+  ] as const)(
+    'frames the screen at 3:1 or more on every ground and on the panel, in %s',
+    (_, l, dark) => {
+      // The frame is a light line on a wider ink line: one of the two stands out.
+      const grounds = [...TINTS.map((t) => t[dark].grass), l.panel];
+      for (const g of grounds)
+        expect(Math.max(contrast(l.ink, g), contrast(FRAME_LIGHT, g)), g).toBeGreaterThanOrEqual(3);
+    },
+  );
+
+  it("sets a carrier's bomb dot off its hot ring at 3:1 or more", () => {
+    expect(contrast(BOMB, HOT)).toBeGreaterThanOrEqual(3);
+  });
 });

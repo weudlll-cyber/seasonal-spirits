@@ -23,7 +23,7 @@ export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './l
 export { drawFallsBehind, drawGhosts, type GhostStyle } from './ghosts.js';
 export { fieldStanding, type FieldStanding } from './standing.js';
 export { ghostRadiusPx } from './reach.js';
-export { MINIMAP_PX, drawMinimap } from './minimap.js';
+export { MINIMAP_PX, drawMinimap, minimapMarks } from './minimap.js';
 export { Trails } from './trails.js';
 export { shape, useShape } from './shape.js';
 export { PULSE_MS, drawRespawnBand } from './own.js';

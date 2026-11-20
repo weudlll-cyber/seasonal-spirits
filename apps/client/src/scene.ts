@@ -77,6 +77,7 @@ export const NO_MARKS: OwnMarks = { pulseMs: null, backInMs: null };
 
 export interface Drawn {
   barBottom: number; // pixels: nothing of the field is drawn above this line
+  minimap: Rect | null; // the follow camera's minimap on screen, null while it is not drawn
   playArea: Rect; // the playing area's square (sumo: around the arena) in pixels
   controls: Rect[];
   zones: Rect[];
@@ -197,13 +198,15 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
     const field = fieldStanding(view, f.latest, ground, { nowMs: now, seasons: memory.seasons });
     labels = drawGhosts(view, f.ghosts, { ...style, field });
   });
+  let minimap: Rect | null = null;
   if (follow && f.latest) {
     const at = minimapAt(ctx.canvas.width, view.top, f.hud.banner);
-    drawMinimap(ctx, at, f.latest, { field: playBox(f.latest), ownId: f.ownId });
+    minimap = drawMinimap(ctx, at, f.latest, { view, own: f.own, tuning: f.tuning });
   }
   drawClock(ctx, f.latest);
   return {
     barBottom: view.top,
+    minimap,
     playArea: playArea(view, f.latest),
     controls: f.hud.controls,
     zones: f.hud.zones,
