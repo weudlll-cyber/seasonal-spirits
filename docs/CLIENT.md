@@ -226,8 +226,13 @@ or touch (browsers allow sound only after a gesture).
   that hit it, and the knocked one slides with spiral eyes (render `moments.ts`, `effects.ts`; the
   client sees no hit itself: a knock is a character faster than running without dashing); one
   falling off (render `fall.ts`) tips over the edge, turns head-down with an open mouth and
-  drops, shrinking, to the sea with three white streaks and an "Aaah!" bubble, and lands in a
-  white crown of water with a ring widening round it on the sea, all within `fallMs`; one out is not drawn;
+  drops, at its standing size, to the sea with three white streaks and an "Aaah!" bubble, and
+  lands in a white crown of water with a ring widening round it on the sea, all within `fallMs`.
+  Off Sumo's island (render `offIsland`, `offBack`; planner 2026-11-20: one off the back was
+  drawn large in the sky over the island) a character — falling, or in the air beyond the edge
+  after a jump — has its standing size and no shadow or ring in the sky; one off the back is
+  drawn behind the island's body, which hides it as it drops (render `drawFallsBehind`, through
+  `drawField`'s `behind`), one off the sides or the front in front of it; one out is not drawn;
   one just back wears a white dashed ring (protected). Labels (render `ghost-labels.ts`, NIGHT
   2026-11-19: a label had sat on almost every character): only the own character, the real
   players and the top three by score carry one, bots otherwise none, for players and spectators
@@ -263,7 +268,7 @@ or touch (browsers allow sound only after a gesture).
   further out than the cap. Below 600 px (a phone) there is no cap: the camera always fits the
   island or field, so late Sumo, King and Bomb fill the width to the end. The same for players,
   spectators and the viewer. A falling character is
-  drawn at the scale of the field, never larger than a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
+  drawn at the scale of the field, the size of a standing one. **The phone's follow camera** (`follow.ts`, 2026-11-19: King's and Bomb's square fields
   fitted only a portrait phone's width, the characters were tiny): on a portrait screen, for a
   player in King or Bomb, the camera follows the own character at a scale where a body is 22 px
   wide (`FOLLOW_BODY_PX`, decision 2026-11-19; was Sumo's starting scale, about 14 px), clamped so it shows no more beyond the walls than the middle would, and

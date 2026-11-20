@@ -60,6 +60,12 @@ export function playBox(s: ServerState | undefined): Box {
   return { x: a.x, y: a.y, half: a.r };
 }
 
+// Sumo's island top as it is now (where characters fall off it, fall.ts), null in the walled
+// modes.
+export function islandOf(s: ServerState | undefined): WireDisc | null {
+  return walled(clientConfig(s?.mode ?? 0)) ? null : (s?.area ?? START);
+}
+
 // The square the client's camera fits around the playing area: room for a character standing on
 // its edge and, in the walled modes, for the back fence's posts above the back wall (NIGHT
 // 2026-11-19: they reached under the band) and in hill for the zone's flag poles there — their
@@ -119,30 +125,44 @@ export interface FieldMemory {
 }
 
 // The ground layer under everything that stands; returns the ground on screen, where the island's
-// standing pieces stand (standing.ts).
+// standing pieces stand (standing.ts). `memory.behind`: what drops behind the island — the
+// characters off its back (ghosts.ts drawFallsBehind) —, drawn after the breaking ring's back and
+// before the island's body, which hides it.
 export function drawField(
   v: View,
   s: ServerState | undefined,
   nowMs: number,
-  { breaks, seasons }: FieldMemory,
+  memory: FieldMemory & { behind?: () => void },
 ): OnScreen {
-  followSeason(seasons, s, nowMs);
-  const box = playBox(s);
-  const walls = walled(clientConfig(s?.mode ?? 0));
-  breaks.observe(walls ? null : (s?.area ?? START), nowMs, shape().sumo.shrink);
-  breaks.draw(v, nowMs, 'behind');
+  const { box, walls } = drawBehind(v, s, nowMs, memory);
   const r = walls ? box.half * PLATFORM : box.half;
   const ground = {
     ...drawGround(v, { x: box.x, y: box.y, r, square: walls }),
     keepOut: zoneKeepOut(v, box, s),
   };
   drawGroundDecor(v.ctx, ground, nowMs);
-  drawSeasonGround(v.ctx, ground, seasons, nowMs);
+  drawSeasonGround(v.ctx, ground, memory.seasons, nowMs);
   if (walls) drawWalled(v, s, nowMs);
   else if (s?.next && ahead(s)) drawCrack(v, s.next, s.countdownMs === null ? null : nowMs);
-  breaks.draw(v, nowMs, 'front');
+  memory.breaks.draw(v, nowMs, 'front');
   drawFrontClouds(v.ctx);
   return ground;
+}
+
+// What lies behind the island: the season followed, the halving's breaking ring's back pieces and
+// `behind`; returns the playing area and whether it is walled.
+function drawBehind(
+  v: View,
+  s: ServerState | undefined,
+  nowMs: number,
+  { breaks, seasons, behind }: FieldMemory & { behind?: () => void },
+): { box: Box; walls: boolean } {
+  followSeason(seasons, s, nowMs);
+  const walls = walled(clientConfig(s?.mode ?? 0));
+  breaks.observe(walls ? null : (s?.area ?? START), nowMs, shape().sumo.shrink);
+  breaks.draw(v, nowMs, 'behind');
+  behind?.();
+  return { box: playBox(s), walls };
 }
 
 // A halving still comes (not the match end, not an open end, not the result pause).

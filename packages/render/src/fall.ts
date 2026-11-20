@@ -1,9 +1,12 @@
 // Seasonal Sumo — a character falling off the island (Sky Island look, 2026-11-18): it tips over
-// the edge, turns head-down with an open "o" mouth, drops and shrinks towards the sea below with
-// three white speed streaks and a short "Aaah!" bubble, and lands in a splash on the sea band — a
-// white crown with a ring widening round it — all within the match's fall time (fallMs; `t`
-// 0 … 1 from trails.ts).
+// the edge, turns head-down with an open "o" mouth, drops towards the sea below with three white
+// speed streaks and a short "Aaah!" bubble, and lands in a splash on the sea band — a white crown
+// with a ring widening round it — all within the match's fall time (fallMs; `t` 0 … 1 from
+// trails.ts). It keeps the size of a standing character (planner 2026-11-20). Which characters
+// are off the island, and which of those at its back — drawn behind the island's body, hidden by
+// it — offIsland and offBack say (ghosts.ts, field.ts).
 
+import { GHOST_FALLING, type GhostState, type WireDisc } from '@seasonal-spirits/protocol';
 import { inkWidth } from './character.js';
 import { look } from './palette.js';
 import { seaTop } from './sky.js';
@@ -12,6 +15,21 @@ import { pill } from './pill.js';
 
 const TIP = 0.2; // the share of the fall spent tipping over the edge
 const SPLASH = 0.85; // from here on the splash shows
+
+// Off Sumo's island (`island` its top, null in the walled modes): falling, or beyond its edge —
+// in the air there after a jump, over nothing (review 2026-11-20: such a one was drawn large with
+// its shadow in the sky).
+export function offIsland(g: GhostState, island: WireDisc | null): boolean {
+  if (!island) return false;
+  return (g.flags & GHOST_FALLING) !== 0 || Math.hypot(g.x - island.x, g.y - island.y) > island.r;
+}
+
+// Off the island at its back: further behind its middle than to either side, so the island's
+// body hides it (planner 2026-11-20); off the sides or the front it stays in front.
+export function offBack(g: GhostState, island: WireDisc | null): boolean {
+  if (!island || !offIsland(g, island)) return false;
+  return island.y - g.y > Math.abs(g.x - island.x);
+}
 
 // The falling character at its place on screen (x, y px, body radius r px).
 export function drawFall(
@@ -22,7 +40,7 @@ export function drawFall(
   const sea = seaTop(ctx.canvas.height);
   const drop = t <= TIP ? 0 : ((t - TIP) / (1 - TIP)) ** 2;
   const y = at.y + (sea - at.y) * drop;
-  const r = at.r * (1 - 0.6 * drop);
+  const r = at.r;
   const turn = Math.min(1, t / TIP) * Math.PI; // head-down after the tip
   const l = look();
   if (t < SPLASH) {

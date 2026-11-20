@@ -9,6 +9,7 @@ export {
   cameraBox,
   drawField,
   halfPx,
+  islandOf,
   playBox,
   type FieldMemory,
   type Screen,
@@ -19,7 +20,7 @@ export { drawPodium, drawStartScene } from './podium.js';
 export { BreakOff } from './breakoff.js';
 export { drawSky } from './ambient.js';
 export { bodyBox, placeLabels, type LabelCandidate, type PlacedLabel } from './labels.js';
-export { drawGhosts, type GhostStyle } from './ghosts.js';
+export { drawFallsBehind, drawGhosts, type GhostStyle } from './ghosts.js';
 export { fieldStanding, type FieldStanding } from './standing.js';
 export { ghostRadiusPx } from './reach.js';
 export { MINIMAP_PX, drawMinimap } from './minimap.js';

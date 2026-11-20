@@ -15,8 +15,10 @@
 // under every character (shadows, rings, dust); the bodies in one depth order with what stands on
 // the island — trees, pebbles, lanterns, fence posts and rails, King's flag poles (standing.ts),
 // no body cut anywhere; over everything the own triangle, the hit stars and the puffs, King's
-// crown, the season's particles, the labels (ghost-labels.ts) and "Dodged!". What the drawing remembers between frames is
-// trails.ts.
+// crown, the season's particles, the labels (ghost-labels.ts) and "Dodged!". A character off
+// Sumo's island — falling, or in the air beyond its edge — has its standing size and no marks on
+// the ground; one off its back is drawn behind the island's body (drawFallsBehind, before the
+// island; planner 2026-11-20). What the drawing remembers between frames is trails.ts.
 
 import {
   GHOST_BOMB,
@@ -25,11 +27,12 @@ import {
   GHOST_OUT,
   GHOST_PROTECTED,
   type GhostState,
+  type WireDisc,
 } from '@seasonal-spirits/protocol';
 import { drawBomb, drawCarrier } from './bomb.js';
 import { inkWidth } from './character.js';
 import { drawDust, drawStar } from './effects.js';
-import { drawFall } from './fall.js';
+import { drawFall, offBack, offIsland } from './fall.js';
 import { drawLabels } from './ghost-labels.js';
 import { drawNoReturn } from './no-return.js';
 import {
@@ -76,6 +79,9 @@ export interface GhostStyle {
   // What flies over the island — the season's particles (season.ts drawSeasonAir) —, drawn
   // under the labels (review 2026-11-20: butterflies hid the own name).
   air?: () => void;
+  // Sumo's island top (field.ts islandOf), null in the walled modes: who is off it, who off its
+  // back (fall.ts).
+  island?: WireDisc | null;
 }
 
 const visible = (g: GhostState): boolean => !(g.flags & GHOST_OUT);
@@ -89,6 +95,7 @@ interface Aloft {
 }
 
 function aloft(v: View, g: GhostState, style: GhostStyle): Aloft {
+  if (offIsland(g, style.island ?? null)) return { g, real: g, h: 0 }; // over nothing: no arc
   const t = style.trails.air(g.id, style.nowMs, shape().jump.airMs);
   if (t === null) return { g, real: g, h: 0 };
   const h = arcHeight(t);
@@ -101,7 +108,8 @@ export function drawGhosts(
   ghosts: readonly GhostState[],
   style: GhostStyle,
 ): PlacedLabel[] {
-  const shown = ghosts.filter(visible).map((g) => aloft(v, g, style));
+  const front = (g: GhostState): boolean => visible(g) && !offBack(g, style.island ?? null);
+  const shown = ghosts.filter(front).map((g) => aloft(v, g, style));
   for (const d of shown) drawGround(v, d, style);
   drawStanding(v, shown, style);
   for (const { g, real } of shown) {
@@ -133,7 +141,7 @@ export function drawGhosts(
 // On the ground under a character: its shadow, the ring of a take-off or a landing, its dust, and
 // for the own one its ring.
 function drawGround(v: View, { real, h }: Aloft, style: GhostStyle): void {
-  if (real.flags & GHOST_FALLING) return;
+  if (real.flags & GHOST_FALLING || offIsland(real, style.island ?? null)) return;
   const r = ghostRadiusPx(v);
   drawShadow(v, real, r, h);
   const ring = style.trails.ring(real.id, style.nowMs);
@@ -141,6 +149,13 @@ function drawGround(v: View, { real, h }: Aloft, style: GhostStyle): void {
   const dust = style.trails.moments.dust(real.id, style.nowMs);
   if (dust !== null) drawDust(v, real, r, dust);
   if (real.id === style.ownId) drawOwnRing(v, { ...real, r }, style.ownPulseMs ?? null);
+}
+
+// The characters off the back of Sumo's island, back to front: drawn before the island's body
+// (field.ts drawField `behind`), which hides them as they drop.
+export function drawFallsBehind(v: View, ghosts: readonly GhostState[], style: GhostStyle): void {
+  const back = ghosts.filter((g) => visible(g) && offBack(g, style.island ?? null));
+  for (const g of [...back].sort((a, b) => a.y - b.y)) drawBody(v, { g, real: g, h: 0 }, style);
 }
 
 // Three white puffs behind a fast character at places it just passed, fading away from it.

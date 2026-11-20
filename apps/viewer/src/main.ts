@@ -33,15 +33,19 @@ import {
   fieldStanding,
   drawSky,
   drawSeasonAir,
+  drawFallsBehind,
   drawGhosts,
   clientConfig,
   fuseLeft,
   cameraBox,
   fitBox,
+  islandOf,
   modeOf,
   scoreTopOf,
   useShape,
   zoneOf,
+  type GhostStyle,
+  type View,
 } from '@seasonal-spirits/render';
 import { startAdminPanel } from './admin-panel.js';
 
@@ -125,6 +129,22 @@ setInterval(() => {
   void pollMetrics();
 }, 1000);
 
+// How the viewer draws the characters: no own one, the mode's marks, the season's particles.
+function styleOf(view: View, latest: ServerState | undefined, now: number): GhostStyle {
+  return {
+    ownId: null,
+    trails,
+    nowMs: now,
+    fuse: latest ? fuseLeft(latest) : 1,
+    zone: zoneOf(latest),
+    scoreTop: scoreTopOf(latest),
+    island: islandOf(latest),
+    air: () => {
+      drawSeasonAir(view, field.seasons, now);
+    },
+  };
+}
+
 function frame(): void {
   const now = Date.now();
   const target = renderClock.target(now, latestServerMs(buffer));
@@ -146,19 +166,13 @@ function frame(): void {
   // The client's camera: the playing area as large as it goes (sumo's arena follows its halving).
   const screen = { ctx, top: CLOCK_HEIGHT, room: { keepOut: [], marginPx: 8 } };
   const view = fitBox(ctx, CLOCK_HEIGHT, cameraBox(latest, screen), screen.room);
-  const ground = drawField(view, latest, now, field);
-  drawGhosts(view, ghosts, {
-    ownId: null,
-    trails,
-    nowMs: now,
-    fuse: latest ? fuseLeft(latest) : 1,
-    zone: zoneOf(latest),
-    scoreTop: scoreTopOf(latest),
-    field: fieldStanding(view, latest, ground, { nowMs: now, seasons: field.seasons }),
-    air: () => {
-      drawSeasonAir(view, field.seasons, now);
-    },
-  });
+  const style = styleOf(view, latest, now);
+  const behind = (): void => {
+    drawFallsBehind(view, ghosts, style);
+  };
+  const ground = drawField(view, latest, now, { ...field, behind });
+  const standing = fieldStanding(view, latest, ground, { nowMs: now, seasons: field.seasons });
+  drawGhosts(view, ghosts, { ...style, field: standing });
   drawClock(ctx, latest, SWITCH_ROOM);
 
   // Expose for Playwright / probe self-check.

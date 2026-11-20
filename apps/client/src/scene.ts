@@ -1,7 +1,8 @@
 // Seasonal Sumo — one frame of the canvas: the sky, the whole playing area — the island —
 // fitted below the band (on a portrait phone in King and Bomb the follow camera and its minimap,
 // follow.ts), its ghosts and labels, the own ghost's marks (its pulse; its respawn band while
-// out), and the season clock. Returns what it drew, for the browser specs.
+// out), and the season clock; characters off the island's back before the island, which hides
+// them. Returns what it drew, for the browser specs.
 
 import type { Settings, Team } from '@seasonal-spirits/game-core';
 import {
@@ -20,6 +21,7 @@ import {
   drawField,
   fieldStanding,
   drawRespawnBand,
+  drawFallsBehind,
   drawGhosts,
   drawMinimap,
   fitBox,
@@ -28,11 +30,13 @@ import {
   zoneOf,
   ghostRadiusPx,
   cameraBox,
+  islandOf,
   playBox,
   sx,
   sy,
   visibleArea,
   type FieldMemory,
+  type GhostStyle,
   type PlacedLabel,
   type Rect,
   type Trails,
@@ -170,11 +174,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
   trails.record(f.ghosts, now);
   let labels: PlacedLabel[] = [];
   belowBar(view, () => {
-    const ground = drawField(view, f.latest, now, memory);
-    const area = f.latest?.area;
-    if (f.marks.backInMs !== null && f.ownTeam !== null && area)
-      drawRespawnBand(view, area, f.ownTeam as Team);
-    labels = drawGhosts(view, f.ghosts, {
+    const style: GhostStyle = {
       ownId: f.ownId,
       trails,
       nowMs: now,
@@ -182,11 +182,20 @@ export function drawScene(ctx: CanvasRenderingContext2D, f: Frame, memory: Memor
       ownPulseMs: f.marks.pulseMs,
       zone: zoneOf(f.latest),
       scoreTop: scoreTopOf(f.latest),
-      field: fieldStanding(view, f.latest, ground, { nowMs: now, seasons: memory.seasons }),
+      island: islandOf(f.latest),
       air: () => {
         drawSeasonAir(view, memory.seasons, now);
       },
-    });
+    };
+    const behind = (): void => {
+      drawFallsBehind(view, f.ghosts, style);
+    };
+    const ground = drawField(view, f.latest, now, { ...memory, behind });
+    const area = f.latest?.area;
+    if (f.marks.backInMs !== null && f.ownTeam !== null && area)
+      drawRespawnBand(view, area, f.ownTeam as Team);
+    const field = fieldStanding(view, f.latest, ground, { nowMs: now, seasons: memory.seasons });
+    labels = drawGhosts(view, f.ghosts, { ...style, field });
   });
   if (follow && f.latest) {
     const at = minimapAt(ctx.canvas.width, view.top, f.hud.banner);
