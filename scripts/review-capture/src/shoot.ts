@@ -1,6 +1,9 @@
 // Seasonal Sumo review capture — one moment on every page watching the match: each page shot as
 // it is, then switched to the other look with its own Light/Dark button, shot again and switched
-// back, all pages at once so a moment takes well under a second. Files:
+// back, all pages at once so a moment takes well under a second. The start screen shows only for
+// a moment after a page loads and fades in 0.4 s (client start.ts): it is shot in each look right
+// after a reload in that look (planner 2026-11-20: the second look's shot fell into the fade).
+// Files:
 // reports/screens/review/<mode>/<size>-<look>-<role>-<nn>-<moment>.png, and per shot one line of
 // what was measured on the page (metrics.ts) in that folder's metrics.jsonl.
 
@@ -29,6 +32,13 @@ const toggle = (page: Page): Promise<void> =>
     document.getElementById('look')?.click();
   });
 
+// Whether the client's start screen shows whole: not hidden, not fading.
+const startShown = (page: Page): Promise<boolean> =>
+  page.evaluate(() => {
+    const s = document.getElementById('start');
+    return !!s && !s.hidden && !s.classList.contains('gone');
+  });
+
 export class Camera {
   private n = 0;
   private readonly dir: string;
@@ -43,25 +53,56 @@ export class Camera {
 
   // `moment` on the pages of `roles` (all when absent), in both looks.
   async shoot(moment: string, roles?: readonly Role[]): Promise<void> {
-    const on = this.watchers.filter((w) => !roles || roles.includes(w.role));
+    const on = this.on(roles);
     if (on.length === 0) return; // e.g. the admin flow in a run without the viewer shown
-    const nn = String(++this.n).padStart(2, '0');
-    const once = async (w: Watcher, dark: boolean): Promise<void> => {
-      const file = `${w.size}-${dark ? 'dark' : 'light'}-${w.role}-${nn}-${moment}.png`;
-      await w.page.screenshot({ path: path.join(this.dir, file) });
-      const m = await measurePage(w.page);
-      fs.appendFileSync(
-        path.join(this.dir, 'metrics.jsonl'),
-        `${JSON.stringify({ file, ...m })}
-`,
-      );
-    };
+    const nn = this.next();
     const looks = await Promise.all(on.map((w) => isDark(w.page)));
-    await Promise.all(on.map((w, i) => once(w, looks[i] ?? false)));
+    await Promise.all(on.map((w, i) => this.once(w, nn, moment, looks[i] ?? false)));
     await Promise.all(on.map((w) => toggle(w.page)));
     await on[0]?.page.waitForTimeout(SWITCH_MS);
-    await Promise.all(on.map((w, i) => once(w, !(looks[i] ?? false))));
+    await Promise.all(on.map((w, i) => this.once(w, nn, moment, !(looks[i] ?? false))));
     await Promise.all(on.map((w) => toggle(w.page)));
     console.log(`  ${nn} ${moment} (${on.map((w) => `${w.size} ${w.role}`).join(', ')})`);
+  }
+
+  // The clients' start screen on the pages of `roles`, Light then Dark, each shot right after the
+  // page is loaded again in that look (the look is remembered across the reload); Light after.
+  async shootStart(roles: readonly Role[]): Promise<void> {
+    const on = this.on(roles);
+    const nn = this.next();
+    for (const dark of [false, true]) {
+      await Promise.all(
+        on.map(async (w) => {
+          if ((await isDark(w.page)) !== dark) await toggle(w.page);
+          await w.page.reload();
+          await w.page.waitForTimeout(SWITCH_MS / 2); // the island drawn once
+          if (!(await startShown(w.page)))
+            console.log(`  the start screen was gone before the shot (${w.size} ${w.role})`);
+          await this.once(w, nn, 'start-screen', dark);
+        }),
+      );
+    }
+    await Promise.all(on.map((w) => toggle(w.page)));
+    console.log(`  ${nn} start-screen (${on.map((w) => `${w.size} ${w.role}`).join(', ')})`);
+  }
+
+  private on(roles?: readonly Role[]): Watcher[] {
+    return this.watchers.filter((w) => !roles || roles.includes(w.role));
+  }
+
+  private next(): string {
+    return String(++this.n).padStart(2, '0');
+  }
+
+  // One page in its present look (`dark`), shot and measured.
+  private async once(w: Watcher, nn: string, moment: string, dark: boolean): Promise<void> {
+    const file = `${w.size}-${dark ? 'dark' : 'light'}-${w.role}-${nn}-${moment}.png`;
+    await w.page.screenshot({ path: path.join(this.dir, file) });
+    const m = await measurePage(w.page);
+    fs.appendFileSync(
+      path.join(this.dir, 'metrics.jsonl'),
+      `${JSON.stringify({ file, ...m })}
+`,
+    );
   }
 }
