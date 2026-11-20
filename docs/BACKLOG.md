@@ -80,6 +80,18 @@ when: the cause is found (the arena no longer halving
 there, or the banner of the previous halving matched) and the spec waits for a fresh match or
 reads the arena at the right moment, green ten runs in a row.
 
+an. **The help card scrolls without a hint** (review 2026-11-20,
+`sumo-points/desktop-dark-player-05-help-open`): on a desktop and a phone the help card is
+longer than the screen; it scrolls, its last visible line is cut in half and nothing says there
+is more. Proposal: a soft fade at the card's bottom edge while more lies below, or the "What you
+see" part folded behind a "More" button. Done when: the owner has chosen one (or neither).
+
+ao. **Last One Standing's players list** (review 2026-11-20,
+`sumo-last-one-standing/*-player-*-result`): the players are listed by survival (game-core
+`ranked`), each with its knockouts, so the numbers jump (8, 5, 7, 6, 3, 2, 6) and the list reads
+as unsorted. Proposal: show when each went out ("out 2:41", the winner "last standing") instead
+of the knockouts, the knockouts in the awards only. Done when: the owner has decided.
+
 z. **Seasonal Party** (owner's idea, recorded 2026-11-17): a party is four rounds, one per
 season, a different short action minigame per round, the halving as the transition between
 rounds, team points over all rounds and an overall winner — to be built only if the
@@ -1517,3 +1529,4 @@ Done when: the spec is green ten runs in a row.
 | 2026-11-20 | review capture tests and lint after the measurement fix                                                                                                                                                               | night chain piece 2 working tree                                                                                                          | 2 files, 7 tests; lint clean                                                                                                                                                                                                                                         | this commit                                                                                    |
 | 2026-11-20 | `result.test.ts` (new); lint and typecheck of client, render and viewer                                                                                                                                               | night chain fix 1 working tree                                                                                                            | 2 tests passed; green                                                                                                                                                                                                                                                | this commit                                                                                    |
 | 2026-11-20 | `layers.test.ts` (particles before labels); lint and typecheck of client, viewer and render                                                                                                                           | night chain fix 2 working tree                                                                                                            | 7 tests passed; one `max-lines-per-function` in the viewer fixed; green                                                                                                                                                                                              | this commit                                                                                    |
+| 2026-11-20 | `pnpm review:capture`, all four games, both runs each (second capture, after the fixes; the final capture)                                                                                                            | `de677a0`                                                                                                                                 | 233 moments, 1022 pictures, 31 sheets; no text cut or overlapping, DOM contrast at least 4.53:1, fonts desktop 12 px, phone 13 px; the four faults gone (start screen shot, result words and next match, joystick when out; particles by test)                       | `reports/review-2026-11-20.md`                                                                 |
