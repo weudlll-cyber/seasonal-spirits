@@ -23,7 +23,8 @@ the viewer stays the debug view.
 ## Repository layout
 
 - `apps/server` — the match server: game core on the 20 Hz loop, WebSocket, server bots.
-- `apps/client` — the player client (Vite + Canvas 2D, plain TypeScript): keyboard and
+- `apps/client` — the player client (Vite + Canvas 2D, TypeScript; the frame around the field in
+  React with `@seasonal/kit`, pinned by tag): keyboard and
   touch controls, the Dash button, the halving staging, the result screen.
 - `apps/viewer` — browser spectator and debug view with network numbers.
 - `packages/render` — the Canvas drawing both browser apps share.

@@ -6,7 +6,16 @@
 
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { GHOST_AIRBORNE } from '@seasonal-spirits/protocol';
-import { CENTRE, MODE_STACKS, screenshotPath, joystick, keyboard, steerTo, view } from './stack.js';
+import {
+  CENTRE,
+  MODE_STACKS,
+  screenshotPath,
+  joystick,
+  keyboard,
+  matchRunning,
+  steerTo,
+  view,
+} from './stack.js';
 
 const AWARDS = {
   hill: /^(King.+, \d+ s in the zone|Bouncer.+, \d+ pushed out of the zone)$/,
@@ -28,7 +37,7 @@ for (const mode of ['hill', 'bomb'] as const) {
     await page.goto(`http://localhost:${String(MODE_STACKS[mode].client)}/`);
     await expect.poll(async () => (await view(page)).own !== null, { timeout: 15_000 }).toBe(true);
     expect((await view(page)).gameMode).toBe(mode);
-    await expect(page.locator('#result')).toBeHidden({ timeout: 20_000 });
+    await matchRunning(page);
     const steer = info.project.name === 'phone' ? await joystick(page) : keyboard(page);
     const start = (await view(page)).own ?? { x: 0, y: 0 };
     const moved = await steerTo(page, steer, CENTRE, async () => {
@@ -51,7 +60,14 @@ for (const mode of ['hill', 'bomb'] as const) {
       expect(scored.length).toBeLessThanOrEqual(3);
     }
     await steer.hold(0, 0);
-    await expect(page.locator('#announce')).toHaveText('MATCH OVER', { timeout: 75_000 });
+    // This match's end, shown: the hidden banner keeps the last match's "MATCH OVER" (as BACKLOG
+    // ai's halving), which matched at once on a stack that had played a match (2026-11-21).
+    const over = page.locator('#announce');
+    await expect
+      .poll(() => over.evaluate((e: HTMLElement) => !e.hidden && e.textContent === 'MATCH OVER'), {
+        timeout: 75_000,
+      })
+      .toBe(true);
     await expect(page.locator('#result')).toBeVisible({ timeout: 10_000 });
     const awards = page.locator('#result-awards li');
     for (const text of await awards.allTextContents()) expect(text).toMatch(AWARDS[mode]);

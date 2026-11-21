@@ -1,17 +1,30 @@
-// Seasonal Sumo — the Light/Dark switch: the kit's theme on Sumo's small pill at the band's corner
-// (client) and the viewer's top right. The kit decides (@seasonal/kit theme): the website's stored
-// choice (`se.theme`, one choice for the site and every game on its origin), else the system
-// setting, followed live while nothing is stored, on <html data-theme>. The pill switches it, and
-// with it the canvas palette (palette.ts useLook) and the pages' colours (index.html).
+// Seasonal Sumo — Light and Dark on the kit's theme (@seasonal/kit): the website's stored choice
+// (`se.theme`, one choice for the site and every game on its origin), else the system setting,
+// followed live while nothing is stored, on <html data-theme>. The canvas palette follows the
+// theme the page shows (`followTheme`, palette.ts useLook): in the client the kit's own toggle
+// sets it (frame/Frame.tsx), in the viewer, which has no React, its small pill at the top right
+// (`bindLookSwitch`).
 
 import {
   applyTheme,
+  onShownThemeChange,
   onSystemThemeChange,
   resolveTheme,
+  shownTheme,
   storeTheme,
   type Theme,
 } from '@seasonal/kit';
 import { useLook } from './palette.js';
+
+// The canvas palette in the theme <html data-theme> shows, now and on every change; Light while
+// nothing has set it.
+export function followTheme(): void {
+  const follow = (): void => {
+    useLook(shownTheme() === 'dark');
+  };
+  follow();
+  onShownThemeChange(follow);
+}
 
 export function bindLookSwitch(button: HTMLButtonElement): void {
   let theme: Theme = resolveTheme();

@@ -4,7 +4,9 @@
 // host is the page's own, so a phone reaches the same machine. The dev server also serves the
 // viewer and the admin panel at /viewer/ and /admin/ (vite/viewer-pages.ts: one address), and with
 // DEV_TUNING=1 the game shows an "Admin" link (vite/dev-admin.ts). The kit's early theme script
-// (@seasonal/kit/vite themeInit) sets <html data-theme> before the first paint.
+// (@seasonal/kit/vite themeInit) sets <html data-theme> before the first paint. WEBSITE_MODE=1
+// (exactly "1"; off by default and today) shows the kit's back link and docked chat
+// (src/frame/Frame.tsx), for the game inside the website.
 
 import { themeInit } from '@seasonal/kit/vite';
 import { defineConfig } from 'vite';
@@ -28,5 +30,6 @@ export default defineConfig(({ command }) => ({
   define: {
     __SERVER_PORT__: JSON.stringify(serverPort),
     __DEV_ADMIN__: JSON.stringify(devAdmin(process.env, command)),
+    __WEBSITE_MODE__: JSON.stringify(process.env.WEBSITE_MODE === '1'),
   },
 }));

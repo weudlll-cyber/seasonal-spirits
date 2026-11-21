@@ -1,9 +1,10 @@
 // Seasonal Sumo — the Light/Dark switch on the kit's theme: the system setting while nothing is
 // stored (followed live), a click stored under the website's key and winning on the next page,
-// and a page whose storage throws still switches (it only forgets).
+// the canvas following the theme the page shows, and a page whose storage throws still switches
+// (it only forgets).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { bindLookSwitch } from './look-switch.js';
+import { bindLookSwitch, followTheme } from './look-switch.js';
 import { DARK, LIGHT, look } from './palette.js';
 
 // A button that remembers its attributes and its one click handler.
@@ -107,5 +108,32 @@ describe('the look switch', () => {
     expect(look()).toBe(LIGHT);
     b.click();
     expect(look()).toBe(DARK);
+  });
+});
+
+describe("the canvas under the client's kit toggle", () => {
+  it('follows the theme the page shows', () => {
+    let shown: string | null = null;
+    let changed = (): void => undefined;
+    vi.stubGlobal('document', { documentElement: { getAttribute: () => shown } });
+    vi.stubGlobal(
+      'MutationObserver',
+      class {
+        constructor(f: () => void) {
+          changed = f;
+        }
+        observe(): void {
+          // the stub calls `changed` itself
+        }
+      },
+    );
+    followTheme();
+    expect(look()).toBe(LIGHT);
+    shown = 'dark';
+    changed();
+    expect(look()).toBe(DARK);
+    shown = 'light';
+    changed();
+    expect(look()).toBe(LIGHT);
   });
 });

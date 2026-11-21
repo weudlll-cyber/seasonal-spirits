@@ -11,6 +11,7 @@ import {
   screenshotPath,
   joystick,
   keyboard,
+  matchRunning,
   steerTo,
   view,
   type Steering,
@@ -33,18 +34,6 @@ async function lastChance(page: Page, info: TestInfo): Promise<void> {
   await expect(page.locator('#announce')).toHaveText('MATCH OVER', { timeout: 15_000 });
   await expect(page.locator('#result')).toBeHidden();
   await shot(page, info, 'match-over');
-}
-
-// Joining during a result pause, or just before one: the result screen covers the field (and the
-// joystick). Waiting for the result to hide was not enough — joined in "MATCH OVER" or the last
-// seconds, it was still hidden and came up a moment later (BACKLOG ai, 2026-11-21): the match has
-// to run, with a halving still to come or more than 12 s left.
-async function matchRunning(page: Page): Promise<void> {
-  const running = async () => {
-    const v = await view(page);
-    return !v.result && v.countdown !== null && (!v.countdown.toEnd || v.countdown.ms > 12_000);
-  };
-  await expect.poll(running, { timeout: 40_000 }).toBe(true);
 }
 
 async function steering(page: Page, info: TestInfo): Promise<Steering> {

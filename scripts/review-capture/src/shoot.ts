@@ -1,6 +1,7 @@
 // Seasonal Sumo review capture — one moment on every page watching the match: each page shot as
-// it is, then switched to the other look with its own Light/Dark button, shot again and switched
-// back, all pages at once so a moment takes well under a second. The start screen shows only for
+// it is, then switched to the other look with its own Light/Dark button (the client's is the
+// kit's theme toggle, the viewer's its pill; the look in force is <html data-theme>), shot again
+// and switched back, all pages at once so a moment takes well under a second. The start screen shows only for
 // a moment after a page loads and fades in 0.4 s (client start.ts): it is shot in each look right
 // after a reload in that look (planner 2026-11-20: the second look's shot fell into the fade).
 // Files:
@@ -25,11 +26,11 @@ export interface Watcher {
 }
 
 const isDark = (page: Page): Promise<boolean> =>
-  page.evaluate(() => document.getElementById('look')?.getAttribute('aria-pressed') === 'true');
+  page.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark');
 
 const toggle = (page: Page): Promise<void> =>
   page.evaluate(() => {
-    document.getElementById('look')?.click();
+    document.querySelector<HTMLElement>('[data-testid="theme-toggle"], #look')?.click();
   });
 
 // Whether the client's start screen shows whole: not hidden, not fading.
