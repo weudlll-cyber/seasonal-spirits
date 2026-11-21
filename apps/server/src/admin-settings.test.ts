@@ -18,11 +18,11 @@ import { PresetStore } from './presets.js';
 import type { GameServer } from './server.js';
 import { connect, startServer } from './test-client.js';
 
-const VIEWER = 'http://localhost:5931';
+const PANEL = 'http://localhost:5930'; // the admin panel's page, /admin/ on the client's address
 const VALID: Settings = { ...DEFAULT_SETTINGS, maxSpeed: 300, lives: 5, variant: 2 };
 const POST: AdminHead = {
   method: 'POST',
-  origin: VIEWER,
+  origin: PANEL,
   remote: '127.0.0.1',
   contentType: 'application/json',
 };
@@ -36,7 +36,7 @@ function endpoint(env: Record<string, string> = {}, now = () => 0) {
   let current = DEFAULT_SETTINGS;
   let keep = false;
   const e = new AdminSettings({
-    origins: [VIEWER],
+    origins: [PANEL],
     current: () => current,
     apply: (s) => {
       applied.push(s);
@@ -166,7 +166,7 @@ function request(server: GameServer, method: string, body?: string) {
           port: server.port(),
           path: ADMIN_SETTINGS_PATH,
           method,
-          headers: { origin: VIEWER, 'content-type': 'application/json' },
+          headers: { origin: PANEL, 'content-type': 'application/json' },
         },
         (res) => {
           let text = '';
@@ -252,7 +252,7 @@ describe('admin settings on the server', () => {
     server = null;
   });
   const admin = () => ({
-    adminOrigins: [VIEWER],
+    adminOrigins: [PANEL],
     presetDir: fs.mkdtempSync(path.join(os.tmpdir(), 'presets-')),
   });
 
@@ -279,7 +279,7 @@ describe('admin settings on the server', () => {
     const base = { ...DEFAULT_SETTINGS, teamSize: 1, reconnectGrace: 0 }; // test-client.ts
     const answer = await request(server, 'POST', apply({ ...base, maxSpeed: 300, lives: 5 }));
     expect(answer.status).toBe(200);
-    expect(answer.cors).toBe(VIEWER);
+    expect(answer.cors).toBe(PANEL);
     // At once: the walking speed; the lives wait for the next match.
     await expect
       .poll(() => heard)

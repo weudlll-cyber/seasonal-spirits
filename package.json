@@ -19,7 +19,6 @@
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "verify:changed": "node scripts/verify-changed.mjs",
     "server": "pnpm --filter @seasonal-spirits/server start",
-    "viewer": "pnpm --filter @seasonal-spirits/viewer start",
     "client": "pnpm --filter @seasonal-spirits/client start",
     "probe": "pnpm --filter @seasonal-spirits/probe start",
     "simulate": "pnpm --filter @seasonal-spirits/game-core simulate",

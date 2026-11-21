@@ -58,6 +58,8 @@ import { ZoneHint } from './zone-hint.js';
 // dash hit) and are extrapolated briefly when a state is late (docs/CLIENT.md).
 const BUFFER_MS = 50;
 
+declare const __DEV_ADMIN__: boolean; // vite.config.ts
+
 const canvas = el('map', HTMLCanvasElement);
 const context = canvas.getContext('2d');
 if (context === null) throw new Error('client: 2D canvas context unavailable');
@@ -76,6 +78,11 @@ const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
 bindLookSwitch(el('look', HTMLButtonElement));
+// The "Admin" link to /admin/ on this address: in the dev build only (vite/dev-admin.ts, chain
+// 2026-11-21); elsewhere it leaves the page.
+const adminLink = el('admin', HTMLAnchorElement);
+if (__DEV_ADMIN__) adminLink.hidden = false;
+else adminLink.remove();
 const sound = new Sound();
 bindMute(() => sound.toggleMute(), sound.muted);
 

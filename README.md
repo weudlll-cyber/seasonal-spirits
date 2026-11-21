@@ -36,10 +36,13 @@ the viewer stays the debug view.
 ## Ports
 
 - Game server: `3930` (override: `PORT`)
-- Player client: `5930` (override: `CLIENT_PORT`)
-- Viewer: `5931` (override: `VIEWER_PORT`)
+- Player client: `5930` (override: `CLIENT_PORT`). The same address serves the viewer at
+  `/viewer/` and, in development, the admin panel at `/admin/` (one address, owner's chain
+  2026-11-21, like Mini Games' `/admin`); the game shows a small "Admin" link there in the dev
+  build only. The admin panel answers this PC only (loopback): from a phone `/admin/` opens but
+  its calls are refused.
 - Browser tests: server `3932`, client `5932` (their own stack, never `pnpm dev`'s)
-- Review capture: server `3936`, client `5936`, viewer `5937` (its own stack, seed 7)
+- Review capture: server `3936`, client `5936` (its own stack, seed 7)
 
 Chosen 2026-11-14 as the first free `*930` pair at that time; see
 [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md).
@@ -50,14 +53,13 @@ Prerequisites: Node >= 22, pnpm. `corepack enable` installs pnpm from `package.j
 
 ```
 pnpm install
-pnpm dev          # server (32 bots, modes in turn: sumo, hill, bomb), client, viewer in the background
+pnpm dev          # server (32 bots, modes in turn: sumo, hill, bomb) and client in the background
 pnpm dev --lan    # the same, also open to the local network: prints the address for a phone
 pnpm dev:stop     # stops exactly the processes pnpm dev started
 pnpm simulate --seed 1 --mode hill  # one full 32-bot match (sumo, hill or bomb), headless, with a sanity list
 pnpm probe        # full probe run: server + 32 bots + headless spectator, writes a report
 pnpm server       # just the server, in the foreground (SEASON_SECONDS=15 for a 1-minute match)
-pnpm client       # just the client on http://localhost:5930, in the foreground
-pnpm viewer       # just the viewer on http://localhost:5931, in the foreground
+pnpm client       # just the client (and /viewer/, /admin/) on http://localhost:5930, in the foreground
 pnpm e2e          # Playwright: the client at desktop and phone size on a short match
 pnpm review:capture [game …]  # every moment of a full match per mode, player and spectator,
                   # desktop and phone, Light and Dark, the viewer; contact sheets (about 45 min)

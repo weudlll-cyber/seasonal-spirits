@@ -1,9 +1,11 @@
-// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server, player client and viewer.
+// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server and player client; the client's
+// address also serves the viewer at /viewer/ and the admin panel at /admin/ (one address, chain
+// 2026-11-21: apps/client vite/viewer-pages.ts).
 // The server's own bots fill all 32 seats; the modes take turns — Sumo Points, King of the
 // Season, Halving Bomb, Sumo Last One Standing (GAME_MODE=rotate) — unless the admin panel's last
-// loaded preset says otherwise (NIGHT 2026-11-18); the viewer carries the admin panel
-// (DEV_TUNING=1).
-// Starts all three as hidden background processes (no windows on Windows, the same on Linux
+// loaded preset says otherwise (NIGHT 2026-11-18); /admin/ carries the admin panel and the game
+// an "Admin" link (DEV_TUNING=1).
+// Starts both as hidden background processes (no windows on Windows, the same on Linux
 // and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
 // tmp/dev-pids.json, and stops exactly those PIDs again. `pnpm dev --lan` (development only,
 // never the default) also opens server and client to the local network and prints the
@@ -23,7 +25,6 @@ const lastPreset = () => fs.existsSync(path.join(ROOT, 'data/presets/last-loaded
 const PID_FILE = path.join(ROOT, 'tmp', 'dev-pids.json');
 const SERVER_PORT = 3930;
 const CLIENT_PORT = 5930;
-const VIEWER_PORT = 5931;
 
 /**
  * @typedef {{ name: string, pid: number }} Started
@@ -154,7 +155,7 @@ function lanAddress() {
 async function start(lan) {
   if (process.env.NODE_ENV === 'production') throw new Error('pnpm dev is development only');
   if (recorded().some((p) => alive(p.pid))) throw new Error('already running; pnpm dev:stop first');
-  for (const port of [SERVER_PORT, CLIENT_PORT, VIEWER_PORT]) {
+  for (const port of [SERVER_PORT, CLIENT_PORT]) {
     if (await portOpen(port)) throw new Error(`port ${port} is in use by another process`);
   }
   const host = lan ? '0.0.0.0' : '127.0.0.1';
@@ -174,18 +175,23 @@ async function start(lan) {
     'apps/server',
     ['--import', 'tsx', 'src/main.ts'],
     // Every mode in turn, unless a preset was loaded last (the server starts with it) or the
-    // caller names GAME_MODE (passed on as it is). DEV_TUNING: the admin panel in the viewer
-    // (docs/SERVER.md, "Settings and presets").
+    // caller names GAME_MODE (passed on as it is). DEV_TUNING: the admin panel at /admin/ on the
+    // client's address, the one page allowed to call (docs/SERVER.md, "Settings and presets").
     {
       HOST: host,
       ...(lastPreset() ? {} : { GAME_MODE: process.env.GAME_MODE ?? 'rotate' }),
       DEV_TUNING: '1',
-      VIEWER_PORT: String(VIEWER_PORT),
+      CLIENT_PORT: String(CLIENT_PORT),
     },
     SERVER_PORT,
   ]);
-  await launch(['client', 'apps/client', vite, { CLIENT_HOST: host }, CLIENT_PORT]);
-  await launch(['viewer', 'apps/viewer', vite, {}, VIEWER_PORT]);
+  await launch([
+    'client',
+    'apps/client',
+    vite,
+    { CLIENT_HOST: host, DEV_TUNING: '1' },
+    CLIENT_PORT,
+  ]);
   console.log(`Seasonal Spirits dev: ${started.map((p) => `${p.name} ${p.pid}`).join(', ')}`);
   console.log(`Client: http://localhost:${CLIENT_PORT}`);
   const address = lan ? lanAddress() : null;
@@ -194,7 +200,8 @@ async function start(lan) {
       `Phone (same Wi-Fi): ${address ? `http://${address}:${CLIENT_PORT}` : 'no LAN address found'}`,
     );
   console.log(
-    `Viewer (debug, admin area: settings and presets): http://localhost:${VIEWER_PORT}   (logs in logs/, stop with pnpm dev:stop)`,
+    `Viewer: http://localhost:${CLIENT_PORT}/viewer/   Admin (settings and presets, this PC only): ` +
+      `http://localhost:${CLIENT_PORT}/admin/   (logs in logs/, stop with pnpm dev:stop)`,
   );
 }
 

@@ -35,7 +35,7 @@ export async function openViewer(browser: Browser): Promise<Page> {
   const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
   await ctx.addInitScript(NAME_HELPER);
   const page = await ctx.newPage();
-  await page.goto(`http://localhost:${String(PORTS.viewer)}/`);
+  await page.goto(`http://localhost:${String(PORTS.client)}/admin/`);
   await page.locator('#tuning:not([hidden])').waitFor({ timeout: 30_000 });
   return page;
 }

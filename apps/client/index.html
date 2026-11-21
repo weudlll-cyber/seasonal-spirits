@@ -477,6 +477,15 @@
         padding: 3px 10px;
         font-size: 13px;
       }
+      /* The dev build's "Admin" link (main.ts; chain 2026-11-21): small, plain, in the corner. */
+      #corner #admin {
+        align-self: center;
+        font-size: 12px;
+        color: inherit;
+      }
+      #corner #admin[hidden] {
+        display: none;
+      }
       #result {
         position: fixed;
         inset: 0;
@@ -603,6 +612,7 @@
           <button id="look" type="button" aria-label="Dark mode" aria-pressed="false"></button>
           <button id="help-open" type="button" aria-label="How to play">?</button>
           <button id="mute" type="button" aria-pressed="false">Sound on</button>
+          <a id="admin" href="/admin/" target="_blank" rel="noopener" hidden>Admin</a>
         </div>
       </div>
       <div id="scores" aria-label="Per team" hidden></div>

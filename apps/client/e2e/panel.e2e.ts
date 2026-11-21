@@ -1,13 +1,14 @@
-// Seasonal Sumo — the admin panel in the viewer on the Sumo stack (rebuilt 2026-11-18 around
-// "choose the game, set its values, start"): choosing Halving Bomb shows only the shared groups
-// and Bomb's; a Bomb value changed in the draft leaves the running match alone; "Start Halving
-// Bomb" ends the running match and Bomb's begins with that value. The stack's Sumo and its
-// settings are started again at the end, for the specs after this one. Screenshots go to
-// reports/screens/latest/panel/ (git-ignored, the latest run only: stack.ts screenshotPath).
+// Seasonal Sumo — the admin panel at /admin/ on the Sumo stack's client address (one address,
+// chain 2026-11-21; rebuilt 2026-11-18 around "choose the game, set its values, start"): choosing
+// Halving Bomb shows only the shared groups and Bomb's; a Bomb value changed in the draft leaves
+// the running match alone; "Start Halving Bomb" ends the running match and Bomb's begins with
+// that value. The stack's Sumo and its settings are started again at the end, for the specs after
+// this one. Screenshots go to reports/screens/latest/panel/ (git-ignored, the latest run only:
+// stack.ts screenshotPath).
 
 import { expect, test, type Page } from '@playwright/test';
 import { ADMIN_SETTINGS_PATH } from '@seasonal-spirits/protocol';
-import { screenshotPath, SERVER_PORT, VIEWER_PORT } from './stack.js';
+import { CLIENT_PORT, screenshotPath, SERVER_PORT } from './stack.js';
 
 const URL = `http://localhost:${String(SERVER_PORT)}${ADMIN_SETTINGS_PATH}`;
 const SHARED = ['movement', 'dash', 'jump', 'falling', 'flow', 'bots', 'botsEndgame'];
@@ -51,7 +52,7 @@ async function slide(page: Page, key: string, value: number): Promise<void> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await page.goto(`http://localhost:${String(VIEWER_PORT)}/`);
+  await page.goto(`http://localhost:${String(CLIENT_PORT)}/admin/`);
   await expect(page.locator('#tuning')).toBeVisible({ timeout: 15_000 });
   await expect.poll(() => gameMode(page), { timeout: 15_000 }).not.toBeNull();
 }

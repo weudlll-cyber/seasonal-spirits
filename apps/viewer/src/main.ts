@@ -2,8 +2,10 @@
 // Connects through the artificial delay queue, interpolates the ghosts and draws the whole
 // match with the client's drawing (packages/render): the same island, characters, effects,
 // season and clock pill, Light or Dark. The HUD shows the network numbers; they
-// are also exposed on window for Playwright checks. With the server's admin settings endpoint on
-// (pnpm dev) it carries the admin panel (admin-panel.ts); it draws with the settings in force.
+// are also exposed on window for Playwright checks. Served at /viewer/ and /admin/ on the client's
+// address (apps/client vite/viewer-pages.ts); at /admin/, with the server's admin settings
+// endpoint on (pnpm dev), it carries the admin panel (admin-panel.ts); it draws with the settings
+// in force.
 
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
@@ -49,8 +51,13 @@ import {
 } from '@seasonal-spirits/render';
 import { startAdminPanel } from './admin-panel.js';
 
-declare const __SERVER_WS_URL__: string;
-declare const __SERVER_HTTP_URL__: string;
+declare const __SERVER_PORT__: number;
+// The match server on the page's own host (one address, chain 2026-11-21: the client's dev server
+// serves this page), so it is reached the same way as the game reaches it.
+const SERVER_HTTP_URL = `http://${location.hostname}:${String(__SERVER_PORT__)}`;
+const SERVER_WS_URL = `ws://${location.hostname}:${String(__SERVER_PORT__)}`;
+// The admin panel only at /admin/; /viewer/ is the spectating debug view alone.
+const ADMIN_PAGE = location.pathname.startsWith('/admin');
 
 const BUFFER_MS = 100;
 const LATENCY_MIN = 100;
@@ -85,15 +92,16 @@ const fastest = (s: Settings): JumpDetector =>
   new JumpDetector({ speedUnitsPerSecond: s.dashSpeed + s.knockSpeed });
 let settings: Settings = DEFAULT_SETTINGS;
 let jumpDetector = fastest(settings);
-void startAdminPanel(
-  `${__SERVER_HTTP_URL__}${ADMIN_SETTINGS_PATH}`,
-  tuningRoot,
-  () => buffer.at(-1)?.state,
-  (s) => {
-    settings = s;
-    jumpDetector = fastest(s);
-  },
-);
+if (ADMIN_PAGE)
+  void startAdminPanel(
+    `${SERVER_HTTP_URL}${ADMIN_SETTINGS_PATH}`,
+    tuningRoot,
+    () => buffer.at(-1)?.state,
+    (s) => {
+      settings = s;
+      jumpDetector = fastest(s);
+    },
+  );
 const renderClock = new RenderClock({ bufferMs: BUFFER_MS });
 
 const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
@@ -105,7 +113,7 @@ const incoming = new DelayQueue<Uint8Array>(LATENCY_MIN, LATENCY_MAX, (buf) => {
   statesRate.record(now);
 });
 
-const ws = new WebSocket(__SERVER_WS_URL__);
+const ws = new WebSocket(SERVER_WS_URL);
 ws.binaryType = 'arraybuffer';
 ws.onopen = () => {
   ws.send(JSON.stringify({ kind: 'spectator' }));
@@ -118,7 +126,7 @@ ws.onmessage = (ev) => {
 let serverHz = 0;
 async function pollMetrics(): Promise<void> {
   try {
-    const r = await fetch(`${__SERVER_HTTP_URL__}/metrics-lite`);
+    const r = await fetch(`${SERVER_HTTP_URL}/metrics-lite`);
     const m = (await r.json()) as { achievedHz: number };
     serverHz = m.achievedHz;
   } catch {

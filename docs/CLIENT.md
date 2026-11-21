@@ -113,7 +113,10 @@ or touch (browsers allow sound only after a gesture).
   "You are Team <Season>" in a white pill behind the team's colour dot, the own lives as red
   circles beside it (sumo only; a lost one white; past five lives one and the number left, "×7",
   so the team line keeps its room on a phone), the corner buttons — the Light/Dark switch, "?"
-  and Sound (on a phone a round note ♪, struck through when off) —, and a
+  and Sound (on a phone a round note ♪, struck through when off), and in the dev build only a
+  small "Admin" link to `/admin/` on the same address (`main.ts`, `vite/dev-admin.ts`; chain
+  2026-11-21: one address — the client's dev server also serves the viewer at `/viewer/` and the
+  admin panel at `/admin/`, `vite/viewer-pages.ts`) —, and a
   white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
   still in; Last One Standing "Spring 7 in"; hill and bomb "Spring 12"; the leader outlined in
   its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the

@@ -133,7 +133,7 @@ and in total (twice the slots). The full list, with the test for each, is
 | `RESULT_SECONDS`              | 15        | 3–60                                            |
 | `DEV_TUNING`                  | 0         | `0` or `1` (`pnpm dev`: the admin settings)     |
 | `PRESET`                      | —         | a saved preset's name to start with             |
-| `VIEWER_PORT`                 | 5931      | 1–65535 (the page allowed to tune)              |
+| `CLIENT_PORT`                 | 5930      | 1–65535 (its `/admin/` page may tune)           |
 
 Other game numbers are not environment variables: they live in
 `packages/game-core/src/config.ts`. The whole server is development only (it refuses
@@ -143,7 +143,7 @@ Other game numbers are not environment variables: they live in
 
 `GET` from a loopback address only: achieved Hz, max tick ms, CPU % of one core, clients,
 players, ghosts, last and largest state bytes, uptime. CORS `*` only in development, for the
-viewer on its own port.
+viewer at `/viewer/` and `/admin/` on the client's port.
 
 ## Settings and presets (development only until the game's admin login exists)
 
@@ -160,8 +160,8 @@ last), then the environment's overrides (`GAME_MODE`, `SUMO_VARIANT`, `SUMO_LIVE
 its hello, after a change and at every new match (public: the rules everyone plays by), and
 predicts and draws with them.
 
-The admin panel (the viewer's, http://localhost:5931, with `DEV_TUNING=1`, which `pnpm dev`
-sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`) is built around one flow —
+The admin panel (the viewer's page at http://localhost:5930/admin/ on the client's address, one
+address since 2026-11-21, with `DEV_TUNING=1`, which `pnpm dev` sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`) is built around one flow —
 choose the game, see and set its values, start — and generated from the schema, its groups
 Movement, Dash & push, Jump, Falling & respawn, Match flow, Bots — general, Bots — endgame, Sumo,
 King of the Season, Halving Bomb, Rotation. It folds to a small "◂ Admin" tab in the top right
@@ -196,10 +196,10 @@ login (CONCEPT.md section 16, BACKLOG OPEN):
 
 - absent (404 like any unknown path) without `DEV_TUNING=1`, and it refuses to exist with
   `NODE_ENV=production` (the whole server does too);
-- loopback callers only (anything else: 404), from the viewer's page only (the `Origin`
-  `http://localhost:5931` or `http://127.0.0.1:5931`, else 403), `content-type:
+- loopback callers only (anything else: 404), from the panel's page only (the `Origin`
+  `http://localhost:5930` or `http://127.0.0.1:5930`, the client's port, else 403), `content-type:
 application/json` only (415), so another page cannot reach it without the browser's
-  preflight, which only the viewer's origin passes;
+  preflight, which only the panel's origin passes;
 - a body of at most 4096 bytes (413) holding one command: `apply` with every setting, each in its
   range and on its step (400 otherwise, nothing applied); `start` with a `game` — one of the four
   above, checked against the rotation slots (game-core `startableGame`) — every setting and

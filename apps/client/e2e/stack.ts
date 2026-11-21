@@ -11,7 +11,6 @@ import { clearOncePerRun } from '../../../scripts/review-capture/src/topics.js';
 
 export const SERVER_PORT = 3932;
 export const CLIENT_PORT = 5932;
-export const VIEWER_PORT = 5935; // the Sumo stack's viewer: its admin panel (panel.e2e.ts)
 // The other modes' own stacks (NIGHT 2026-11-18): a server and a client each.
 export const MODE_STACKS = {
   hill: { server: 3933, client: 5933 },

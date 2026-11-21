@@ -11,11 +11,12 @@ import { startSettings } from './start-settings.js';
 const env = process.env;
 refuseProduction(env, 'The Seasonal Spirits dev server');
 
-// The admin settings endpoint for the viewer's panel (NIGHT 2026-11-18): only with DEV_TUNING=1,
-// which `pnpm dev` sets; the viewer's page on VIEWER_PORT is the one page allowed to call. Its
+// The admin settings endpoint for the admin panel (NIGHT 2026-11-18): only with DEV_TUNING=1,
+// which `pnpm dev` sets; the panel's page — /admin/ on the client's address, CLIENT_PORT (one
+// address, chain 2026-11-21) — is the one page allowed to call, from this machine only. Its
 // presets live in the repository's git-ignored dev data folder.
 const admin = envChoice(env, 'DEV_TUNING', '0', ['0', '1'] as const) === '1';
-const viewerPort = envInt(env, 'VIEWER_PORT', 5931, [1, 65535]);
+const clientPort = envInt(env, 'CLIENT_PORT', 5930, [1, 65535]);
 // PRESET_DIR: elsewhere (the browser specs keep theirs under test-results/).
 const presetDir =
   env.PRESET_DIR ?? fileURLToPath(new URL('../../../data/presets', import.meta.url));
@@ -36,7 +37,7 @@ const cfg: ServerConfig = {
   helloTimeoutMs: 10_000,
   devCors: true,
   firstSeed: envInt(env, 'SEED', 1, [0, 999_999_999]),
-  adminOrigins: admin ? [`http://localhost:${viewerPort}`, `http://127.0.0.1:${viewerPort}`] : null,
+  adminOrigins: admin ? [`http://localhost:${clientPort}`, `http://127.0.0.1:${clientPort}`] : null,
   presetDir,
 };
 
@@ -50,7 +51,7 @@ console.log(
   `Seasonal Spirits match server on ws://${cfg.host}:${server.port()} ` +
     `(tick ${cfg.tickHz} Hz, ${4 * settings.teamSize} seats, seed ${cfg.firstSeed}, ` +
     `rotation ${rotation.join(' → ')}, sumo seasons of ${settings.sumoSeason} s` +
-    `${preset ? `, preset "${preset}"` : ''}${admin ? ', admin settings for the viewer' : ''})`,
+    `${preset ? `, preset "${preset}"` : ''}${admin ? ', admin settings for /admin' : ''})`,
 );
 
 process.on('SIGINT', () => {
