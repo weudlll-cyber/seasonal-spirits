@@ -4,12 +4,14 @@
 // out on every season's ground at 3:1 at least: the minimap's marks (2026-11-19, minimap.ts) and
 // the own ring's outer edge (owner 2026-11-20, own.ts). The minimap's frame of the screen reads on
 // every ground and on the panel round the walls, and a carrier's bomb dot on its hot ring (owner
-// 2026-11-20).
+// 2026-11-20). Every team's figure keeps its ink outline at 3:1 where its body does not stand out
+// from the grass (Spring the closest, measured 2026-11-21).
 
 import { describe, expect, it } from 'vitest';
 import { BOMB, HOT } from './bomb.js';
 import { FRAME_LIGHT } from './minimap.js';
-import { DARK, LIGHT, SEASON_NAMES, type Look } from './palette.js';
+import { inkWidth } from './character.js';
+import { DARK, LIGHT, SEASON_COLOURS, SEASON_NAMES, type Look } from './palette.js';
 import { TINTS } from './season.js';
 
 // WCAG 2 relative luminance and contrast ratio of two #rrggbb colours.
@@ -45,6 +47,27 @@ describe('ink on the season grounds', () => {
       expect(contrast(DARK.ink, dark?.grass ?? DARK.ink)).toBeGreaterThanOrEqual(3);
     },
   );
+
+  // Measured 2026-11-21 (second night chain, piece 5): the website's Spring (#afb84e) on the
+  // grounds is 1.17–2.17:1, every team's body under 3:1 somewhere — the season colour stays
+  // (owner 2026-11-20), so the figure's ink outline carries it apart from the grass.
+  it("outlines every team's figure at 3:1 or more, and never thinner than 1.2 px, where its body is under 3:1 on a ground", () => {
+    let carried = 0;
+    TINTS.forEach(([light, dark]) => {
+      for (const [l, ground] of [
+        [LIGHT, light.grass],
+        [DARK, dark.grass],
+      ] as const) {
+        for (const body of SEASON_COLOURS) {
+          if (!ground || contrast(body, ground) >= 3) continue;
+          carried += 1;
+          expect(contrast(l.ink, ground), `${body} on ${ground}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+    });
+    expect(carried).toBeGreaterThan(0);
+    expect(inkWidth(1)).toBeGreaterThanOrEqual(1.2);
+  });
 });
 
 describe("the minimap's frame and carriers", () => {
