@@ -5,7 +5,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
-import type { CDPSession, Page, TestInfo } from '@playwright/test';
+import { expect, type CDPSession, type Page, type TestInfo } from '@playwright/test';
 import type { Rect } from '@seasonal-spirits/render';
 import { clearOncePerRun } from '../../../scripts/review-capture/src/topics.js';
 
@@ -156,4 +156,16 @@ export async function steerTo(
   }
   await steering.hold(0, 0);
   return false;
+}
+
+// Joining during a result pause, or just before one: the result screen covers the field (and the
+// joystick). Waiting for the result to hide was not enough — joined in "MATCH OVER" or the last
+// seconds, it was still hidden and came up a moment later (BACKLOG ai, 2026-11-21): the match has
+// to run, with a halving still to come or more than 12 s left.
+export async function matchRunning(page: Page): Promise<void> {
+  const running = async () => {
+    const v = await view(page);
+    return !v.result && v.countdown !== null && (!v.countdown.toEnd || v.countdown.ms > 12_000);
+  };
+  await expect.poll(running, { timeout: 40_000 }).toBe(true);
 }
