@@ -3,7 +3,8 @@
 // podium as the reveal, the awards and the teams as the placings, the players and the bridge box
 // below. Its parts keep their ids; result.ts fills them as before. Fitted to the screen with a
 // 14 px text floor: no `data-sk-game`, so the kit's strictest floors apply; the scale's floor is
-// Mini Games' (0.6), as the kit has no Seasonal Party floor yet (needs the owner's word).
+// Mini Games' (0.6): the owner set the Seasonal Party floor at 14 px body text (2026-11-21), and
+// the kit's FIT_FLOORS has no Seasonal Party entry yet.
 
 import { ResultFrame } from '@seasonal/kit/react';
 import type { ReactElement } from 'react';

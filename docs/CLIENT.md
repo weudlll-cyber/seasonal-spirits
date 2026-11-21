@@ -137,7 +137,8 @@ or touch (browsers allow sound only after a gesture).
   slot is the kit's `ChatDock` with the website's chat frame (`Dock.tsx`), in website mode only:
   `WEBSITE_MODE=1` at the client's start (exactly "1", off by default and today) shows the back
   link and the dock. Not taken: the kit's `StartCard` — its "Opens in N s" counts down to a round,
-  and Sumo's start screen is a short joining splash with no countdown.
+  and Sumo's start screen is a short joining splash with no countdown; it waits until Seasonal
+  Party has a lobby with a countdown (owner decision 2026-11-21).
 - **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
   quarters above: screen y = field y × the view's tilt (`VIEW_TILT` 0.55, steeper on a portrait
   phone up to `MAX_TILT` 0.9 — see Camera; render `view.ts`; input directions stay screen =
@@ -333,7 +334,8 @@ or touch (browsers allow sound only after a gesture).
   at the top, the podium as its reveal, the awards and the teams beside it on a desktop (under it
   on a phone), then the players and the bridge box below. Its first part is fitted to the screen
   by the kit (`useFitScale`, `--fit`): no `data-sk-game`, so the kit's strictest floors hold —
-  14 px text —, the scale's floor Mini Games' 0.6, as the kit has no Seasonal Party floor yet.
+  14 px text, the Seasonal Party floor the owner set on 2026-11-21 —, the scale's floor Mini
+  Games' 0.6, as the kit's `FIT_FLOORS` has no Seasonal Party entry yet.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena
