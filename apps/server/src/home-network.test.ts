@@ -11,7 +11,7 @@ describe('isHomeNetwork', () => {
       '10.0.0.1',
       '172.16.5.4',
       '172.31.255.255',
-      '192.168.0.66',
+      '192.168.1.20',
       '::ffff:192.168.1.2',
     ])
       expect(isHomeNetwork(a), a).toBe(true);
@@ -50,10 +50,10 @@ describe('homeOrigins', () => {
         scopeid: 0,
       }) as NetworkInterfaceInfo;
     const origins = homeOrigins(5930, {
-      wifi: [nic('192.168.0.66', 'IPv4'), nic('fe80::1', 'IPv6')],
+      wifi: [nic('192.168.1.20', 'IPv4'), nic('fe80::1', 'IPv6')],
       vpn: [nic('100.64.0.2', 'IPv4')],
       loop: [nic('127.0.0.1', 'IPv4')],
     });
-    expect(origins).toEqual(['http://192.168.0.66:5930']);
+    expect(origins).toEqual(['http://192.168.1.20:5930']);
   });
 });

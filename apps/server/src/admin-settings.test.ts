@@ -29,7 +29,7 @@ const POST: AdminHead = {
 const apply = (settings: unknown): string => JSON.stringify({ action: 'apply', settings });
 const named = (action: string, name: string): string => JSON.stringify({ action, name });
 
-const PHONE_PAGE = 'http://192.168.0.66:5930'; // the same page on this machine's home address
+const PHONE_PAGE = 'http://192.168.1.20:5930'; // the same page on this machine's home address
 
 function endpoint(env: Record<string, string> = {}, now = () => 0, homeNetwork = false) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'presets-'));
@@ -69,7 +69,7 @@ describe('admin settings refusals', () => {
 
   it('answers a caller from another host as if the endpoint did not exist', () => {
     const { e, applied } = endpoint();
-    expect(e.answer({ ...POST, remote: '192.168.0.66' }, apply(VALID))).toEqual({ status: 404 });
+    expect(e.answer({ ...POST, remote: '192.168.1.20' }, apply(VALID))).toEqual({ status: 404 });
     expect(applied).toEqual([]);
   });
 
@@ -113,7 +113,7 @@ describe('admin settings refusals', () => {
 });
 
 describe('admin settings from the home network (the LAN mode)', () => {
-  const FROM_PHONE: AdminHead = { ...POST, origin: PHONE_PAGE, remote: '::ffff:192.168.0.80' };
+  const FROM_PHONE: AdminHead = { ...POST, origin: PHONE_PAGE, remote: '::ffff:192.168.1.30' };
 
   it('takes a phone in the home network on the page at the home address', () => {
     const { e, applied } = endpoint({}, () => 0, true);
@@ -124,7 +124,7 @@ describe('admin settings from the home network (the LAN mode)', () => {
   it('still refuses a public caller, and another page from the home network', () => {
     const { e, applied } = endpoint({}, () => 0, true);
     expect(e.answer({ ...FROM_PHONE, remote: '8.8.8.8' }, apply(VALID))).toEqual({ status: 404 });
-    const other = { ...FROM_PHONE, origin: 'http://192.168.0.80:5930' };
+    const other = { ...FROM_PHONE, origin: 'http://192.168.1.30:5930' };
     expect(e.answer(other, apply(VALID))).toEqual({ status: 403 });
     expect(applied).toEqual([]);
   });
@@ -245,7 +245,7 @@ describe('admin next match', () => {
   it('refuses a start from another host or page like every other command', () => {
     const { e, started } = endpoint();
     const body = start('King of the Season', VALID);
-    expect(e.answer({ ...POST, remote: '192.168.0.66' }, body).status).toBe(404);
+    expect(e.answer({ ...POST, remote: '192.168.1.20' }, body).status).toBe(404);
     expect(e.answer({ ...POST, origin: 'http://evil.example' }, body).status).toBe(403);
     expect(started).toEqual([]);
   });

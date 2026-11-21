@@ -51,3 +51,31 @@ start with `NODE_ENV=production`; the rules are tested in `apps/server`):
   the LAN mode it stays loopback only; a public caller gets 404, another page 403. The game's own
   admin login replaces this check before the endpoint leaves development (docs/THREATS.md row
   39).
+
+## Security passes
+
+**2026-11-21/22, second night chain, piece 8** (on `proto/sumo` at `827880c`):
+
+- CodeQL and CI `dependencies` (osv-scanner) green on `21f3b29`, the last code commit before the
+  pass. The alert list itself was not read: `gh api` is not allowed in an unattended session, so
+  open alerts under Security → Code scanning are for the owner to look at.
+- `pnpm audit`: no known vulnerabilities.
+- Secrets over the whole history (gitleaks is not installed on this PC, so `git log --all -G`
+  with its common patterns — cloud and GitHub tokens, private keys, chat and API keys — and the
+  game's own secret names assigned a literal): no match.
+- Personal data: this PC's real home-network address stood in the LAN rule's tests, in
+  `SERVER.md`, in a BACKLOG row and in the first night report; replaced by example addresses
+  (`192.168.1.20` for this machine, `192.168.1.30` for a phone). Earlier commits keep it, since
+  pushed history is never rewritten.
+- The dev-only openings: the admin endpoint refuses production with and without the LAN rule;
+  the client's "Admin" link only in Vite's `serve` with `DEV_TUNING=1` and never with
+  `NODE_ENV=production` (`vite/dev-admin.ts`); `/viewer/` and `/admin/` only on the dev server
+  (`vite/viewer-pages.ts`, `apply: 'serve'`); the client's LAN mode refused with `NODE_ENV=production`
+  (`vite.config.ts`), the match server refusing it altogether (`main.ts` `refuseProduction`).
+- The embed: website mode is a build constant (`WEBSITE_MODE=1`), not a URL parameter; the
+  docked chat is the kit's `WebsiteChatFrame` for the fixed room `seasonal-party`, sandboxed; no
+  message listener in the game.
+- Noticed, left: `CLIENT_PORT` and `SERVER_PORT` reach the client's Vite config through `Number()`
+  unchecked. A bad value fails loudly (`ERR_SOCKET_BAD_PORT`, or a socket that does not connect)
+  and comes from the developer's own shell; the server's checked `envInt` lives in
+  `apps/server`, and the client does not depend on the server package.

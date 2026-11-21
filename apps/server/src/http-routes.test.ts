@@ -11,7 +11,7 @@ describe('isLoopback', () => {
   });
 
   it('refuses any other or missing address', () => {
-    expect(isLoopback('192.168.0.66')).toBe(false);
+    expect(isLoopback('192.168.1.20')).toBe(false);
     expect(isLoopback('::ffff:10.0.0.1')).toBe(false);
     expect(isLoopback('1270.0.0.1')).toBe(false);
     expect(isLoopback(undefined)).toBe(false);
