@@ -34,7 +34,10 @@ export function viewerPages(): Plugin {
         root: VIEWER_ROOT,
         configFile: fileURLToPath(new URL('../../viewer/vite.config.ts', import.meta.url)),
         base: VIEWER_BASE,
-        server: { middlewareMode: true, hmr: server.httpServer ? { server: server.httpServer } : false },
+        server: {
+          middlewareMode: true,
+          hmr: server.httpServer ? { server: server.httpServer } : false,
+        },
       });
       server.middlewares.use((req, res, next) => {
         const to = viewerPath(req.url ?? '/');
