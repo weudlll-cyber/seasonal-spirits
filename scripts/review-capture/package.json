@@ -8,6 +8,7 @@
     "own-marker": "tsx src/own-marker.ts",
     "minimap": "tsx src/minimap.ts",
     "sheets": "tsx src/sheets.ts",
+    "frame-cost": "tsx src/frame-cost.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

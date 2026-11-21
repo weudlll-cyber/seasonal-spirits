@@ -28,7 +28,8 @@
     "review:capture": "pnpm --filter @seasonal-spirits/review-capture start",
     "review:own-marker": "pnpm --filter @seasonal-spirits/review-capture own-marker",
     "review:minimap": "pnpm --filter @seasonal-spirits/review-capture minimap",
-    "review:sheets": "pnpm --filter @seasonal-spirits/review-capture sheets"
+    "review:sheets": "pnpm --filter @seasonal-spirits/review-capture sheets",
+    "frame-cost": "pnpm --filter @seasonal-spirits/review-capture frame-cost"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
