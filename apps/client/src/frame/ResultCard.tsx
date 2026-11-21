@@ -4,10 +4,13 @@
 // below. Its parts keep their ids; result.ts fills them as before. Fitted to the screen with a
 // 14 px text floor: no `data-sk-game`, so the kit's strictest floors apply; the scale's floor is
 // Mini Games' (0.6): the owner set the Seasonal Party floor at 14 px body text (2026-11-21), and
-// the kit's FIT_FLOORS has no Seasonal Party entry yet.
+// the kit's FIT_FLOORS has no Seasonal Party entry yet. The whole result is measured (the first
+// part and the rest, both `data-fit-fixed`), so it fits the screen; at the floor the players'
+// list is the one named scroll area (result.css).
 
 import { ResultFrame } from '@seasonal/kit/react';
 import type { ReactElement } from 'react';
+import './result.css';
 
 function Bridge(): ReactElement {
   return (
@@ -52,11 +55,18 @@ export function ResultCard(p: { readonly signature: string }): ReactElement {
         </>
       }
       more={
-        <>
-          <h3>Players</h3>
-          <ol id="result-players" />
+        <div className="result-rest" data-fit-fixed="">
+          <h3 id="result-players-head">Players</h3>
+          <div
+            id="result-players-area"
+            role="region"
+            aria-labelledby="result-players-head"
+            tabIndex={0}
+          >
+            <ol id="result-players" />
+          </div>
           <Bridge />
-        </>
+        </div>
       }
     />
   );

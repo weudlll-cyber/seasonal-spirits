@@ -1,0 +1,117 @@
+/* Seasonal Sumo — the result screen's look (frame/ResultCard.tsx in the kit's result frame): the
+   card over the veiled field, its parts on the frame's surface. It fits the screen without
+   scrolling (second night chain 2026-11-21, piece 4): the kit's fit (`--fit`) shrinks every size
+   here down to the 14 px text floor (the owner's Seasonal Party floor, 2026-11-21); what still
+   does not fit at the floor goes to one named scroll area, the players' list, so the head, the
+   podium, the teams and the bridge box with its buttons always show whole. */
+
+#result {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  background: var(--veil);
+  overflow: auto;
+}
+
+/* One column at most the screen's height: the first part at its size, the rest takes what is
+   left, its players' list shrinking first. */
+#result .sk-result {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--fit, 1) * 12px);
+  width: min(860px, 100%);
+  max-height: 100%;
+  margin: auto;
+  color: var(--panel-text);
+}
+
+#result .sk-result-first,
+#result .sk-result-more {
+  flex: none;
+  gap: calc(var(--fit, 1) * 12px);
+  padding: calc(var(--fit, 1) * 14px) calc(var(--fit, 1) * 20px);
+  background: var(--panel);
+  font-size: max(var(--sk-floor-text), calc(var(--fit, 1) * 16px));
+}
+
+/* The rest's bottom padding is its own wrapper's, not the kit's part's: the kit measures the
+   wrapper (`data-fit-fixed`), and padding below it read as room, so the list kept a few pixels
+   hidden (measured 2026-11-21). */
+#result .sk-result-more {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+
+#result .result-rest {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--fit, 1) * 14px);
+}
+
+#result h3 {
+  margin: 0 0 calc(var(--fit, 1) * 6px);
+  font-size: max(var(--sk-floor-text), calc(var(--fit, 1) * 17px));
+}
+
+#result p {
+  margin: 0;
+}
+
+#result ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#result li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(var(--fit, 1) * 2px) 0;
+}
+
+/* The named scroll area: the players' list scrolls inside when even the floor leaves no room;
+   its names near their amounts on a wide screen (review 2026-11-21). */
+#result-players-area {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#result-players {
+  max-width: 28rem;
+}
+
+/* The podium shrinks fastest: from 190 px at full size to 60 px at the kit's least scale. */
+#podium {
+  /* The kit's reveal gives its child flex 1, which overrode this height (the review of
+     2026-11-21 took it for the frame's own gap). */
+  flex: none;
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: max(60px, calc((var(--fit, 1) - 0.6) * 325px + 60px));
+  width: auto;
+}
+
+#bridge {
+  flex: none;
+  border-top: 2px solid var(--ink);
+  margin-top: calc(var(--fit, 1) * 10px);
+  padding-top: calc(var(--fit, 1) * 10px);
+}
+
+#bridge .buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: calc(var(--fit, 1) * 8px) 0;
+}

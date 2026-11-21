@@ -49,6 +49,9 @@ export default defineConfig({
       GAME_MODE: 'sumo',
       SUMO_VARIANT: 'points',
       SUMO_LIVES: '9',
+      // The result up 15 s: result-fit.e2e.ts reads it at four sizes, which did not fit 5 s on a
+      // loaded PC (second night chain 2026-11-21, piece 4).
+      RESULT_SECONDS: '15',
       DEV_TUNING: '1',
       CLIENT_PORT: String(CLIENT_PORT),
       PRESET_DIR: path.join(ROOT, 'test-results', 'presets'),

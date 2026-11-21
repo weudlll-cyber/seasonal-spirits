@@ -469,50 +469,6 @@
         font-weight: 400;
         color: inherit;
       }
-      #result {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        justify-content: center;
-        padding: 12px;
-        box-sizing: border-box;
-        background: var(--veil);
-        overflow: auto;
-      }
-      /* The result in the kit's result frame (frame/ResultCard.tsx): its first part fitted to the
-         screen (the kit's --fit, never below the 14 px text floor), what follows scrolls. */
-      #result .sk-result {
-        width: min(860px, 100%);
-        margin: auto;
-        color: var(--panel-text);
-      }
-      #result .sk-result-first,
-      #result .sk-result-more {
-        background: var(--panel);
-        font-size: max(var(--sk-floor-text), calc(var(--fit, 1) * 16px));
-      }
-      #result h3 {
-        margin: 0 0 6px;
-        font-size: max(var(--sk-floor-text), calc(var(--fit, 1) * 17px));
-      }
-      #result p {
-        margin: 0;
-      }
-      #result ol {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-      #result li {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 2px 0;
-      }
-      /* The players' names near their amounts on a wide screen (review 2026-11-21). */
-      #result-players {
-        max-width: 28rem;
-      }
       /* The start screen (start.ts): the title in a white pill over a small floating island with
          the four seasons' characters, while the client joins; it lets every touch through and
          fades out (NIGHT 2026-11-19). */
@@ -546,13 +502,6 @@
         position: absolute;
         inset: 0;
         z-index: -1;
-      }
-      #podium {
-        display: block;
-        margin: 0 auto;
-        max-width: 100%;
-        height: max(76px, calc(var(--fit, 1) * 190px));
-        width: auto;
       }
       #start p {
         margin: 0;
@@ -597,20 +546,10 @@
         justify-content: space-between;
         padding: 2px 0;
       }
-      #bridge {
-        border-top: 2px solid var(--ink);
-        margin-top: 12px;
-        padding-top: 12px;
-      }
-      #bridge .buttons {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin: 10px 0;
-      }
+      /* Small print, never below the 14 px floor (owner decision 2026-11-21). */
       .small {
         color: var(--muted);
-        font-size: 13px;
+        font-size: 14px;
       }
     </style>
   </head>

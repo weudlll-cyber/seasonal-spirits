@@ -335,10 +335,17 @@ or touch (browsers allow sound only after a gesture).
   every mode (the team order of `teamLines`). Since piece 4 (night chain 2026-11-21) in the kit's
   `ResultFrame` (`frame/ResultCard.tsx`): "Result", the own place and the time to the next match
   at the top, the podium as its reveal, the awards and the teams beside it on a desktop (under it
-  on a phone), then the players and the bridge box below. Its first part is fitted to the screen
-  by the kit (`useFitScale`, `--fit`): no `data-sk-game`, so the kit's strictest floors hold —
-  14 px text, the Seasonal Party floor the owner set on 2026-11-21 —, the scale's floor Mini
-  Games' 0.6, as the kit's `FIT_FLOORS` has no Seasonal Party entry yet.
+  on a phone), then the players and the bridge box below. The whole result fits the screen
+  without scrolling (second night chain 2026-11-21, piece 4; its look in `frame/result.css`): the
+  kit measures both parts (`useFitScale`, `--fit`, the rest marked `data-fit-fixed`) and every
+  size shrinks with it — the podium fastest, 190 px down to 60 px —, never below the 14 px text
+  floor (the Seasonal Party floor the owner set on 2026-11-21; no `data-sk-game`, so the kit's
+  strictest floors hold, the scale's floor Mini Games' 0.6, as the kit's `FIT_FLOORS` has no
+  Seasonal Party entry yet). What still does not fit at the floor goes to one named scroll area,
+  the players' list (a region labelled "Players", reachable by keyboard); the head, the podium,
+  the teams and the bridge box with "Start here", "Try the simulator" and "No financial advice"
+  always show whole. Measured at 375 × 667, 390 × 844, 360 × 780 and 430 × 932: all eight
+  players show, nothing scrolls (`e2e/result-fit.e2e.ts`). Small print (`.small`) is 14 px.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena

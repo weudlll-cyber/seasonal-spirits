@@ -136,7 +136,7 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
 });
 
 // The result after the match, with the bridge box word for word. Read in one go the moment it
-// shows: it stays only RESULT_SECONDS (5 s), and on a loaded PC a dozen separate checks outlasted
+// shows: it stays only RESULT_SECONDS (15 s on this stack), and on a loaded PC a dozen separate checks outlasted
 // it and found the next match (BACKLOG ai, 20-run measurement 2026-11-21).
 async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
   await expect(page.locator('#result')).toBeVisible({ timeout: 10_000 });
