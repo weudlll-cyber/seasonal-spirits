@@ -10,6 +10,14 @@ export function readSetting(key: string): string | null {
   }
 }
 
+export function removeSetting(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // not removed; nothing reads it again (look-switch.ts carryOverLook)
+  }
+}
+
 export function writeSetting(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);

@@ -1,10 +1,10 @@
-// Seasonal Sumo — the Light/Dark switch on the kit's theme: the system setting while nothing is
-// stored (followed live), a click stored under the website's key and winning on the next page,
-// the canvas following the theme the page shows, and a page whose storage throws still switches
-// (it only forgets).
+// Seasonal Sumo — the theme from the player's own setting (owner decision 2026-11-21) on the
+// kit's theme: inside the website the choice made there, standalone the game's own, else the
+// device's setting (followed live); the game's old key carried over once; the canvas following
+// the theme the page shows; and a page whose storage throws still switches (it only forgets).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { bindLookSwitch, followTheme } from './look-switch.js';
+import { bindLookSwitch, carryOverLook, followTheme } from './look-switch.js';
 import { DARK, LIGHT, look } from './palette.js';
 
 // A button that remembers its attributes and its one click handler.
@@ -30,6 +30,7 @@ function page(storage: Storage, systemDark: boolean) {
   let dark = systemDark;
   let changed = (): void => undefined;
   let shown: string | null = null;
+  vi.stubGlobal('localStorage', storage);
   vi.stubGlobal('window', {
     localStorage: storage,
     matchMedia: () => ({
@@ -56,6 +57,7 @@ function memory(): Storage {
   return {
     getItem: (k: string) => m.get(k) ?? null,
     setItem: (k: string, v: string) => m.set(k, v),
+    removeItem: (k: string) => m.delete(k),
   } as unknown as Storage;
 }
 
@@ -64,6 +66,17 @@ afterEach(() => {
 });
 
 describe('the look switch', () => {
+  it("takes the website's choice inside the website (the same key on the same origin)", () => {
+    const storage = memory();
+    storage.setItem('se.theme', 'dark');
+    const p = page(storage, false);
+    bindLookSwitch(button().el);
+    expect(look()).toBe(DARK);
+    expect(p.shown()).toBe('dark');
+    p.system(false);
+    expect(look()).toBe(DARK);
+  });
+
   it('follows the system setting while nothing is stored', () => {
     const p = page(memory(), true);
     const b = button();
@@ -135,5 +148,36 @@ describe("the canvas under the client's kit toggle", () => {
     shown = 'light';
     changed();
     expect(look()).toBe(LIGHT);
+  });
+});
+
+describe("the game's old choice", () => {
+  it('becomes the stored choice once, and the old key goes', () => {
+    const storage = memory();
+    storage.setItem('seasonal-spirits.look', 'dark');
+    page(storage, false);
+    bindLookSwitch(button().el);
+    expect(look()).toBe(DARK);
+    expect(storage.getItem('se.theme')).toBe('dark');
+    expect(storage.getItem('seasonal-spirits.look')).toBeNull();
+  });
+
+  it("never overrides a stored choice (the website's or the game's), and still goes", () => {
+    const storage = memory();
+    storage.setItem('se.theme', 'light');
+    storage.setItem('seasonal-spirits.look', 'dark');
+    page(storage, true);
+    carryOverLook();
+    expect(storage.getItem('se.theme')).toBe('light');
+    expect(storage.getItem('seasonal-spirits.look')).toBeNull();
+  });
+
+  it('drops a value that is neither light nor dark without storing it', () => {
+    const storage = memory();
+    storage.setItem('seasonal-spirits.look', 'purple');
+    page(storage, false);
+    carryOverLook();
+    expect(storage.getItem('se.theme')).toBeNull();
+    expect(storage.getItem('seasonal-spirits.look')).toBeNull();
   });
 });

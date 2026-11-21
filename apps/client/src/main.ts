@@ -80,9 +80,10 @@ document.body.classList.toggle('touch', matchMedia('(pointer: coarse)').matches)
 const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
-// The kit's frame first (frame/Frame.tsx): the modules below find their parts in it by id.
-mountFrame();
+// The player's theme (an old choice carried over) before the kit's toggle mounts; then the kit's
+// frame (frame/Frame.tsx), before the modules below look their parts up in it by id.
 followTheme();
+mountFrame();
 loadCanvasFont();
 const sound = new Sound();
 bindMute(() => sound.toggleMute(), sound.muted);

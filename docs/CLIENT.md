@@ -208,12 +208,15 @@ or touch (browsers allow sound only after a gesture).
 - **Light and Dark** (the kit's theme, night chain 2026-11-21 pieces 3 and 4): the kit's round
   theme toggle in the client's band corner (`frame/Bar.tsx`; the canvas follows the theme the
   page shows, render `look-switch.ts` `followTheme`) and a small pill switch at the viewer's top
-  right (render `look-switch.ts` `bindLookSwitch`). The
-  kit decides (`@seasonal/kit` theme): the website's stored choice (localStorage `se.theme`, one
-  choice for the site and every game on its origin), else the system setting, followed live
-  while nothing is stored; set on `<html data-theme>` before the first paint by the kit's
-  `theme-init.js` (`themeInit` in both Vite configs). The old key `seasonal-spirits.look` is no
-  longer read. Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
+  right (render `look-switch.ts` `bindLookSwitch`). The game starts in the player's own setting
+  (owner decision 2026-11-21; it replaces Light by default of 2026-11-18), by the kit's theme: the
+  stored choice `se.theme` (`light`/`dark`) — inside the website (same origin, `/games/<slug>/`)
+  the one made on the website, which stores the same key (seasonal-entertainment
+  `client/src/theme/theme.js` line 12, `client/public/theme-init.js` line 14), standalone the one
+  made in the game —, else the device's setting, followed live while nothing is stored; set on
+  `<html data-theme>` before the first paint by the kit's `theme-init.js` (`themeInit` in both
+  Vite configs). A choice under the game's old key `seasonal-spirits.look` is carried over once
+  and the key removed (`carryOverLook`; a stored choice is never overridden). Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
   `:root[data-theme='dark']`, the frame's from the kit's dark tokens): a night sky with stars and a crescent moon, dimmer island colours, three small
   lanterns on the island, the crack glowing; the team colours stay. Text keeps a contrast of at
   least 4.5:1 in both (tested in `palette.test.ts`); the banner's and the lives' red is
