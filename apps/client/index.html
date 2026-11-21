@@ -7,33 +7,31 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
     />
     <title>Seasonal Sumo</title>
+    <!-- The kit's theme before the first paint (vite.config.ts themeInit). -->
+    <script src="theme-init.js"></script>
     <style>
-      /* Sky Island look (owner's choice 2026-11-18): white panels with an ink outline and an ink
-         drop shadow over the sky, Fredoka (bundled, @fontsource/fredoka). Every colour is a
-         variable here, so the dark mode only swaps them. */
+      /* The frame around the play field takes the kit's look (owner decision 2026-11-20,
+         @seasonal/kit tokens.css and fonts.css, imported in main.ts): its surface, text and scrim
+         colours, light and dark on <html data-theme> (the kit's theme, render look-switch.ts),
+         and Luxora Grotesk for every frame text. The Sky Island stays inside the play field: the
+         sky, the ink outlines and drop shadows, Fredoka on the canvas. */
       :root {
-        color-scheme: light;
         --ink: #2b2140;
-        --panel: #ffffff;
-        --panel-text: #2b2140;
-        --muted: #5b5270;
+        --panel: var(--color-surface);
+        --panel-text: var(--color-text);
+        --muted: var(--color-text-muted);
         --sky: #9edcf5;
         --alert: #cc4858; /* white on it 4.53:1 (NIGHT 2026-11-19; #ff5a6e was 3.0:1) */
         --dash: #ffc23c;
         --jump: #4cc2ff;
-        --veil: rgba(43, 33, 64, 0.45);
+        --veil: var(--color-scrim);
         --drop: 4px 4px 0 var(--ink);
         --rest: #ffffff; /* the Dash and Jump buttons' part still charging */
       }
-      /* Dark (the switch): the same look at night; every colour above is swapped here. */
-      body.dark {
-        color-scheme: dark;
+      /* Dark: the island at night; the frame's colours follow the kit's dark tokens. */
+      :root[data-theme='dark'] {
         --ink: #120e22;
-        --panel: #2b2550;
-        --panel-text: #f3f0ff;
-        --muted: #c9c3ff;
         --sky: #1d1b3f;
-        --veil: rgba(10, 8, 25, 0.6);
         --rest: #d9d4ff;
       }
       html,
@@ -42,7 +40,7 @@
         height: 100%;
         background: var(--sky);
         color: var(--panel-text);
-        font-family: Fredoka, system-ui, sans-serif;
+        font-family: var(--font-family);
         overflow: hidden;
         touch-action: none;
         user-select: none;
@@ -92,7 +90,7 @@
         border: 1.5px solid var(--ink);
         transition: left 0.2s;
       }
-      body.dark #look::after {
+      :root[data-theme='dark'] #look::after {
         content: '\263E';
         left: 21px;
         background: #fff3c4;
@@ -147,10 +145,7 @@
         border-radius: 50%;
         background: var(--panel);
         color: var(--panel-text);
-        font:
-          600 24px/1 Fredoka,
-          system-ui,
-          sans-serif;
+        font: 700 24px/1 var(--font-family);
         cursor: pointer;
       }
       /* The help card while more of it lies below: a fade over its bottom edge, held there as the

@@ -4,20 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Seasonal Spirits — Phase 0 viewer</title>
+    <!-- The kit's theme before the first paint (vite.config.ts themeInit). -->
+    <script src="theme-init.js"></script>
     <style>
-      /* Sky Island look (owner's choice 2026-11-18): the network numbers in a white panel with an
-         ink outline and drop shadow, Fredoka (bundled) for the canvas; the admin panel keeps its
-         own dark style. */
+      /* The frame takes the kit's look (owner decision 2026-11-20, @seasonal/kit tokens.css and
+         fonts.css, imported in main.ts): the network numbers on the kit's surface with the
+         island's ink outline and drop shadow, light and dark on <html data-theme> (the kit's
+         theme, render look-switch.ts), Luxora Grotesk for every page text, Fredoka on the canvas;
+         the admin panel keeps its own dark colours. */
       :root {
-        color-scheme: light;
         --ink: #2b2140;
-        --panel: #ffffff;
-        --panel-text: #2b2140;
+        --panel: var(--color-surface);
+        --panel-text: var(--color-text);
       }
-      body.dark {
+      :root[data-theme='dark'] {
         --ink: #120e22;
-        --panel: #2b2550;
-        --panel-text: #f3f0ff;
+      }
+      :root[data-theme='dark'] body {
         background: #1d1b3f;
       }
       #look {
@@ -56,7 +59,7 @@
         border: 1.5px solid var(--ink);
         transition: left 0.2s;
       }
-      body.dark #look::after {
+      :root[data-theme='dark'] #look::after {
         content: '\263E';
         left: 21px;
         background: #fff3c4;
@@ -67,7 +70,7 @@
         padding: 0;
         background: #9edcf5;
         color: #e6edf3;
-        font-family: Fredoka, system-ui, sans-serif;
+        font-family: var(--font-family);
         overflow: hidden;
       }
       /* The network numbers at the bottom left, over the rock and the clouds, not the field

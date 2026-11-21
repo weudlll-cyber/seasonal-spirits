@@ -102,8 +102,10 @@ or touch (browsers allow sound only after a gesture).
   fades out once the first state is in and it has shown for 1.2 s. There is no name entry and no
   team choice: the server seats a player on a team.
 
-- **Top bar** (Sky Island look: white panels with an ink outline and drop shadow, Fredoka
-  bundled with `@fontsource/fredoka`, no request to a font service). The season clock: one line
+- **Top bar** (the frame in the kit's look, owner decision 2026-11-20: the kit's surface and text
+  colours with the island's ink outline and drop shadow, Luxora Grotesk from `@seasonal/kit`
+  for every page text; Fredoka, bundled with `@fontsource/fredoka`, for the canvas, loaded at
+  once by render `canvas-font.ts`; no request to a font service). The season clock: one line
   in a small white pill at the top left (render `clock.ts`, 36 px `CLOCK_HEIGHT`; NIGHT
   2026-11-19 removed its row of season cells, which repeated the team pills) — a dot in the
   season's colour, the mode's name with sumo's variant, "Seasonal Sumo · Points" or "· Last One
@@ -189,20 +191,23 @@ or touch (browsers allow sound only after a gesture).
   U-turn arrow crossed out in red — for exactly the lock (the server's `GHOST_NO_RETURN`), seen
   by everybody; above its bomb if it carries one again; its label keeps clear of it; the help's
   "What you see" has a line on it.
-- **Light and Dark** (Sky Island look, piece 3): a small pill switch in the client's band
-  corner (NIGHT 2026-11-19: moved off the top right, where it left the clock's line too little
-  room on a phone) and at the viewer's top right (render `look-switch.ts`), Light by default,
-  the choice remembered in
-  localStorage (`seasonal-spirits.look`; render `storage.ts`, which also keeps the mute and the
-  help seen). Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
-  `body.dark`): a night sky with stars and a crescent moon, dimmer island colours, three small
+- **Light and Dark** (the kit's theme, night chain 2026-11-21 piece 3): a small pill switch in
+  the client's band corner (NIGHT 2026-11-19: moved off the top right, where it left the clock's
+  line too little room on a phone) and at the viewer's top right (render `look-switch.ts`). The
+  kit decides (`@seasonal/kit` theme): the website's stored choice (localStorage `se.theme`, one
+  choice for the site and every game on its origin), else the system setting, followed live
+  while nothing is stored; set on `<html data-theme>` before the first paint by the kit's
+  `theme-init.js` (`themeInit` in both Vite configs). The old key `seasonal-spirits.look` is no
+  longer read. Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
+  `:root[data-theme='dark']`, the frame's from the kit's dark tokens): a night sky with stars and a crescent moon, dimmer island colours, three small
   lanterns on the island, the crack glowing; the team colours stay. Text keeps a contrast of at
   least 4.5:1 in both (tested in `palette.test.ts`); the banner's and the lives' red is
   #CC4858, white on it 4.53:1 (NIGHT 2026-11-19; #FF5A6E was 3.0:1).
 - **Ghosts** (Sky Island look 2026-11-18): round toy-like characters (render `character.ts`)
   in their team colour, softly shaded (a highlight at the top left, a shade at the lower right)
-  — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
-  with feet in a darker shade, short arms, a light belly, big eyes, pink cheeks, a smile and the
+  — the website's season colours, exactly as the kit's `tokens.css` holds them (owner decision
+  2026-11-20; client `season-colours.test.ts` compares): spring #AFB84E, summer #E06E22, autumn
+  #F9A825, winter #04AAF7 — with feet in a darker shade (82 % in Light, 72 % in Dark), short arms, a light belly, big eyes, pink cheeks, a smile and the
   season's hat (spring a crown of flowers, summer a straw hat and sunglasses, autumn a beanie
   with a leaf, winter a wool hat with a pompom), each over a soft shadow, facing the side it last
   walked to, bobbing with stepping feet while it moves. Each team's character in each pose is

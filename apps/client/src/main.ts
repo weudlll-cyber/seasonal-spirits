@@ -7,6 +7,8 @@
 // from the server's state, only the own ghost is drawn ahead of it by the own input
 // (prediction.ts, display only).
 
+import '@seasonal/kit/fonts.css';
+import '@seasonal/kit/tokens.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
@@ -32,6 +34,7 @@ import {
   Trails,
   bindLookSwitch,
   clientConfig,
+  loadCanvasFont,
   liveConfig,
   matchName,
   modeOf,
@@ -78,6 +81,7 @@ const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
 bindLookSwitch(el('look', HTMLButtonElement));
+loadCanvasFont();
 // The "Admin" link to /admin/ on this address: in the dev build only (vite/dev-admin.ts, chain
 // 2026-11-21); elsewhere it leaves the page.
 const adminLink = el('admin', HTMLAnchorElement);

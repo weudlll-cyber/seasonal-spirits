@@ -1,5 +1,6 @@
-// Seasonal Sumo — the Light/Dark switch (Sky Island look, 2026-11-18): Light by default, the
-// choice remembered, and a page whose storage throws still switches (it only forgets).
+// Seasonal Sumo — the Light/Dark switch on the kit's theme: the system setting while nothing is
+// stored (followed live), a click stored under the website's key and winning on the next page,
+// and a page whose storage throws still switches (it only forgets).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bindLookSwitch } from './look-switch.js';
@@ -23,13 +24,30 @@ function button() {
   };
 }
 
-function page(storage: Storage): { dark: () => boolean } {
-  let dark = false;
-  vi.stubGlobal('document', {
-    body: { classList: { toggle: (_: string, on: boolean) => (dark = on) } },
+// A page: its storage, the system's dark setting (changeable) and the theme on <html>.
+function page(storage: Storage, systemDark: boolean) {
+  let dark = systemDark;
+  let changed = (): void => undefined;
+  let shown: string | null = null;
+  vi.stubGlobal('window', {
+    localStorage: storage,
+    matchMedia: () => ({
+      get matches() {
+        return dark;
+      },
+      addEventListener: (_: string, f: () => void) => (changed = f),
+    }),
   });
-  vi.stubGlobal('localStorage', storage);
-  return { dark: () => dark };
+  vi.stubGlobal('document', {
+    documentElement: { setAttribute: (_: string, v: string) => (shown = v) },
+  });
+  return {
+    shown: () => shown,
+    system: (now: boolean) => {
+      dark = now;
+      changed();
+    },
+  };
 }
 
 function memory(): Storage {
@@ -45,23 +63,36 @@ afterEach(() => {
 });
 
 describe('the look switch', () => {
-  it('starts Light, switches to Dark and is remembered on the next page', () => {
+  it('follows the system setting while nothing is stored', () => {
+    const p = page(memory(), true);
+    const b = button();
+    bindLookSwitch(b.el);
+    expect(look()).toBe(DARK);
+    expect(p.shown()).toBe('dark');
+    expect(b.attrs.get('aria-pressed')).toBe('true');
+    p.system(false);
+    expect(look()).toBe(LIGHT);
+    expect(p.shown()).toBe('light');
+  });
+
+  it('stores a click, which wins over the system on the next page and is no longer overridden', () => {
     const storage = memory();
-    const first = page(storage);
+    const first = page(storage, false);
     const b = button();
     bindLookSwitch(b.el);
     expect(look()).toBe(LIGHT);
-    expect(b.attrs.get('aria-pressed')).toBe('false');
     b.click();
     expect(look()).toBe(DARK);
-    expect(first.dark()).toBe(true);
-    const next = page(storage);
+    expect(storage.getItem('se.theme')).toBe('dark');
+    first.system(false);
+    expect(look()).toBe(DARK);
+    const next = page(storage, false);
     bindLookSwitch(button().el);
     expect(look()).toBe(DARK);
-    expect(next.dark()).toBe(true);
+    expect(next.shown()).toBe('dark');
   });
 
-  it('still switches when the storage throws, and starts Light', () => {
+  it('still switches when the storage throws, starting from the system setting', () => {
     const broken = {
       getItem: () => {
         throw new Error('blocked');
@@ -70,7 +101,7 @@ describe('the look switch', () => {
         throw new Error('blocked');
       },
     } as unknown as Storage;
-    page(broken);
+    page(broken, false);
     const b = button();
     bindLookSwitch(b.el);
     expect(look()).toBe(LIGHT);

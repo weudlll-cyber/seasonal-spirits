@@ -1,25 +1,34 @@
-// Seasonal Sumo — the Light/Dark switch of the Sky Island look (2026-11-18, piece 3): a small
-// pill at the top right of the client and the viewer. It switches the canvas palette
-// (palette.ts useLook) and the page's colours (the `dark` class on the body, index.html), and
-// remembers the choice (storage.ts); Light by default.
+// Seasonal Sumo — the Light/Dark switch: the kit's theme on Sumo's small pill at the band's corner
+// (client) and the viewer's top right. The kit decides (@seasonal/kit theme): the website's stored
+// choice (`se.theme`, one choice for the site and every game on its origin), else the system
+// setting, followed live while nothing is stored, on <html data-theme>. The pill switches it, and
+// with it the canvas palette (palette.ts useLook) and the pages' colours (index.html).
 
+import {
+  applyTheme,
+  onSystemThemeChange,
+  resolveTheme,
+  storeTheme,
+  type Theme,
+} from '@seasonal/kit';
 import { useLook } from './palette.js';
-import { readSetting, writeSetting } from './storage.js';
-
-const KEY = 'seasonal-spirits.look';
 
 export function bindLookSwitch(button: HTMLButtonElement): void {
-  const show = (dark: boolean): void => {
-    useLook(dark);
-    document.body.classList.toggle('dark', dark);
-    button.setAttribute('aria-pressed', String(dark));
+  let theme: Theme = resolveTheme();
+  const show = (): void => {
+    useLook(theme === 'dark');
+    applyTheme(theme);
+    button.setAttribute('aria-pressed', String(theme === 'dark'));
   };
-  let dark = readSetting(KEY) === 'dark';
-  show(dark);
+  show();
+  onSystemThemeChange((t) => {
+    theme = t;
+    show();
+  });
   button.addEventListener('click', () => {
-    dark = !dark;
-    writeSetting(KEY, dark ? 'dark' : 'light');
-    show(dark);
+    theme = theme === 'dark' ? 'light' : 'dark';
+    storeTheme(theme);
+    show();
     button.blur(); // Space stays the dash, never a second click on the switch
   });
 }
