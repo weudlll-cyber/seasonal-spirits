@@ -13,6 +13,11 @@ describe("the viewer and admin pages on the game's address", () => {
     expect(viewerPath('/viewer/src/main.ts')).toBe('/viewer/src/main.ts');
   });
 
+  it("answers the admin page's relative files from the viewer (the kit's theme script)", () => {
+    expect(viewerPath('/admin/theme-init.js')).toBe(`${VIEWER_BASE}theme-init.js`);
+    expect(viewerPath('/admin/theme-init.js?v=2')).toBe(`${VIEWER_BASE}theme-init.js?v=2`);
+  });
+
   it("leaves the game's own requests alone", () => {
     expect(viewerPath('/')).toBeNull();
     expect(viewerPath('/src/main.ts')).toBeNull();

@@ -23,7 +23,8 @@ the viewer stays the debug view.
 ## Repository layout
 
 - `apps/server` — the match server: game core on the 20 Hz loop, WebSocket, server bots.
-- `apps/client` — the player client (Vite + Canvas 2D, plain TypeScript): keyboard and
+- `apps/client` — the player client (Vite + Canvas 2D, TypeScript; the frame around the field in
+  React with `@seasonal/kit`, pinned by tag): keyboard and
   touch controls, the Dash button, the halving staging, the result screen.
 - `apps/viewer` — browser spectator and debug view with network numbers.
 - `packages/render` — the Canvas drawing both browser apps share.
@@ -61,8 +62,9 @@ pnpm probe        # full probe run: server + 32 bots + headless spectator, write
 pnpm server       # just the server, in the foreground (SEASON_SECONDS=15 for a 1-minute match)
 pnpm client       # just the client (and /viewer/, /admin/) on http://localhost:5930, in the foreground
 pnpm e2e          # Playwright: the client at desktop and phone size on a short match
-pnpm review:capture [game …]  # every moment of a full match per mode, player and spectator,
-                  # desktop and phone, Light and Dark, the viewer; contact sheets (about 45 min)
+pnpm review:capture [game …]  # every moment of a full match per mode, player and spectator, desktop
+                  # 1536 × 768, big screen 1920 × 1080 and phone, Light and Dark, the viewer and
+                  # its admin panel; contact sheets (about 90 min)
 pnpm review:own-marker        # the own marker where it is densest: Sumo, King, Bomb, desktop and
                   # phone players, Light and Dark, every season; sheet-own-marker.png (about 15 min)
 pnpm review:minimap [game …]  # the phone's minimap in King and Bomb, Light and Dark, at the start,

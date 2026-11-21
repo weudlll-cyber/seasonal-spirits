@@ -7,6 +7,9 @@
 // endpoint on (pnpm dev), it carries the admin panel (admin-panel.ts); it draws with the settings
 // in force.
 
+// The kit's look for the page (Luxora Grotesk, the tokens); Fredoka for the canvas.
+import '@seasonal/kit/fonts.css';
+import '@seasonal/kit/tokens.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
@@ -30,6 +33,7 @@ import {
   CLOCK_HEIGHT,
   Trails,
   bindLookSwitch,
+  loadCanvasFont,
   drawClock,
   drawField,
   fieldStanding,
@@ -66,6 +70,7 @@ const LATENCY_MAX = 200;
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLPreElement;
 bindLookSwitch(document.getElementById('look') as HTMLButtonElement);
+loadCanvasFont();
 const tuningRoot = document.getElementById('tuning') as HTMLElement;
 const context = canvas.getContext('2d');
 if (context === null) throw new Error('viewer: 2D canvas context unavailable');

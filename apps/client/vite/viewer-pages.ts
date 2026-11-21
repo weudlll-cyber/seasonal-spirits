@@ -12,13 +12,15 @@ export const VIEWER_BASE = '/viewer/';
 const ADMIN = '/admin';
 
 // The path the viewer's server answers for `url`: /admin and /admin/ show the viewer's page (it
-// opens its panel there, apps/viewer main.ts), /viewer the same as /viewer/; null for the game's
-// own requests.
+// opens its panel there, apps/viewer main.ts), and a file under /admin/ is the viewer's file (the
+// page's relative src, the kit's theme-init.js); /viewer the same as /viewer/; null for the
+// game's own requests.
 export function viewerPath(url: string): string | null {
   const [pathname = '', query = ''] = url.split('?', 2);
   const q = query ? `?${query}` : '';
-  if (pathname === ADMIN || pathname === `${ADMIN}/` || pathname === '/viewer') {
-    return `${VIEWER_BASE}${q}`;
+  if (pathname === ADMIN || pathname === '/viewer') return `${VIEWER_BASE}${q}`;
+  if (pathname.startsWith(`${ADMIN}/`)) {
+    return `${VIEWER_BASE}${pathname.slice(ADMIN.length + 1)}${q}`;
   }
   return pathname.startsWith(VIEWER_BASE) ? url : null;
 }

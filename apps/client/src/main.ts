@@ -7,6 +7,8 @@
 // from the server's state, only the own ghost is drawn ahead of it by the own input
 // (prediction.ts, display only).
 
+import '@seasonal/kit/fonts.css';
+import '@seasonal/kit/tokens.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
@@ -30,8 +32,9 @@ import {
   BreakOff,
   Seasons,
   Trails,
-  bindLookSwitch,
   clientConfig,
+  followTheme,
+  loadCanvasFont,
   liveConfig,
   matchName,
   modeOf,
@@ -39,6 +42,8 @@ import {
 } from '@seasonal-spirits/render';
 import { Connection, type Mode } from './connection.js';
 import { CameraEase } from './follow.js';
+import { setRunning } from './frame/frame-store.js';
+import { mountFrame } from './frame/Frame.js';
 import { Help, variantRule } from './help.js';
 import { Hud, MATCH_OVER_MS, bindMute, el, hudOnField } from './hud.js';
 import { bindJoystick, bindKeyboard, type Controls } from './input.js';
@@ -58,8 +63,6 @@ import { ZoneHint } from './zone-hint.js';
 // dash hit) and are extrapolated briefly when a state is late (docs/CLIENT.md).
 const BUFFER_MS = 50;
 
-declare const __DEV_ADMIN__: boolean; // vite.config.ts
-
 const canvas = el('map', HTMLCanvasElement);
 const context = canvas.getContext('2d');
 if (context === null) throw new Error('client: 2D canvas context unavailable');
@@ -77,12 +80,10 @@ document.body.classList.toggle('touch', matchMedia('(pointer: coarse)').matches)
 const spectate = new URLSearchParams(location.search).get('spectate') === '1';
 document.body.classList.toggle('spectating', spectate);
 
-bindLookSwitch(el('look', HTMLButtonElement));
-// The "Admin" link to /admin/ on this address: in the dev build only (vite/dev-admin.ts, chain
-// 2026-11-21); elsewhere it leaves the page.
-const adminLink = el('admin', HTMLAnchorElement);
-if (__DEV_ADMIN__) adminLink.hidden = false;
-else adminLink.remove();
+// The kit's frame first (frame/Frame.tsx): the modules below find their parts in it by id.
+mountFrame();
+followTheme();
+loadCanvasFont();
 const sound = new Sound();
 bindMute(() => sound.toggleMute(), sound.muted);
 
@@ -290,6 +291,7 @@ function frame(): void {
   const now = performance.now();
   conn.flush(now);
   const f = snapshot(now);
+  setRunning(f.latest !== undefined && !f.over);
   expose(f, draw(f));
   requestAnimationFrame(frame);
 }

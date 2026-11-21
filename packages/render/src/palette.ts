@@ -2,9 +2,10 @@
 // (owner's choice 2026-11-18), light and dark (the player's switch, look-switch.ts), tinted by the
 // season in play (season.ts): the one list both apps draw with; index = season = team.
 
-// The team colours of the Sky Island look (they replace the website's tokens in this game; the
-// owner's question of 2026-11-16 — Summer and Autumn too alike — answered with them).
-export const SEASON_COLOURS = ['#9BD15A', '#FF8A3D', '#FFC23C', '#4CC2FF'] as const;
+// The season and team colours: the website's, exactly, wherever a season is shown (owner
+// decision 2026-11-20), as the kit's tokens.css holds them (@seasonal/kit; palette.test.ts reads
+// the installed file, so a new kit tag with other colours fails here).
+export const SEASON_COLOURS = ['#afb84e', '#e06e22', '#f9a825', '#04aaf7'] as const;
 export const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'] as const;
 
 // Every colour of the world around the ghosts: the sky, the sea, the island and what grows on it.
@@ -57,7 +58,7 @@ export const LIGHT: Look = {
   crowns: ['#6cbf4b', '#ffb347'],
   pebble: '#d8d0c4',
   crack: '#6e4c34',
-  feet: ['#7fb446', '#e2702a', '#e8a82a', '#2ea6e4'],
+  feet: ['#909740', '#b85a1c', '#cc8a1e', '#038bcb'], // the season colours at 82 %
   puff: '#ffffff',
   panel: '#ffffff',
   panelText: '#2b2140',
@@ -85,7 +86,7 @@ export const DARK: Look = {
   crowns: ['#3f7d55', '#c97b3a'],
   pebble: '#6d6480',
   crack: '#ffcf6e',
-  feet: ['#6f9a3c', '#c25a1c', '#c98c1a', '#1f86c0'],
+  feet: ['#7e8438', '#a14f18', '#b3791b', '#037ab2'], // the season colours at 72 %
   puff: '#c9c3ff',
   panel: '#2b2550',
   panelText: '#f3f0ff',

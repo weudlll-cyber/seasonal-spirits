@@ -1,9 +1,10 @@
 // Seasonal Sumo review capture (`pnpm review:capture [sumo-points|sumo-last-one-standing|king-of-the-season|halving-bomb …]`, night
 // 2026-11-19/20): every part of a match, as the owner and the planner review it before a test.
 // On its own stack (stack.ts) each mode is started through the viewer's "Next match" flow and
-// played to its end and into the next match twice: once with the scripted player (player.ts) on a
-// desktop, a spectator on a phone and the viewer at 1920 × 1080, once with the player on a phone
-// and a spectator on a desktop — every moment (moments.ts) in Light and Dark (shoot.ts); then
+// played to its end and into the next match three times: once with the scripted player (player.ts)
+// on a desktop, a spectator on a phone and the viewer at 1920 × 1080, once with the player on a
+// phone and a spectator on a desktop, once with the player on a big screen and a spectator on a
+// phone — every moment (moments.ts) in Light and Dark (shoot.ts); then
 // the contact sheets (sheets.ts). Development only: it starts the dev admin endpoint.
 
 import { setTimeout as delay } from 'node:timers/promises';
@@ -39,7 +40,7 @@ async function main(): Promise<void> {
   try {
     for (const game of games) {
       clearTopic(REVIEW_DIR, slug(game), null); // only the latest run of a game (topics.ts)
-      for (const size of ['desktop', 'phone'] as const) await run(browser, game, size);
+      for (const size of ['desktop', 'phone', 'big'] as const) await run(browser, game, size);
     }
   } finally {
     await browser.close();
@@ -51,7 +52,7 @@ async function main(): Promise<void> {
 // One match of `game` with the player on `size`.
 async function run(browser: Browser, game: string, size: Size): Promise<void> {
   console.log(`${game}, player on the ${size}`);
-  const other: Size = size === 'desktop' ? 'phone' : 'desktop';
+  const other: Size = size === 'phone' ? 'desktop' : 'phone';
   // The viewer first: the clients' start screen shows only for a moment after their page loads.
   const viewer = await openViewer(browser);
   const [player, spectator] = await Promise.all([

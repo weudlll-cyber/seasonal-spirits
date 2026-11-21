@@ -7,33 +7,31 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
     />
     <title>Seasonal Sumo</title>
+    <!-- The kit's theme before the first paint (vite.config.ts themeInit). -->
+    <script src="theme-init.js"></script>
     <style>
-      /* Sky Island look (owner's choice 2026-11-18): white panels with an ink outline and an ink
-         drop shadow over the sky, Fredoka (bundled, @fontsource/fredoka). Every colour is a
-         variable here, so the dark mode only swaps them. */
+      /* The frame around the play field takes the kit's look (owner decision 2026-11-20,
+         @seasonal/kit tokens.css and fonts.css, imported in main.ts): its surface, text and scrim
+         colours, light and dark on <html data-theme> (the kit's theme, render look-switch.ts),
+         and Luxora Grotesk for every frame text. The Sky Island stays inside the play field: the
+         sky, the ink outlines and drop shadows, Fredoka on the canvas. */
       :root {
-        color-scheme: light;
         --ink: #2b2140;
-        --panel: #ffffff;
-        --panel-text: #2b2140;
-        --muted: #5b5270;
+        --panel: var(--color-surface);
+        --panel-text: var(--color-text);
+        --muted: var(--color-text-muted);
         --sky: #9edcf5;
         --alert: #cc4858; /* white on it 4.53:1 (NIGHT 2026-11-19; #ff5a6e was 3.0:1) */
         --dash: #ffc23c;
         --jump: #4cc2ff;
-        --veil: rgba(43, 33, 64, 0.45);
+        --veil: var(--color-scrim);
         --drop: 4px 4px 0 var(--ink);
         --rest: #ffffff; /* the Dash and Jump buttons' part still charging */
       }
-      /* Dark (the switch): the same look at night; every colour above is swapped here. */
-      body.dark {
-        color-scheme: dark;
+      /* Dark: the island at night; the frame's colours follow the kit's dark tokens. */
+      :root[data-theme='dark'] {
         --ink: #120e22;
-        --panel: #2b2550;
-        --panel-text: #f3f0ff;
-        --muted: #c9c3ff;
         --sky: #1d1b3f;
-        --veil: rgba(10, 8, 25, 0.6);
         --rest: #d9d4ff;
       }
       html,
@@ -42,7 +40,7 @@
         height: 100%;
         background: var(--sky);
         color: var(--panel-text);
-        font-family: Fredoka, system-ui, sans-serif;
+        font-family: var(--font-family);
         overflow: hidden;
         touch-action: none;
         user-select: none;
@@ -66,36 +64,6 @@
       button:disabled {
         opacity: 0.45;
         cursor: default;
-      }
-      /* The Light/Dark switch (render look-switch.ts): a small pill in the band's corner, its
-         knob left with a sun in Light, right with a moon in Dark (NIGHT 2026-11-19: moved off the
-         top right, where it left the clock's line too little room on a phone). */
-      #corner #look {
-        position: relative;
-        width: 46px;
-        height: 26px;
-        padding: 0;
-        border-radius: 999px;
-      }
-      #look::after {
-        content: '\2600';
-        position: absolute;
-        top: 1px;
-        left: 2px;
-        width: 19px;
-        height: 19px;
-        line-height: 19px;
-        font-size: 12px;
-        border-radius: 50%;
-        background: #ffe073;
-        color: #2b2140;
-        border: 1.5px solid var(--ink);
-        transition: left 0.2s;
-      }
-      body.dark #look::after {
-        content: '\263E';
-        left: 21px;
-        background: #fff3c4;
       }
       /* Jump left of Dash, both at the bottom right (JUMP 2026-11-17). */
       #actions {
@@ -147,10 +115,7 @@
         border-radius: 50%;
         background: var(--panel);
         color: var(--panel-text);
-        font:
-          600 24px/1 Fredoka,
-          system-ui,
-          sans-serif;
+        font: 700 24px/1 var(--font-family);
         cursor: pointer;
       }
       /* The help card while more of it lies below: a fade over its bottom edge, held there as the
@@ -254,7 +219,7 @@
          it. White text on the red at 4.5:1 or more (--alert), with an ink edge. */
       #announce {
         position: fixed;
-        top: 112px;
+        top: 122px;
         left: 50%;
         width: max-content;
         /* Never wider than the screen minus 16 px, padding and border included; on a phone the
@@ -298,8 +263,10 @@
           opacity: 0;
         }
       }
-      /* Under the canvas season clock (36 px, render clock.ts CLOCK_HEIGHT): the band, 68 px (scene.ts BAND_HEIGHT), with the
-         team line and the corner buttons, and below them the team scores. No control sits
+      /* Under the canvas season clock (36 px, render clock.ts CLOCK_HEIGHT): the band, 78 px (scene.ts BAND_HEIGHT; 68
+         px before the kit's game bar, whose phone targets are 44 px), with the kit's game bar
+         (frame/Bar.tsx: the team line, the lives, the corner buttons) and below it the team
+         scores. No control sits
          on the field (owner's play test 2026-11-15); the team line shrinks or ends in "…"
          before it reaches the buttons. */
       #band {
@@ -307,7 +274,7 @@
         top: 36px;
         left: 0;
         right: 0;
-        height: 68px;
+        height: 78px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -315,10 +282,17 @@
         padding: 0 10px;
       }
       #band-top {
-        display: flex;
-        align-items: center;
-        gap: 8px;
         min-width: 0;
+      }
+      #band-top .sk-game-bar {
+        gap: 8px;
+      }
+      /* The corner on the right; the bar has no panel buttons. */
+      #band-top .sk-bar-fact:has(> #corner) {
+        margin-left: auto;
+      }
+      #band-top .sk-bar-actions {
+        display: none;
       }
       /* A team's colour dot before its name (the team line, the score chips). */
       .dot::before {
@@ -397,7 +371,7 @@
       }
       #hint {
         position: fixed;
-        top: 105px;
+        top: 115px;
         left: 50%;
         transform: translateX(-50%);
         white-space: nowrap;
@@ -412,7 +386,7 @@
       }
       #notice {
         position: fixed;
-        top: 168px; /* below the banner (#announce) */
+        top: 178px; /* below the banner (#announce) */
         left: 50%;
         transform: translateX(-50%);
         background: var(--panel);
@@ -429,7 +403,7 @@
         visibility: hidden;
       }
       #notice.row {
-        top: 105px;
+        top: 115px;
         white-space: nowrap;
         font-size: 13px;
         font-weight: 600;
@@ -437,18 +411,17 @@
         border-width: 2px;
         border-radius: 999px;
       }
-      @media (max-width: 480px) {
-        #team .lead,
-        #scores .name {
-          display: none;
+      /* The Sound switch as a round note wherever the kit's bar takes its phone layout (44 px
+         buttons, no words shown: under 900 px wide or upright, kit bar.css), struck through when
+         off; its words stay for screen readers (NIGHT 2026-11-19; piece 4 2026-11-21). The gaps
+         narrower there, so the team line keeps its room beside the 44 px buttons. */
+      @media (max-width: 899px), (orientation: portrait) {
+        #band-top .sk-game-bar,
+        #band-top #corner {
+          gap: 4px;
         }
-        /* The Sound switch as a round note on a phone, struck through when off (its words stay
-           for screen readers): room in the band for the Light/Dark switch (NIGHT 2026-11-19). */
         #corner #mute {
           font-size: 0;
-          width: 30px;
-          height: 26px;
-          padding: 0;
         }
         #mute::before {
           content: '\266A';
@@ -456,6 +429,12 @@
         }
         #mute[aria-pressed='true']::before {
           text-decoration: line-through;
+        }
+      }
+      @media (max-width: 480px) {
+        #team .lead,
+        #scores .name {
+          display: none;
         }
         /* A little smaller on a phone, so "You fell — back in 3" fits beside the lives. */
         #team {
@@ -467,33 +446,72 @@
           height: 11px;
         }
       }
+      /* The corner (frame/Bar.tsx): the kit's theme toggle and bar buttons ("?", the sound), in
+         the kit's look, not the island's ink. */
       #corner {
-        margin-left: auto;
         display: flex;
+        align-items: center;
         gap: 6px;
-        flex-shrink: 0;
       }
-      #corner button {
-        padding: 3px 10px;
-        font-size: 13px;
+      #corner .sk-bar-button,
+      #corner .sk-theme-toggle {
+        padding-block: 0;
+        box-shadow: none;
+        font-weight: 600;
       }
-      /* The dev build's "Admin" link (main.ts; chain 2026-11-21): small, plain, in the corner. */
+      #corner .sk-theme-toggle {
+        padding: 0;
+      }
+      /* The dev build's "Admin" link (frame/Bar.tsx; chain 2026-11-21): small, plain, in the
+         corner. */
       #corner #admin {
-        align-self: center;
         font-size: 12px;
+        font-weight: 400;
         color: inherit;
-      }
-      #corner #admin[hidden] {
-        display: none;
       }
       #result {
         position: fixed;
         inset: 0;
         display: flex;
-        align-items: center;
         justify-content: center;
+        padding: 12px;
+        box-sizing: border-box;
         background: var(--veil);
         overflow: auto;
+      }
+      /* The result in the kit's result frame (frame/ResultCard.tsx): its first part fitted to the
+         screen (the kit's --fit, never below the 14 px text floor), what follows scrolls. */
+      #result .sk-result {
+        width: min(860px, 100%);
+        margin: auto;
+        color: var(--panel-text);
+      }
+      #result .sk-result-first,
+      #result .sk-result-more {
+        background: var(--panel);
+        font-size: max(var(--sk-floor-text), calc(var(--fit, 1) * 16px));
+      }
+      #result h3 {
+        margin: 0 0 6px;
+        font-size: max(var(--sk-floor-text), calc(var(--fit, 1) * 17px));
+      }
+      #result p {
+        margin: 0;
+      }
+      #result ol {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      #result li {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 2px 0;
+      }
+      /* The players' names near their amounts on a wide screen (review 2026-11-21). */
+      #result-players {
+        max-width: 28rem;
       }
       /* The start screen (start.ts): the title in a white pill over a small floating island with
          the four seasons' characters, while the client joins; it lets every touch through and
@@ -533,6 +551,8 @@
         display: block;
         margin: 0 auto;
         max-width: 100%;
+        height: max(76px, calc(var(--fit, 1) * 190px));
+        width: auto;
       }
       #start p {
         margin: 0;
@@ -605,16 +625,8 @@
     <div id="announce" role="status" hidden></div>
     <div id="notice" role="status" hidden></div>
     <div id="band">
-      <div id="band-top">
-        <div id="team" class="dot" hidden></div>
-        <div id="hearts" hidden></div>
-        <div id="corner">
-          <button id="look" type="button" aria-label="Dark mode" aria-pressed="false"></button>
-          <button id="help-open" type="button" aria-label="How to play">?</button>
-          <button id="mute" type="button" aria-pressed="false">Sound on</button>
-          <a id="admin" href="/admin/" target="_blank" rel="noopener" hidden>Admin</a>
-        </div>
-      </div>
+      <!-- The kit's game bar (src/frame/Bar.tsx) -->
+      <div id="band-top"></div>
       <div id="scores" aria-label="Per team" hidden></div>
       <div id="hint" role="status" hidden></div>
     </div>
@@ -624,32 +636,12 @@
       <canvas id="start-island" width="340" height="230"></canvas>
       <p>Joining the match …</p>
     </div>
-    <div id="result" hidden>
-      <div class="card">
-        <h2>Result</h2>
-        <canvas id="podium" width="300" height="190" aria-hidden="true"></canvas>
-        <p id="result-place"></p>
-        <p id="result-next" class="small"></p>
-        <div id="result-awards-box">
-          <h3>Awards</h3>
-          <ol id="result-awards"></ol>
-        </div>
-        <h3>Teams</h3>
-        <ol id="result-teams"></ol>
-        <h3>Players</h3>
-        <ol id="result-players"></ol>
-        <div id="bridge">
-          <p id="bridge-text"></p>
-          <div class="buttons">
-            <a id="start-here" class="link" target="_blank" rel="noopener noreferrer">Start here</a>
-            <a id="simulator" class="link" target="_blank" rel="noopener noreferrer"
-              >Try the simulator</a
-            >
-          </div>
-          <p class="small">No financial advice</p>
-        </div>
-      </div>
-    </div>
+    <!-- The kit's result frame (src/frame/ResultCard.tsx) -->
+    <div id="result" hidden></div>
+    <!-- The kit's docked chat, website mode only (src/frame/Dock.tsx) -->
+    <div id="dock"></div>
+    <!-- The React root of the frame; its parts render into the containers above (Frame.tsx) -->
+    <div id="frame"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

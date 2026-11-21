@@ -24,6 +24,7 @@ Spirits' client is on `master`.
 | `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute |
 | `src/banner-fit.ts`        | The halving banner's text shrunk to at most two lines on a narrow screen          |
 | `src/result.ts`            | Result screen: the podium, the mode's awards, scores per team and player, bridge  |
+| `src/frame/`               | The frame in React with the kit's blocks: game bar, result frame, docked chat     |
 | `src/start.ts`             | The start screen while the client joins                                           |
 | `src/follow.ts`            | The phone's follow camera in King and Bomb, eased                                 |
 | `src/team-line.ts`         | The band's team line: "You are Team …", the fall's countdown, out                 |
@@ -102,8 +103,10 @@ or touch (browsers allow sound only after a gesture).
   fades out once the first state is in and it has shown for 1.2 s. There is no name entry and no
   team choice: the server seats a player on a team.
 
-- **Top bar** (Sky Island look: white panels with an ink outline and drop shadow, Fredoka
-  bundled with `@fontsource/fredoka`, no request to a font service). The season clock: one line
+- **Top bar** (the frame in the kit's look, owner decision 2026-11-20: the kit's surface and text
+  colours with the island's ink outline and drop shadow, Luxora Grotesk from `@seasonal/kit`
+  for every page text; Fredoka, bundled with `@fontsource/fredoka`, for the canvas, loaded at
+  once by render `canvas-font.ts`; no request to a font service). The season clock: one line
   in a small white pill at the top left (render `clock.ts`, 36 px `CLOCK_HEIGHT`; NIGHT
   2026-11-19 removed its row of season cells, which repeated the team pills) — a dot in the
   season's colour, the mode's name with sumo's variant, "Seasonal Sumo · Points" or "· Last One
@@ -112,17 +115,29 @@ or touch (browsers allow sound only after a gesture).
   played, "· 6:52 played"; 13 px, shrinking to 11 px at the least on a phone. Under it the band:
   "You are Team <Season>" in a white pill behind the team's colour dot, the own lives as red
   circles beside it (sumo only; a lost one white; past five lives one and the number left, "×7",
-  so the team line keeps its room on a phone), the corner buttons — the Light/Dark switch, "?"
-  and Sound (on a phone a round note ♪, struck through when off), and in the dev build only a
-  small "Admin" link to `/admin/` on the same address (`main.ts`, `vite/dev-admin.ts`; chain
+  so the team line keeps its room on a phone), the corner buttons — the kit's theme toggle, "?"
+  and Sound in the kit's bar-button look (on a phone a round note ♪, struck through when off),
+  and in the dev build only a
+  small "Admin" link to `/admin/` on the same address (`frame/Bar.tsx`, `vite/dev-admin.ts`; chain
   2026-11-21: one address — the client's dev server also serves the viewer at `/viewer/` and the
   admin panel at `/admin/`, `vite/viewer-pages.ts`) —, and a
   white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
   still in; Last One Standing "Spring 7 in"; hill and bomb "Spring 12"; the leader outlined in
   its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the
   team line says "Out — watching" (short enough for a 390 px phone, 2026-11-19) until
-  the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 68 px
-  (`BAND_HEIGHT`).
+  the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 78 px
+  (`BAND_HEIGHT`; 68 px before the kit's game bar, whose phone targets are 44 px).
+- **The frame in React** (night chain 2026-11-21 piece 4; owner decision 2026-11-20: the frame
+  comes from the kit; `src/frame/`, React 19.3.1, the kit's pinned peer): `Frame.tsx` renders
+  once, synchronously, before the game's modules look their parts up by id, so they fill them
+  as before. The band's top row is the kit's `GameBar` (`Bar.tsx`): the kit's `BackLink` (website
+  mode only), the team line and the lives as its lead, the corner on the right; while a match
+  runs the kit's focus mode marks `<html data-sk-focus>` (`frame-store.ts`, fed by the loop). The
+  result is the kit's `ResultFrame` (`ResultCard.tsx`, below). The docked chat with its call
+  slot is the kit's `ChatDock` with the website's chat frame (`Dock.tsx`), in website mode only:
+  `WEBSITE_MODE=1` at the client's start (exactly "1", off by default and today) shows the back
+  link and the dock. Not taken: the kit's `StartCard` — its "Opens in N s" counts down to a round,
+  and Sumo's start screen is a short joining splash with no countdown.
 - **Field** (Sky Island look, owner's choice 2026-11-18; render `field.ts`). Seen from three
   quarters above: screen y = field y × the view's tilt (`VIEW_TILT` 0.55, steeper on a portrait
   phone up to `MAX_TILT` 0.9 — see Camera; render `view.ts`; input directions stay screen =
@@ -189,20 +204,24 @@ or touch (browsers allow sound only after a gesture).
   U-turn arrow crossed out in red — for exactly the lock (the server's `GHOST_NO_RETURN`), seen
   by everybody; above its bomb if it carries one again; its label keeps clear of it; the help's
   "What you see" has a line on it.
-- **Light and Dark** (Sky Island look, piece 3): a small pill switch in the client's band
-  corner (NIGHT 2026-11-19: moved off the top right, where it left the clock's line too little
-  room on a phone) and at the viewer's top right (render `look-switch.ts`), Light by default,
-  the choice remembered in
-  localStorage (`seasonal-spirits.look`; render `storage.ts`, which also keeps the mute and the
-  help seen). Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
-  `body.dark`): a night sky with stars and a crescent moon, dimmer island colours, three small
+- **Light and Dark** (the kit's theme, night chain 2026-11-21 pieces 3 and 4): the kit's round
+  theme toggle in the client's band corner (`frame/Bar.tsx`; the canvas follows the theme the
+  page shows, render `look-switch.ts` `followTheme`) and a small pill switch at the viewer's top
+  right (render `look-switch.ts` `bindLookSwitch`). The
+  kit decides (`@seasonal/kit` theme): the website's stored choice (localStorage `se.theme`, one
+  choice for the site and every game on its origin), else the system setting, followed live
+  while nothing is stored; set on `<html data-theme>` before the first paint by the kit's
+  `theme-init.js` (`themeInit` in both Vite configs). The old key `seasonal-spirits.look` is no
+  longer read. Dark swaps every colour (render `palette.ts` `DARK`, the page's variables under
+  `:root[data-theme='dark']`, the frame's from the kit's dark tokens): a night sky with stars and a crescent moon, dimmer island colours, three small
   lanterns on the island, the crack glowing; the team colours stay. Text keeps a contrast of at
   least 4.5:1 in both (tested in `palette.test.ts`); the banner's and the lives' red is
   #CC4858, white on it 4.53:1 (NIGHT 2026-11-19; #FF5A6E was 3.0:1).
 - **Ghosts** (Sky Island look 2026-11-18): round toy-like characters (render `character.ts`)
   in their team colour, softly shaded (a highlight at the top left, a shade at the lower right)
-  — spring #9BD15A, summer #FF8A3D, autumn #FFC23C, winter #4CC2FF —
-  with feet in a darker shade, short arms, a light belly, big eyes, pink cheeks, a smile and the
+  — the website's season colours, exactly as the kit's `tokens.css` holds them (owner decision
+  2026-11-20; client `season-colours.test.ts` compares): spring #AFB84E, summer #E06E22, autumn
+  #F9A825, winter #04AAF7 — with feet in a darker shade (82 % in Light, 72 % in Dark), short arms, a light belly, big eyes, pink cheeks, a smile and the
   season's hat (spring a crown of flowers, summer a straw hat and sunglasses, autumn a beanie
   with a leaf, winter a wool hat with a pompom), each over a soft shadow, facing the side it last
   walked to, bobbing with stepping feet while it moves. Each team's character in each pose is
@@ -309,8 +328,12 @@ or touch (browsers allow sound only after a gesture).
 - **Result screen** (`result.ts`): over the result a podium on a small floating island —
   the winning team's character on the middle step, the second and third on the lower ones — with
   a confetti burst in the winner's colour (render `podium.ts`, NIGHT 2026-11-19), the same for
-  every mode (the team order of `teamLines`); below it the place, the awards, the teams and the
-  players as before, in the white card.
+  every mode (the team order of `teamLines`). Since piece 4 (night chain 2026-11-21) in the kit's
+  `ResultFrame` (`frame/ResultCard.tsx`): "Result", the own place and the time to the next match
+  at the top, the podium as its reveal, the awards and the teams beside it on a desktop (under it
+  on a phone), then the players and the bridge box below. Its first part is fitted to the screen
+  by the kit (`useFitScale`, `--fit`): no `data-sk-game`, so the kit's strictest floors hold —
+  14 px text —, the scale's floor Mini Games' 0.6, as the kit has no Seasonal Party floor yet.
 - **Halving staging** (the words per mode in render `modes.ts`): the clock counts the last
   seconds down in red ("HALVING in 0:06 — the arena halves, then Summer is in season", "— the
   zone jumps to Summer and halves", "— the bomb goes off"); at the halving "HALVING — the arena

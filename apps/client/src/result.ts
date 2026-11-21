@@ -7,7 +7,8 @@
 // in config.ts). Over it a podium on a floating island with the best three teams'
 // characters and a confetti burst in the winner's colour (render podium.ts, NIGHT 2026-11-19),
 // for every mode. Result and awards come from the server's recap message, the names and the time
-// to the next match from the state.
+// to the next match from the state. The parts are the kit's result frame (frame/ResultCard.tsx);
+// this fills them by id, and each result filled lets the frame fit again.
 
 import {
   GHOST_BOT,
@@ -25,6 +26,7 @@ import {
   type ModeWords,
 } from '@seasonal-spirits/render';
 import { BRIDGE_TEXT, CLIENT_CONFIG } from './config.js';
+import { resultFilled } from './frame/frame-store.js';
 import { el } from './hud.js';
 
 const SHOWN_PLAYERS = 8;
@@ -82,6 +84,7 @@ export class ResultScreen {
       unit: modeWords(s.mode).unit,
       lastStanding: (s.flags & STATE_LAST_STANDING) !== 0,
     });
+    resultFilled();
   }
 
   private fill(

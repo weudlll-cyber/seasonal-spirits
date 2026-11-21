@@ -1,6 +1,7 @@
 // Seasonal Sumo review capture — the browser pages watching a match on the review stack: the
-// player's or a spectator's client at desktop (1280 × 800) or phone (390 × 844, touch) size, the
-// help overlay counted as seen; the viewer (big screen, 1920 × 1080) with its admin panel; the
+// player's or a spectator's client at desktop (1536 × 768), big-screen (1920 × 1080) or phone
+// (390 × 844, touch) size (night chain 2026-11-21: the owner's review sizes), the help overlay
+// counted as seen; the viewer (big screen, 1920 × 1080) with its admin panel; the
 // panel's "Next match" flow: choose the game, its values shown, start it; waiting on a client for
 // that match; and a game's folder name.
 
@@ -11,8 +12,9 @@ import type { Camera } from './shoot.js';
 import { PORTS } from './stack.js';
 
 export const SIZES = {
-  desktop: { viewport: { width: 1280, height: 800 } },
+  desktop: { viewport: { width: 1536, height: 768 } },
   phone: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
+  big: { viewport: { width: 1920, height: 1080 } },
 } as const;
 export type Size = keyof typeof SIZES;
 
