@@ -71,6 +71,8 @@ pnpm review:own-marker        # the own marker where it is densest: Sumo, King, 
 pnpm review:minimap [game …]  # the phone's minimap in King and Bomb, Light and Dark, at the start,
                   # after each halving and in the last seconds; sheet-minimap.png (about 8 min)
 pnpm review:sheets [game …]   # the contact sheets again from the shots
+pnpm frame-cost [runs]        # the client's main-thread time per frame with 32 seats, desktop
+                  # 1536 × 768 and phone 390 × 844, PC load per run; median, p95, N (30 runs ≈ 8 min)
 pnpm verify       # format:check + lint + typecheck + test (the full suite, as in CI)
 pnpm verify:changed  # the same checks, only for what changed since origin/master
 ```
