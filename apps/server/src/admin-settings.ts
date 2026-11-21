@@ -1,9 +1,10 @@
 // Seasonal Sumo — the game's admin settings endpoint (NIGHT 2026-11-18, piece 3; it grew out of
 // TUNE 2026-11-17's /dev/tune): one endpoint, ADMIN_SETTINGS_PATH, for the settings, the named
 // presets and the next match (choose a game, its values, start it — the panel rebuild), which the
-// admin panel (the viewer's, today) talks to. Access is one check in front of
-// it (adminAccess): today the dev flag — the server creates the endpoint only with DEV_TUNING=1,
-// and it refuses to exist with NODE_ENV=production — a loopback caller and the viewer's origin;
+// admin panel (the viewer's, today) talks to. Access is one check in front of it (adminAccess):
+// today the dev flag — the endpoint exists only with DEV_TUNING=1, never with NODE_ENV=production
+// — a loopback caller (in the LAN mode also a home-network one, owner 2026-11-21: /admin from the
+// phone; home-network.ts) and the panel's page;
 // later the game's own admin login, as the sibling games' admin areas have it (BACKLOG OPEN).
 // Every value is checked against the game's one schema (game-core readSettings); the player
 // message validator never sees any of it (THREATS rows 39, 42).
@@ -17,6 +18,7 @@ import {
 } from '@seasonal-spirits/game-core';
 import type { ServerTuning } from '@seasonal-spirits/protocol';
 import { refuseProduction, type Env } from './env.js';
+import { isHomeNetwork } from './home-network.js';
 import { isLoopback } from './http-routes.js';
 import { PresetStore } from './presets.js';
 
@@ -26,6 +28,7 @@ const MAX_CHANGES_PER_SECOND = 20;
 
 export interface AdminOptions {
   origins: readonly string[]; // the admin panel's page: no other page may call
+  homeNetwork: boolean; // the LAN mode: callers from the home network too (a phone)
   current: () => Settings; // the settings the next match starts with
   apply: (s: Settings) => void;
   // Ends the running match at once and starts `game` with `settings` (match-host.ts startGame).
@@ -57,11 +60,17 @@ export interface AdminAnswer {
   body?: AdminView;
 }
 
-// The one access check: a refusal's status, or null to go on. Today a loopback caller (else 404:
-// as if it did not exist) from the admin panel's origin (else 403). The game's admin login takes
-// this place before the endpoint leaves development.
-export function adminAccess(head: AdminHead, origins: readonly string[]): number | null {
-  if (!isLoopback(head.remote)) return 404;
+// The one access check: a refusal's status, or null to go on. Today a loopback caller — in the
+// LAN mode also a home-network one (RFC 1918) — (else 404: as if it did not exist) from the admin
+// panel's origin (else 403). The game's admin login takes this place before the endpoint leaves
+// development.
+export function adminAccess(
+  head: AdminHead,
+  origins: readonly string[],
+  homeNetwork = false,
+): number | null {
+  const near = isLoopback(head.remote) || (homeNetwork && isHomeNetwork(head.remote));
+  if (!near) return 404;
   if (head.origin === undefined || !origins.includes(head.origin)) return 403;
   return null;
 }
@@ -81,10 +90,12 @@ export function adminEndpoint(
   origins: readonly string[] | null | undefined,
   presetDir: string,
   host: AdminHost,
+  homeNetwork = false,
 ): AdminSettings | null {
   if (!origins) return null;
   return new AdminSettings({
     origins,
+    homeNetwork,
     current: () => host.settingsWanted(),
     apply: (s) => {
       host.tune(s);
@@ -210,7 +221,7 @@ export class AdminSettings {
 
   // A refusal, or the answer to OPTIONS and GET; null: a POST worth reading.
   private before(head: AdminHead): AdminAnswer | null {
-    const refused = adminAccess(head, this.o.origins);
+    const refused = adminAccess(head, this.o.origins, this.o.homeNetwork);
     if (refused !== null) return { status: refused };
     if (head.method === 'OPTIONS') return { status: 204 };
     if (head.method === 'GET') return { status: 200, body: this.view() };

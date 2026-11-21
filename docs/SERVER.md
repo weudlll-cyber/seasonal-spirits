@@ -191,13 +191,18 @@ modes rotate again).
 
 The panel talks to one endpoint, `GET` / `POST /api/v1/admin/settings` (`admin-settings.ts`; the
 path follows the sibling games' admin routes), with one access check in front of it,
-`adminAccess` — today the dev flag, loopback and the panel's origin; later the game's own admin
+`adminAccess` — today the dev flag, loopback (in the LAN mode also the home network) and the
+panel's origin; later the game's own admin
 login (CONCEPT.md section 16, BACKLOG OPEN):
 
 - absent (404 like any unknown path) without `DEV_TUNING=1`, and it refuses to exist with
   `NODE_ENV=production` (the whole server does too);
 - loopback callers only (anything else: 404), from the panel's page only (the `Origin`
-  `http://localhost:5930` or `http://127.0.0.1:5930`, the client's port, else 403), `content-type:
+  `http://localhost:5930` or `http://127.0.0.1:5930`, the client's port, else 403); in the LAN
+  mode (`HOST=0.0.0.0`, set only by `pnpm dev --lan`) also home-network callers (RFC 1918:
+  10/8, 172.16/12, 192.168/16, also IPv4-mapped) from the panel's page on one of this machine's
+  own home-network addresses (`http://192.168.0.66:5930`, read from its network interfaces, no
+  pattern; `home-network.ts`; owner decision 2026-11-21: /admin from the phone), `content-type:
 application/json` only (415), so another page cannot reach it without the browser's
   preflight, which only the panel's origin passes;
 - a body of at most 4096 bytes (413) holding one command: `apply` with every setting, each in its

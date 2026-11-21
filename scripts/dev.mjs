@@ -200,7 +200,7 @@ async function start(lan) {
       `Phone (same Wi-Fi): ${address ? `http://${address}:${CLIENT_PORT}` : 'no LAN address found'}`,
     );
   console.log(
-    `Viewer: http://localhost:${CLIENT_PORT}/viewer/   Admin (settings and presets, this PC only): ` +
+    `Viewer: http://localhost:${CLIENT_PORT}/viewer/   Admin (settings and presets, this PC${lan ? ' and the home network' : ' only'}): ` +
       `http://localhost:${CLIENT_PORT}/admin/   (logs in logs/, stop with pnpm dev:stop)`,
   );
 }

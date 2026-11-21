@@ -35,3 +35,19 @@ These are repository settings on GitHub. A session does not change them.
    request then stays pending.
 3. **Copilot code review on pull requests.** Settings → Copilot → Code review (or a ruleset
    "Request pull request review from Copilot"): automatic review of every pull request.
+
+## Development-only openings
+
+What the dev server opens beyond this machine, and only in development (the server refuses to
+start with `NODE_ENV=production`; the rules are tested in `apps/server`):
+
+- **`pnpm dev --lan`** binds the match server and the client to `0.0.0.0`, so a phone in the same
+  Wi-Fi can play (`env.test.ts`).
+- **The admin panel from a phone** (owner decision 2026-11-21): in that LAN mode the admin
+  endpoint also takes callers from the home network — RFC 1918 addresses only (10/8, 172.16/12,
+  192.168/16, also IPv4-mapped) — and only from the panel's page on one of this machine's own
+  home-network addresses, read from its network interfaces (`home-network.ts`,
+  `admin-settings.ts` `adminAccess`; `home-network.test.ts`, `admin-settings.test.ts`). Without
+  the LAN mode it stays loopback only; a public caller gets 404, another page 403. The game's own
+  admin login replaces this check before the endpoint leaves development (docs/THREATS.md row
+  39).

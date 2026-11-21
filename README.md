@@ -40,8 +40,9 @@ the viewer stays the debug view.
 - Player client: `5930` (override: `CLIENT_PORT`). The same address serves the viewer at
   `/viewer/` and, in development, the admin panel at `/admin/` (one address, owner's chain
   2026-11-21, like Mini Games' `/admin`); the game shows a small "Admin" link there in the dev
-  build only. The admin panel answers this PC only (loopback): from a phone `/admin/` opens but
-  its calls are refused.
+  build only. The admin panel answers this PC, and with `pnpm dev --lan` also a phone in the home
+  network at the LAN address (owner decision 2026-11-21: private RFC 1918 callers, the page on this
+  PC's own home-network address only; never in production, where the server refuses to start).
 - Browser tests: server `3932`, client `5932` (their own stack, never `pnpm dev`'s)
 - Review capture: server `3936`, client `5936` (its own stack, seed 7)
 

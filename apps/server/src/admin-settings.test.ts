@@ -29,14 +29,17 @@ const POST: AdminHead = {
 const apply = (settings: unknown): string => JSON.stringify({ action: 'apply', settings });
 const named = (action: string, name: string): string => JSON.stringify({ action, name });
 
-function endpoint(env: Record<string, string> = {}, now = () => 0) {
+const PHONE_PAGE = 'http://192.168.0.66:5930'; // the same page on this machine's home address
+
+function endpoint(env: Record<string, string> = {}, now = () => 0, homeNetwork = false) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'presets-'));
   const applied: Settings[] = [];
   const started: { game: RotationSlot; settings: Settings; keep: boolean }[] = [];
   let current = DEFAULT_SETTINGS;
   let keep = false;
   const e = new AdminSettings({
-    origins: [PANEL],
+    origins: homeNetwork ? [PANEL, PHONE_PAGE] : [PANEL],
+    homeNetwork,
     current: () => current,
     apply: (s) => {
       applied.push(s);
@@ -59,8 +62,9 @@ function endpoint(env: Record<string, string> = {}, now = () => 0) {
 }
 
 describe('admin settings refusals', () => {
-  it('refuses to exist with NODE_ENV=production', () => {
+  it('refuses to exist with NODE_ENV=production, with or without the home network', () => {
     expect(() => endpoint({ NODE_ENV: 'production' })).toThrow(/development tool/);
+    expect(() => endpoint({ NODE_ENV: 'production' }, () => 0, true)).toThrow(/development tool/);
   });
 
   it('answers a caller from another host as if the endpoint did not exist', () => {
@@ -105,6 +109,29 @@ describe('admin settings refusals', () => {
     expect(statuses.at(-1)).toBe(429);
     now = 1000;
     expect(e.answer(POST, apply(VALID)).status).toBe(200);
+  });
+});
+
+describe('admin settings from the home network (the LAN mode)', () => {
+  const FROM_PHONE: AdminHead = { ...POST, origin: PHONE_PAGE, remote: '::ffff:192.168.0.80' };
+
+  it('takes a phone in the home network on the page at the home address', () => {
+    const { e, applied } = endpoint({}, () => 0, true);
+    expect(e.answer(FROM_PHONE, apply(VALID)).status).toBe(200);
+    expect(applied).toEqual([VALID]);
+  });
+
+  it('still refuses a public caller, and another page from the home network', () => {
+    const { e, applied } = endpoint({}, () => 0, true);
+    expect(e.answer({ ...FROM_PHONE, remote: '8.8.8.8' }, apply(VALID))).toEqual({ status: 404 });
+    const other = { ...FROM_PHONE, origin: 'http://192.168.0.80:5930' };
+    expect(e.answer(other, apply(VALID))).toEqual({ status: 403 });
+    expect(applied).toEqual([]);
+  });
+
+  it('refuses the phone without the LAN mode', () => {
+    const { e } = endpoint();
+    expect(e.answer(FROM_PHONE, apply(VALID))).toEqual({ status: 404 });
   });
 });
 

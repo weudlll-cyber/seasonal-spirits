@@ -35,6 +35,7 @@ export interface ServerConfig {
   // The admin settings endpoint for these pages (the viewer's panel; DEV_TUNING=1, development
   // only) and its presets' folder; absent or null: no endpoint (admin-settings.ts).
   adminOrigins?: readonly string[] | null;
+  adminHomeNetwork?: boolean; // the LAN mode: the admin panel from the home network too
   presetDir?: string;
 }
 
@@ -79,7 +80,7 @@ export class GameServer {
     this.cfg = cfg;
     this.host = new MatchHost(cfg.settings, cfg.firstSeed);
     const dir = cfg.presetDir ?? 'presets';
-    this.admin = adminEndpoint(cfg.adminOrigins, dir, this.host);
+    this.admin = adminEndpoint(cfg.adminOrigins, dir, this.host, cfg.adminHomeNetwork ?? false);
   }
 
   async listen(): Promise<void> {
