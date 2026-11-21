@@ -35,6 +35,18 @@ async function lastChance(page: Page, info: TestInfo): Promise<void> {
   await shot(page, info, 'match-over');
 }
 
+// Joining during a result pause, or just before one: the result screen covers the field (and the
+// joystick). Waiting for the result to hide was not enough — joined in "MATCH OVER" or the last
+// seconds, it was still hidden and came up a moment later (BACKLOG ai, 2026-11-21): the match has
+// to run, with a halving still to come or more than 12 s left.
+async function matchRunning(page: Page): Promise<void> {
+  const running = async () => {
+    const v = await view(page);
+    return !v.result && v.countdown !== null && (!v.countdown.toEnd || v.countdown.ms > 12_000);
+  };
+  await expect.poll(running, { timeout: 40_000 }).toBe(true);
+}
+
 async function steering(page: Page, info: TestInfo): Promise<Steering> {
   return info.project.name === 'phone' ? joystick(page) : keyboard(page);
 }
@@ -82,8 +94,7 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   await expect.poll(async () => (await view(page)).own !== null, { timeout: 15_000 }).toBe(true);
   const joined = await view(page);
   expect(joined.mode).toBe('player');
-  // Joining during a result pause: the result screen covers the field (and the joystick).
-  await expect(page.locator('#result')).toBeHidden({ timeout: 20_000 });
+  await matchRunning(page);
   const steer = await steering(page, info);
 
   // Move towards the middle of the arena and stop there.
@@ -106,13 +117,23 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   // The arena read in the countdown to a halving (not to the match's end): read earlier, a new
   // match in between starts at full size; read at the announcement, the edge may already be
   // easing in. Up to one season, or the rest of the last season, the result pause and one season.
+  // Not in the result pause: an ended match keeps its last countdown without the to-end flag, and
+  // the next halving was a result pause and a season away (BACKLOG ai, 2026-11-21).
   const toHalving = async () => {
-    const c = (await view(page)).countdown;
-    return c !== null && !c.toEnd;
+    const v = await view(page);
+    return !v.result && v.countdown !== null && !v.countdown.toEnd;
   };
   await expect.poll(toHalving, { timeout: 45_000 }).toBe(true);
-  const before = (await view(page)).area?.r ?? 0;
-  await expect(announce).toHaveText(halving, { timeout: 15_000 });
+  const { area, halvings } = await view(page);
+  const before = area?.r ?? 0;
+  // This halving, not the last one: the hidden banner keeps the previous halving's words, which
+  // matched at once and left the arena unchanged (BACKLOG ai, measured 2026-11-21). The client's
+  // halving count rises at the event, and the banner shows.
+  await expect
+    .poll(async () => (await view(page)).halvings, { timeout: 15_000 })
+    .toBeGreaterThan(halvings);
+  await expect(announce).toBeVisible();
+  await expect(announce).toHaveText(halving);
   const match = halving.exec((await announce.textContent()) ?? '');
   const season = SEASON_NAMES.indexOf(match?.[1] ?? '');
   await expect.poll(async () => (await view(page)).season).toBe(season);
@@ -125,26 +146,41 @@ test('join, move, dash, a halving, the last chance and the result with the bridg
   await resultWithBridge(page, info);
 });
 
-// The result after the match, with the bridge box word for word.
+// The result after the match, with the bridge box word for word. Read in one go the moment it
+// shows: it stays only RESULT_SECONDS (5 s), and on a loaded PC a dozen separate checks outlasted
+// it and found the next match (BACKLOG ai, 20-run measurement 2026-11-21).
 async function resultWithBridge(page: Page, info: TestInfo): Promise<void> {
-  const result = page.locator('#result');
-  await expect(result).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator('#result-place')).toHaveText(
-    /^Your place: \d+ of \d+ — \d+ knockouts?$/,
-  );
-  const awards = page.locator('#result-awards li');
-  await expect(awards.first()).toBeVisible();
-  for (const text of await awards.allTextContents()) {
+  await expect(page.locator('#result')).toBeVisible({ timeout: 10_000 });
+  const seen = await page.evaluate(() => {
+    const result = document.querySelector('#result');
+    const text = (sel: string) => document.querySelector(sel)?.textContent ?? '';
+    const link = (name: string) =>
+      [...(result?.querySelectorAll('a') ?? [])].find((a) => a.textContent === name);
+    return {
+      shown: result?.checkVisibility() ?? false,
+      place: text('#result-place'),
+      awards: [...document.querySelectorAll('#result-awards li')].map((li) => li.textContent),
+      awardsShown: document.querySelector('#result-awards-box')?.checkVisibility() ?? false,
+      bridge: text('#bridge-text'),
+      startHere: link('Start here')?.checkVisibility() ?? false,
+      simulator: link('Try the simulator')?.getAttribute('href') ?? null,
+      advice: [...(result?.querySelectorAll('p') ?? [])].some(
+        (p) => p.textContent === 'No financial advice' && p.checkVisibility(),
+      ),
+    };
+  });
+  await shot(page, info, 'result');
+  expect(seen.shown, 'the result was still up when read').toBe(true);
+  expect(seen.place).toMatch(/^Your place: \d+ of \d+ — \d+ knockouts?$/);
+  expect(seen.awardsShown, 'the awards show').toBe(true);
+  expect(seen.awards.length).toBeGreaterThan(0);
+  for (const text of seen.awards) {
     expect(text).toMatch(/^(Best pusher.+, \d+ knockouts?|Survivor.+, \d+:\d\d without a fall)$/);
   }
-  await expect(page.locator('#bridge-text')).toHaveText(
+  expect(seen.bridge).toBe(
     'This is how Seasonal Tokens work: every halving cuts in half — here it cuts the arena.',
   );
-  await expect(page.getByRole('link', { name: 'Start here' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Try the simulator' })).toHaveAttribute(
-    'href',
-    'https://seasonaltokens.org',
-  );
-  await expect(result.getByText('No financial advice')).toBeVisible();
-  await shot(page, info, 'result');
+  expect(seen.startHere, 'the Start here link shows').toBe(true);
+  expect(seen.simulator).toBe('https://seasonaltokens.org');
+  expect(seen.advice, 'the no-financial-advice line shows').toBe(true);
 }
