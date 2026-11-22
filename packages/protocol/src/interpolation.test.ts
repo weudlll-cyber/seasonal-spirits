@@ -1,4 +1,5 @@
 // Seasonal Spirits — interpolation + extrapolation tests.
+// Clients draw between two server states; a late state is bridged for a short while.
 
 import { describe, expect, it } from 'vitest';
 import { interpolate, type BufferedState } from './interpolation.js';

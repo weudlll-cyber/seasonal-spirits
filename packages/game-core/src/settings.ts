@@ -61,12 +61,6 @@ export const DEFAULT_SETTINGS: Settings = Object.fromEntries(
   SETTINGS.map((s) => [s.key, s.default]),
 ) as Settings;
 
-const BY_KEY = new Map<string, Setting>(SETTINGS.map((s) => [s.key, s]));
-
-export function settingOf(key: string): Setting | undefined {
-  return BY_KEY.get(key);
-}
-
 // On its step from the minimum (a float's last digits forgiven).
 function onStep(s: Setting, v: number): boolean {
   const k = (v - s.min) / s.step;

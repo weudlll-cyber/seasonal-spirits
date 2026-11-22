@@ -1,4 +1,5 @@
 // Seasonal Spirits — jump detector tests at/around threshold.
+// The probe and the viewer count a drawn position that jumps too far as a glitch.
 
 import { describe, expect, it } from 'vitest';
 import { JumpDetector } from './jump.js';

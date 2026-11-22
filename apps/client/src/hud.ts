@@ -16,12 +16,13 @@ const ANNOUNCE_MS = 3500;
 // "MATCH OVER" stays this long; then the result screen takes its place (main.ts).
 export const MATCH_OVER_MS = 2000;
 
-// An element of index.html, checked to be of the expected kind.
+// An element of the page (index.html or the React frame, frame/*.tsx), checked to be of the
+// expected kind.
 function el<T extends HTMLElement>(id: string, kind: new () => T): T;
 function el(id: string): HTMLElement;
 function el(id: string, kind: new () => HTMLElement = HTMLElement): HTMLElement {
   const found = document.getElementById(id);
-  if (!(found instanceof kind)) throw new Error(`client: #${id} missing from index.html`);
+  if (!(found instanceof kind)) throw new Error(`client: #${id} missing from the page`);
   return found;
 }
 

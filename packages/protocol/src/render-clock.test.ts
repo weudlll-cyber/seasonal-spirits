@@ -1,4 +1,5 @@
 // Seasonal Spirits — render clock tests: smooth linear advance; resync on drift.
+// The clients' drawing time follows the server's states at a fixed distance behind.
 
 import { describe, expect, it } from 'vitest';
 import { RenderClock } from './render-clock.js';

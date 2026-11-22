@@ -20,7 +20,7 @@ export interface Random {
   next(): number; // [0, 1)
 }
 
-export const mathRandom: Random = { next: () => Math.random() };
+const mathRandom: Random = { next: () => Math.random() };
 
 // The two seams a test replaces with a fake clock and a scripted random source.
 export interface DelayQueueDeps {

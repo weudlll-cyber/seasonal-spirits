@@ -45,7 +45,7 @@ export type VariantChoice = (typeof VARIANT_CHOICES)[number];
 // Last One Standing after the third halving: "stop-time" — the arena keeps its size, the match
 // ends at its time limit; "keep-halving" — it halves every halvingEveryMs, no time limit;
 // "stop-open" — it keeps its size and there is no time limit.
-export const AFTER_LAST = ['stop-time', 'keep-halving', 'stop-open'] as const;
+const AFTER_LAST = ['stop-time', 'keep-halving', 'stop-open'] as const;
 export type AfterLast = (typeof AFTER_LAST)[number];
 
 export interface SumoConfig {

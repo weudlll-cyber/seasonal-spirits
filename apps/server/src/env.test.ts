@@ -1,4 +1,5 @@
 // Seasonal Spirits — environment values are checked at the boundary; dev tools refuse production.
+// Every server setting from the environment passes these checks before the server starts.
 
 import { describe, expect, it } from 'vitest';
 import { envChoice, envInt, refuseProduction } from './env.js';

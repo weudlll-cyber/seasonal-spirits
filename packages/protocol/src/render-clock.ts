@@ -7,7 +7,7 @@
 export interface RenderClockOptions {
   bufferMs: number; // target distance behind the latest state's server time
   // If the clock drifts farther than resyncToleranceMs from (latest - bufferMs), snap
-  // back. Default: half a tick's worth of a 20 Hz server.
+  // back. Default: 250 ms, five ticks of a 20 Hz server.
   resyncToleranceMs?: number;
 }
 

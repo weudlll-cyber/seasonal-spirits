@@ -287,7 +287,7 @@ export class AdminSettings {
 
   private send(res: http.ServerResponse, head: AdminHead, a: AdminAnswer): void {
     const headers: http.OutgoingHttpHeaders = { vary: 'Origin' };
-    // A caller off the machine sees no trace of the endpoint.
+    // A caller it does not take (404) or another page gets no CORS header for the endpoint.
     if (a.status !== 404 && head.origin !== undefined && this.o.origins.includes(head.origin)) {
       headers['access-control-allow-origin'] = head.origin;
       headers['access-control-allow-methods'] = 'GET, POST';

@@ -1,4 +1,5 @@
-// Seasonal Spirits — season order and the season clock (coin values: prices.test.ts).
+// Seasonal Sumo — season order and the season clock: the four seasons in turn, one per halving.
+// The modes' halvings and the clients' clock line rest on them.
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from './config.js';

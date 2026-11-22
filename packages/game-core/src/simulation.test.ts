@@ -1,4 +1,5 @@
 // Seasonal Sumo — a full 32-bot match: deterministic per seed, sanity list green, lively.
+// The whole game in one run: a seed replays the same match, and nothing in it stalls.
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from './config.js';

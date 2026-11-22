@@ -1,4 +1,5 @@
 // Seasonal Spirits — /metrics-lite is for loopback callers only.
+// The metrics show the server's load; only this machine may read them.
 
 import type http from 'node:http';
 import { describe, expect, it } from 'vitest';

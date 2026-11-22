@@ -1,4 +1,5 @@
 // Seasonal Spirits — delay queue tests: order preserved and bounds respected.
+// The probe's and the viewer's simulated network delay must never reorder or grow unbounded.
 
 import { describe, expect, it } from 'vitest';
 import { DelayQueue, type DelayQueueClock, type Random } from './delay-queue.js';

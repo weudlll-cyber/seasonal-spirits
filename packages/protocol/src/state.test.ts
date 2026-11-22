@@ -1,4 +1,5 @@
 // Seasonal Sumo — state encode/decode round trips and the message size against 1 KB.
+// One state message goes to every client 20 times a second, so its size is bounded.
 
 import { describe, expect, it } from 'vitest';
 import {

@@ -1,4 +1,5 @@
 // Seasonal Spirits — the client message validator: only well-formed messages get through.
+// Every client message passes this validator first; anything else is dropped (THREATS.md).
 
 import { describe, expect, it } from 'vitest';
 import { MAX_CLIENT_MESSAGE_BYTES, parseClientMessage } from './client-message.js';

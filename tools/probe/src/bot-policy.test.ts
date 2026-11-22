@@ -1,4 +1,5 @@
 // Seasonal Spirits — bot policy tests: direction change interval in [0.5, 2.0] s, wall turn.
+// The probe's bots move like players so the measured load is realistic.
 
 import { describe, expect, it } from 'vitest';
 import { BotPolicy } from './bot-policy.js';

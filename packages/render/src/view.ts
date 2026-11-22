@@ -144,7 +144,7 @@ export function byDepth<T extends { y: number }>(items: readonly T[]): T[] {
   return [...items].sort((a, b) => a.y - b.y);
 }
 
-// Everything drawn inside `draw` stays below the top bar: no ghost, coin or label under it
+// Everything drawn inside `draw` stays below the top bar: no ghost or label under it
 // (owner's play test 2026-11-15).
 export function belowBar(v: View, draw: () => void): void {
   const { ctx } = v;
