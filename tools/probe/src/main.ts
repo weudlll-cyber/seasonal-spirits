@@ -45,7 +45,11 @@ const cfg: ProbeConfig = {
   reportDir: env.REPORT_DIR ?? path.resolve(env.INIT_CWD ?? process.cwd(), 'reports/phase0'),
 };
 
-async function main(): Promise<void> {
+// The probe's clients are programs, not pages; this stands in for the page they play from.
+const PROBE_ORIGIN = 'http://localhost';
+
+// The match server, in this process, for the probe's bots and spectator.
+async function startServer(): Promise<GameServer> {
   console.log(`[probe] starting server on port ${cfg.port}`);
   const server = new GameServer({
     port: cfg.port,
@@ -56,10 +60,18 @@ async function main(): Promise<void> {
     // All bots and the spectator connect from this machine.
     maxConnectionsPerAddress: cfg.maxGhosts + 1,
     helloTimeoutMs: 10_000,
+    // A bot is a normal client: it names a page origin like a browser does, the one listed here.
+    gameOrigins: [PROBE_ORIGIN],
+    maxBufferedBytes: 262_144,
     devCors: false,
     firstSeed: 1,
   });
   await server.listen();
+  return server;
+}
+
+async function main(): Promise<void> {
+  const server = await startServer();
 
   // A short warm-up before clients connect so the HTTP listener is fully ready.
   await sleep(50);
@@ -68,6 +80,7 @@ async function main(): Promise<void> {
   const url = `ws://127.0.0.1:${cfg.port}`;
   const bots = spawnBots(cfg.maxGhosts, {
     url,
+    origin: PROBE_ORIGIN,
     worldSize: cfg.world,
     latencyMinMs: cfg.latencyMin,
     latencyMaxMs: cfg.latencyMax,
@@ -81,6 +94,7 @@ async function main(): Promise<void> {
   console.log(`[probe] starting headless spectator`);
   const spectator = new HeadlessSpectator({
     url,
+    origin: PROBE_ORIGIN,
     latencyMinMs: cfg.latencyMin,
     latencyMaxMs: cfg.latencyMax,
     bufferMs: cfg.bufferMs,

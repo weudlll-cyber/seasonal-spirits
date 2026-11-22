@@ -15,6 +15,7 @@ import { toUint8Array } from './raw.js';
 
 export interface BotOptions {
   url: string;
+  origin: string; // the page Origin the server's allow-list expects (server origin-guard.ts)
   worldSize: number;
   latencyMinMs: number;
   latencyMaxMs: number;
@@ -47,7 +48,7 @@ class ProbeBot {
     this.inbound = new DelayQueue<Uint8Array>(opts.latencyMinMs, opts.latencyMaxMs, (buf) => {
       this.onState(decodeState(buf));
     });
-    this.ws = new WebSocket(opts.url);
+    this.ws = new WebSocket(opts.url, { origin: opts.origin });
     this.ws.binaryType = 'arraybuffer';
     this.ws.on('open', () => {
       this.onOpen();

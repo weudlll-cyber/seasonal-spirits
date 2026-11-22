@@ -53,7 +53,6 @@ export default defineConfig({
       // loaded PC (second night chain 2026-11-21, piece 4).
       RESULT_SECONDS: '15',
       DEV_TUNING: '1',
-      CLIENT_PORT: String(CLIENT_PORT),
       PRESET_DIR: path.join(ROOT, 'test-results', 'presets'),
     }),
     ...stack(MODE_STACKS.hill.server, MODE_STACKS.hill.client, { GAME_MODE: 'hill' }),
@@ -61,14 +60,21 @@ export default defineConfig({
   ],
 });
 
-// A match server with 15 s seasons and its client.
+// A match server with 15 s seasons and its client; the server is told the client's port, the one
+// page origin its WebSocket and admin panel accept (server main.ts).
 function stack(server: number, client: number, env: Record<string, string>) {
   return [
     {
       command: 'pnpm --filter @seasonal-spirits/server start',
       cwd: ROOT,
       url: `http://127.0.0.1:${String(server)}/metrics-lite`,
-      env: { PORT: String(server), SEASON_SECONDS: '15', RESULT_SECONDS: '5', ...env },
+      env: {
+        PORT: String(server),
+        CLIENT_PORT: String(client),
+        SEASON_SECONDS: '15',
+        RESULT_SECONDS: '5',
+        ...env,
+      },
       reuseExistingServer: false,
       timeout: 60_000,
     },

@@ -17,10 +17,18 @@ import {
   type ServerSpectating,
   type ServerWelcome,
 } from '@seasonal-spirits/protocol';
-import { rawToText, withinRate, type ClientRecord } from './client-record.js';
+import {
+  POLICY_VIOLATION,
+  rawToText,
+  sendWithin,
+  withinRate,
+  type ClientRecord,
+} from './client-record.js';
 import { handleHttp } from './http-routes.js';
 import { MatchHost } from './match-host.js';
 import { adminEndpoint, tuningText, type AdminSettings } from './admin-settings.js';
+import { ORIGIN_REFUSED, OriginGuard } from './origin-guard.js';
+import { TickMetrics, type ServerMetrics } from './tick-metrics.js';
 import { stepsDue } from './tick-steps.js';
 
 export interface ServerConfig {
@@ -31,6 +39,8 @@ export interface ServerConfig {
   maxInputsPerSecond: number; // every message counts, valid or not
   maxConnectionsPerAddress: number;
   helloTimeoutMs: number; // a connection that has not said hello by then is closed
+  gameOrigins: readonly string[]; // the pages the game is served from: no other may connect
+  maxBufferedBytes: number; // a client holding more unsent bytes is closed (client-record.ts)
   devCors: boolean; // CORS `*` on /metrics-lite, development only
   firstSeed: number;
   // The admin settings endpoint for these pages (the viewer's panel; DEV_TUNING=1, development
@@ -40,26 +50,11 @@ export interface ServerConfig {
   presetDir?: string;
 }
 
-// WebSocket close code 1008: policy violation.
-const POLICY_VIOLATION = 1008;
-
-export interface ServerMetrics {
-  achievedHz: number; // computed over the recent window
-  maxTickMs: number;
-  cpuPercentOfOneCore: number;
-  clients: number;
-  players: number; // slots steered by a connected player
-  ghosts: number; // slots in the match
-  stateBytes: number; // the last state message
-  maxStateBytes: number; // the largest since the window started
-  startedAtMs: number;
-  uptimeMs: number;
-}
-
 export class GameServer {
   private readonly cfg: ServerConfig;
   private readonly host: MatchHost;
   private readonly admin: AdminSettings | null;
+  private readonly origins: OriginGuard;
   private http!: http.Server;
   private wss!: WebSocketServer;
   private tickTimer: NodeJS.Timeout | null = null;
@@ -67,21 +62,18 @@ export class GameServer {
   private readonly clients = new Map<number, ClientRecord>();
   private readonly perAddress = new Map<string, number>();
   private tickCount = 0;
-  private maxTickMs = 0;
   private lastTickWall = 0;
   private accumulator = 0;
-  private startWall = 0;
-  private cpuBaseline: NodeJS.CpuUsage = { user: 0, system: 0 };
-  private metricsWindowStart = 0;
-  private ticksInWindow = 0;
-  private stateBytes = 0;
-  private maxStateBytes = 0;
+  private stats!: TickMetrics;
 
   constructor(cfg: ServerConfig) {
     this.cfg = cfg;
     this.host = new MatchHost(cfg.settings, cfg.firstSeed);
     const dir = cfg.presetDir ?? 'presets';
     this.admin = adminEndpoint(cfg.adminOrigins, dir, this.host, cfg.adminHomeNetwork ?? false);
+    this.origins = new OriginGuard(cfg.gameOrigins, (line) => {
+      console.warn(line);
+    });
   }
 
   async listen(): Promise<void> {
@@ -89,8 +81,18 @@ export class GameServer {
       if (this.admin && req.url === ADMIN_SETTINGS_PATH) this.admin.handle(req, res);
       else handleHttp(req, res, () => this.metrics(), this.cfg.devCors);
     });
-    // Frames above the bound are refused by ws itself (close code 1009) before we see them.
-    this.wss = new WebSocketServer({ server: this.http, maxPayload: MAX_CLIENT_MESSAGE_BYTES });
+    // Frames above the bound are refused by ws itself (close code 1009) before we see them; an
+    // upgrade from a page the game is not served from gets 403 before it is a connection.
+    this.wss = new WebSocketServer({
+      server: this.http,
+      maxPayload: MAX_CLIENT_MESSAGE_BYTES,
+      verifyClient: (info, done) => {
+        done(
+          this.origins.allows(info.origin, info.req.socket.remoteAddress ?? 'unknown'),
+          ORIGIN_REFUSED,
+        );
+      },
+    });
     this.wss.on('connection', (ws, req) => {
       this.handleConnection(ws, req.socket.remoteAddress ?? 'unknown');
     });
@@ -115,11 +117,8 @@ export class GameServer {
   }
 
   private start(): void {
-    this.startWall = Date.now();
-    this.lastTickWall = this.startWall;
-    this.cpuBaseline = process.cpuUsage();
-    this.metricsWindowStart = this.startWall;
-    this.ticksInWindow = 0;
+    this.stats = new TickMetrics(Date.now());
+    this.lastTickWall = this.stats.startWall;
     // 1 ms resolution; drift-corrected inside tickLoop.
     this.tickTimer = setInterval(() => {
       this.tickLoop();
@@ -141,10 +140,8 @@ export class GameServer {
       const buf = encodeState({
         ...wire,
         tick: this.tickCount,
-        serverMs: tickStart - this.startWall,
+        serverMs: tickStart - this.stats.startWall,
       });
-      this.stateBytes = buf.byteLength;
-      this.maxStateBytes = Math.max(this.maxStateBytes, buf.byteLength);
       this.sendToAll(buf);
       // The settings in force, after a change or at a new match: every client plays by them.
       const rules = this.host.settingsToTell();
@@ -152,8 +149,7 @@ export class GameServer {
       // The match recap goes to everyone once, in the tick the match ended (THREATS row 33).
       const recap = this.host.recapNow(true);
       if (recap) this.sendToAll(JSON.stringify(recap));
-      this.maxTickMs = Math.max(this.maxTickMs, Date.now() - tickStart);
-      this.ticksInWindow++;
+      this.stats.tick(Date.now() - tickStart, buf.byteLength);
     }
   }
 
@@ -161,8 +157,7 @@ export class GameServer {
   private sendToAll(data: Uint8Array | string): void {
     for (const c of this.clients.values()) {
       if (c.kind === 'pending' || c.ws.readyState !== c.ws.OPEN) continue;
-      if (typeof data === 'string') c.ws.send(data);
-      else c.ws.send(data, { binary: true });
+      sendWithin(c.ws, data, this.cfg.maxBufferedBytes);
     }
   }
 
@@ -264,30 +259,16 @@ export class GameServer {
   }
 
   metrics(): ServerMetrics {
-    const now = Date.now();
-    const uptime = now - this.startWall;
-    const cpu = process.cpuUsage(this.cpuBaseline);
-    const windowMs = now - this.metricsWindowStart;
-    return {
-      achievedHz: windowMs > 0 ? (this.ticksInWindow * 1000) / windowMs : 0,
-      maxTickMs: this.maxTickMs,
-      cpuPercentOfOneCore: windowMs > 0 ? ((cpu.user + cpu.system) / 1000 / windowMs) * 100 : 0,
+    const who = {
       clients: this.clients.size,
       players: this.host.players(),
       ghosts: this.host.seats(),
-      stateBytes: this.stateBytes,
-      maxStateBytes: this.maxStateBytes,
-      startedAtMs: this.startWall,
-      uptimeMs: uptime,
     };
+    return this.stats.snapshot(Date.now(), who);
   }
 
   resetMetricsWindow(): void {
-    this.metricsWindowStart = Date.now();
-    this.ticksInWindow = 0;
-    this.maxTickMs = 0;
-    this.maxStateBytes = 0;
-    this.cpuBaseline = process.cpuUsage();
+    this.stats.reset(Date.now());
   }
 
   port(): number {

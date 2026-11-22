@@ -18,6 +18,7 @@ import { toUint8Array } from './raw.js';
 
 export interface SpectatorOptions {
   url: string;
+  origin: string; // as the bots' (bot.ts)
   latencyMinMs: number;
   latencyMaxMs: number;
   bufferMs: number;
@@ -57,7 +58,7 @@ export class HeadlessSpectator {
       if (buf.byteLength < this.statesBytesMin) this.statesBytesMin = buf.byteLength;
       if (buf.byteLength > this.statesBytesMax) this.statesBytesMax = buf.byteLength;
     });
-    this.ws = new WebSocket(opts.url);
+    this.ws = new WebSocket(opts.url, { origin: opts.origin });
     this.ws.binaryType = 'arraybuffer';
     this.ws.on('open', () => {
       this.ws.send(JSON.stringify({ kind: 'spectator' }));

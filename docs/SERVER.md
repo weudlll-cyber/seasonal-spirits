@@ -7,25 +7,27 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 
 ## Files
 
-| File                    | What it holds                                                         |
-| ----------------------- | --------------------------------------------------------------------- |
-| `src/main.ts`           | Reads and validates the environment, starts the server                |
-| `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds, metrics      |
-| `src/tick-steps.ts`     | The steps due for the wall time passed, with the catch-up bound       |
-| `src/client-record.ts`  | One connected client: kind, socket, address, its message budget       |
-| `src/recap.ts`          | The match recap message every client gets when a match ends           |
-| `src/home-network.ts`   | The LAN mode's home network: its callers and the panel's origins      |
-| `src/index.ts`          | The package's exports for the probe                                   |
-| `src/test-client.ts`    | A raw WebSocket client for the server tests                           |
-| `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle          |
-| `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started   |
-| `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config     |
-| `src/wire.ts`           | Game state → wire state: per-ghost values, the arena, the team scores |
-| `src/http-routes.ts`    | `/metrics-lite` (loopback only), everything else 404                  |
-| `src/admin-settings.ts` | The admin settings endpoint and its one access check (`DEV_TUNING`)   |
-| `src/presets.ts`        | Named presets in the dev data folder, checked against the schema      |
-| `src/start-settings.ts` | The starting settings: defaults, a preset, the environment            |
-| `src/env.ts`            | `envInt`, `envChoice`, `refuseProduction` — shared with the probe     |
+| File                    | What it holds                                                           |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `src/main.ts`           | Reads and validates the environment, starts the server                  |
+| `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds                 |
+| `src/tick-metrics.ts`   | The server's numbers for `/metrics-lite` and the probe, by window       |
+| `src/origin-guard.ts`   | The pages that may open the WebSocket: their `Origin`, else 403         |
+| `src/tick-steps.ts`     | The steps due for the wall time passed, with the catch-up bound         |
+| `src/client-record.ts`  | One client: kind, socket, address, message budget, unsent-bytes bound   |
+| `src/recap.ts`          | The match recap message every client gets when a match ends             |
+| `src/home-network.ts`   | The LAN mode's home network: its callers and the panel's origins        |
+| `src/index.ts`          | The package's exports for the probe                                     |
+| `src/test-client.ts`    | A raw WebSocket client for the server tests                             |
+| `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle            |
+| `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started     |
+| `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config       |
+| `src/wire.ts`           | Game state → wire state: per-ghost values, the arena, the team scores   |
+| `src/http-routes.ts`    | `/metrics-lite` (loopback only), everything else 404                    |
+| `src/admin-settings.ts` | The admin settings endpoint and its one access check (`DEV_TUNING`)     |
+| `src/presets.ts`        | Named presets in the dev data folder, checked against the schema        |
+| `src/start-settings.ts` | The starting settings: defaults, a preset, the environment              |
+| `src/env.ts`            | `envInt`, `envChoice`, `envOrigin`, `refuseProduction` (with the probe) |
 
 ## The loop
 
@@ -87,7 +89,7 @@ docs/GAME-CORE.md); an award nobody earned is left out, and a client
 shows the kinds it knows. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
 field checked, at most 64 players and 8 awards, at most 4096 characters; THREATS row 33). Built in
-`src/recap.ts`; `src/client-record.ts` holds one client's record and message budget.
+`src/recap.ts`; `src/client-record.ts` holds one client's record, message budget and send bound.
 
 ## The state message (`packages/protocol/src/state.ts`)
 
@@ -117,10 +119,18 @@ gone; the probe runs of docs/PHASE0.md were measured with older layouts).
 
 ## Bounds and checks
 
-Every message passes `parseClientMessage` first; frames above 256 bytes are refused by the
+An upgrade is taken only from a page the game is served from (`src/origin-guard.ts`, owner
+decision 2026-11-22, docs/DECISIONS.md D2): its `Origin` must be the client's address on this
+machine (`CLIENT_PORT`, on `localhost` or `127.0.0.1`), in the LAN mode one of this machine's
+home-network addresses on that port (read from the network interfaces at start, never written
+down), or in website mode `WEBSITE_ORIGIN` (a bare origin, checked by `envOrigin`); anything
+else, a missing `Origin` too, gets 403 before it is a connection, each refused address logged
+once. Every message passes `parseClientMessage` first; frames above 256 bytes are refused by the
 WebSocket server; every message counts against 20 per second; a connection that has not
 said hello within 10 s is closed; connections are bounded per address (40 in development)
-and in total (twice the slots). The full list, with the test for each, is
+and in total (twice the slots); a client holding more than 256 KiB unsent (about 20 s of
+states at 32 ghosts) is closed with 1008 "send queue full" and sent nothing more, and its page
+shows the connection as gone. The full list, with the test for each, is
 [THREATS.md](THREATS.md).
 
 ## Environment

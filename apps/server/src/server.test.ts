@@ -11,6 +11,7 @@ import {
   ghostIn,
   nthState,
   player,
+  refusedStatus,
   serverText,
   startServer,
 } from './test-client.js';
@@ -168,6 +169,21 @@ describe('server connection bounds', () => {
     for (let i = 0; i < 8; i++) await connect(server);
     const ninth = await connect(server);
     expect(await closed(ninth)).toBe(1008);
+  });
+});
+
+describe('server Origin check (THREATS row 21b)', () => {
+  it('refuses an upgrade from a page the game is not served from with 403', async () => {
+    server = await startServer();
+    expect(await refusedStatus(server, 'http://other.example')).toBe(403);
+    // A near miss is no match either: another port of the same host.
+    expect(await refusedStatus(server, 'http://localhost:5931')).toBe(403);
+    expect(server.clientCount()).toBe(0);
+  });
+
+  it('refuses an upgrade without an Origin with 403', async () => {
+    server = await startServer();
+    expect(await refusedStatus(server, null)).toBe(403);
   });
 });
 

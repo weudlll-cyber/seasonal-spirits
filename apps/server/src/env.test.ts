@@ -2,7 +2,7 @@
 // Every server setting from the environment passes these checks before the server starts.
 
 import { describe, expect, it } from 'vitest';
-import { envChoice, envInt, refuseProduction } from './env.js';
+import { envChoice, envInt, envOrigin, refuseProduction } from './env.js';
 
 describe('envInt', () => {
   it('uses the fallback when the variable is unset or empty', () => {
@@ -28,6 +28,25 @@ describe('envChoice', () => {
     expect(envChoice({ HOST: '0.0.0.0' }, 'HOST', '127.0.0.1', hosts)).toBe('0.0.0.0');
     for (const raw of ['localhost', '192.168.1.5', '0.0.0.0 ', '::']) {
       expect(() => envChoice({ HOST: raw }, 'HOST', '127.0.0.1', hosts), raw).toThrow(/HOST/);
+    }
+  });
+});
+
+describe('envOrigin', () => {
+  it('takes a bare page origin and stops on a path, a slash, another scheme or no URL', () => {
+    expect(envOrigin({}, 'WEBSITE_ORIGIN')).toBeNull();
+    const site = 'https://games.example.org';
+    expect(envOrigin({ WEBSITE_ORIGIN: site }, 'WEBSITE_ORIGIN')).toBe(site);
+    for (const raw of [
+      `${site}/`,
+      `${site}/play`,
+      'ftp://games.example.org',
+      'games.example.org',
+      '*',
+    ]) {
+      expect(() => envOrigin({ WEBSITE_ORIGIN: raw }, 'WEBSITE_ORIGIN'), raw).toThrow(
+        /WEBSITE_ORIGIN/,
+      );
     }
   });
 });

@@ -3,7 +3,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { rotationOf } from '@seasonal-spirits/game-core';
-import { envChoice, envInt, refuseProduction } from './env.js';
+import { envChoice, envInt, envOrigin, refuseProduction } from './env.js';
 import { homeOrigins } from './home-network.js';
 import { PresetStore } from './presets.js';
 import { GameServer, type ServerConfig } from './server.js';
@@ -26,7 +26,19 @@ const presetDir =
 
 // Loopback only, unless `pnpm dev --lan` asks for the local network (a phone in the Wi-Fi).
 const host = envChoice(env, 'HOST', '127.0.0.1', ['127.0.0.1', '0.0.0.0']);
-const homeNetwork = admin && host === '0.0.0.0';
+const lan = host === '0.0.0.0';
+const homeNetwork = admin && lan;
+
+// The pages the game is served from (audit 2026-11-22 P1, owner decision 2026-11-22): the client's
+// address on this machine and, in the LAN mode, on its home-network addresses — the one
+// `pnpm dev --lan` prints is among them; read from the interfaces, never written down. In website
+// mode the website's page too (WEBSITE_ORIGIN). No other page may open the game's WebSocket.
+const localPages = [
+  `http://localhost:${clientPort}`,
+  `http://127.0.0.1:${clientPort}`,
+  ...(lan ? homeOrigins(clientPort) : []),
+];
+const website = envOrigin(env, 'WEBSITE_ORIGIN');
 
 // Every gameplay number, the rotation and the seats: the defaults, a preset, the environment
 // (start-settings.ts).
@@ -41,15 +53,13 @@ const cfg: ServerConfig = {
   // Room for 32 bots and a few viewers on one machine in development.
   maxConnectionsPerAddress: envInt(env, 'MAX_CONNECTIONS_PER_ADDRESS', 40, [1, 1000]),
   helloTimeoutMs: 10_000,
+  gameOrigins: website ? [...localPages, website] : localPages,
+  // About 20 s of states at 32 ghosts (592 bytes at 20 Hz, docs/SERVER.md) on top of what the
+  // operating system buffers: a client that takes none for that long is closed.
+  maxBufferedBytes: 262_144,
   devCors: true,
   firstSeed: envInt(env, 'SEED', 1, [0, 999_999_999]),
-  adminOrigins: admin
-    ? [
-        `http://localhost:${clientPort}`,
-        `http://127.0.0.1:${clientPort}`,
-        ...(homeNetwork ? homeOrigins(clientPort) : []),
-      ]
-    : null,
+  adminOrigins: admin ? localPages : null,
   adminHomeNetwork: homeNetwork,
   presetDir,
 };

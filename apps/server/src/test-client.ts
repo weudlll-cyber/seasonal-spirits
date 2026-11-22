@@ -11,6 +11,9 @@ import {
 } from '@seasonal-spirits/protocol';
 import { GameServer, type ServerConfig } from './server.js';
 
+// The page the tests' clients name; a raw ws client sends no Origin unless told.
+const TEST_ORIGIN = 'http://localhost:5930';
+
 // Four seats; a left player's seat goes back to a bot on the next tick.
 const TEST_CONFIG: ServerConfig = {
   port: 0,
@@ -20,6 +23,8 @@ const TEST_CONFIG: ServerConfig = {
   maxInputsPerSecond: 20,
   maxConnectionsPerAddress: 6,
   helloTimeoutMs: 10_000,
+  gameOrigins: [TEST_ORIGIN],
+  maxBufferedBytes: 262_144,
   devCors: true,
   firstSeed: 1,
 };
@@ -30,13 +35,35 @@ export async function startServer(over: Partial<ServerConfig> = {}): Promise<Gam
   return server;
 }
 
+// `origin` null: an upgrade without an Origin header, as a program sends it.
+function open(server: GameServer, origin: string | null): WebSocket {
+  const url = `ws://127.0.0.1:${server.port()}`;
+  return origin === null ? new WebSocket(url) : new WebSocket(url, { origin });
+}
+
 export function connect(server: GameServer): Promise<WebSocket> {
-  const ws = new WebSocket(`ws://127.0.0.1:${server.port()}`);
+  const ws = open(server, TEST_ORIGIN);
   return new Promise((resolve, reject) => {
     ws.once('open', () => {
       resolve(ws);
     });
     ws.once('error', reject);
+  });
+}
+
+// The HTTP status of an upgrade the server refuses (no socket is opened).
+export function refusedStatus(server: GameServer, origin: string | null): Promise<number> {
+  const ws = open(server, origin);
+  return new Promise((resolve, reject) => {
+    // Listening here replaces ws' own handling: the answer is read to its end, no error follows.
+    ws.once('unexpected-response', (_req, res) => {
+      resolve(res.statusCode ?? 0);
+      res.resume();
+    });
+    ws.once('error', reject);
+    ws.once('open', () => {
+      reject(new Error('the upgrade was accepted'));
+    });
   });
 }
 
