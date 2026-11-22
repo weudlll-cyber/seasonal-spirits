@@ -19,3 +19,12 @@ test-results/
 .claude/settings.local.json
 *.log
 *.tsbuildinfo
+# Playwright's HTML report and coverage output (screenshots and local paths inside), secrets in
+# .env files, agent worktrees and OS files (audit 2026-11-22, P8).
+playwright-report/
+coverage/
+.env
+.env.*
+.claude/worktrees/
+.DS_Store
+Thumbs.db
