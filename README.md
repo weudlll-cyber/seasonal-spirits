@@ -123,6 +123,8 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
 - [docs/THREATS.md](docs/THREATS.md) — what a cheating or broken client can try, the
   server's answer and the test for each.
 - [docs/BACKLOG.md](docs/BACKLOG.md) — OPEN / CLOSED / CHECKS DONE.
+- [docs/AUDIT-2026-11-22.md](docs/AUDIT-2026-11-22.md) — the full audit of `proto/sumo`: what was
+  checked, every finding, what was fixed and what needs the owner's word.
 
 ## Licence
 
