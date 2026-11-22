@@ -347,7 +347,7 @@ or touch (browsers allow sound only after a gesture).
   at the top, the podium as its reveal, the awards and the teams beside it on a desktop (under it
   on a phone), then the players and the bridge box below. The whole result fits the screen
   without scrolling (second night chain 2026-11-21, piece 4; its look in `frame/result.css`): the
-  kit measures both parts (`useFitScale`, `--fit`, the rest marked `data-fit-fixed`) and every
+  kit measures both parts (`useFitScale`, `--fit`, the rest marked `data-sk-fit-fixed`) and every
   size shrinks with it — the podium fastest, 190 px down to 60 px —, never below the 14 px text
   floor (the Seasonal Party floor the owner set on 2026-11-21; no `data-sk-game`, so the kit's
   strictest floors hold, the scale's floor Mini Games' 0.6, as the kit's `FIT_FLOORS` has no

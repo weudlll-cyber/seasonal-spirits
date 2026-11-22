@@ -5,7 +5,7 @@
 // 14 px text floor: no `data-sk-game`, so the kit's strictest floors apply; the scale's floor is
 // Mini Games' (0.6): the owner set the Seasonal Party floor at 14 px body text (2026-11-21), and
 // the kit's FIT_FLOORS has no Seasonal Party entry yet. The whole result is measured (the first
-// part and the rest, both `data-fit-fixed`), so it fits the screen; at the floor the players'
+// part and the rest, both `data-sk-fit-fixed`), so it fits the screen; at the floor the players'
 // list is the one named scroll area (result.css).
 
 import { ResultFrame } from '@seasonal/kit/react';
@@ -55,7 +55,7 @@ export function ResultCard(p: { readonly signature: string }): ReactElement {
         </>
       }
       more={
-        <div className="result-rest" data-fit-fixed="">
+        <div className="result-rest" data-sk-fit-fixed="">
           <h3 id="result-players-head">Players</h3>
           <div
             id="result-players-area"

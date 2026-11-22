@@ -13,7 +13,7 @@
     "@seasonal-spirits/game-core": "workspace:*",
     "@seasonal-spirits/protocol": "workspace:*",
     "@seasonal-spirits/render": "workspace:*",
-    "@seasonal/kit": "github:weudlll-cyber/seasonal-kit#v0.10.0",
+    "@seasonal/kit": "github:weudlll-cyber/seasonal-kit#v0.10.1",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

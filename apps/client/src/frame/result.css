@@ -38,7 +38,7 @@
 }
 
 /* The rest's bottom padding is its own wrapper's, not the kit's part's: the kit measures the
-   wrapper (`data-fit-fixed`), and padding below it read as room, so the list kept a few pixels
+   wrapper (`data-sk-fit-fixed`), and padding below it read as room, so the list kept a few pixels
    hidden (measured 2026-11-21). */
 #result .sk-result-more {
   flex: 0 1 auto;
