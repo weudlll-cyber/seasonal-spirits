@@ -75,8 +75,8 @@ export function lineFont(ctx: CanvasRenderingContext2D, line: string, room: numb
 }
 
 // The line to draw in `room` pixels, its font left set on `ctx`. Too long even at the smallest
-// size (a long mode's name on a phone beside the viewer's switch, review 2026-11-22): the next
-// season goes first, so the line is never cut off.
+// size (a long mode's name or a countdown on a phone beside the viewer's switch, 2026-11-22):
+// the short form goes in (statusLine), so the line is never cut off.
 export function fittedLine(ctx: CanvasRenderingContext2D, s: ServerState, room: number): string {
   const whole = statusLine(s);
   ctx.font = lineFont(ctx, whole, room);
@@ -86,7 +86,9 @@ export function fittedLine(ctx: CanvasRenderingContext2D, s: ServerState, room: 
   return short;
 }
 
-// `withNext` false leaves out "· next: <season>" when the whole line does not fit.
+// `withNext` false is the short form for where the whole line does not fit: no "· next: <season>",
+// and a countdown keeps only its words and time ("HALVING in 0:08" ran under the viewer's switch
+// on a phone, day chain 2026-11-22, final piece).
 export function statusLine(s: ServerState, withNext = true): string {
   const words = modeWords(s.mode);
   const next = seasonName(s.season + 1);
@@ -96,9 +98,11 @@ export function statusLine(s: ServerState, withNext = true): string {
   if (s.flags & STATE_OPEN_END)
     return `${name} · ${seasonName(s.season)} · ${mmss(s.matchMs)} played`;
   if (s.countdownMs !== null) {
+    const t = mmss(s.countdownMs);
+    if (!withNext) return toEnd ? `LAST CHANCE · ${t}` : `HALVING in ${t}`;
     return toEnd
-      ? `LAST CHANCE — ${words.lastChance} · ${mmss(s.countdownMs)}`
-      : `HALVING in ${mmss(s.countdownMs)} — ${words.countdown(next)}`;
+      ? `LAST CHANCE — ${words.lastChance} · ${t}`
+      : `HALVING in ${t} — ${words.countdown(next)}`;
   }
   const now = `${name} · ${seasonName(s.season)} · ${mmss(s.seasonLeftMs)}`;
   if (toEnd) return `${now} to the end`;

@@ -108,6 +108,19 @@ describe('clock status line on a narrow screen (owner 2026-11-17: band text cut 
     expect(fittedLine(ctx, s, 1894)).toBe(statusLine(s)); // room enough: the whole line
   });
 
+  // Day chain 2026-11-22, final piece: "HALVING in 0:08 — the arena halves, then Summer is in
+  // season" ran under the viewer's switch on a 390 px phone.
+  it("keeps a countdown to its words and time where it would run under the viewer's switch", () => {
+    const viewer = lineRoom(390, 64);
+    const halving = state({ countdownMs: 8000 });
+    expect(fittedLine(ctx, halving, viewer)).toBe('HALVING in 0:08');
+    // A countdown that fits stays whole.
+    const last = state({ countdownMs: 9000, flags: STATE_TO_END });
+    expect(fittedLine(ctx, last, viewer)).toBe('LAST CHANCE — push them off · 0:09');
+    expect(statusLine(last, false)).toBe('LAST CHANCE · 0:09'); // its short form
+    expect(fittedLine(ctx, halving, 1894)).toBe(statusLine(halving)); // room enough: whole
+  });
+
   it('keeps 13 px where the line fits', () => {
     expect(lineFont(ctx, 'Seasonal Sumo · Spring · 1:15 left', 1894)).toBe(
       '500 13px Fredoka, system-ui, sans-serif',
