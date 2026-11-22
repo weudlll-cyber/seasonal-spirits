@@ -48,7 +48,9 @@ start with `NODE_ENV=production`; the rules are tested in `apps/server`):
   192.168/16, also IPv4-mapped) — and only from the panel's page on one of this machine's own
   home-network addresses, read from its network interfaces (`home-network.ts`,
   `admin-settings.ts` `adminAccess`; `home-network.test.ts`, `admin-settings.test.ts`). Without
-  the LAN mode it stays loopback only; a public caller gets 404, another page 403. The game's own
+  the LAN mode it stays loopback only; a public caller gets 404, another page 403. The `Origin`
+  check stops other browser pages, not other programs: a device in the home network that writes
+  the header itself can call the endpoint in the LAN mode (audit 2026-11-22, P1). The game's own
   admin login replaces this check before the endpoint leaves development (docs/THREATS.md row
   39).
 
