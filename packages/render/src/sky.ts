@@ -168,14 +168,25 @@ function layer(
 const back = { current: null as Layer | null };
 const front = { current: null as Layer | null };
 
+// A canvas without a size (a window not laid out yet, an embed at 0 height) shows nothing, and
+// the browser's drawImage throws on an empty layer — which ended the client's frame loop for
+// good (day chain 2026-11-22 piece 2). So nothing is drawn until the canvas has a size.
+function drawLayer(
+  ctx: Ctx,
+  cache: { current: Layer | null },
+  paint: (ctx: Ctx, w: number, h: number, l: Look) => void,
+): void {
+  const { width, height } = ctx.canvas;
+  if (width === 0 || height === 0) return;
+  ctx.drawImage(layer(cache, width, height, paint), 0, 0);
+}
+
 // The whole canvas: the sky, the sun or the moon and the stars, the far islands, the sea.
 export function drawBackdrop(ctx: Ctx): void {
-  const { width, height } = ctx.canvas;
-  ctx.drawImage(layer(back, width, height, drawBack), 0, 0);
+  drawLayer(ctx, back, drawBack);
 }
 
 // The two big clouds low in front of the sea, over the island's rock.
 export function drawFrontClouds(ctx: Ctx): void {
-  const { width, height } = ctx.canvas;
-  ctx.drawImage(layer(front, width, height, drawFront), 0, 0);
+  drawLayer(ctx, front, drawFront);
 }
