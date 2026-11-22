@@ -21,6 +21,7 @@ import { rawToText, withinRate, type ClientRecord } from './client-record.js';
 import { handleHttp } from './http-routes.js';
 import { MatchHost } from './match-host.js';
 import { adminEndpoint, tuningText, type AdminSettings } from './admin-settings.js';
+import { stepsDue } from './tick-steps.js';
 
 export interface ServerConfig {
   port: number; // 0 picks a free port (tests); port() reports the bound one
@@ -125,14 +126,15 @@ export class GameServer {
     }, 1);
   }
 
-  // Drift correction: wall time accumulates, and as many fixed steps run as fit into it, so
-  // a late timer callback catches up instead of slowing the match down.
+  // Drift correction: wall time accumulates, and as many fixed steps run as fit into it, so a
+  // late timer callback catches up instead of slowing the match down — up to tick-steps.ts' bound.
   private tickLoop(): void {
     const stepMs = 1000 / this.cfg.tickHz;
     const now = Date.now();
-    this.accumulator += now - this.lastTickWall;
+    const due = stepsDue(this.accumulator, now - this.lastTickWall, stepMs);
+    this.accumulator = due.carryMs;
     this.lastTickWall = now;
-    while (this.accumulator >= stepMs) {
+    for (let i = 0; i < due.steps; i++) {
       const tickStart = Date.now();
       this.tickCount++;
       const wire = this.host.tick(stepMs);
@@ -152,7 +154,6 @@ export class GameServer {
       if (recap) this.sendToAll(JSON.stringify(recap));
       this.maxTickMs = Math.max(this.maxTickMs, Date.now() - tickStart);
       this.ticksInWindow++;
-      this.accumulator -= stepMs;
     }
   }
 

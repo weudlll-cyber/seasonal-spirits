@@ -11,6 +11,7 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 | ----------------------- | --------------------------------------------------------------------- |
 | `src/main.ts`           | Reads and validates the environment, starts the server                |
 | `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds, metrics      |
+| `src/tick-steps.ts`     | The steps due for the wall time passed, with the catch-up bound       |
 | `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle          |
 | `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started   |
 | `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config     |
@@ -24,7 +25,10 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 ## The loop
 
 `setInterval` at 1 ms with drift correction: wall time accumulates and as many 50 ms steps
-run as fit into it, so a late callback catches up instead of slowing the match. Each step:
+run as fit into it, so a late callback catches up instead of slowing the match. At most 1 s
+is caught up at once (`MAX_CATCH_UP_MS`): after a longer gap — the PC in standby, the process
+suspended — the rest is dropped and the match goes on where it stopped, instead of running
+every missed step in one go and answering no connection for minutes. Each step:
 the host advances one tick (`dt` = 50 ms — the game core has no clock of its own), the state
 is encoded once and sent to every client that has said hello.
 
