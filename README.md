@@ -104,6 +104,7 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
 
 - [CONCEPT.md](CONCEPT.md) — the concept, decided 2026-11-14.
 - [CLAUDE.md](CLAUDE.md) — working rules for Claude Code sessions in this repository.
+- [docs/DECISIONS.md](docs/DECISIONS.md) — the owner's numbered decisions from 2026-11-22 on.
 - [docs/PHASE0.md](docs/PHASE0.md) — what Phase 0 measures and why.
 - [docs/NIGHT-RUN.md](docs/NIGHT-RUN.md) — the launch recipe for an unattended night run.
 - [docs/GAME-CORE.md](docs/GAME-CORE.md) — the mechanics as built in `packages/game-core`.

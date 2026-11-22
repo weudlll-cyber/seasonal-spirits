@@ -73,7 +73,7 @@ start with `NODE_ENV=production`; the rules are tested in `apps/server`):
   (`vite/viewer-pages.ts`, `apply: 'serve'`); the client's LAN mode refused with `NODE_ENV=production`
   (`vite.config.ts`), the match server refusing it altogether (`main.ts` `refuseProduction`).
 - The embed: website mode is a build constant (`WEBSITE_MODE=1`), not a URL parameter; the
-  docked chat is the kit's `WebsiteChatFrame` for the fixed room `seasonal-party`, sandboxed; no
+  docked chat is the kit's `WebsiteChatFrame` for the fixed room `seasonal-party`, always sandboxed (the kit's own rule since v0.9.0); no
   message listener in the game.
 - Noticed, left: `CLIENT_PORT` and `SERVER_PORT` reach the client's Vite config through `Number()`
   unchecked. A bad value fails loudly (`ERR_SOCKET_BAD_PORT`, or a socket that does not connect)

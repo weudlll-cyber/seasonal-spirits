@@ -41,6 +41,8 @@ export const Bar = memo(function Bar(p: {
         </>
       }
       facts={[{ text: <Corner devAdmin={p.devAdmin} /> }]}
+      // No time in the bar: the clock is drawn on the field (render clock.ts).
+      time={null}
       actions={[]}
       panels={panels}
     />

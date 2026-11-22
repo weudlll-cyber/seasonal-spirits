@@ -129,7 +129,9 @@ or touch (browsers allow sound only after a gesture).
   its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the
   team line says "Out — watching" (short enough for a 390 px phone, 2026-11-19) until
   the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 78 px
-  (`BAND_HEIGHT`; 68 px before the kit's game bar, whose phone targets are 44 px).
+  (`BAND_HEIGHT`; 68 px before the kit's game bar). Its buttons are 44 px targets on every
+  screen (kit v0.10.0; 36 px on a desktop before), and a keyboard focus shows the kit's ring,
+  2 px in the text colour outside the control.
 - **The frame in React** (night chain 2026-11-21 piece 4; owner decision 2026-11-20: the frame
   comes from the kit; `src/frame/`, React 19.3.1, the kit's pinned peer): `Frame.tsx` renders
   once, synchronously, before the game's modules look their parts up by id, so they fill them
