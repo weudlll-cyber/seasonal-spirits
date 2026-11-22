@@ -4,8 +4,10 @@
 /* The frame around the play field takes the kit's look (owner decision 2026-11-20,
    @seasonal/kit tokens.css and fonts.css, imported in main.ts): its surface, text and scrim
    colours, light and dark on <html data-theme> (the kit's theme, render look-switch.ts),
-   and Luxora Grotesk for every frame text. The Sky Island stays inside the play field: the
-   sky, the ink outlines and drop shadows, Fredoka on the canvas. */
+   and Luxora Grotesk for every official text — the help, the start card, the result frame, the
+   kit's bar and chat. The Sky Island stays inside the play field: the sky, the ink outlines and
+   drop shadows, and Fredoka (--font-game) for the game's own texts — the canvas, the HUD over
+   the field (banner, score chips, hints), the Dash and Jump buttons (DECISIONS D7, kit K4). */
 :root {
   --ink: #2b2140;
   --panel: var(--color-surface);
@@ -18,6 +20,7 @@
   --veil: var(--color-scrim);
   --drop: 4px 4px 0 var(--ink);
   --rest: #ffffff; /* the Dash and Jump buttons' part still charging */
+  --font-game: Fredoka, system-ui, sans-serif;
 }
 /* Dark: the island at night; the frame's colours follow the kit's dark tokens. */
 :root[data-theme='dark'] {

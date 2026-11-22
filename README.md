@@ -132,8 +132,8 @@ AGPL-3.0-or-later. See [LICENSE](LICENSE).
 
 The fonts are not under this licence:
 
-- **Fredoka** (inside the play field): `@fontsource/fredoka` 5.3.0, SIL Open Font License 1.1,
+- **Fredoka** (the game's own texts, in and over the play field): `@fontsource/fredoka` 5.3.0, SIL Open Font License 1.1,
   "Copyright 2016 The Fredoka Project Authors"; its licence text is in that package.
-- **Luxora Grotesk** (the frame): from `@seasonal/kit`; its files name Fontastica as the
+- **Luxora Grotesk** (every official text: the frame, help, result, admin): from `@seasonal/kit`; its files name Fontastica as the
   copyright holder; the kit's `fonts/README.md` records the project's purchase and the owner's
   approval to ship it (kit DECISIONS K8). Not covered by the AGPL.

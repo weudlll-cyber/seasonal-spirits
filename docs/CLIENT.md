@@ -109,9 +109,13 @@ or touch (browsers allow sound only after a gesture).
   team choice: the server seats a player on a team.
 
 - **Top bar** (the frame in the kit's look, owner decision 2026-11-20: the kit's surface and text
-  colours with the island's ink outline and drop shadow, Luxora Grotesk from `@seasonal/kit`
-  for every page text; Fredoka, bundled with `@fontsource/fredoka`, for the canvas, loaded at
-  once by render `canvas-font.ts`; no request to a font service). The season clock: one line
+  colours with the island's ink outline and drop shadow). Fonts by DECISIONS D7 (kit K4): Luxora
+  Grotesk from `@seasonal/kit` for every official text — the help, the start card, the result
+  frame, the kit's bar with the team line and the corner, the chat, the admin panel; Fredoka,
+  bundled with `@fontsource/fredoka`, for the game's own texts — the canvas, and on the page the
+  banner, the score chips, the zone hint, the spectator's pill and the Dash and Jump buttons
+  (`--font-game`, `styles/base.css`), loaded at once by render `canvas-font.ts`; no request to a
+  font service. The season clock: one line
   in a small white pill at the top left (render `clock.ts`, 36 px `CLOCK_HEIGHT`; NIGHT
   2026-11-19 removed its row of season cells, which repeated the team pills) — a dot in the
   season's colour, the mode's name with sumo's variant, "Seasonal Sumo · Points" or "· Last One
@@ -414,7 +418,9 @@ touch):
   card and closed with "×", a key or a tap beside it;
 - `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello;
 - `e2e/result-fit.e2e.ts` (phone): the whole result, the bridge box included, fits 375 × 667,
-  390 × 844, 360 × 780 and 430 × 932, its text at 14 px or more.
+  390 × 844, 360 × 780 and 430 × 932, its text at 14 px or more;
+- `e2e/text-style.e2e.ts`: the fonts by DECISIONS D7 — the banner, score chips, zone hint and the
+  Dash and Jump buttons in Fredoka; the help, start card, team line and corner in Luxora Grotesk.
 
 Screenshots go to `reports/screens/latest/<spec>/` (git-ignored, like every screenshot under
 `reports/screens/`). Each spec's folder holds only its latest run (owner decision 2026-11-21:

@@ -17,6 +17,7 @@
   transform: translateX(-50%) rotate(-2deg);
   padding: 6px 18px;
   text-align: center;
+  font-family: var(--font-game);
   font-size: clamp(15px, 4vw, 22px);
   line-height: 1.2;
   font-weight: 700;
@@ -100,6 +101,7 @@
 #scores {
   display: flex;
   gap: 6px;
+  font-family: var(--font-game);
   font-size: 13px;
   font-weight: 600;
 }
@@ -163,6 +165,7 @@
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
+  font-family: var(--font-game);
   font-size: 13px;
   font-weight: 600;
   padding: 1px 10px;
@@ -193,6 +196,7 @@
 #notice.row {
   top: 115px;
   white-space: nowrap;
+  font-family: var(--font-game);
   font-size: 13px;
   font-weight: 600;
   padding: 1px 10px;

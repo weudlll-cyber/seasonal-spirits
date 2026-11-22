@@ -80,6 +80,7 @@ body.touch #actions {
   height: 96px;
   padding: 0;
   border-radius: 50%;
+  font-family: var(--font-game);
   font-size: 18px;
   border: 3px solid var(--ink);
   box-shadow: var(--drop);
