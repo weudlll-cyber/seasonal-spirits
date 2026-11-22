@@ -12,10 +12,10 @@ On `proto/sumo` the rough prototype **Seasonal Sumo** is built; the topics below
 Spirits wait.
 
 y. **Seasonal Sumo and its modes — the owner plays them** (NIGHT 2026-11-17, on
-`proto/sumo`, not merged). `pnpm dev` plays Sumo only, its two variants in turn — Points and
-Last One Standing (LIVES 2026-11-17, 3 lives); `GAME_MODE=rotate pnpm dev` brings in King of
-the Season (3:00) and Halving Bomb (3:00). The feel and the rules of Sumo are tuned live with
-the viewer's panel (arena size, walking speed, dash, push; lives, variant, after the last
+`proto/sumo`, not merged). `pnpm dev` plays every mode in turn — Sumo's two variants, Points and
+Last One Standing (LIVES 2026-11-17, 3 lives), King of the Season (3:00) and Halving Bomb (3:00)
+(`scripts/dev.mjs`, `GAME_MODE=rotate` unless a preset or `GAME_MODE` says otherwise). The feel
+and the rules of Sumo are tuned live with the admin panel at `/admin/` (arena size, walking speed, dash, push; lives, variant, after the last
 season, keep-halving interval; the jump on/off, its time in the air and cooldown; starting
 values arena 25 ghost diameters, top speed 240, dash 480, push 320, 3 lives, stop at the time
 limit, 75 s, jump on, 0.5 s, 3 s). Done when: the owner has played all
@@ -87,12 +87,13 @@ tag v0.1.0 (merge commit `920f983`) holds:
 - `sk-` motion;
 - the theme logic, with its early script and Vite plugin.
 
-Fonts stay in the games until their licence is confirmed (kit BACKLOG 7). Still open:
+Since then the kit holds the fonts (v0.2.0; kit BACKLOG 7 closed, DECISIONS K8, kept as they are
+by K26), the sign-in helpers and the chat embed (v0.3.0), the call-view slot (v0.3.0), the server
+sign-in and 2FA (v0.8.0), the header and the dev tools (v0.9.0). Still open in the kit:
 
-- the sign-in helpers and the chat embed, client side;
-- the call-view slot (waits for the website);
-- the server sign-in and 2FA merge;
-- adopting the kit in Mini Games, then Bingo Royale, then Seasonal Party.
+- framing the website's call view in the slot (waits for the website's page; kit BACKLOG 8);
+- adopting the kit in Mini Games and Bingo Royale (kit BACKLOG 5); Seasonal Party has taken it on
+  `proto/sumo` (below).
 
 For Seasonal Party, the kit gives the frame around the play field: bars, chat, start card,
 result page and fonts. The island look and its round font stay inside the field (kit DECISIONS
@@ -1462,6 +1463,23 @@ review:capture` at `e1a0ddb`, all four games, desktop 1536 × 768, big 1920 × 1
   name; on a phone in website mode the link (156 px) leaves the team line only its dot — the
   same width as before, as the bar keeps one row.
 
+- 2026-11-22 — **The open list checked against the tree** (day chain 2026-11-22, piece 4). Every
+  OPEN item's names, files and values looked up in the whole tree (`git grep`, all spellings);
+  the Spirits items against `origin/master` and the tag `v5-prototype`, where their code lives.
+  Two items were stale and are corrected: y said `pnpm dev` plays Sumo only and the panel is the
+  viewer's — it plays every mode in turn (`scripts/dev.mjs`) and the panel is `/admin/`; ak said
+  the fonts stay in the games until their licence is confirmed and listed the sign-in helpers,
+  the chat embed, the call slot and the server sign-in as open — the kit holds all of them (v0.2.0
+  to v0.9.0; kit BACKLOG 7 closed, K8, K26), and its open parts are the call view (kit BACKLOG 8)
+  and adopting the kit in Mini Games and Bingo Royale (kit BACKLOG 5; neither pins it on its
+  master). Checked and true: y's starting values (arena radius 400 = 25 diameters of a 16 radius,
+  240, 480, 320, 3 lives, 75 s, jump 0.5 s / 3 s), af's endpoint (`ADMIN_SETTINGS_PATH`) and
+  `adminAccess`, ad's `edgeShare`, ag's `MAX_TILT` 0.9, ak's note that the kit's `FIT_FLOORS` has
+  no Seasonal Party entry (still only `mini-games` and `bingo` at v0.10.0), a's files, b2's, h's
+  and r's names on `master`, u's `shrineLabelAt` on `v5-prototype`. There is no `docs/OPEN.md` in
+  this repository (the kit has one); none was added. Noticed for the docs audit: README lines 12,
+  58 and 85 say the same stale things about `pnpm dev`.
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                                                                                                                                                                                                                                      | Tree or commit                                                                                                                            | Result                                                                                                                                                                                                                                                                                                                                                                                                                | Evidence                                                                                       |
@@ -1977,3 +1995,5 @@ review:capture` at `e1a0ddb`, all four games, desktop 1536 × 768, big 1920 × 1
 | 2026-11-22 | local probe: the corner's controls at 1536 × 768 on `pnpm dev`, sizes and the keyboard focus                                                                                                                                                                                                                                                                                                               | piece 3 working tree                                                                                                                      | toggle, "?", sound 44 px high (36 px before for "?" and sound); the kit's ring 2 px solid, offset 2 px                                                                                                                                                                                                                                                                                                                | this commit                                                                                    |
 | 2026-11-22 | local probe: a website-mode client (`WEBSITE_MODE=1`), 1536 × 768 and 390 × 844                                                                                                                                                                                                                                                                                                                            | piece 3 working tree                                                                                                                      | back link 156 × 44, 14 px words, the bar 44 px, no sideways scroll; the arrow's space gone; on the phone the team line down to its dot                                                                                                                                                                                                                                                                                | this commit                                                                                    |
 | 2026-11-22 | `pnpm e2e` (desktop and phone)                                                                                                                                                                                                                                                                                                                                                                             | piece 3 working tree                                                                                                                      | 15 passed, 5 skipped (by design), 12.0 min (CPU at 100 % from other projects)                                                                                                                                                                                                                                                                                                                                         | this commit                                                                                    |
+| 2026-11-22 | every OPEN item against the tree: `git grep` for each name, file and value; the Spirits items on `origin/master` and `v5-prototype`; the kit's BACKLOG, DECISIONS and `fit.ts` at `v0.10.0`; Mini Games' and Bingo Royale's `package.json` on their master (read-only)                                                                                                                                     | `f81dd54`                                                                                                                                 | y and ak stale (corrected); the rest true; no `docs/OPEN.md` here                                                                                                                                                                                                                                                                                                                                                     | this commit                                                                                    |
+| 2026-11-22 | format check of the changed docs (docs only: no tests, no typecheck)                                                                                                                                                                                                                                                                                                                                       | piece 4 working tree                                                                                                                      | clean                                                                                                                                                                                                                                                                                                                                                                                                                 | this commit                                                                                    |
