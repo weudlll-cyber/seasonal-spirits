@@ -42,6 +42,9 @@ countdown, the end and the recap frame are built once; a mode only adds its own 
 | `src/bots/human.ts`       | The human-like layer every bot plays through (`createBot`)                     |
 | `src/human/perception.ts` | What a bot sees: the whole playing area, a reaction time late                  |
 | `src/simulation.ts`       | One full bot match with the sanity list; `src/simulate.ts` is `pnpm simulate`  |
+| `src/cli-args.ts`         | `pnpm simulate`'s arguments, checked in one place                              |
+| `src/rng.ts`              | The seeded random source (`mulberry32`) of the game and the probe bots         |
+| `src/index.ts`            | The package's exports                                                          |
 
 Removed on this branch, because Sumo does not use them: coins, prices, shrines, securing,
 the price board, the team check (`pnpm balance`), the fairness search and the human
@@ -158,11 +161,11 @@ countdown.
 - **Falling.** A ghost whose centre leaves the arena falls: +1 knockout for the last opponent
   that touched it within `creditMs`, and for its team; nobody scores without one. It falls
   for `fallMs` (the animation), is out until `outMs` after the fall, then respawns on its
-  team's quarter (`RESPAWN_BAND`: a quarter wide, from 0.25 to 0.75 of the radius, drawn
+  team's quarter (`respawnBand`, the settings `respawnInner`/`respawnOuter`: a quarter wide, from 0.25 to 0.75 of the radius, drawn
   faintly for a player while out) at the freest of a few seeded spots, protected for `protectMs` (nothing
   pushes it, it pushes nothing).
 - **Halving** at 1:15, 2:30 and 3:45: the next season comes into season and the arena's area
-  halves (radius × 1/√2: 400 → 283 → 200 → 141); the edge eases in over `arenaShrinkMs`
+  halves (radius × `sumo.shrink`, 0.71: 400 → 284 → 202 → 143); the edge eases in over `arenaShrinkMs`
   (slow, fast, slow). A ghost the edge passes under falls. During the 10 s countdown the
   clients draw the edge after the halving (`nextRadius`) as a dashed ring.
 - **End.** Points: the team with the most knockouts wins; Last One Standing: see "Lives and
@@ -234,7 +237,7 @@ carrier within two dash ranges, bending towards the middle so they do not pin th
 wall, and else walk to their wander point. Sumo (`botIntent`): near the edge back inward — within
 its own `bots.edgeMargin` (140, with its slack), but at most `bots.edgeShare` (0.35) of the
 edge's radius, never less than a ghost radius (`edgeMargin`): the full arena (400) keeps 140,
-the last halving's arena (141) 49 (FIX 2026-11-17-4; 140 there left the bots only its middle and
+the last halving's arena (143) 50 (FIX 2026-11-17-4; 140 there left the bots only its middle and
 Last One Standing without a time limit did not end; 0.15 of the radius everywhere ended every
 match by elimination at 2–4 min) —; otherwise to the
 nearest opponent it can push, approaching a little from the side of its own wander point

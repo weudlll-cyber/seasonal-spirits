@@ -12,6 +12,11 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 | `src/main.ts`           | Reads and validates the environment, starts the server                |
 | `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds, metrics      |
 | `src/tick-steps.ts`     | The steps due for the wall time passed, with the catch-up bound       |
+| `src/client-record.ts`  | One connected client: kind, socket, address, its message budget       |
+| `src/recap.ts`          | The match recap message every client gets when a match ends           |
+| `src/home-network.ts`   | The LAN mode's home network: its callers and the panel's origins      |
+| `src/index.ts`          | The package's exports for the probe                                   |
+| `src/test-client.ts`    | A raw WebSocket client for the server tests                           |
 | `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle          |
 | `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started   |
 | `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config     |
@@ -129,7 +134,7 @@ and in total (twice the slots). The full list, with the test for each, is
 | `MAX_CONNECTIONS_PER_ADDRESS` | 40        | 1–1000                                          |
 | `SEED`                        | 1         | 0–999999999                                     |
 | `HOST`                        | 127.0.0.1 | `127.0.0.1` or `0.0.0.0` (`pnpm dev --lan`)     |
-| `GAME_MODE`                   | sumo      | `sumo` (`pnpm dev`), `hill`, `bomb` or `rotate` |
+| `GAME_MODE`                   | —         | `sumo`, `hill`, `bomb` or `rotate` (`pnpm dev`) |
 | `SUMO_VARIANT`                | points    | `points`, `last-standing` or `alternate` (dev)  |
 | `SUMO_LIVES`                  | 3         | 1–9 (the browser specs: 9)                      |
 | `SEASON_SECONDS`              | 75        | 15–75: four seasons in every mode (tests)       |
@@ -139,8 +144,9 @@ and in total (twice the slots). The full list, with the test for each, is
 | `PRESET`                      | —         | a saved preset's name to start with             |
 | `CLIENT_PORT`                 | 5930      | 1–65535 (its `/admin/` page may tune)           |
 
-Other game numbers are not environment variables: they live in
-`packages/game-core/src/config.ts`. The whole server is development only (it refuses
+Other game numbers are not environment variables: they are settings in
+`packages/game-core/src/settings-list.ts` (the table: [SETTINGS.md](SETTINGS.md)); unset, `GAME_MODE`
+leaves the settings' rotation (Sumo). The whole server is development only (it refuses
 `NODE_ENV=production`), the short match and the LAN address with it.
 
 ## `/metrics-lite`

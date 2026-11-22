@@ -1,7 +1,7 @@
 # The player client (`apps/client`) — Seasonal Sumo prototype
 
-Plain TypeScript, Canvas 2D and Vite, no game framework. It sends a direction and the one
-action, Dash; everything it shows comes from the server's state message (docs/SERVER.md).
+Plain TypeScript, Canvas 2D and Vite, no game framework. It sends a direction and the two
+actions, Dash and Jump; everything it shows comes from the server's state message (docs/SERVER.md).
 Development mode only: there is no sign-in yet. On `proto/sumo` it plays Seasonal Sumo and
 its sister modes, King of the Season and Halving Bomb (docs/GAME-CORE.md "Game modes"); the
 mode comes with every state, and field, clock, help, banner and result follow it. Seasonal
@@ -33,6 +33,10 @@ Spirits' client is on `master`.
 | `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                             |
 | `src/sound-events.ts`      | Which sounds a new state calls for                                                          |
 | `src/config.ts`            | Bridge box on/off and its links                                                             |
+| `vite/viewer-pages.ts`     | Development only: the viewer at /viewer/ and the admin panel at /admin/ on this address     |
+| `vite/dev-admin.ts`        | Development only: whether the game shows its "Admin" link                                   |
+| `vite.config.ts`           | The dev server and build: ports, the LAN mode, the kit's theme script, website mode         |
+| `index.html`               | The page: the canvas, the band, the controls, the screens, the CSS links                    |
 | `e2e/`                     | Playwright config, helpers and the specs                                                    |
 | `packages/render` (shared) | What client and viewer share: island, characters, clock, words, the look switch             |
 
@@ -408,7 +412,9 @@ touch):
   apart, the own one "You", no bot named outside the top three;
 - `e2e/help.e2e.ts`: the help on the first visit with its rules and drawings, scrolled on the
   card and closed with "×", a key or a tap beside it;
-- `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello.
+- `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello;
+- `e2e/result-fit.e2e.ts` (phone): the whole result, the bridge box included, fits 375 × 667,
+  390 × 844, 360 × 780 and 430 × 932, its text at 14 px or more.
 
 Screenshots go to `reports/screens/latest/<spec>/` (git-ignored, like every screenshot under
 `reports/screens/`). Each spec's folder holds only its latest run (owner decision 2026-11-21:

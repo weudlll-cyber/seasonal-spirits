@@ -30,8 +30,9 @@ export function settingsDoc(): string {
   return [
     '# Settings',
     '',
-    'Generated from `packages/game-core/src/settings.ts` by `pnpm settings:doc` — do not edit by',
-    'hand. Every number that shapes play; all placeholders the owner sets in the admin panel.',
+    'Generated from `packages/game-core/src/settings-list.ts` (the settings) and `settings.ts` (the',
+    'numbers that are not settings) by `pnpm settings:doc` — do not edit by hand. Every number that',
+    'shapes play; all placeholders the owner sets in the admin panel.',
     '',
     ...groups.flatMap((g) => [g, '']),
     '## Numbers in game-core that are not settings',

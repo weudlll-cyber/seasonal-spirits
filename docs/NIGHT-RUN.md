@@ -18,8 +18,8 @@ A Claude Code session running unattended (`dontAsk` permission mode) uses this r
 1. Reads `night-task.md` and `CONCEPT.md` completely before any tool call.
 2. Works piece by piece. Each piece ends with a `git commit` + `git push`; a heartbeat
    commit every 45 minutes when a piece is long.
-3. Writes the morning sheet at `reports/night-<YYYY-MM-DD>.md`. Sections: `DONE`,
-   `RUNNING`, `OPEN`, `NEEDS OWNER`. The last two are rewritten completely every time, not
+3. Writes the morning sheet at `reports/night-<YYYY-MM-DD>.md`. Sections as the task names
+   them; without such a word: `DONE`, `RUNNING`, `OPEN`, `NEEDS OWNER`. The last two are rewritten completely every time, not
    appended to. The sheet is pushed after every piece.
 4. One-off scripts live under `tmp/` (git-ignored) and are deleted at the end of the step
    that needed them.
@@ -28,8 +28,9 @@ A Claude Code session running unattended (`dontAsk` permission mode) uses this r
 
 ## Starting and stopping long-running processes
 
-- Start detached on Windows:
-  `powershell -NoProfile -Command Start-Process node -ArgumentList 'apps/server/dist/main.js' -WindowStyle Hidden`
+- Start the game server and client detached, on every system: `pnpm dev` (`scripts/dev.mjs`;
+  stop them with `pnpm dev:stop`). Any other process on Windows:
+  `powershell -NoProfile -Command Start-Process node -ArgumentList '<script>' -WindowStyle Hidden`
 - Stop by port:
   `powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 3930 -State Listen | %{ Stop-Process -Id $_.OwningProcess -Force }"`
 
@@ -49,4 +50,5 @@ container; the run sheet is in [PHASE0.md](PHASE0.md).
 - Morning sheet is final: `DONE` (with commits), `RUNNING` (the URLs), `OPEN`, `NEEDS
 OWNER`.
 - `git ls-remote origin` confirms the branches are on GitHub. Nothing is merged tonight.
-- Server and viewer stay running on their configured ports; URLs are in the morning sheet.
+- Server and client stay running on their configured ports (the client also serves /viewer/ and
+  /admin/); URLs are in the morning sheet.

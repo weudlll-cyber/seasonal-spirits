@@ -119,8 +119,8 @@ a. **Safety net — owner part.** CodeQL, osv-scanner and Renovate are in the re
 requests, and the Renovate app. Done when: all four are on and a test push of a fake
 secret is refused.
 
-b2. **Game-core placeholders.** The values marked `placeholder — owner decides` in
-`packages/game-core/src/config.ts` (list in [GAME-CORE.md](GAME-CORE.md)), among them since
+b2. **Game-core placeholders** (Seasonal Spirits, on `master`). The values marked `placeholder —
+owner decides` in `packages/game-core/src/config.ts` on `master` (list in its GAME-CORE.md), among them since
 2026-11-15 `bots.waypointMs`, `ghostRadius`, `ghostGrowthPerCoin`, `ghostGrowthMax` and
 `coinRadius` (the swap, steal and signal placeholders went with V5). Done when: the owner has
 decided each and config.ts carries the source.
@@ -176,7 +176,8 @@ when: the owner has decided whether and how.
 r. **A human against bots** (owner's observation 2026-11-16: almost impossible to collect
 coins; groups at the shrines). Measured (BALANCE.md "Human round 1" and "Response"); the bot
 trial switches T1–T4 were removed unused (owner decision 2026-11-16, CLOSED); the human
-stand-in (`pnpm human`) and the latency tool (`pnpm latency`) stay as measurement tools. The
+stand-in (`pnpm human`) and the latency tool (`pnpm latency`) stay as measurement tools on
+`master` (removed on `proto/sumo`). The
 responsive client (own ghost predicted, display only; direction sent at once; coins from the
 newest state: 113 ms → 8 ms from a key to the drawn movement) is merged into `master`
 (CLOSED). New placeholders in the client: `SEND_GAP_MS` (60), `PREDICTION_LAG_MS` (40),
