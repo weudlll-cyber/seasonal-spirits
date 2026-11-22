@@ -1,0 +1,268 @@
+/* Seasonal Sumo — The play screen's overlays: the banner, the band with the team line, scores and lives,
+   the hints, the sound switch and the corner (hud.ts, scene.ts, frame/Bar.tsx). */
+
+/* The halving, the bombs' blast and the match end (hud.ts): a red banner, slightly tilted,
+   at the top edge of the play area right under the band — never over the middle of the
+   field (NIGHT 2026-11-18); with the flash and the tone, the clock's countdown stays above
+   it. White text on the red at 4.5:1 or more (--alert), with an ink edge. */
+#announce {
+  position: fixed;
+  top: 122px;
+  left: 50%;
+  width: max-content;
+  /* Never wider than the screen minus 16 px, padding and border included; on a phone the
+     text shrinks to at most two lines (banner-fit.ts, 2026-11-19: it ran past both edges). */
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  transform: translateX(-50%) rotate(-2deg);
+  padding: 6px 18px;
+  text-align: center;
+  font-size: clamp(15px, 4vw, 22px);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow:
+    -1.5px -1.5px 0 #2b2140,
+    1.5px -1.5px 0 #2b2140,
+    -1.5px 1.5px 0 #2b2140,
+    1.5px 1.5px 0 #2b2140;
+  background: var(--alert);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--drop);
+  pointer-events: none;
+}
+#flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+#flash.go {
+  animation: flash 450ms ease-out;
+}
+@keyframes flash {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* Under the canvas season clock (36 px, render clock.ts CLOCK_HEIGHT): the band, 78 px (scene.ts BAND_HEIGHT; 68
+   px before the kit's game bar, whose phone targets are 44 px), with the kit's game bar
+   (frame/Bar.tsx: the team line, the lives, the corner buttons) and below it the team
+   scores. No control sits
+   on the field (owner's play test 2026-11-15); the team line shrinks or ends in "…"
+   before it reaches the buttons. */
+#band {
+  position: fixed;
+  top: 36px;
+  left: 0;
+  right: 0;
+  height: 78px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+}
+#band-top {
+  min-width: 0;
+}
+#band-top .sk-game-bar {
+  gap: 8px;
+}
+/* The corner on the right; the bar has no panel buttons. */
+#band-top .sk-bar-fact:has(> #corner) {
+  margin-left: auto;
+}
+#band-top .sk-bar-actions {
+  display: none;
+}
+/* A team's colour dot before its name (the team line, the score chips). */
+.dot::before {
+  content: '';
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: var(--team);
+  border: 2px solid var(--ink);
+  vertical-align: -0.05em;
+}
+/* The team scores: one white pill per team with its colour dot, name and score, in sumo its
+   ghosts still in; the leader outlined in its colour (scores.ts). Four fit a 390 px
+   phone. */
+#scores {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+#scores .score {
+  flex: 1;
+  text-align: center;
+  padding: 1px 4px;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--drop);
+  white-space: nowrap;
+}
+#scores .score.lead {
+  outline: 4px solid var(--team);
+}
+#team {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(15px, 4.6vw, 20px);
+  font-weight: 700;
+  padding: 1px 12px;
+  background: var(--panel);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--drop);
+}
+/* The own lives next to the team line (lives.ts): red circles, a lost one white. */
+#hearts {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--panel-text);
+}
+#hearts .heart {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--alert);
+  border: 2px solid var(--ink);
+  transition: background-color 0.8s;
+}
+#hearts .heart.lost {
+  background: #ffffff;
+}
+/* King of the Season: "Stand in the zone to score" while the own ghost is outside the zone
+   (zone-hint.ts), a small pill in its own row under the band (the field starts below it,
+   scene.ts fieldTop) in the team line's style; hidden while a banner shows. */
+#announce:not([hidden]) ~ #band #hint {
+  visibility: hidden;
+}
+#hint {
+  position: fixed;
+  top: 115px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 1px 10px;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--drop);
+  pointer-events: none;
+}
+#notice {
+  position: fixed;
+  top: 178px; /* below the banner (#announce) */
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--drop);
+  padding: 8px 14px;
+  max-width: 90vw;
+  text-align: center;
+}
+/* A spectator's notice: a pill like #hint in the row under the band (scene.ts fieldTop),
+   never over the back fence or the zone (2026-11-19); hidden while a banner shows. */
+#announce:not([hidden]) ~ #notice.row {
+  visibility: hidden;
+}
+#notice.row {
+  top: 115px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 1px 10px;
+  border-width: 2px;
+  border-radius: 999px;
+}
+/* The Sound switch as a round note wherever the kit's bar takes its phone layout (44 px
+   buttons, no words shown: under 900 px wide or upright, kit bar.css), struck through when
+   off; its words stay for screen readers (NIGHT 2026-11-19; piece 4 2026-11-21). The gaps
+   narrower there, so the team line keeps its room beside the 44 px buttons. */
+@media (max-width: 899px), (orientation: portrait) {
+  #band-top .sk-game-bar,
+  #band-top #corner {
+    gap: 4px;
+  }
+  #corner #mute {
+    font-size: 0;
+  }
+  #mute::before {
+    content: '\266A';
+    font-size: 15px;
+  }
+  #mute[aria-pressed='true']::before {
+    text-decoration: line-through;
+  }
+}
+/* After a fall the line holds a whole and a short form (team-line.ts); one shows. */
+#team .short {
+  display: none;
+}
+@media (max-width: 480px) {
+  #team .lead,
+  #team .long,
+  #scores .name {
+    display: none;
+  }
+  /* "Back in 3" here: the whole line ran into "…" before its seconds (review 2026-11-22). */
+  #team .short {
+    display: inline;
+  }
+  /* A little smaller on a phone, so the team's name fits beside the lives. */
+  #team {
+    font-size: 15px;
+    padding: 1px 8px;
+  }
+  #hearts .heart {
+    width: 11px;
+    height: 11px;
+  }
+}
+/* The corner (frame/Bar.tsx): the kit's theme toggle and bar buttons ("?", the sound), in
+   the kit's look, not the island's ink. */
+#corner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#corner .sk-bar-button,
+#corner .sk-theme-toggle {
+  padding-block: 0;
+  box-shadow: none;
+  font-weight: 600;
+}
+#corner .sk-theme-toggle {
+  padding: 0;
+}
+/* The dev build's "Admin" link (frame/Bar.tsx; chain 2026-11-21): plain, in the corner, at
+   the 14 px floor (review 2026-11-22: it was 12 px). */
+#corner #admin {
+  font-size: 14px;
+  font-weight: 400;
+  color: inherit;
+}

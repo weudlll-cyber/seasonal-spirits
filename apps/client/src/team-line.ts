@@ -5,28 +5,38 @@
 import { seasonColour, seasonName } from '@seasonal-spirits/render';
 import { el } from './hud.js';
 import { OUT_LINE } from './lives.js';
-import { fellLine } from './own-marker.js';
+import { backLine, fellLine } from './own-marker.js';
+
+const span = (className: string, text: string): HTMLSpanElement => {
+  const s = document.createElement('span');
+  s.className = className;
+  s.textContent = text;
+  return s;
+};
 
 export class TeamLine {
   private readonly line = el('team');
 
-  // On a narrow phone "You are " is hidden (index.html), so the team's name is never cut off.
-  // While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3);
-  // out of lives, that it watches until the next match (LIVES 2026-11-17).
+  // On a narrow phone "You are " is hidden (styles/hud.css), so the team's name is never cut off.
+  // While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3) —
+  // the whole line and a short one, the phone showing the short (review 2026-11-22); out of
+  // lives, that it watches until the next match (LIVES 2026-11-17).
   show(team: number | null, backInMs: number | null, out: boolean): void {
     const line = this.line;
     line.hidden = team === null;
     if (team !== null && (out || backInMs !== null)) {
-      line.textContent = out ? OUT_LINE : fellLine(backInMs ?? 0);
-      line.style.setProperty('--team', seasonColour(team));
+      const text = out ? OUT_LINE : fellLine(backInMs ?? 0);
       delete line.dataset.team;
+      if (line.dataset.line === text) return; // the same second: nothing to redraw
+      line.dataset.line = text;
+      if (out) line.textContent = text;
+      else line.replaceChildren(span('long', text), span('short', backLine(backInMs ?? 0)));
+      line.style.setProperty('--team', seasonColour(team));
       return;
     }
     if (team === null || line.dataset.team === String(team)) return;
-    const lead = document.createElement('span');
-    lead.className = 'lead';
-    lead.textContent = 'You are ';
-    line.replaceChildren(lead, `Team ${seasonName(team)}`);
+    delete line.dataset.line;
+    line.replaceChildren(span('lead', 'You are '), `Team ${seasonName(team)}`);
     line.style.setProperty('--team', seasonColour(team));
     line.dataset.team = String(team);
   }

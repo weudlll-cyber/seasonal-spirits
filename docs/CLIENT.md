@@ -9,31 +9,32 @@ Spirits' client is on `master`.
 
 ## Files
 
-| File                       | What it holds                                                                     |
-| -------------------------- | --------------------------------------------------------------------------------- |
-| `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook     |
-| `src/scene.ts`             | One canvas frame: sky, the camera on the whole island, ghosts, labels, clock      |
-| `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys      |
-| `src/scores.ts`            | The team pills in the band: score and ghosts still in per team, the leader ringed |
-| `src/lives.ts`             | The own lives as red circles in the band; "You are out — watching"                |
-| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, settings   |
-| `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated     |
-| `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server  |
-| `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown               |
-| `src/input.ts`             | Keyboard (WASD/arrows, Space to dash, Shift to jump) and the touch joystick       |
-| `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute |
-| `src/banner-fit.ts`        | The halving banner's text shrunk to at most two lines on a narrow screen          |
-| `src/result.ts`            | Result screen: the podium, the mode's awards, scores per team and player, bridge  |
-| `src/frame/`               | The frame in React with the kit's blocks: game bar, result frame, docked chat     |
-| `src/start.ts`             | The start screen while the client joins                                           |
-| `src/follow.ts`            | The phone's follow camera in King and Bomb, eased                                 |
-| `src/team-line.ts`         | The band's team line: "You are Team …", the fall's countdown, out                 |
-| `src/zone-hint.ts`         | King's hint "Stand in the zone to score" while outside the zone                   |
-| `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                   |
-| `src/sound-events.ts`      | Which sounds a new state calls for                                                |
-| `src/config.ts`            | Bridge box on/off and its links                                                   |
-| `e2e/`                     | Playwright config, helpers and the specs                                          |
-| `packages/render` (shared) | What client and viewer share: island, characters, clock, words, the look switch   |
+| File                       | What it holds                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook               |
+| `src/scene.ts`             | One canvas frame: sky, the camera on the whole island, ghosts, labels, clock                |
+| `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys                |
+| `src/scores.ts`            | The team pills in the band: score and ghosts still in per team, the leader ringed           |
+| `src/lives.ts`             | The own lives as red circles in the band; "You are out — watching"                          |
+| `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, settings             |
+| `src/input-sender.ts`      | When the direction goes out: at once on a change, 60 ms apart, never repeated               |
+| `src/prediction.ts`        | Where the own ghost is drawn: by the own input and dash, corrected to the server            |
+| `src/own-marker.ts`        | When the own ghost pulses, and the "You fell — back in N" countdown                         |
+| `src/input.ts`             | Keyboard (WASD/arrows, Space to dash, Shift to jump) and the touch joystick                 |
+| `src/hud.ts`               | Dash and Jump buttons with cooldown rings, announcements and flash, notices, mute           |
+| `src/banner-fit.ts`        | The halving banner's text shrunk to at most two lines on a narrow screen                    |
+| `src/result.ts`            | Result screen: the podium, the mode's awards, scores per team and player, bridge            |
+| `src/frame/`               | The frame in React with the kit's blocks: game bar, result frame, docked chat               |
+| `src/styles/`              | The page's own CSS, linked from `index.html` in cascade order: base, controls, hud, screens |
+| `src/start.ts`             | The start screen while the client joins                                                     |
+| `src/follow.ts`            | The phone's follow camera in King and Bomb, eased                                           |
+| `src/team-line.ts`         | The band's team line: "You are Team …", the fall's countdown, out                           |
+| `src/zone-hint.ts`         | King's hint "Stand in the zone to score" while outside the zone                             |
+| `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                             |
+| `src/sound-events.ts`      | Which sounds a new state calls for                                                          |
+| `src/config.ts`            | Bridge box on/off and its links                                                             |
+| `e2e/`                     | Playwright config, helpers and the specs                                                    |
+| `packages/render` (shared) | What client and viewer share: island, characters, clock, words, the look switch             |
 
 ## Joining and watching
 
@@ -112,13 +113,15 @@ or touch (browsers allow sound only after a gesture).
   season's colour, the mode's name with sumo's variant, "Seasonal Sumo · Points" or "· Last One
   Standing", the season, the time left and the next season, the countdown in red; with no
   deadline at all — Last One Standing "stop, no time limit" after the third halving — the time
-  played, "· 6:52 played"; 13 px, shrinking to 11 px at the least on a phone. Under it the band:
+  played, "· 6:52 played"; 13 px, shrinking to 11 px at the least on a phone, and where even
+  that does not fit (a long mode's name beside the viewer's switch) without "· next: <season>"
+  (`fittedLine`, review 2026-11-22). Under it the band:
   "You are Team <Season>" in a white pill behind the team's colour dot, the own lives as red
   circles beside it (sumo only; a lost one white; past five lives one and the number left, "×7",
   so the team line keeps its room on a phone), the corner buttons — the kit's theme toggle, "?"
   and Sound in the kit's bar-button look (on a phone a round note ♪, struck through when off),
   and in the dev build only a
-  small "Admin" link to `/admin/` on the same address (`frame/Bar.tsx`, `vite/dev-admin.ts`; chain
+  plain "Admin" link at 14 px to `/admin/` on the same address (`frame/Bar.tsx`, `vite/dev-admin.ts`; chain
   2026-11-21: one address — the client's dev server also serves the viewer at `/viewer/` and the
   admin panel at `/admin/`, `vite/viewer-pages.ts`) —, and a
   white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
@@ -249,8 +252,9 @@ or touch (browsers allow sound only after a gesture).
   character is outside the visible field, a small arrow in its team's colour at that edge points
   to it (render `drawOwnOffScreen`). After a respawn, at every match start and on joining, the
   ring pulses outwards three times (1.5 s). While it is
-  out after a fall, the band's team line says "You fell — back in 3 … 1" (server time of the
-  fall plus `outMs`) and its team's respawn band is drawn faintly on the arena
+  out after a fall, the band's team line says "You fell — back in 3 … 1", on a phone under
+  480 px "Back in 3 … 1", so its seconds are never cut to "…" beside the corner's buttons
+  (review 2026-11-22) (server time of the fall plus `outMs`) and its team's respawn band is drawn faintly on the arena
   (`own-marker.ts`; not after the last life). A character in the air after a jump (render
   `jump.ts`, NIGHT 2026-11-18) rises on a smooth arc over its time in the air — up to 1.5× its
   size and one ghost diameter up on screen at the top, its label and arrow with it — while

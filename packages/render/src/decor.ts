@@ -55,7 +55,7 @@ export function spotOn(o: OnScreen, p: readonly [number, number, ...unknown[]]):
 }
 
 // Whether a place (u, w) is clear of the ground's keep-out (OnScreen.keepOut).
-export function standsFree(o: OnScreen, p: readonly [number, number, ...unknown[]]): boolean {
+function standsFree(o: OnScreen, p: readonly [number, number, ...unknown[]]): boolean {
   const [x, y] = spotOn(o, p);
   return (o.keepOut ?? []).every((e) => ((x - e.x) / e.rx) ** 2 + ((y - e.y) / e.ry) ** 2 > 1);
 }

@@ -105,7 +105,7 @@ const JUMP = {
 
 // Static text and drawings only; nothing from the server or the player goes in here. Three
 // rules per mode, then the jump (a hidden button when the owner's switch has it off).
-export const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
+const RULES: Record<GameMode, { text: string; drawing: string }[]> = {
   sumo: [
     {
       text: 'Push the other teams off the arena. Every fall costs a life; with none left you watch until the next match.',
@@ -271,7 +271,7 @@ export class Help {
     this.hint();
   }
 
-  // The fade at the card's bottom edge while more follows (index.html `#help .card.more`).
+  // The fade at the card's bottom edge while more follows (styles/controls.css `#help .card.more`).
   private hint(): void {
     const card = this.overlay.firstElementChild;
     if (card instanceof HTMLElement) card.classList.toggle('more', moreBelow(card));

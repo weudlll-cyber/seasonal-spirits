@@ -16,7 +16,7 @@ const LATE_MS = 2500; // a season with no crowd is shot this long before it ends
 const SEASONS = 4;
 
 // How many others stand within NEAR_RADII of the own character on screen.
-export function crowdAround(v: ClientView): number {
+function crowdAround(v: ClientView): number {
   const me = v.ghostsShown.find((g) => g.id === v.ghost);
   if (!me) return 0;
   const near = (g: { id: number; x: number; y: number }): boolean =>

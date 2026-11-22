@@ -51,7 +51,7 @@ export function nearest(
 
 // Where `g` will be bots.leadMs on at its seen speed: a bot aims there, not where it was seen
 // (FIX 2026-11-17-5: chasing the seen position, the last two bots ran in circles).
-export function leadPoint(cfg: GameConfig, g: Readonly<Ghost>): Vec {
+function leadPoint(cfg: GameConfig, g: Readonly<Ghost>): Vec {
   const t = cfg.bots.leadMs / 1000;
   return { x: g.x + g.vx * t, y: g.y + g.vy * t };
 }

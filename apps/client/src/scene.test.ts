@@ -17,7 +17,7 @@ import { camera, fieldTop, minimapAt, playArea } from './scene.js';
 
 const C = DEFAULT_CONFIG.fieldSize / 2;
 const HALVED = DEFAULT_CONFIG.sumo.shrink; // a halving's radius factor (the setting)
-const DASH = 96; // index.html #dash, 16 px from the bottom right corner
+const DASH = 96; // styles/controls.css #dash, 16 px from the bottom right corner
 const SCREENS = [
   { width: 1918, height: 945, touch: false },
   { width: 1280, height: 800, touch: false },

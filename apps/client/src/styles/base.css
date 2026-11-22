@@ -1,0 +1,58 @@
+/* Seasonal Sumo — The page itself: the frame's colours (the kit's tokens), the page, buttons and links.
+   Loaded first (index.html); the parts after it use its custom properties. */
+
+/* The frame around the play field takes the kit's look (owner decision 2026-11-20,
+   @seasonal/kit tokens.css and fonts.css, imported in main.ts): its surface, text and scrim
+   colours, light and dark on <html data-theme> (the kit's theme, render look-switch.ts),
+   and Luxora Grotesk for every frame text. The Sky Island stays inside the play field: the
+   sky, the ink outlines and drop shadows, Fredoka on the canvas. */
+:root {
+  --ink: #2b2140;
+  --panel: var(--color-surface);
+  --panel-text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --sky: #9edcf5;
+  --alert: #cc4858; /* white on it 4.53:1 (NIGHT 2026-11-19; #ff5a6e was 3.0:1) */
+  --dash: #ffc23c;
+  --jump: #4cc2ff;
+  --veil: var(--color-scrim);
+  --drop: 4px 4px 0 var(--ink);
+  --rest: #ffffff; /* the Dash and Jump buttons' part still charging */
+}
+/* Dark: the island at night; the frame's colours follow the kit's dark tokens. */
+:root[data-theme='dark'] {
+  --ink: #120e22;
+  --sky: #1d1b3f;
+  --rest: #d9d4ff;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--sky);
+  color: var(--panel-text);
+  font-family: var(--font-family);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+canvas {
+  display: block;
+}
+button,
+.link {
+  font: inherit;
+  font-weight: 600;
+  color: var(--panel-text);
+  background: var(--panel);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 10px 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

@@ -45,7 +45,7 @@ export interface Mind {
   form: number;
 }
 
-export function rotate(i: Intent, radians: number): Intent {
+function rotate(i: Intent, radians: number): Intent {
   const c = Math.cos(radians);
   const s = Math.sin(radians);
   return { dx: i.dx * c - i.dy * s, dy: i.dx * s + i.dy * c };

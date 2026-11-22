@@ -24,7 +24,7 @@ export interface BotOptions {
 const WALL_MARGIN = 50;
 const realClock = { now: (): number => Date.now() };
 
-export class ProbeBot {
+class ProbeBot {
   private readonly ws: WebSocket;
   private readonly policy: BotPolicy;
   private readonly outbound: DelayQueue<string>;

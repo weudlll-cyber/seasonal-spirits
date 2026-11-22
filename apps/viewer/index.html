@@ -85,7 +85,7 @@
         border: 2.5px solid var(--ink);
         border-radius: 12px;
         box-shadow: 4px 4px 0 var(--ink);
-        font-size: 13px;
+        font-size: 14px; /* the 14 px floor (owner decision 2026-11-21) */
         line-height: 1.4;
         white-space: pre;
       }
@@ -109,11 +109,11 @@
         background: rgba(0, 0, 0, 0.9); /* the field shows through little: readable on a phone */
         border: 1px solid #22303c;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 14px; /* no panel text under the 14 px floor (review 2026-11-22, phone) */
       }
       #tuning h2 {
         margin: 0 0 6px;
-        font-size: 14px;
+        font-size: 16px;
       }
       #tuning label {
         display: grid;
@@ -128,8 +128,15 @@
         font-weight: bold;
         margin: 6px 0;
       }
+      /* The hints ("now", "next match") set apart by colour, not by a smaller size. */
       #tuning small {
         color: #9fb3c8;
+        font-size: inherit;
+      }
+      /* The browser sets form fields to 13.33 px of their own; here they take the panel's. */
+      #tuning select,
+      #tuning input {
+        font: inherit;
       }
       #tuning .presets input {
         width: 100%;

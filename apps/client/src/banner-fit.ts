@@ -4,8 +4,8 @@
 // BANNER_LINES lines.
 
 export const BANNER_MIN_PX = 14;
-export const BANNER_LINES = 2;
-const LINE_HEIGHT = 1.2; // index.html #announce line-height
+const BANNER_LINES = 2;
+const LINE_HEIGHT = 1.2; // styles/hud.css #announce line-height
 
 // The largest whole font size from `startPx` down to BANNER_MIN_PX at which `linesAt` reports at
 // most BANNER_LINES lines; BANNER_MIN_PX when none does.

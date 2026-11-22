@@ -304,9 +304,6 @@ importers:
       '@seasonal-spirits/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
-      '@seasonal-spirits/render':
-        specifier: workspace:*
-        version: link:../../packages/render
     devDependencies:
       '@playwright/test':
         specifier: 1.64.1

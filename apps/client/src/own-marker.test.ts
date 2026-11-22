@@ -9,7 +9,7 @@ import {
   type ServerState,
 } from '@seasonal-spirits/protocol';
 import { PULSE_MS } from '@seasonal-spirits/render';
-import { OwnMarker, fellLine } from './own-marker.js';
+import { OwnMarker, backLine, fellLine } from './own-marker.js';
 
 const OUT_MS = 3000;
 const state = (serverMs: number, flags: number, over = false): ServerState =>
@@ -34,6 +34,10 @@ describe('the own ghost out after a fall', () => {
     expect(line()).toBe('You fell — back in 1');
     m.observe(state(4000, 0), 3, 4000, OUT_MS);
     expect(m.backInMs()).toBeNull();
+  });
+
+  it("gives the phone a short line that keeps the seconds (review 2026-11-22: cut to '…')", () => {
+    expect([2001, 1000, 1].map(backLine)).toEqual(['Back in 3', 'Back in 1', 'Back in 1']);
   });
 });
 

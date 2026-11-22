@@ -29,7 +29,7 @@ export class StartScreen {
     if (!ready || nowMs - this.since < MIN_MS) return;
     this.gone = true;
     this.root.classList.add('gone');
-    // Hidden after the fade (0.4 s in index.html); a timer, as no transition runs with reduced
+    // Hidden after the fade (0.4 s in styles/screens.css); a timer, as no transition runs with reduced
     // motion.
     setTimeout(() => (this.root.hidden = true), 450);
   }

@@ -1,0 +1,85 @@
+/* Seasonal Sumo — The start screen (start.ts), the cards (help, result) and the small print.
+   Loaded last (index.html), as these rules came last in its old style block. */
+
+/* The start screen (start.ts): the title in a white pill over a small floating island with
+   the four seasons' characters, while the client joins; it lets every touch through and
+   fades out (NIGHT 2026-11-19). */
+#start {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--sky);
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+#start.gone {
+  opacity: 0;
+}
+#start h1 {
+  margin: 0;
+  padding: 6px 22px;
+  font-size: clamp(30px, 9vw, 52px);
+  font-weight: 700;
+  color: var(--panel-text);
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--drop);
+}
+/* The start screen's canvas fills the screen behind its title (start.ts). */
+#start canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+#start p {
+  margin: 0;
+  padding: 3px 12px;
+  color: var(--panel-text);
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #start {
+    transition: none;
+  }
+}
+#result[hidden],
+[hidden] {
+  display: none !important;
+}
+.card {
+  background: var(--panel);
+  color: var(--panel-text);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: var(--drop);
+  padding: 18px 20px;
+  width: min(440px, 92vw);
+  max-height: 92vh;
+  box-sizing: border-box;
+  overflow: auto;
+}
+.card h2,
+.card h3 {
+  margin: 0 0 8px;
+}
+.card ol {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.card li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+/* Small print, never below the 14 px floor (owner decision 2026-11-21). */
+.small {
+  color: var(--muted);
+  font-size: 14px;
+}

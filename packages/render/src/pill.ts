@@ -6,7 +6,7 @@ import { look } from './palette.js';
 export const PILL_PAD = 2; // px of pill on each side of its text: narrow, so a crowd's labels fit (CI 2026-11-18)
 
 // A rounded box as the current path, its corners as round as it allows.
-export function roundBox(
+function roundBox(
   ctx: CanvasRenderingContext2D,
   box: { left: number; top: number; width: number; height: number },
   radius = box.height / 2,

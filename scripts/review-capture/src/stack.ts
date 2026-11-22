@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export const PORTS = { server: 3936, client: 5936 } as const;
-export const SEED = 7; // the first match's seed; each started match takes the next
+const SEED = 7; // the first match's seed; each started match takes the next
 
 function start(pkg: string, env: Record<string, string>): ChildProcess {
   // One command line through the shell (pnpm is a .cmd on Windows); `pkg` is one of two names.

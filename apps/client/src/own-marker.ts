@@ -53,7 +53,15 @@ export class OwnMarker {
   }
 }
 
+const seconds = (ms: number): string => String(Math.max(1, Math.ceil(ms / 1000)));
+
 // The band's line while the own ghost is out: whole seconds, counting down.
 export function fellLine(backInMs: number): string {
-  return `You fell — back in ${String(Math.max(1, Math.ceil(backInMs / 1000)))}`;
+  return `You fell — back in ${seconds(backInMs)}`;
+}
+
+// The same on a narrow phone, where the whole line ran into "…" before its seconds beside the
+// corner's three buttons (review 2026-11-22; team-line.ts shows one of the two).
+export function backLine(backInMs: number): string {
+  return `Back in ${seconds(backInMs)}`;
 }

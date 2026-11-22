@@ -48,7 +48,7 @@ import type { HudOnField } from './hud.js';
 // Pixels of the band under the season clock: the team line, the corner buttons and the team
 // scores (index.html #band). Every client has it, so no control sits on the field. 78 px since
 // the kit's game bar (its phone targets 44 px; 68 before, night chain 2026-11-21).
-export const BAND_HEIGHT = 78;
+const BAND_HEIGHT = 78;
 // In King a row under the band for the hint pill (zone-hint.ts, index.html #hint), kept whether
 // it shows or not so the camera never jumps: the pill over the back fence hid it (2026-11-19).
 // A spectator's "Watching the match." notice sits in the same row (index.html #notice.row).

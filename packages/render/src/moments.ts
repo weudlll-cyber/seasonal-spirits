@@ -14,7 +14,7 @@ import {
 import { effectMs } from './motion.js';
 import { shape } from './shape.js';
 
-export const STRETCH_MS = 160;
+const STRETCH_MS = 160;
 export const SQUASH_MS = 220;
 export const STAR_MS = 260;
 // How near a dasher must be, in body radii, to count as the one that hit.

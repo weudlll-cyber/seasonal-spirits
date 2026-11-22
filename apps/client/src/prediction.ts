@@ -38,7 +38,7 @@ export interface ServerOwn extends Motion {
 export const PREDICTION_LAG_MS = 40;
 // The share of the gap closed per frame is frame time / this, so a gap fades within a few
 // frames without the ghost jumping. Placeholder — owner decides.
-export const CORRECTION_MS = 150;
+const CORRECTION_MS = 150;
 // A gap above this (a respawn, a knock the client could not see coming, a long stall) is
 // closed at once. Placeholder — owner decides.
 export const SNAP_DISTANCE = 100;

@@ -32,7 +32,7 @@ import { el } from './hud.js';
 const SHOWN_PLAYERS = 8;
 
 // A ghost as every screen names it: "You" for the own one, else "Bot 7" or "Player 7".
-export function nameIn(s: ServerState | undefined, ghost: number, ownId: number | null): string {
+function nameIn(s: ServerState | undefined, ghost: number, ownId: number | null): string {
   if (ghost === ownId) return 'You';
   const flags = s?.ghosts.find((g) => g.id === ghost)?.flags ?? 0;
   return ghostName(ghost, (flags & GHOST_BOT) !== 0);

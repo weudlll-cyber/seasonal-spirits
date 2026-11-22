@@ -12,7 +12,7 @@ import {
 import { GameServer, type ServerConfig } from './server.js';
 
 // Four seats; a left player's seat goes back to a bot on the next tick.
-export const TEST_CONFIG: ServerConfig = {
+const TEST_CONFIG: ServerConfig = {
   port: 0,
   host: '127.0.0.1',
   tickHz: 20,

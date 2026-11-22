@@ -11,7 +11,7 @@ import {
   STATE_TO_END,
   type ServerState,
 } from '@seasonal-spirits/protocol';
-import { lineFont, lineRoom, statusLine } from './clock.js';
+import { fittedLine, lineFont, lineRoom, statusLine } from './clock.js';
 
 const state = (over: Partial<ServerState>): ServerState => ({
   tick: 0,
@@ -97,6 +97,15 @@ describe('clock status line on a narrow screen (owner 2026-11-17: band text cut 
 
   it('stops at 11 px even where the line would need less (NIGHT 2026-11-19: 9 px)', () => {
     expect(lineFont(ctx, 'x'.repeat(200), room)).toBe('500 11px Fredoka, system-ui, sans-serif');
+  });
+
+  it("drops the next season where a long mode's line would run under the viewer's switch", () => {
+    const viewer = lineRoom(390, 64); // the viewer's SWITCH_ROOM on a 390 px phone
+    const s = state({ flags: STATE_LAST_STANDING });
+    const line = fittedLine(ctx, s, viewer);
+    expect(line).toBe('Seasonal Sumo · Last One Standing · Spring · 0:40 left');
+    expect(ctx.measureText(line).width).toBeLessThanOrEqual(viewer);
+    expect(fittedLine(ctx, s, 1894)).toBe(statusLine(s)); // room enough: the whole line
   });
 
   it('keeps 13 px where the line fits', () => {

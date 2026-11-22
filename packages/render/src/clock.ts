@@ -42,8 +42,7 @@ export function drawClock(
 ): void {
   if (!s) return;
   const l = look();
-  const line = statusLine(s);
-  ctx.font = lineFont(ctx, line, lineRoom(ctx.canvas.width, reserve));
+  const line = fittedLine(ctx, s, lineRoom(ctx.canvas.width, reserve));
   const width = ctx.measureText(line).width + 2 * PAD + 2 * DOT;
   const height = CLOCK_HEIGHT - 2 * MARGIN;
   const middle = MARGIN + height / 2;
@@ -75,7 +74,20 @@ export function lineFont(ctx: CanvasRenderingContext2D, line: string, room: numb
   return font();
 }
 
-export function statusLine(s: ServerState): string {
+// The line to draw in `room` pixels, its font left set on `ctx`. Too long even at the smallest
+// size (a long mode's name on a phone beside the viewer's switch, review 2026-11-22): the next
+// season goes first, so the line is never cut off.
+export function fittedLine(ctx: CanvasRenderingContext2D, s: ServerState, room: number): string {
+  const whole = statusLine(s);
+  ctx.font = lineFont(ctx, whole, room);
+  if (ctx.measureText(whole).width <= room) return whole;
+  const short = statusLine(s, false);
+  ctx.font = lineFont(ctx, short, room);
+  return short;
+}
+
+// `withNext` false leaves out "· next: <season>" when the whole line does not fit.
+export function statusLine(s: ServerState, withNext = true): string {
   const words = modeWords(s.mode);
   const next = seasonName(s.season + 1);
   const toEnd = (s.flags & STATE_TO_END) !== 0;
@@ -89,5 +101,6 @@ export function statusLine(s: ServerState): string {
       : `HALVING in ${mmss(s.countdownMs)} — ${words.countdown(next)}`;
   }
   const now = `${name} · ${seasonName(s.season)} · ${mmss(s.seasonLeftMs)}`;
-  return toEnd ? `${now} to the end` : `${now} left · next: ${next}`;
+  if (toEnd) return `${now} to the end`;
+  return withNext ? `${now} left · next: ${next}` : `${now} left`;
 }

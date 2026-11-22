@@ -1,0 +1,151 @@
+/* Seasonal Sumo — The controls: Dash and Jump, the joystick, and the help card (help.ts).
+   Split out of index.html (second night chain 2026-11-21, piece 7); the order is kept. */
+
+/* Jump left of Dash, both at the bottom right (JUMP 2026-11-17). */
+#actions {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+#help {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--veil);
+  overflow: auto;
+}
+#help ol {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+}
+#help li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+}
+#help li svg {
+  flex-shrink: 0;
+}
+/* The card scrolls with a finger (the page itself takes no touch gestures) and keeps its
+   scroll to itself; "×" at its top right stays there as it scrolls (help.ts). */
+#help .card {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+#help .close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  margin: -8px -10px 0 8px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--panel-text);
+  font: 700 24px/1 var(--font-family);
+  cursor: pointer;
+}
+/* The help card while more of it lies below: a fade over its bottom edge, held there as the
+   card scrolls, gone at the end (help.ts; owner 2026-11-20). It spans the card's padding. */
+#help .card.more::after {
+  content: '';
+  position: sticky;
+  bottom: -18px;
+  display: block;
+  height: 48px;
+  margin: -48px -20px 0;
+  background: linear-gradient(transparent, var(--panel));
+  pointer-events: none;
+}
+/* The left half belongs to the joystick thumb; the buttons stay in the right half. */
+body.touch #actions {
+  max-width: calc(50vw - 24px);
+}
+/* Dash and Jump: big round buttons in their colours; the colour fills round them while the
+   cooldown runs (--ready 0 … 1); Jump smaller, so both fit a phone's right half. Their
+   text stays dark on both colours and on white. */
+#dash,
+#jump {
+  -webkit-tap-highlight-color: transparent;
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 18px;
+  border: 3px solid var(--ink);
+  box-shadow: var(--drop);
+  color: #2b2140;
+  background: conic-gradient(var(--fill) calc(var(--ready, 1) * 360deg), var(--rest) 0);
+  opacity: 0.75;
+}
+#dash {
+  --fill: var(--dash);
+}
+#jump {
+  --fill: var(--jump);
+  width: 68px;
+  height: 68px;
+  font-size: 14px;
+}
+#dash.ready,
+#jump.ready {
+  opacity: 1;
+}
+.key {
+  color: #4a4060;
+  font-weight: 500;
+  font-size: 12px;
+  display: block;
+}
+body.touch .key {
+  display: none;
+}
+#stick {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 60%;
+  display: none;
+}
+body.touch #stick {
+  display: block;
+}
+/* A spectator has no controls (it sends nothing after its hello). */
+body.spectating #stick,
+body.spectating #actions {
+  display: none;
+}
+#stick::before,
+#knob {
+  position: fixed;
+  left: calc(var(--ox, 90px) - 30px);
+  top: calc(var(--oy, 80%) - 30px);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+#stick::before {
+  content: '';
+  left: calc(var(--ox, 90px) - 60px);
+  top: calc(var(--oy, 80%) - 60px);
+  width: 120px;
+  height: 120px;
+  border: 3px solid rgba(43, 33, 64, 0.35);
+  background: rgba(255, 255, 255, 0.2);
+}
+#knob {
+  background: rgba(255, 255, 255, 0.75);
+  border: 3px solid var(--ink);
+  box-sizing: border-box;
+}

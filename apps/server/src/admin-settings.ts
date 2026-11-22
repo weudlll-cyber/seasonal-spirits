@@ -64,7 +64,7 @@ export interface AdminAnswer {
 // LAN mode also a home-network one (RFC 1918) — (else 404: as if it did not exist) from the admin
 // panel's origin (else 403). The game's admin login takes this place before the endpoint leaves
 // development.
-export function adminAccess(
+function adminAccess(
   head: AdminHead,
   origins: readonly string[],
   homeNetwork = false,
