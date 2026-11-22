@@ -1,7 +1,8 @@
 // Seasonal Sumo — "Halving Bomb": one bomb per 8 players on distinct carriers, the pass to a
 // touching opponent (never a teammate), the second without a pass back — the giver marked as
 // locked for exactly that time (the clients' "no return" mark, 2026-11-19) — and the explosion at
-// the halving that halves each carrier's points and hands out new bombs.
+// the halving that takes each carrier's share (blastShare) and hands out new bombs; a carrier or
+// a jumper takes no bomb (audit 2026-11-22, P2).
 
 import { describe, expect, it } from 'vitest';
 import { botRoster } from '../simulation.js';
@@ -79,5 +80,48 @@ describe('bombs', () => {
     for (const id of others) expect(ghost(m, id).scoreMs).toBe(turn);
     expect(before.every((ms) => ms === turn - 50)).toBe(true);
     expect(m.state.bombs).toHaveLength(1);
+  });
+});
+
+describe('bombs: what a blast costs and who takes one', () => {
+  // blastShare at 0.25, so "loses its share" and "keeps its share" differ (at 0.5 they do not).
+  it('takes exactly blastShare of the carrier’s points at the halving', () => {
+    const m = matchOf({ ...cfg, bomb: { ...cfg.bomb, blastShare: 0.25 } }, four);
+    const turn = cfg.seasonDurationMs;
+    runTo(m, turn - 50);
+    const held = carrier(m) ?? 0;
+    runTo(m, turn);
+    // Whole milliseconds: the share kept is rounded.
+    expect(ghost(m, held).scoreMs).toBe(Math.round((turn - 50) * 0.75) + 50);
+  });
+
+  it('never gives a bomb to an opponent who already carries one', () => {
+    const m = matchOf(cfg, four);
+    m.state.bombs.splice(
+      0,
+      m.state.bombs.length,
+      { carrier: 1, from: null, backAtMs: 0 },
+      { carrier: 3, from: null, backAtMs: 0 },
+    );
+    place(m, 1, 0, 0);
+    place(m, 3, 2 * cfg.ghostRadius, 0); // the two carriers touching
+    place(m, 2, -300, 0);
+    place(m, 4, 0, -300);
+    runTo(m, 200);
+    expect(m.state.bombs.map((b) => b.carrier)).toEqual([1, 3]);
+  });
+
+  it('is not taken by an opponent in the air, and taken once it lands', () => {
+    const m = matchOf(cfg, four);
+    hand(m, 1);
+    place(m, 1, 0, 0);
+    place(m, 3, 2 * cfg.ghostRadius, 0);
+    place(m, 2, -300, 0);
+    place(m, 4, 0, -300);
+    ghost(m, 3).airUntilMs = 200; // jumping over the carrier until 200 ms
+    runTo(m, 150);
+    expect(carrier(m)).toBe(1);
+    runTo(m, 300);
+    expect(carrier(m)).toBe(3);
   });
 });

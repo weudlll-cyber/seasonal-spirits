@@ -68,6 +68,24 @@ describe('hill scoring', () => {
   });
 });
 
+describe('hill bounce at the zone jump', () => {
+  // The zone jumping away leaves the ghosts in it outside: nobody's bounce, even right after a
+  // dash hit (modes/hill.ts clears who was inside at the jump; audit 2026-11-22, P2).
+  it('gives no bounce when the zone jumps away from a ghost just hit by a dash', () => {
+    const m = matchOf(cfg, two);
+    const z = m.state.zone;
+    if (!z) throw new Error('no zone');
+    const turn = cfg.seasonDurationMs;
+    standAt(m, 1, z.x, z.y);
+    runTo(m, turn - 100);
+    Object.assign(ghost(m, 1), { lastTouch: { by: 2, atMs: turn - 60, dash: true } });
+    runTo(m, turn + 100);
+    const moved = m.state.zone;
+    expect(Math.hypot(ghost(m, 1).x - moved.x, ghost(m, 1).y - moved.y)).toBeGreaterThan(moved.r);
+    expect(ghost(m, 2).bounces).toBe(0);
+  });
+});
+
 describe('hill zone', () => {
   it('jumps to the new season’s quarter at every halving and halves its area, shown before', () => {
     const m = matchOf(cfg, two);

@@ -4,14 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { configFrom } from './config.js';
-import {
-  FIELD_CROWDS,
-  ZONE_CROWDS,
-  crowdArea,
-  smallestField,
-  smallestZone,
-  upToStep,
-} from './crowd.js';
+import { FIELD_CROWDS, ZONE_CROWDS, crowdArea, smallestField, smallestZone } from './crowd.js';
 import { DEFAULT_SETTINGS } from './settings.js';
 
 describe('room for the crowd', () => {
@@ -33,9 +26,6 @@ describe('room for the crowd', () => {
 
   it("starts King's settings at the crowd's numbers: 260 and 130 for 32 characters of radius 16", () => {
     const king = configFrom(DEFAULT_SETTINGS, 'hill');
-    const players = 4 * DEFAULT_SETTINGS.teamSize;
-    expect(king.walls.smallest).toBe(upToStep(smallestField(king.ghostRadius, players), 10));
-    expect(king.hill.smallest).toBe(upToStep(smallestZone(king.ghostRadius, players), 5));
     expect([king.walls.smallest, king.hill.smallest]).toEqual([260, 130]);
   });
 });

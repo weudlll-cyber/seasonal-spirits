@@ -92,12 +92,21 @@ describe('admin settings refusals', () => {
       apply({ ...VALID, teleport: 1 }),
       apply(rest),
       JSON.stringify({ action: 'reset' }),
+      // Names an object has through its prototype are no command (audit 2026-11-22, P2).
+      JSON.stringify({ action: 'toString' }),
+      JSON.stringify({ action: 'constructor' }),
+      JSON.stringify({ action: '__proto__' }),
       named('save', 'x'.repeat(40)),
+      // A preset name never leaves the presets' folder.
+      named('save', '../x'),
+      named('save', 'a/b'),
       '{"action":',
       '',
     ]) {
       expect(e.answer(POST, body).status, body.slice(0, 60)).toBe(400);
     }
+    // Loading by a name outside the folder is "no such preset", nothing read.
+    expect(e.answer(POST, named('load', '..')).status).toBe(404);
     expect(applied).toEqual([]);
   });
 
