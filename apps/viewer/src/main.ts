@@ -201,14 +201,14 @@ function frame(): void {
   };
 
   hud.textContent =
-    `drawn ghosts:    ${ghosts.length}\n` +
-    `states/s:        ${(statesRate.value(now) / 60).toFixed(1)}\n` +
-    `bytes/message:   ${lastStateBytes}\n` +
-    `latency:         ${LATENCY_MIN}-${LATENCY_MAX} ms (one way)\n` +
-    `buffer:          ${BUFFER_MS} ms (${buffer.length} states held)\n` +
-    `jumps /60 s:     ${jumpCounter.value(now)}\n` +
-    `underruns /60 s: ${underrunCounter.value(now)}\n` +
-    `server Hz:       ${serverHz.toFixed(1)}`;
+    `drawn ghosts:\t${ghosts.length}\n` +
+    `states/s:\t${(statesRate.value(now) / 60).toFixed(1)}\n` +
+    `bytes/message:\t${lastStateBytes}\n` +
+    `latency:\t${LATENCY_MIN}-${LATENCY_MAX} ms (one way)\n` +
+    `buffer:\t${BUFFER_MS} ms (${buffer.length} states held)\n` +
+    `jumps /60 s:\t${jumpCounter.value(now)}\n` +
+    `underruns /60 s:\t${underrunCounter.value(now)}\n` +
+    `server Hz:\t${serverHz.toFixed(1)}`;
 
   requestAnimationFrame(frame);
 }

@@ -1,6 +1,6 @@
 // Seasonal Sumo — a canvas for the render unit tests that draws nothing and records what was
 // drawn where, in screen pixels: circles, ellipses (with the fill colour at the time), the paths
-// closed (where they began) and the texts filled, with where. It follows translate and scale (the sprites'
+// closed (where they began) and the texts filled, with where and in which font. It follows translate and scale (the sprites'
 // mirroring), not rotate; text measures 6 px per character. Used by the tests only.
 
 export interface Recorded {
@@ -9,7 +9,7 @@ export interface Recorded {
   ellipses: { x: number; y: number; rx: number; ry: number; fill: string }[];
   closed: { x: number; y: number }[];
   texts: string[];
-  textsAt: { text: string; x: number; y: number }[];
+  textsAt: { text: string; x: number; y: number; font: string }[];
 }
 
 export function recorder(width = 1280, height = 800): Recorded {
@@ -45,7 +45,7 @@ export function recorder(width = 1280, height = 800): Recorded {
     closePath: () => rec.closed.push(start),
     fillText: (s: string, x: number, y: number) => {
       rec.texts.push(s);
-      rec.textsAt.push({ text: s, ...at(x, y) });
+      rec.textsAt.push({ text: s, ...at(x, y), font: String(state.font) });
     },
     measureText: (s: string) => ({ width: 6 * s.length }),
     createRadialGradient: () => ({ addColorStop: () => undefined }),

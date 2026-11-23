@@ -74,8 +74,12 @@
         overflow: hidden;
       }
       /* The network numbers at the bottom left, over the rock and the clouds, not the field
-         (NIGHT 2026-11-19: the viewer's camera now fills the height like the client's). */
+         (NIGHT 2026-11-19: the viewer's camera now fills the height like the client's). Luxora
+         Grotesk, not the <pre>'s monospace (DECISIONS D10); each value after one tab, so the tab
+         stop past the longest label keeps the values in one column. */
       #hud {
+        font-family: inherit;
+        tab-size: 9em;
         position: fixed;
         bottom: 12px;
         left: 12px;
