@@ -3,12 +3,12 @@
 // (ambient.ts: sun or moon, drifting clouds, far islands, the sea band; 2026-11-19) with the four
 // seasons' characters idling on the island, on the result screen, in a small canvas, a podium
 // with the best three teams' characters on their steps and a confetti burst in the winner's
-// colour. The same sky, island (island.ts) and cached characters (sprites.ts) as the game; no
-// second drawing path.
+// colour (none with reduced motion, and the characters hold still: motion.ts). The same sky, island
+// (island.ts) and cached characters (sprites.ts) as the game; no second drawing path.
 
 import { drawSky } from './ambient.js';
 import { drawGround } from './island.js';
-import { ambientMs } from './motion.js';
+import { ambientMs, reducedMotion } from './motion.js';
 import { look, seasonColour } from './palette.js';
 import { drawSprite } from './sprites.js';
 import { VIEW_TILT, type View } from './view.js';
@@ -89,8 +89,10 @@ export function drawPodium(
       'idle',
     );
   });
+  // The confetti is decoration: none with reduced motion (audit 2026-11-22 P6 item 6).
   const k = (nowMs - sinceMs) / CONFETTI_MS;
-  if (k >= 0 && k < 1 && teams[0] !== undefined) confetti(ctx, v, seasonColour(teams[0]), k);
+  const burst = k >= 0 && k < 1 && !reducedMotion();
+  if (burst && teams[0] !== undefined) confetti(ctx, v, seasonColour(teams[0]), k);
 }
 
 // The burst: small pieces flying up and out from above the winner, then falling, fading.

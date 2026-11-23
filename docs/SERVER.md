@@ -188,7 +188,8 @@ predicts and draws with them.
 The admin panel (the viewer's page at http://localhost:5930/admin/ on the client's address, one
 address since 2026-11-21, with `DEV_TUNING=1`, which `pnpm dev` sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`;
 in Vite's dev server only — a build of the viewer leaves it out, `vite.config.ts` `__ADMIN_PANEL__`,
-checked in CI by `pnpm --filter @seasonal-spirits/viewer build:check`, audit 2026-11-22 I1) is built around one flow —
+checked in CI by `pnpm --filter @seasonal-spirits/viewer build:check`, audit 2026-11-22 I1; on a
+touch screen every control a 44 px target, P6 item 4) is built around one flow —
 choose the game, see and set its values, start — and generated from the schema, its groups
 Movement, Dash & push, Jump, Falling & respawn, Match flow, Bots — general, Bots — endgame, Sumo,
 King of the Season, Halving Bomb, Rotation. It folds to a small "◂ Admin" tab in the top right

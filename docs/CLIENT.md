@@ -174,7 +174,9 @@ or touch (browsers allow sound only after a gesture).
   along, the sun's dashed ring turns, at night the moon glows softly and a few stars twinkle; the
   grass tufts and the tree crowns sway a little (render `decor.ts`). With
   `prefers-reduced-motion` all of that holds still and the effects below run half as long
-  (render `motion.ts`). Sumo: the arena is
+  (render `motion.ts`); the decoration stops — the halving's white flash (`styles/hud.css`) and the
+  podium's confetti (render `podium.ts`) — while the game's own motion stays (audit 2026-11-22 P6
+  item 6). Sumo: the arena is
   a floating island's round grass top with an ink rim, a dirt edge and a hanging rock body with
   strata, roots and three jagged points (render `island.ts`), grass tufts, flowers, two trees and
   two pebbles on it (render `decor.ts`, scaled with the arena); the next halving's edge is a
@@ -432,7 +434,10 @@ touch):
   390 × 844, 360 × 780 and 430 × 932, its text at 14 px or more;
 - `e2e/text-style.e2e.ts`: the fonts by DECISIONS D7 — the banner, score chips, zone hint and the
   Dash and Jump buttons in Fredoka; the help, start card, team line, corner and connection notice
-  in Luxora Grotesk, `/admin/`'s network numbers too (D10); every page text on screen at 14 px or more with the help open (DECISIONS D3).
+  in Luxora Grotesk, `/admin/`'s network numbers too (D10); every page text on screen at 14 px or more with the help open (DECISIONS D3);
+- `e2e/motion.e2e.ts`: the halving flash runs, and not with `prefers-reduced-motion`;
+- `e2e/targets.e2e.ts` (phone): the help's "×", the result's bridge links and every control of
+  `/admin/`'s panel are 44 px targets, the Light/Dark switch there taking the taps around it.
 
 Screenshots go to `reports/screens/latest/<spec>/` (git-ignored, like every screenshot under
 `reports/screens/`). Each spec's folder holds only its latest run (owner decision 2026-11-21:

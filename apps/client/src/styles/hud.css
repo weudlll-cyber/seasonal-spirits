@@ -52,6 +52,13 @@
     opacity: 0;
   }
 }
+/* The flash is decoration — the banner says "halving" too: none with reduced motion (audit
+   2026-11-22 P6 item 6). */
+@media (prefers-reduced-motion: reduce) {
+  #flash.go {
+    animation: none;
+  }
+}
 /* Under the canvas season clock (36 px, render clock.ts CLOCK_HEIGHT): the band, 78 px (scene.ts BAND_HEIGHT; 68
    px before the kit's game bar, whose phone targets are 44 px), with the kit's game bar
    (frame/Bar.tsx: the team line, the lives, the corner buttons) and below it the team

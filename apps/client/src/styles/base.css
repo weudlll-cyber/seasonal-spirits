@@ -55,6 +55,14 @@ button,
   text-decoration: none;
   cursor: pointer;
 }
+/* A link drawn as a button is a 44 px target, as tall as its text needs and no less (the result's
+   bridge links were 42 px; audit 2026-11-22 P6 item 4). */
+.link {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 44px;
+}
 button:disabled {
   opacity: 0.45;
   cursor: default;

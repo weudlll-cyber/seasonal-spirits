@@ -59,6 +59,11 @@
         border: 1.5px solid var(--ink);
         transition: left 0.2s;
       }
+      @media (prefers-reduced-motion: reduce) {
+        #look::after {
+          transition: none;
+        }
+      }
       :root[data-theme='dark'] #look::after {
         content: '\263E';
         left: 21px;
@@ -142,7 +147,9 @@
       #tuning input {
         font: inherit;
       }
-      #tuning .presets input {
+      /* The preset name and the preset list full width: an empty list is no narrow target. */
+      #tuning .presets input,
+      #tuning .presets select {
         width: 100%;
         box-sizing: border-box;
       }
@@ -208,6 +215,27 @@
       }
       #tuning.folded > :not(.fold) {
         display: none;
+      }
+      /* On a touch screen every control is a 44 px target (audit 2026-11-22 P6 item 4): the
+         panel's buttons, tabs, fold tab, fields, sliders and switch rows; the Light/Dark switch
+         keeps its look and takes the taps of the 44 px around it (an invisible ::before, clear of
+         the clock's pill and the panel below). */
+      @media (pointer: coarse) {
+        #tuning button,
+        #tuning select,
+        #tuning input,
+        #tuning label.switch {
+          box-sizing: border-box;
+          min-height: 44px;
+        }
+        #tuning summary {
+          line-height: 44px; /* a list item still: its open/closed marker stays */
+        }
+        #look::before {
+          content: '';
+          position: absolute;
+          inset: -4px -4px -14px;
+        }
       }
     </style>
   </head>

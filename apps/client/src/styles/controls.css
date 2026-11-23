@@ -44,9 +44,9 @@
   top: 0;
   float: right;
   z-index: 1;
-  width: 40px;
-  height: 40px;
-  margin: -8px -10px 0 8px;
+  width: 44px; /* a 44 px target (audit 2026-11-22 P6 item 4) */
+  height: 44px;
+  margin: -10px -12px 0 8px;
   border: 3px solid var(--ink);
   border-radius: 50%;
   background: var(--panel);
