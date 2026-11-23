@@ -2,11 +2,19 @@
 // "?", scrolled and read to its end by keyboard (DECISIONS D3), closed with "×" or a key; it links
 // the source (AGPL), reached by Tab (D15), names every field marker. Screenshot <size>-help.png.
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';
 import { screenshotPath } from './stack.js';
 
 const RULES = 4; // the numbered rules above "What you see" — three and the jump —, one drawing each
+
+// The card is rebuilt once the match's first state names its variant (help.ts show): a test that
+// acts on the card's link or focus waits for that, or the rebuild takes the link away (CI
+// 2026-11-23, `0c8a5d4`: "not attached to the DOM") or the focus back to "×". The stack plays
+// Sumo Points.
+async function matchShown(page: Page): Promise<void> {
+  await expect(page.locator('#help')).toContainText('Points —', { timeout: 15_000 });
+}
 
 // A first visit: nothing remembered in the browser.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -82,6 +90,7 @@ test('the help is read to its end with the keyboard and closed with Esc', async 
 // §13); a tap on the link opens it and leaves the card open.
 test("the help offers the game's source, and a tap on it opens a new tab", async ({ page }) => {
   await page.goto('/');
+  await matchShown(page);
   const link = page.locator('#help a', { hasText: 'Source (AGPL)' });
   await expect(link).toHaveAttribute('href', /^https:\/\/github\.com\/.+\/seasonal-spirits$/);
   await expect(link).toHaveAttribute('target', '_blank');
@@ -105,6 +114,7 @@ test('Tab moves between "×" and the source link; the other keys still scroll an
   const close = help.locator('.close');
   const link = help.locator('a', { hasText: 'Source (AGPL)' });
   await page.goto('/');
+  await matchShown(page);
   await expect(close).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(link).toBeFocused();
