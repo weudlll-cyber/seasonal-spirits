@@ -117,26 +117,12 @@ floor is 14 px body text (the kit's `FIT_FLOORS` has no Seasonal Party entry yet
 the website's chat room is `seasonal-party`.
 
 am. **The audit of 2026-11-22 — the owner's word** ([AUDIT-2026-11-22.md](AUDIT-2026-11-22.md)).
-Decided on 2026-11-22 ([DECISIONS.md](DECISIONS.md) D2–D9) and worked in the night chain of
-2026-11-22/23 (`reports/night-2026-11-23.md`): the WebSocket's `Origin` check and send bound
-(P1 M1, M2 — done, CLOSED); the readability fixes — 14 px outside the play field, contrast, the
-help by keyboard (P6 items 1–3, done, CLOSED; pinch zoom stays locked); the fonts by D7 (done, CLOSED; three
-texts of unclear class kept for the owner: the connection notice, the podium's place numbers, the
-viewer's network numbers); the bridge texts per
-mode (done, CLOSED); the CI and Renovate changes with a weekly security scan (P5, done, CLOSED); the kit's back-link arrow
-reported to the kit's planning (done: the sheet's piece 5, kit `css/shell.css` 43 and
-`src/react/BackLink.tsx` 27 at `v0.10.1`). `.claude/settings.json` stays as it is (D5); the font licence is
-closed as in kit K26 (D9). The three texts of unclear class decided (D10, done in the chain of
-2026-11-23, CLOSED). Every other open item is decided as the audit recommends (D11) and is worked
-in the chain of 2026-11-23 (`reports/night-2026-11-23b.md`): the liveness ping (M2's second half),
-the smaller per-address and pending caps (L1), the viewer's production build (I1) and the admin
-"read" action no longer marking a preset last loaded (B1) are done (CLOSED); a per-run admin token
-(L2) is kept for the owner's word — the owner would open `/admin/` on the phone through a printed
-address carrying the token, not the plain one; the touch targets and reduced motion (P6 items 4, 6) are done (CLOSED); Fredoka's OFL notice and the AGPL source link (P7 items 2, 3), the three
-Phase 0 screenshots and the BACKLOG's size (P8 items 2, 3), CLAUDE.md and BACKLOG c and z (P4)
-are done (CLOSED); the headers' length (P3) is next. Done when: each is built as the audit recommends, or — where it
-would change what a player or the owner sees beyond a technical message — kept and put to the
-owner.
+Every item is decided (DECISIONS D2–D11) and built — in the night chain of 2026-11-22/23 and the
+chain of 2026-11-23 (`reports/night-2026-11-23.md`, `reports/night-2026-11-23b.md`; CLOSED) —
+except two kept for the owner because they would change what the owner does or sees: a per-run
+admin token (P1 L2: `/admin/` on the phone would need a printed address carrying the token) and
+the help card's source link by keyboard (the card keeps every key for itself, DECISIONS D3, so
+the link is reached by a tap or the mouse only). Done when: the owner has decided both.
 
 In the order decided on 2026-11-14.
 
@@ -1245,6 +1231,15 @@ review:capture` at `e1a0ddb`, all four games, desktop 1536 × 768, big 1920 × 1
   React frame); z says how "Seasonal Party" relates to the party idea. Tests:
   `vite/notices.test.ts`, `e2e/help.e2e.ts` (the source link).
 
+- 2026-11-23 — **The headers' length** (chain 2026-11-23, piece 4; DECISIONS D11, audit P3). In
+  one pass 167 source files' leading comments cut to at most 4 lines — what the file is and why —
+  and their session history (dates, NIGHT, chain, piece) dropped to git; kept: DECISIONS and
+  THREATS references, the audit item a file exists for, and the rules a reader needs (development
+  only, the server is the truth, the delay queue's order rule). 932 header lines → 380; no code,
+  inline comment or blank line changed (checked file by file against `HEAD`). Six files were
+  already short. The viewer config's header named a script that does not exist
+  (`scripts/viewer-build-check.mjs`); it now names `build-check.mjs`.
+
 ## CHECKS DONE
 
 | Date       | Check                                                                                                                                                                                                                                                                                                                                                                                                      | Tree or commit                                                           | Result                                                                                                                                                                                                                                                                                                                                                                                                                | Evidence                                                                |
@@ -1607,3 +1602,5 @@ review:capture` at `e1a0ddb`, all four games, desktop 1536 × 768, big 1920 × 1
 | 2026-11-23 | `vitest run apps/client/vite/notices.test.ts`; a client build to `tmp/` (piece 4)                                                                                                                                                                                                                                                                                                                          | piece 4 working tree                                                     | 1 of 1; the build holds `THIRD-PARTY-NOTICES.txt`, 98 lines, the OFL to its last sentence                                                                                                                                                                                                                                                                                                                             |
 | 2026-11-23 | `pnpm e2e help` (piece 4: the source link)                                                                                                                                                                                                                                                                                                                                                                 | piece 4 working tree                                                     | 5 passed, 1 skipped by design, 2.4 min, N = 1                                                                                                                                                                                                                                                                                                                                                                         |
 | 2026-11-23 | `pnpm verify:changed` (piece 4, before the headers)                                                                                                                                                                                                                                                                                                                                                        | piece 4 working tree                                                     | format, lint, typecheck green; tests 484 of 484 in 25.6 s, N = 1                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-11-23 | local check `tmp/header-only.py`: every changed file against `HEAD` (piece 4, the headers)                                                                                                                                                                                                                                                                                                                 | piece 4 headers working tree                                             | 167 files; below the header identical in every one; every header 4 lines or fewer; two "history" hits false (the word "night lanterns", an audit item id)                                                                                                                                                                                                                                                             |
+| 2026-11-23 | `pnpm verify:changed` (piece 4, the headers)                                                                                                                                                                                                                                                                                                                                                               | piece 4 headers working tree                                             | format, lint, typecheck green; tests 484 of 484 in 42.3 s, N = 1                                                                                                                                                                                                                                                                                                                                                      |

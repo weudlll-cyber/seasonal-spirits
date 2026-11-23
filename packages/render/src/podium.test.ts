@@ -1,7 +1,6 @@
 // Seasonal Sumo — the result's podium: its place numbers and its confetti. Why: the numbers are a
-// game text by the owner's decision (DECISIONS D10), so a font change for the official frame must
-// not reach them; the confetti is decoration, which reduced motion stops (audit 2026-11-22 P6
-// item 6).
+// game text (DECISIONS D10), so a font change for the official frame must not reach them; the
+// confetti is decoration, which reduced motion stops.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recorder } from './canvas-recorder.js';

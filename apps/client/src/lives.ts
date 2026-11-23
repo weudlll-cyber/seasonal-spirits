@@ -1,8 +1,5 @@
-// Seasonal Sumo — the own lives in the band (LIVES 2026-11-17): a red circle (styles/hud.css, Sky
-// Island look) per life the match began with, a lost one white — more than MAX_HEARTS as one
-// and the number left, so the team line keeps its room on a phone (FIX 2026-11-17-4) — and the
-// line for a player whose ghost is out of lives. Only the own ghost's, and only in sumo: inside the walls of hill and bomb
-// nobody falls.
+// Seasonal Sumo — the own lives in the band, sumo only: a circle per life, a lost one white (past
+// MAX_HEARTS one and the number), and the line for a ghost out of lives.
 
 import type { ServerState } from '@seasonal-spirits/protocol';
 import { modeOf } from '@seasonal-spirits/render';

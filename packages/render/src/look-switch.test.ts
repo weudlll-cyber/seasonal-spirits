@@ -1,7 +1,6 @@
-// Seasonal Sumo — the theme from the player's own setting (owner decision 2026-11-21) on the
-// kit's theme: inside the website the choice made there, standalone the game's own, else the
-// device's setting (followed live); the game's old key carried over once; the canvas following
-// the theme the page shows; and a page whose storage throws still switches (it only forgets).
+// Seasonal Sumo — the theme from the player's setting on the kit's theme: the website's choice
+// inside, the game's standalone, else the device's; the old key carried over; the canvas follows;
+// storage that throws still switches.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bindLookSwitch, carryOverLook, followTheme } from './look-switch.js';

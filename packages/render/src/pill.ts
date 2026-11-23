@@ -1,5 +1,5 @@
-// Seasonal Sumo — the white rounded pill with an ink outline (Sky Island look, 2026-11-18): the
-// one shape for the ghosts' labels, the clock's box and the short bubbles ("Aaah!", "Dodged!").
+// Seasonal Sumo — the white rounded pill with an ink outline: the one shape for labels, the
+// clock's box and the short bubbles ("Aaah!", "Dodged!").
 
 import { look } from './palette.js';
 

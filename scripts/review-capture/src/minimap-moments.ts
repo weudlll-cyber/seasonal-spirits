@@ -1,8 +1,5 @@
-// Seasonal Sumo review capture — which moments the minimap's capture shoots (owner 2026-11-20:
-// does the phone's minimap show the field's edge, the screen's frame, King's zone or Bomb's
-// carriers and the own dot?), read from the player's client frame by frame: the match's first
-// seconds, every halving once the walls have eased to where it puts them, and the match's last
-// seconds. Pure: the clock comes in.
+// Seasonal Sumo review capture — which moments the minimap's capture shoots, from the client frame
+// by frame: the first seconds, every halving once the walls settle, the last seconds. Pure.
 
 import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import { GHOST_OUT } from '@seasonal-spirits/protocol';

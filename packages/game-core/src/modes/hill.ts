@@ -1,10 +1,5 @@
-// Seasonal Sumo — "King of the Season" (hill): walls, nobody falls. A glowing zone sits in the
-// quarter of the season in season; every ghost inside earns hill.pointsPerSecond for itself and
-// its team. At every halving the walls may close in (arena.ts closeWalls) and the zone jumps to
-// the new season's quarter of the field as it will be and shrinks (hill.shrink) — never below
-// hill.smallest, never larger than its quarter (2026-11-19).
-// Leaving the zone within hill.bounceMs of an opponent's dash into it is a bounce for that
-// opponent — its own dash, not a plain push (NIGHT 2026-11-18).
+// Seasonal Sumo — "King of the Season" (hill): walls, nobody falls; ghosts in the season's zone
+// earn points, the zone jumps and shrinks at each halving, leaving it after a dash is a bounce.
 
 import { closeWalls, quarterCentre, wallsAfter } from '../arena.js';
 import type { GameConfig } from '../config.js';

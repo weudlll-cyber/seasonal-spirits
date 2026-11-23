@@ -1,10 +1,6 @@
-// Seasonal Sumo — the admin panel at /admin/ on the Sumo stack's client address (one address,
-// chain 2026-11-21; rebuilt 2026-11-18 around "choose the game, set its values, start"): choosing
-// Halving Bomb shows only the shared groups and Bomb's; a Bomb value changed in the draft leaves
-// the running match alone; "Start Halving Bomb" ends the running match and Bomb's begins with
-// that value. The stack's Sumo and its settings are started again at the end, for the specs after
-// this one. Screenshots go to reports/screens/latest/panel/ (git-ignored, the latest run only:
-// stack.ts screenshotPath).
+// Seasonal Sumo — the admin panel at /admin/ in the browser: choosing Halving Bomb shows its
+// groups, a draft value leaves the running match alone, "Start" begins Bomb's match with it.
+// It starts the stack's Sumo and its settings again at the end, for the specs after it.
 
 import { expect, test, type Page } from '@playwright/test';
 import { ADMIN_SETTINGS_PATH } from '@seasonal-spirits/protocol';

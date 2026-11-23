@@ -1,5 +1,5 @@
-// Seasonal Sumo — the halving banner on a phone (planner 2026-11-19): its text keeps the largest
-// size at which it takes at most two lines, never below 14 px.
+// Seasonal Sumo — the halving banner on a phone: its text keeps the largest size at which it takes
+// at most two lines, never below 14 px.
 
 import { describe, expect, it } from 'vitest';
 import { BANNER_MIN_PX, bannerFont } from './banner-fit.js';

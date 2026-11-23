@@ -1,8 +1,5 @@
-// Seasonal Sumo — "Halving Bomb": one bomb per 8 players on distinct carriers, the pass to a
-// touching opponent (never a teammate), the second without a pass back — the giver marked as
-// locked for exactly that time (the clients' "no return" mark, 2026-11-19) — and the explosion at
-// the halving that takes each carrier's share (blastShare) and hands out new bombs; a carrier or
-// a jumper takes no bomb (audit 2026-11-22, P2).
+// Seasonal Sumo — "Halving Bomb": one bomb per 8 players, the pass to a touching opponent only, no
+// pass back while locked, the halving's blast and new bombs; a carrier or jumper takes no bomb.
 
 import { describe, expect, it } from 'vitest';
 import { botRoster } from '../simulation.js';

@@ -1,9 +1,5 @@
-// Seasonal Sumo — the result fits a phone without scrolling (second night chain 2026-11-21,
-// piece 4): at 375 × 667, 390 × 844, 360 × 780 and 430 × 932 the whole result shows — the bridge
-// box's "Start here", "Try the simulator" and "No financial advice" inside the screen — no text
-// under the 14 px floor, and only the players' list, a named region, may scroll. The sizes are
-// set here: one browser is enough. One screenshot, after all four are read (the result is up
-// 15 s on this stack, playwright.config.ts), goes to reports/screens/latest/result-fit/.
+// Seasonal Sumo — the result fits a phone without scrolling: at four phone sizes the whole result,
+// the bridge box's links included, shows with no text under 14 px; only the players' list scrolls.
 
 import { expect, test } from '@playwright/test';
 import { matchRunning, screenshotPath } from './stack.js';

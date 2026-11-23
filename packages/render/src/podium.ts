@@ -1,10 +1,6 @@
-// Seasonal Sumo — the start and result screens' scenes in the Sky Island look (NIGHT 2026-11-19,
-// piece 4): a floating island — on the start screen, over the whole screen, the game's own sky
-// (ambient.ts: sun or moon, drifting clouds, far islands, the sea band; 2026-11-19) with the four
-// seasons' characters idling on the island, on the result screen, in a small canvas, a podium
-// with the best three teams' characters on their steps and a confetti burst in the winner's
-// colour (none with reduced motion, and the characters hold still: motion.ts). The same sky, island
-// (island.ts) and cached characters (sprites.ts) as the game; no second drawing path.
+// Seasonal Sumo — the start and result screens' scenes: the start screen's island with the four
+// seasons' characters in the game's sky, the result's podium with the best three teams and
+// confetti (none with reduced motion). The game's sky, island and sprites; no second drawing path.
 
 import { drawSky } from './ambient.js';
 import { drawGround } from './island.js';

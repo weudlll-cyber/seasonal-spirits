@@ -1,9 +1,6 @@
-// Seasonal Sumo — named presets of the settings (NIGHT 2026-11-18, piece 3): saved by the admin
-// panel, one JSON file each in a dev data folder outside the repository's tracked files
-// (`data/presets/`, git-ignored), the name of the last loaded one beside them so `pnpm dev`
-// starts with it. Every preset is checked against the game's one schema (game-core readSettings)
-// when it is saved and when it is loaded: an invalid or unknown value is refused, never applied.
-// Bounded: names of 1–32 lowercase letters, digits and dashes, at most MAX_PRESETS files.
+// Seasonal Sumo — named settings presets from the admin panel: one JSON file each in the
+// git-ignored `data/presets/`, with the last loaded name for `pnpm dev`. Checked by game-core
+// readSettings on save and load; names of 1–32 of [a-z0-9-], at most MAX_PRESETS files.
 
 import fs from 'node:fs';
 import path from 'node:path';

@@ -1,10 +1,5 @@
-// Seasonal Sumo — the characters drawn once and then copied (Sky Island look, 2026-11-18): each
-// team's character in each pose is painted into an offscreen canvas at the size the view needs
-// (character.ts), and every frame only copies those, so 32 characters stay cheap. A new size —
-// a resize, a halving's camera — or a new look paints the set again. The own character's
-// set wears a soft white glow round its outline (owner 2026-11-20), painted in once, so it costs
-// nothing per frame. Where there is no document (the unit tests) the character is drawn straight
-// onto the canvas instead, without the glow.
+// Seasonal Sumo — the characters painted once per team, pose, size and look into offscreen
+// canvases and copied each frame (the own set with a glow); without a document drawn straight.
 
 import { REACH, drawCharacter, inkWidth, type Pose } from './character.js';
 import { look } from './palette.js';

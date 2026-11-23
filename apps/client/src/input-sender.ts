@@ -1,6 +1,5 @@
-// Seasonal Spirits — when the client sends its direction (session 2026-11-16-RESPONSE).
-// A changed direction goes out at once, unless the last send was less than SEND_GAP_MS ago;
-// then the next frame's flush sends it. A direction equal to the last one sent is never sent.
+// Seasonal Spirits — when the client sends its direction: a change goes out at once unless the
+// last send was under SEND_GAP_MS ago (then the next flush); an unchanged one is never sent.
 
 export interface Direction {
   dx: number;

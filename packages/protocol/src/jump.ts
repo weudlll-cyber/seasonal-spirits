@@ -1,8 +1,5 @@
-// Seasonal Spirits — jump detector for the rendered frame stream.
-// A "jump" is one rendered frame in which any ghost moves farther than
-// 2 * (speed * frameDt) + 2 units compared to the previous frame.
-// This catches both missing interpolation and a bad extrapolation; the owner reads the
-// per-60-second count.
+// Seasonal Spirits — jump detector for the rendered frame stream: a frame in which any ghost moves
+// farther than 2 * (speed * frameDt) + 2 units; the owner reads the per-60-second count.
 
 import type { GhostState } from './state.js';
 

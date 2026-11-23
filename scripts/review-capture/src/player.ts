@@ -1,9 +1,5 @@
-// Seasonal Sumo review capture — the one scripted player among 31 bots, playing as a person might:
-// in Sumo it circles inside the arena and dashes at whoever comes close, so it can be knocked off;
-// in King it makes for the zone; in Bomb for the nearest character (to take a bomb or pass one
-// on) and dashes at it; everywhere it jumps now and then. A calm player (the own marker's capture,
-// own-marker.ts) heads for Sumo's middle, where the crowd is, and never dashes. Keyboard on the
-// desktop, the joystick on the phone, both the browser specs' helpers (apps/client/e2e/stack.ts).
+// Seasonal Sumo review capture — the one scripted player among 31 bots, playing as a person might
+// per mode (or calm: to Sumo's middle, no dash), by keyboard or joystick (e2e stack.ts).
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import type { Page } from '@playwright/test';

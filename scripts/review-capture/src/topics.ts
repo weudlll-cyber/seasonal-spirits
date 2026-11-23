@@ -1,10 +1,6 @@
-// Seasonal Sumo review capture — the rule that keeps review images from piling up (owner decision
-// 2026-11-21: review screenshots and contact sheets stay out of the repository, on the owner's PC,
-// and do not pile up): before a run writes a topic's images, that topic's previous images and
-// sheets go, so each topic holds only its latest run. A topic is a folder under
-// reports/screens/review/ (a game, `own-marker`, `minimap`) and its sheets beside it,
-// sheet-<topic>.png and sheet-<topic>-….png. The browser e2e specs keep their screenshots by the
-// same rule, one topic per spec under reports/screens/latest/ (apps/client/e2e stack.ts).
+// Seasonal Sumo review capture — the rule that keeps review images (on the owner's PC, not in the
+// repository) from piling up: a run clears its topic's previous images and sheets first.
+// A topic is a folder under reports/screens/review/ plus its sheet-<topic>*.png; e2e specs alike.
 
 import fs from 'node:fs';
 import path from 'node:path';

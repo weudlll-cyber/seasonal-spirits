@@ -1,8 +1,5 @@
-// Seasonal Sumo — King of the Season's zone on the island (2026-11-19): a gold crown floats over
-// its middle, its flags fly inwards, never past its ring, their heads above a character's hat on
-// the ring, and no tree, pebble or lantern stands inside
-// it, inside its next place, or where it can jump — tufts and flowers grow anywhere (owner
-// 2026-11-19).
+// Seasonal Sumo — King's zone on the island: a crown over its middle, flags inward within its ring
+// and above a hat, no tree, pebble or lantern in it, its next place or where it can jump.
 
 import { configFrom, DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';

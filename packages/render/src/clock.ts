@@ -1,10 +1,5 @@
-// Seasonal Sumo — the season clock at the top: one line in a small white pill at the top left —
-// the mode's name (sumo's with its variant), the season in play with a dot in its colour, the
-// time left and the next season, and in the last seconds before a deadline its countdown — the
-// mode's halving, or the match end ("LAST CHANCE"); with no deadline at all the time played.
-// Which deadline is next the server says (STATE_TO_END, STATE_OPEN_END). The row of season
-// cells it had is gone (NIGHT 2026-11-19: it repeated the team pills in the band below,
-// scores.ts).
+// Seasonal Sumo — the season clock pill at the top left: the mode's name, the season, the time
+// left and the next one, the countdown before a deadline (STATE_TO_END, STATE_OPEN_END).
 
 import {
   STATE_OPEN_END,

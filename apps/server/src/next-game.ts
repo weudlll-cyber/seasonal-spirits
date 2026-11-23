@@ -1,7 +1,5 @@
-// Seasonal Sumo — which game the next match plays (moved out of match-host.ts in the admin panel
-// rebuild): the rotation's slot for the match number, or a game the admin panel started — that
-// one once, or for every following match while "keep playing this game" is on (a switch of the
-// development session, not a gameplay setting) —, and sumo's variant.
+// Seasonal Sumo — which game the next match plays: the rotation's slot for the match number, or
+// the admin panel's game (once, or while "keep playing" is on), and sumo's variant.
 
 import { SUMO_VARIANTS, type RotationSlot, type SumoVariant } from '@seasonal-spirits/game-core';
 

@@ -1,8 +1,5 @@
-// Seasonal Sumo — how large a character is drawn and how far its drawing reaches (moved out of
-// ghosts.ts for the Sky Island look, 2026-11-18): its body radius in pixels from the match's
-// size, how far above its centre the hat, a bomb, the "no return" mark or the protection ring
-// reach — what the own arrow goes over (own.ts) —, and how far to its sides it reaches — what its
-// label keeps clear of.
+// Seasonal Sumo — how large a character is drawn and how far its drawing reaches: up (hat, bomb,
+// marks — what the own arrow goes over) and to its sides (what its label keeps clear of).
 
 import {
   GHOST_AIRBORNE,

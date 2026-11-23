@@ -1,11 +1,5 @@
-// Seasonal Sumo review capture — what can be measured on a page at a moment, for the review's
-// checklist: the smallest font of any text shown, texts cut off at the screen's edge, texts that
-// overlap one another, the lowest text contrast against its own background (WCAG; a text over the
-// canvas has none of its own and is left to the eye), and from the client the playing area on
-// screen and the characters' size. Boxes are the texts' own, as far as a clipping or scrolling
-// ancestor shows them (a text scrolled out of a panel counts as not shown, not as cut). While an
-// overlay (help, result, start) shows, only its texts.
-// The page hands over raw boxes and colours (collect); the judging happens here.
+// Seasonal Sumo review capture — what can be measured on a page at a moment: smallest font, cut and
+// overlapping texts, lowest contrast, playing area, character size. The page collects; judged here.
 
 import type { Page } from '@playwright/test';
 

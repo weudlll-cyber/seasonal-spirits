@@ -1,8 +1,5 @@
-// Seasonal Sumo — the band's top row as the kit's game bar (@seasonal/kit GameBar, night chain
-// 2026-11-21 piece 4): the way back to the website (website mode only), the team line and the own
-// lives (filled by team-line.ts and lives.ts by their ids), and the corner: the kit's theme
-// toggle, "?" (help.ts), the sound (hud.ts bindMute) and, in the dev build, the admin link. No
-// panels: the chat docks below the field (Dock.tsx). Rendered once; its props never change.
+// Seasonal Sumo — the band's top row as the kit's GameBar: the back link (website mode), the team
+// line and lives, and the corner (theme, "?", sound, the dev build's admin link). Rendered once.
 
 import { BackLink, GameBar, ThemeToggle, usePanels } from '@seasonal/kit/react';
 import { memo, type ReactElement } from 'react';

@@ -1,6 +1,5 @@
-// Seasonal Spirits — colours and names of the four seasons and the Sky Island look's palettes
-// (owner's choice 2026-11-18), light and dark (the player's switch, look-switch.ts), tinted by the
-// season in play (season.ts): the one list both apps draw with; index = season = team.
+// Seasonal Spirits — the four seasons' colours and names and the Sky Island palettes, light and
+// dark (look-switch.ts), tinted by the season (season.ts): the one list both apps draw with.
 
 // The season and team colours: the website's, exactly, wherever a season is shown (owner
 // decision 2026-11-20), as the kit's tokens.css holds them (@seasonal/kit; palette.test.ts reads

@@ -1,8 +1,5 @@
-// Seasonal Sumo — the ground the ghosts stand on, as a floating island (Sky Island look,
-// 2026-11-18): sumo's arena is its round grass top, the walled modes' square a rounded platform
-// (its fence stands on it, fence.ts); under the top a dirt edge and a hanging rock body
-// with strata and roots, tapering to three jagged points. Scales with the ground, so the rock
-// shrinks with the arena at a halving.
+// Seasonal Sumo — the ground as a floating island: sumo's round grass top or the walled modes'
+// platform over a rock body, scaling with the ground so it shrinks at a halving.
 
 import { look } from './palette.js';
 import { ISLAND_DEPTH, sx, sy, type View } from './view.js';

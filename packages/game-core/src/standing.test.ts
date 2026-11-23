@@ -1,8 +1,5 @@
-// Seasonal Sumo — lives and sumo's two variants (LIVES 2026-11-17): a fall costs a life and the
-// last one puts a ghost out for the rest of the match; Points ends at its time limit or when one
-// team is left; Last One Standing ends with one ghost, or with "stop-time" at the time limit by
-// ghosts left, then lives, then team order; "keep-halving" halves on at its interval until one
-// is left, "stop-open" keeps the size with no time limit. The teams knocked out are kept in order.
+// Seasonal Sumo — lives and sumo's two variants: a fall costs a life, the last puts a ghost out;
+// Points and Last One Standing end and rank as set (stop-time, keep-halving, stop-open).
 
 import { describe, expect, it } from 'vitest';
 import type { AfterLast, GameConfig, SumoVariant } from './config.js';

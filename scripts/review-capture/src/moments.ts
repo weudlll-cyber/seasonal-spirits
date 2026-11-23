@@ -1,8 +1,5 @@
 // Seasonal Sumo review capture — which moments of a match to shoot, read from the player's client
-// (window.__client) frame by frame: 2 s before each halving, its banner, the island breaking or
-// the walls moving, the new season 2 s after it, "last chance", match over, the result and the
-// next match's first seconds; for the player alone its fall and respawn, out of lives, holding
-// King's zone, carrying, passing and the "no return" mark. Pure: the clock comes in.
+// frame by frame (halvings, last chance, match over, result, the player's own events). Pure.
 
 import {
   GHOST_BOMB,

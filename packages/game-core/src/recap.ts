@@ -1,11 +1,6 @@
-// Seasonal Sumo — the match recap's awards, two per mode, and the players' final order, from the
-// result at the end. An award nobody earned (a count of 0) is left out; of equal ones the lowest
-// id gets it.
-// - sumo, Points: "Best pusher" (most knockouts), "Survivor" (longest without a fall);
-// - sumo, Last One Standing: "Last one standing" (the one ghost left, with its lives left —
-//   none when the time limit left several), "Best pusher";
-// - hill: "King" (most seconds in the zone), "Bouncer" (most opponents pushed out of it);
-// - bomb: "Hot hands" (most passes), "Cool head" (most points at the end).
+// Seasonal Sumo — the recap's awards, two per mode, and the players' final order. An award nobody
+// earned is left out; ties go to the lowest id. Sumo: "Best pusher", "Survivor" / "Last one
+// standing"; hill: "King", "Bouncer"; bomb: "Hot hands", "Cool head".
 
 import type { GameMode } from './config.js';
 import type { MatchResult, PlayerResult } from './types.js';

@@ -1,6 +1,5 @@
-// Seasonal Sumo — King's smallest field and zone from the crowd (owner 2026-11-19): the field
-// holds four crowds of characters standing shoulder to shoulder, the zone one and a half, the
-// zone still fits its quarter, and the settings start at these values.
+// Seasonal Sumo — King's smallest field and zone from the crowd: the field holds four crowds
+// shoulder to shoulder, the zone one and a half within its quarter; the settings start there.
 
 import { describe, expect, it } from 'vitest';
 import { configFrom } from './config.js';

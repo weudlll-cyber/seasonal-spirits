@@ -1,6 +1,5 @@
-// Seasonal Sumo — the help card's hint of more (owner 2026-11-20: its last line was cut in half
-// with nothing saying there was more): the fade shows while more lies below the card's edge and
-// is gone at the end, and never on a card that fits.
+// Seasonal Sumo — the help card's hint of more: the fade shows while more lies below the card's
+// edge, is gone at the end, and never shows on a card that fits.
 
 import { describe, expect, it } from 'vitest';
 import { moreBelow } from './help.js';

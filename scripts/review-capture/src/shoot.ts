@@ -1,12 +1,5 @@
-// Seasonal Sumo review capture — one moment on every page watching the match: each page shot as
-// it is, then switched to the other look with its own Light/Dark button (the client's is the
-// kit's theme toggle, the viewer's its pill; the look in force is <html data-theme>), shot again
-// and switched back, all pages at once so a moment takes well under a second. The start screen shows only for
-// a moment after a page loads and fades in 0.4 s (client start.ts): it is shot in each look right
-// after a reload in that look (planner 2026-11-20: the second look's shot fell into the fade).
-// Files:
-// reports/screens/review/<mode>/<size>-<look>-<role>-<nn>-<moment>.png, and per shot one line of
-// what was measured on the page (metrics.ts) in that folder's metrics.jsonl.
+// Seasonal Sumo review capture — one moment on every watching page, shot in both looks at once
+// (the start screen right after a reload in each look), into reports/screens/review/<mode>/.
 
 import fs from 'node:fs';
 import path from 'node:path';

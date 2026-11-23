@@ -1,7 +1,6 @@
-// Seasonal Sumo — the home network, for the dev admin panel from a phone (owner decision
-// 2026-11-21): which callers are in it (RFC 1918 private IPv4, also mapped into IPv6) and which
-// page origins it has (this machine's own private addresses on the client's port). Used only in
-// the LAN mode of the dev build (`pnpm dev --lan`); the server refuses NODE_ENV=production.
+// Seasonal Sumo — the home network for the dev admin panel from a phone: its callers (RFC 1918
+// private IPv4, also IPv6-mapped) and its page origins (this machine's private addresses).
+// Used only in `pnpm dev --lan`; the server refuses NODE_ENV=production.
 
 import os from 'node:os';
 

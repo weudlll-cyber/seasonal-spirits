@@ -1,8 +1,5 @@
-// Seasonal Sumo — what stands up on the island (owner 2026-11-19: the crack lay over the trees, the
-// fence over the characters): every tree, pebble and lantern, every fence post and rail
-// (fence.ts) and King's flag poles (zone.ts), each a piece with the screen y of its foot, drawn in
-// one depth order with the characters (ghosts.ts); the crown floats over all of them. Everything
-// flat lies under them (field.ts drawField).
+// Seasonal Sumo — what stands up on the island (trees, pebbles, lanterns, fence pieces, King's
+// flags), each with its foot's screen y, in one depth order with the characters; flat things under.
 
 import { walled } from '@seasonal-spirits/game-core';
 import type { ServerState } from '@seasonal-spirits/protocol';

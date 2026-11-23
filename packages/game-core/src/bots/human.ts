@@ -1,21 +1,6 @@
-// Seasonal Sumo — the human-like layer over the bot's brain (owner requirement 2026-11-17: bots
-// fill seats and play like an average human). One layer over every mode's brain:
-// - it sees what a player's screen shows — the whole playing area — a reaction time late
-//   (human/perception.ts);
-// - each bot has its own reaction time from bots.reactionMs, varied per decision;
-// - its direction carries aim noise; it dashes only when its brain has a target lined up, a
-//   good chance is sometimes missed (too late), and never sooner than bots.dashGapMs after its
-//   last dash — a calm player's pace (owner 2026-11-17); it hesitates now and then; its own
-//   edge margin may be too small;
-// - once no halving is coming any more and fewer than bots.boldAt ghosts are left it grows
-//   bolder (FIX 2026-11-17-5: the last two circled each other): it aims ahead, its dash angle
-//   widens, and after a wait without a dash — the shorter the fewer are left — it attacks anyway,
-//   whatever its dash chance;
-// - a rival dashing at it (as it sees it, a reaction time late) it jumps over with a chance
-//   that grows with its form, one decision per dash (JUMP 2026-11-17: never a perfect dodge);
-// - its form drifts slowly within bots.form (a seeded random walk): sharper and steadier on a
-//   good run, sloppier in a weak spell.
-// All randomness comes from `seed` (derived from the match's seed), so runs are reproducible.
+// Seasonal Sumo — the human-like layer over every mode's bot brain, so bots play like an average
+// human: it sees late (human/perception.ts), aims with noise, misses chances, keeps a dash gap,
+// grows bolder in the endgame, jumps a dash by chance, its form drifts. Randomness from `seed`.
 
 import type { GameConfig } from '../config.js';
 import { clamp } from '../geometry.js';

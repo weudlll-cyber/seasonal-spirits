@@ -1,8 +1,6 @@
-// Seasonal Sumo — the arena: a disc in the middle of the field. At every halving its radius
-// shrinks (× sumo.shrink, 0.71 by default: half the area) and the edge eases in over arenaShrinkMs; a ghost whose centre is
-// outside the edge falls. Also where ghosts start and respawn: each team on its own quarter.
-// In the walled modes the arena's radius is the walls' half side: with walls.close on they close
-// in at each halving the same way (closeWalls), and nobody falls.
+// Seasonal Sumo — the arena: a disc that shrinks at every halving (sumo.shrink, eased over
+// arenaShrinkMs); a ghost whose centre is outside it falls. Also the teams' start and respawn
+// quarters; in the walled modes its radius is the walls' half side (closeWalls), nobody falls.
 
 import { walled, type GameConfig } from './config.js';
 import { distance } from './geometry.js';

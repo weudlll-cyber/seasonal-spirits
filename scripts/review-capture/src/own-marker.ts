@@ -1,11 +1,5 @@
-// Seasonal Sumo review capture of the own marker (`pnpm review:own-marker [game …]`, owner
-// 2026-11-20: is the own character found at a glance where it is densest?): on the review stack
-// (stack.ts) Sumo · Points, King of the Season and Halving Bomb started one after the other
-// through the viewer's "Next match" flow, each with two calm players (player.ts) in the same
-// match — one on a desktop, one on a phone —, each shot in Light and Dark (shoot.ts) at the
-// moments of own-moments.ts: the first seconds and every season's densest moment, so every
-// season's ground shows. Named games alone (their folder names, e.g. `halving-bomb`) are shot
-// again, the others' shots kept. Then one contact sheet of all, sheet-own-marker.png (sheets.ts).
+// Seasonal Sumo review capture of the own marker (`pnpm review:own-marker [game …]`): three games
+// with two calm players (desktop, phone) shot in both looks at own-moments.ts, into one sheet.
 // Development only: it starts the dev admin endpoint.
 
 import { setTimeout as delay } from 'node:timers/promises';

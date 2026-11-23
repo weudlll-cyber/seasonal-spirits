@@ -1,8 +1,5 @@
-// Seasonal Sumo — where the field lands on the canvas, seen from three quarters above (Sky
-// Island look, 2026-11-18): a square of it fitted below the bar (the client's playing area, the
-// viewer's whole field), its depth squashed by the view's tilt, with room under it for the
-// island's rock body. Every drawing function takes a View and maps field units to pixels through
-// it; input directions stay screen = field directions.
+// Seasonal Sumo — where the field lands on the canvas, seen from three quarters above: fitted below
+// the bar, tilted, room for the rock body. Every drawing maps field units to pixels through a View.
 
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';
 

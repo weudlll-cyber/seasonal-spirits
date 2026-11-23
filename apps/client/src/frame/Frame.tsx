@@ -1,9 +1,6 @@
-// Seasonal Sumo — the frame around the play field in React with the kit's building blocks (night
-// chain 2026-11-21 piece 4; owner decision 2026-11-20: the frame comes from the kit): the game
-// bar in the band (Bar.tsx; the kit's focus mode while a match runs), the result frame
-// (ResultCard.tsx) and, in website mode only, the docked chat (Dock.tsx). Rendered once and
-// synchronously into the page's containers, before the game's modules look their parts up by id
-// (hud.ts el); after that only the focus mode and the result's fit change (frame-store.ts).
+// Seasonal Sumo — the React frame round the play field from the kit: the game bar (Bar.tsx), the
+// result frame (ResultCard.tsx) and in website mode the docked chat (Dock.tsx). Rendered once,
+// synchronously, before the game's modules look their parts up by id (hud.ts el).
 
 import '@seasonal/kit/shell.css';
 import '@seasonal/kit/fit.css';

@@ -1,6 +1,5 @@
-// Seasonal Sumo — the bots in the endgame (FIX 2026-11-17-5: the last two circled each other):
-// they aim ahead of a moving target, grow bolder as ghosts are knocked out once no halving is
-// coming, and attack after a wait without a dash.
+// Seasonal Sumo — the bots in the endgame (the last two must not circle each other): they aim
+// ahead of a moving target, grow bolder once no halving is coming, and attack after a wait.
 
 import { describe, expect, it } from 'vitest';
 import { configFrom, type GameConfig } from '../config.js';

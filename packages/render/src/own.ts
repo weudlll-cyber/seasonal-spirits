@@ -1,13 +1,6 @@
-// Seasonal Sumo — the own character's marks, so the player always finds it (FIX 2026-11-17-3;
-// owner 2026-11-20: in a crowd it was still lost): a thick ring in its team's colour on the ground,
-// white-edged and ink-outlined, breathing gently; a large arrow in the team's colour pointing down
-// at it from above whatever it carries, white-edged and ink-outlined like the ring (the 2026-11-20
-// capture: Spring's green arrow on Spring's green grass), "YOU" over it, bobbing; the box that
-// arrow keeps clear of other labels and bubbles; an arrow at the screen's edge towards it when it
-// is off screen; the
-// ring pulsing outwards after a respawn and at the start of a match, and — while it is out — its
-// team's respawn band drawn faintly (the match's respawnBand, render shape.ts). Sizes in pixels,
-// so they read on desktop and phone.
+// Seasonal Sumo — the own character's marks, so the player always finds it: a breathing ring and a
+// "YOU" arrow in its team's colour, an edge arrow off screen, a pulse after a respawn, the respawn
+// band while out. Sizes in pixels, so they read on desktop and phone.
 
 import { QUARTER, teamAngle, type Team } from '@seasonal-spirits/game-core';
 import type { WireDisc } from '@seasonal-spirits/protocol';

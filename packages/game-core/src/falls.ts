@@ -1,9 +1,5 @@
-// Seasonal Sumo — falling off and coming back. A ghost whose centre is outside the arena falls
-// (one in the air when it lands — jump.ts): the
-// fall counts +1 for the last opponent that touched it within creditMs (and its team), for
-// nobody without one. Every fall costs a life (LIVES 2026-11-17). It falls for fallMs (the
-// animation), is out until outMs after the fall, then respawns on its team's quarter,
-// protected for protectMs — with no life left it stays out for the rest of the match.
+// Seasonal Sumo — falling off and coming back: a fall credits the last opponent within creditMs
+// and costs a life; the ghost is out until outMs, then respawns protected, unless no life is left.
 
 import { outside, respawnSpot } from './arena.js';
 import type { GameConfig } from './config.js';

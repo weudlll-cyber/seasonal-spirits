@@ -1,26 +1,7 @@
-// Seasonal Sumo — the ghosts as the Sky Island look's characters (owner's choice 2026-11-18): a
-// character in its team's colour and season hat (character.ts, cached by sprites.ts), players
-// and bots alike, back to front by where they stand, each over a soft shadow, facing the side it
-// walks to with a bob and stepping feet; the own one drawn after every other character, glowing,
-// its ring on the ground, its arrow above all of the field and an arrow at the screen's edge when
-// it is off screen (own.ts; owner 2026-11-20). A fast one — dashing or knocked flying — leaves three white puffs; one falling off
-// tips over the edge into the sea (fall.ts); one out is not drawn; one just back (protected)
-// wears a white dashed ring; one in the air after a jump rises on an arc while its shadow stays
-// on the ground, with a ground ring at take-off and landing and "Dodged!" when a dash passed
-// under it (jump.ts); a bomb carrier pulses in a hot halo under the ticking bomb (bomb.ts), one
-// that just passed a bomb on wears the "no return" mark while it may not take it back
-// (no-return.ts); a dash
-// winding up glows with its line (windup.ts). A dash's start stretches the body, a landing or a
-// respawn squashes it, a landing kicks up dust, a hit shows a white star and the knocked one
-// slides with spiral eyes (moments.ts, effects.ts). Layers (owner 2026-11-19): the ground marks
-// under every character (shadows, rings, dust); the bodies in one depth order with what stands on
-// the island — trees, pebbles, lanterns, fence posts and rails, King's flag poles (standing.ts),
-// no body cut anywhere, the own one last; over them the hit stars and the puffs, King's crown, the
-// season's particles, the labels (ghost-labels.ts) and "Dodged!" — none in the own arrow's box —
-// and over everything the own arrow. A character off
-// Sumo's island — falling, or in the air beyond its edge — has its standing size and no marks on
-// the ground; one off its back is drawn behind the island's body (drawFallsBehind, before the
-// island; planner 2026-11-20). What the drawing remembers between frames is trails.ts.
+// Seasonal Sumo — the ghosts as Sky Island characters (character.ts, sprites.ts) with their states'
+// looks (fall.ts, jump.ts, bomb.ts, no-return.ts, windup.ts, moments.ts) in layers: ground marks,
+// bodies in one depth order with what stands (standing.ts), the own one last, then effects and
+// labels (ghost-labels.ts), the own arrow over all (own.ts). Memory between frames: trails.ts.
 
 import {
   GHOST_BOMB,

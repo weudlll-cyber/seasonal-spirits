@@ -1,11 +1,5 @@
-// Seasonal Sumo — the zoom cap (planner 2026-11-19, decision BACKLOG am): on a screen whose
-// shorter side is at least 600 px the camera never comes so close that a character's body
-// diameter exceeds 6 % of that side (48 px at 1280×800) — a late halving shows more sky round the
-// island instead of ever larger characters; below 600 px (a phone) there is no cap and the
-// camera always fits the field, so late Sumo, King and Bomb fill the width to the end. The cap
-// holds only while more than 8 characters stand (planner 2026-11-20): with 8 or fewer the camera
-// comes closer, client and viewer alike, until the island fills two thirds of its room. A falling
-// character is never drawn larger than a standing one.
+// Seasonal Sumo — the zoom cap: at 600 px or more a body never exceeds 6 % of the shorter side
+// while more than 8 characters stand; a phone always fits the field; a fall is never drawn larger.
 
 import { GHOST_FALLING, GHOST_OUT, type ServerState } from '@seasonal-spirits/protocol';
 import { describe, expect, it } from 'vitest';

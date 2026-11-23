@@ -1,10 +1,5 @@
-// Seasonal Sumo review capture — the contact sheets (`pnpm review:sheets [mode …]` alone, or at
-// the end of a capture): per mode and size one grid of every shot in moment order, each labelled
-// with its number, moment, look and role — the player's run first, then the spectator's —, large enough to read the HUD (desktop and big screen
-// 640 px wide, phone 260 px), split into -1, -2 … past about 4000 px; or one sheet of a folder's
-// every shot, all sizes in one flow (the own marker's sheet, own-marker.ts); or the minimap's sheet,
-// each phone shot under its map enlarged (minimap.ts). Drawn by the browser from a page of <img>s,
-// so no image library is needed.
+// Seasonal Sumo review capture — the contact sheets (`pnpm review:sheets [mode …]`, or after a
+// capture): grids of shots per mode and size, a folder's or the minimap's, drawn by the browser.
 
 import fs from 'node:fs';
 import path from 'node:path';

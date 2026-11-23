@@ -1,9 +1,6 @@
-// Seasonal Sumo — the texts' style as the browser applies it, at desktop and phone size: the
-// fonts by DECISIONS D7 (kit K4) — Fredoka for the game's own texts over the play field, Luxora
-// Grotesk for every official part, the connection notice and /admin/'s network numbers among them
-// (D10) — and every page text at 14 px or more (DECISIONS D3). Why: a
-// stylesheet change can move a text to the other font or under the floor without any other spec
-// noticing.
+// Seasonal Sumo — the texts' fonts and sizes as the browser applies them: Fredoka for the game's
+// texts, Luxora Grotesk for the official parts (DECISIONS D7, D10), all at 14 px or more (D3).
+// Why: a stylesheet change can move a text to the other font or under the floor unnoticed.
 
 import { expect, test, type Page } from '@playwright/test';
 import { view } from './stack.js';

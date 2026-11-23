@@ -1,10 +1,5 @@
-// Seasonal Sumo — the client's frame cost (`pnpm frame-cost [runs]`, second night chain 2026-11-21,
-// piece 6): the player's client with all 32 seats played (bots) on the review stack (stack.ts),
-// at a desktop 1536 × 768 and a phone 390 × 844, `runs` short runs each (30 by default). A run is a
-// fresh page, 2 s to settle, then 5 s measured: the main thread's task time per drawn frame
-// (Chrome's own TaskDuration over the frames counted), so a build is measured without a line of
-// it changed. Per run the PC's CPU load is recorded — before the run, with only the stack up, and
-// during it. Prints a line per run and the median and 95th percentile per size, with N.
+// Seasonal Sumo — the client's frame cost (`pnpm frame-cost [runs]`): on the review stack with 32
+// seats, desktop and phone, main-thread task time per frame and CPU load; median and p95 per size.
 
 import os from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';

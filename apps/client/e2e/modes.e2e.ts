@@ -1,8 +1,5 @@
-// Seasonal Sumo — King of the Season and Halving Bomb in the player client, at desktop and phone
-// size (NIGHT 2026-11-18, piece 7), each on its own short-match stack: join, move, dash, jump
-// (the own ghost in the air), in Bomb the carriers and the labels' score rule, live to "MATCH
-// OVER" and see the result with the mode's awards and the bridge box with the mode's line. Screenshots go to
-// reports/screens/latest/modes/ (git-ignored, the latest run only: stack.ts screenshotPath).
+// Seasonal Sumo — King of the Season and Halving Bomb in the player client at desktop and phone
+// size: join, move, dash, jump, Bomb's carriers, to "MATCH OVER" and the mode's result screen.
 
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { GHOST_AIRBORNE } from '@seasonal-spirits/protocol';

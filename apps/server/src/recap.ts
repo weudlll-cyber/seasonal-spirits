@@ -1,8 +1,5 @@
-// Seasonal Sumo — the match recap as the message every client gets when a match ends: the
-// core's result — the mode's score per team and player, the ghosts still in per team, the teams
-// knocked out in order, Last One Standing's winner, when each player went out — and the mode's
-// awards (game-core recap.ts).
-// An award nobody earned is left out; the client names the ghosts.
+// Seasonal Sumo — the match recap message every client gets when a match ends: the core's result
+// and the mode's awards (game-core recap.ts); an award nobody earned is left out.
 
 import { awardsOf, ranked, type MatchResult } from '@seasonal-spirits/game-core';
 import type { ServerRecap } from '@seasonal-spirits/protocol';

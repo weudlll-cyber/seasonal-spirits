@@ -1,9 +1,5 @@
-// Seasonal Sumo — the short moments the characters' effects play from (NIGHT 2026-11-19, piece
-// 2), seen from the states as they come: a dash starting (a stretch), a landing after a jump and
-// a respawn (a squash; a landing also a dust puff), and a knock (a white star where the dasher hit
-// it, spiral eyes while it slides). The client sees no hit itself: a knock is a character going
-// faster than running without dashing, its contact point the middle to the nearest dasher. Part
-// of trails.ts's memory; bounded by the ghost ids drawn.
+// Seasonal Sumo — the moments the characters' effects play from, seen in the states: dash start,
+// landing, respawn and knock (faster than running without a dash). Part of trails.ts; bounded.
 
 import {
   GHOST_AIRBORNE,

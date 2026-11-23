@@ -1,7 +1,6 @@
-// Seasonal Sumo — the phone's follow camera in King and Bomb (2026-11-19): only on a portrait
-// screen, for a player, with the setting on; a body about 22 px wide (decision 2026-11-19), centred on the own
-// character but never showing more beyond the walls than it must; the whole field once it fits;
-// eased, never jumping.
+// Seasonal Sumo — the phone's follow camera in King and Bomb: only portrait, a player, setting on;
+// a body about 22 px wide, centred on the own character, little beyond the walls, eased; the whole
+// field once it fits.
 
 import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';

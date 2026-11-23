@@ -1,15 +1,6 @@
-// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server and player client; the client's
-// address also serves the viewer at /viewer/ and the admin panel at /admin/ (one address, chain
-// 2026-11-21: apps/client vite/viewer-pages.ts).
-// The server's own bots fill all 32 seats; the modes take turns — Sumo Points, King of the
-// Season, Halving Bomb, Sumo Last One Standing (GAME_MODE=rotate) — unless the admin panel's last
-// loaded preset says otherwise (NIGHT 2026-11-18); /admin/ carries the admin panel and the game
-// an "Admin" link (DEV_TUNING=1).
-// Starts both as hidden background processes (no windows on Windows, the same on Linux
-// and macOS), logs to logs/dev-*.log (and dev-*.err.log on Windows), records their PIDs in
-// tmp/dev-pids.json, and stops exactly those PIDs again. `pnpm dev --lan` (development only,
-// never the default) also opens server and client to the local network and prints the
-// address for a phone in the same Wi-Fi.
+// Seasonal Spirits — `pnpm dev` / `pnpm dev:stop`: match server and player client (also serving
+// /viewer/ and /admin/), bots in all 32 seats, the modes in rotation, DEV_TUNING=1; hidden
+// processes, logs in logs/, PIDs in tmp/dev-pids.json. `--lan` (development only) opens the LAN.
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';

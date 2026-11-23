@@ -1,5 +1,5 @@
-// Seasonal Sumo — the admin settings endpoint's commands (moved out of admin-settings.ts, audit
-// 2026-11-22 P3: the file at its line limit): what a POST body may ask, each read field by field.
+// Seasonal Sumo — the admin settings endpoint's commands (admin-settings.ts): what a POST body may
+// ask, each read field by field.
 
 import {
   readSettings,

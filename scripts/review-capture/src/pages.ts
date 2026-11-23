@@ -1,9 +1,5 @@
-// Seasonal Sumo review capture — the browser pages watching a match on the review stack: the
-// player's or a spectator's client at desktop (1536 × 768), big-screen (1920 × 1080) or phone
-// (390 × 844, touch) size (night chain 2026-11-21: the owner's review sizes), the help overlay
-// counted as seen; the viewer (big screen, 1920 × 1080) with its admin panel; the
-// panel's "Next match" flow: choose the game, its values shown, start it; waiting on a client for
-// that match; and a game's folder name.
+// Seasonal Sumo review capture — the browser pages on the review stack: clients at desktop, big
+// screen and phone size, the viewer with its admin panel, and the panel's "Next match" flow.
 
 import type { Browser, Page } from '@playwright/test';
 import { startableGame } from '@seasonal-spirits/game-core';

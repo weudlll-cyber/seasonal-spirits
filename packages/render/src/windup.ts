@@ -1,7 +1,5 @@
-// Seasonal Sumo — a dash's wind-up drawn (game-core windup.ts, the owner's option; Sky Island
-// look 2026-11-18): a white glow round the character and an ink-edged white line on the ground in
-// the dash's direction, so every player sees the dash coming and where it goes, and can jump or
-// step aside.
+// Seasonal Sumo — a dash's wind-up drawn (game-core windup.ts): a white glow and a line on the
+// ground in the dash's direction, so every player sees it coming.
 
 import { look } from './palette.js';
 import { sx, sy, type View } from './view.js';

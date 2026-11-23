@@ -1,8 +1,6 @@
-// Seasonal Sumo — the layers of the island (owner 2026-11-19: the crack lay over the trees, the
-// fence over the characters): what lies flat is under every tree and character, a character and
-// what stands on the island are in one depth order — a tree or a fence post in front of a
-// character covers it, one behind it does not —, the crown floats over the crowd, the season's
-// particles fly under the labels; two "Dodged!" bubbles never stand over each other.
+// Seasonal Sumo — the island's layers: flat things under trees and characters, characters and
+// standing pieces in one depth order, the crown over the crowd, particles under labels, no
+// "Dodged!" over another.
 
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';
 import { describe, expect, it, vi } from 'vitest';

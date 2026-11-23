@@ -1,9 +1,5 @@
-/* Seasonal Sumo — the result screen's look (frame/ResultCard.tsx in the kit's result frame): the
-   card over the veiled field, its parts on the frame's surface. It fits the screen without
-   scrolling (second night chain 2026-11-21, piece 4): the kit's fit (`--fit`) shrinks every size
-   here down to the 14 px text floor (the owner's Seasonal Party floor, 2026-11-21); what still
-   does not fit at the floor goes to one named scroll area, the players' list, so the head, the
-   podium, the teams and the bridge box with its buttons always show whole. */
+/* Seasonal Sumo — the result screen's look (frame/ResultCard.tsx): it fits the screen down to the
+   14 px text floor with the kit's `--fit`; past it only the players' list scrolls. */
 
 #result {
   position: fixed;

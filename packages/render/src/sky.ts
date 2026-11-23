@@ -1,8 +1,5 @@
-// Seasonal Sumo — the sky around the island (Sky Island look, 2026-11-18): the sky, a sun top
-// right (at night a crescent moon and stars), two or three small far islands, the sea band at
-// the bottom, and two big clouds low in front. Drawn once per canvas size and look into offscreen
-// canvases (the frame only copies them); what moves over it — the far clouds, the waves, the
-// sun's ring, the moon's glow, twinkling stars — is ambient.ts (NIGHT 2026-11-19).
+// Seasonal Sumo — the sky around the island: sun or moon and stars, far islands, the sea band,
+// front clouds, drawn once per size and look into offscreen canvases; what moves is ambient.ts.
 
 import { look, type Look } from './palette.js';
 

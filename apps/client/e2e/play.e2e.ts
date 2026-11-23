@@ -1,8 +1,5 @@
-// Seasonal Sumo — one short match in the player client, at desktop and phone size: join, move,
-// jump (the own ghost in the air), dash (the button's cooldown ring runs), live through a
-// HALVING with the arena halving, the last-chance countdown and "MATCH OVER", and see the result
-// screen with the awards and the bridge box. Screenshots of each step go to
-// reports/screens/latest/play/ (git-ignored, the latest run only: stack.ts screenshotPath).
+// Seasonal Sumo — one short match in the player client at desktop and phone size: join, move,
+// jump, dash, a HALVING, the last-chance countdown, "MATCH OVER", the result with the bridge box.
 
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { GHOST_AIRBORNE } from '@seasonal-spirits/protocol';

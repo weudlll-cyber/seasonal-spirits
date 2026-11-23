@@ -1,6 +1,5 @@
-// Seasonal Sumo — the band's team line (index.html #team): "You are Team <Season>" behind the
-// team's colour dot, for players only (owner's play test 2026-11-15). Its own file so main.ts
-// stays one concern: wiring the client together.
+// Seasonal Sumo — the band's team line (index.html #team): "You are Team <Season>" with the team's
+// colour dot, for players only; its own file so main.ts stays wiring.
 
 import { seasonColour, seasonName } from '@seasonal-spirits/render';
 import { el } from './hud.js';

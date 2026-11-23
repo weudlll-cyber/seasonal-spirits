@@ -1,8 +1,5 @@
-// Seasonal Sumo — Halving Bomb's "no return" mark (2026-11-19: the return lock was invisible, and
-// about half the passes that failed tried it): over a ghost that just passed a bomb on, for exactly
-// the lock (protocol GHOST_NO_RETURN, game-core bomb.ts returnLocked), a white pill with an ink
-// outline carrying a U-turn arrow crossed out — above the hat, or above its own bomb when it holds
-// another one again. Everybody sees it.
+// Seasonal Sumo — Halving Bomb's "no return" mark: a pill with a crossed-out U-turn over a ghost
+// that just passed a bomb, for exactly the lock (GHOST_NO_RETURN, game-core bomb.ts returnLocked).
 
 import { bombReach } from './bomb.js';
 import { REACH } from './character.js';

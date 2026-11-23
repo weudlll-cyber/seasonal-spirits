@@ -1,13 +1,6 @@
-// Seasonal Sumo — the help overlay (owner's observation 2026-11-15: the rules were not
-// understood): the mode's three short rules in plain words and the jump (JUMP 2026-11-17), each
-// with a small drawing made in code (help-drawings.ts); in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
-// mark on the field, as the game draws it (LEGEND); the controls; and the game's source (AGPL). Shown once on the first
-// visit, any time with "?" or the band's "?" button. The card scrolls with a finger, the mouse
-// wheel or the scroll keys (help-keys.ts, DECISIONS D3); the "×" at its top right, a tap outside
-// it, Esc or any other key closes it (owner 2026-11-20: on a phone every touch closed it, so its
-// end was out of reach). It opens with the focus on its "×". It follows the match on screen.
-// While more of the card lies below its bottom edge a fade shows there, gone at the end (owner
-// 2026-11-20: its last line was cut in half with no hint of more).
+// Seasonal Sumo — the help overlay: each mode's rules and the jump, drawn (help-drawings.ts),
+// "What you see" (LEGEND), the controls and the source (AGPL); on the first visit and on "?".
+// Scrolls by finger, wheel or keys (help-keys.ts, DECISIONS D3); "×", a tap out or a key close it.
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';

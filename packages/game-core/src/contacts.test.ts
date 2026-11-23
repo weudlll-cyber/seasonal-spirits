@@ -1,7 +1,5 @@
-// Seasonal Sumo — no ghost passes through another (FIX 2026-11-17-3, owner: "I drove at bots to
-// push them and passed straight through"): a dash that reaches a ghost always hits it, also at
-// the fastest the sliders allow; a thrown ghost that dashes throws no harder than any other; in
-// bot matches no tick ends with two solid ghosts having crossed.
+// Seasonal Sumo — no ghost passes through another: a dash that reaches a ghost always hits it, at
+// the top slider speed too; a thrown dasher throws no harder; in bot matches no solid ghosts cross.
 
 import { describe, expect, it } from 'vitest';
 import type { GameConfig } from './config.js';

@@ -1,7 +1,5 @@
-// Seasonal Sumo — characters off the island (planner 2026-11-20: one falling off the back of the
-// island was drawn large in the sky above it): one off the back is drawn before the island's
-// body, which hides it; one off the sides or the front after it; off the island every character
-// keeps its standing size, in the air after a jump too.
+// Seasonal Sumo — characters off the island: one off the back is drawn before the island's body,
+// which hides it, others after it; off the island every character keeps its standing size.
 
 import {
   GHOST_AIRBORNE,

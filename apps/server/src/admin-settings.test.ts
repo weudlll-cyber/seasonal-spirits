@@ -1,10 +1,7 @@
-// Seasonal Sumo — the admin settings endpoint (THREATS rows 39, 42): absent without the flag and in
-// production, refused from another host or page, only settings that pass the schema applied,
-// rate bounded; presets saved, loaded and deleted by name, a stored preset with a bad value
-// refused and never applied; a change reaches the running match and every client; the next match
-// (the panel rebuild): a game started with its settings, the keep switch, a preset read into the
-// draft without applying it or marking it last loaded (audit 2026-11-22 B1: the next `pnpm dev`
-// started with a preset only looked at).
+// Seasonal Sumo — the admin settings endpoint (THREATS rows 39, 42): absent without the flag and
+// in production, refused from another host or page, schema-checked, rate bounded; presets saved,
+// loaded, deleted, bad ones refused; changes reach the match and clients; the next-match start
+// and keep switch; a preset read into the draft is not marked last loaded.
 
 import fs from 'node:fs';
 import http from 'node:http';

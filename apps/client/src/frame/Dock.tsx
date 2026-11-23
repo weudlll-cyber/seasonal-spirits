@@ -1,7 +1,5 @@
-// Seasonal Sumo — the docked chat with the call slot (@seasonal/kit ChatDock, night chain
-// 2026-11-21 piece 4), website mode only and so hidden today: the website's chat for the game's
-// room in the website's chat frame (always sandboxed, kit v0.9.0), no call linked (the kit keeps the slot hidden then). The
-// room's name on the website is `seasonal-party` (owner decision 2026-11-21).
+// Seasonal Sumo — the docked chat (kit ChatDock), website mode only: the website's chat for the
+// room `seasonal-party` in its sandboxed chat frame, no call linked.
 
 import { ChatDock, WebsiteChatFrame, useDockView } from '@seasonal/kit/react';
 import type { ReactElement } from 'react';

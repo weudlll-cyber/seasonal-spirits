@@ -1,9 +1,6 @@
-// Seasonal Sumo — the jump (owner's idea, JUMP 2026-11-17): the second action. For jump.airMs a
-// ghost is in the air: nothing hits it and it pushes nobody (collisions.ts, and no bomb passes
-// either way), it barely steers (airSteer), and it falls only when it lands outside the arena
-// (falls.ts). The match starts it (match.ts); the client's prediction steers the own ghost with
-// the same airSteer. A rival's dash that passes under it is a dodge (NIGHT 2026-11-18: "Dodged!"
-// on every screen), once per jump.
+// Seasonal Sumo — the jump, the second action: for jump.airMs nothing hits the ghost and it pushes
+// nobody, it barely steers (airSteer, shared with the client's prediction), it falls only when it
+// lands outside; a rival's dash under it is a dodge, once per jump.
 
 import type { GameConfig } from './config.js';
 import { clampDirection } from './geometry.js';

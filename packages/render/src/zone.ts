@@ -1,11 +1,5 @@
-// Seasonal Sumo — King of the Season's zone on the island (field.ts draws it in hill): on the
-// ground, under everything that stands, a soft glow in the season's colour, slowly pulsing, with
-// an ink ring and, in the countdown, its next place dashed with a faint fill; small flags on poles
-// standing on the ring, each in the depth order with the characters (standing.ts), their heads
-// above a character's hat so a full zone still shows them over the crowd; a gold crown floating
-// over its middle, over everything (owner 2026-11-19: the ring lay over the characters). And where
-// the island's trees, pebbles and lanterns keep off: the zone, its next place and the four places
-// it can jump to (zoneKeepOut).
+// Seasonal Sumo — King of the Season's zone on the island: a pulsing glow and ring on the ground,
+// its next place dashed, flags in the depth order, a crown over all; and the decor's zoneKeepOut.
 
 import { quarterCentre, type Team } from '@seasonal-spirits/game-core';
 import type { ServerState, WireDisc } from '@seasonal-spirits/protocol';

@@ -1,8 +1,5 @@
-// Seasonal Sumo — the team scores in the band (the price board's place in Seasonal Spirits):
-// the four teams in their order, each a pill with its colour dot and its score — in sumo also
-// its ghosts still in, and in Last One Standing only those (no points; LIVES 2026-11-17) — the
-// leader outlined in its colour. On a narrow phone the team's name is hidden (styles/hud.css): its
-// dot names it.
+// Seasonal Sumo — the team scores in the band: per team a pill with its colour dot and score (in
+// sumo also its ghosts still in; in Last One Standing only those), the leader outlined.
 
 import { STATE_LAST_STANDING, type ServerState } from '@seasonal-spirits/protocol';
 import { SEASON_NAMES, modeOf, seasonColour } from '@seasonal-spirits/render';

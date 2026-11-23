@@ -1,6 +1,5 @@
-// Seasonal Sumo — the season colours the game draws (render palette.ts) are the website's, as the
-// pinned kit's tokens.css holds them (owner decision 2026-11-20): a new kit tag with other colours
-// fails here. Here and not in render, which has no Node types (browser code only).
+// Seasonal Sumo — the season colours the game draws (render palette.ts) are the pinned kit's
+// tokens.css ones; here, not in render, which has no Node types. Why: a kit tag could change them.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

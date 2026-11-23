@@ -1,7 +1,5 @@
-// Seasonal Sumo — sumo's halving on screen (Sky Island look, 2026-11-18): the island's outer ring
-// breaks into chunks — grass, dirt and rock — that tumble, drop and shrink towards the sea over
-// about a second, while the server eases the edge in to the new size. Watches the arena's radius
-// the states bring: a drop starts the break (no event to miss between two frames).
+// Seasonal Sumo — sumo's halving on screen: the island's outer ring breaks into chunks that drop
+// to the sea; started by a drop in the arena's radius in the states (no event to miss).
 
 import type { WireDisc } from '@seasonal-spirits/protocol';
 import { look } from './palette.js';

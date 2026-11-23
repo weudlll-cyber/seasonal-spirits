@@ -1,8 +1,6 @@
-// Seasonal Sumo — one address for the game, the viewer and the dev admin panel (chain 2026-11-21,
-// piece 1, like Mini Games' single address with /admin): the client's dev server (port 5930) also
-// serves the viewer's page (apps/viewer) at /viewer/ and, with its admin panel, at /admin/. The
-// viewer runs as a second Vite server in middleware mode inside this one; the match server stays
-// on its own port behind both. Development only (Vite's `serve`); a build has neither page.
+// Seasonal Sumo — one address for game, viewer and dev admin panel: the client's dev server (5930)
+// also serves apps/viewer at /viewer/ and /admin/ as a middleware-mode Vite server inside it.
+// Development only (Vite's `serve`); a build has neither page.
 
 import { fileURLToPath } from 'node:url';
 import { createServer, type Plugin } from 'vite';

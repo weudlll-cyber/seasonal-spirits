@@ -1,6 +1,5 @@
 // Seasonal Sumo — the shape of a match's config and how it is built from the settings
-// (configFrom): every gameplay number lives in the settings schema (settings.ts, NIGHT 2026-11-18)
-// and is a placeholder the owner sets with the admin panel; nothing here holds one.
+// (configFrom): every gameplay number lives in the settings schema (settings.ts), none here.
 
 import type { Season } from './seasons.js';
 import { DEFAULT_SETTINGS, type Settings } from './settings.js';

@@ -1,13 +1,6 @@
-// Seasonal Sumo — the sumo bot's brain, and the helpers the other modes' brains (hill.ts,
-// bomb.ts) share: rough but lively (NIGHT 2026-11-17). It reads the public match state only,
-// the same a player's client sees; the human-like layer (human.ts) hands it what a player
-// would see and blurs what it decides. Near the edge — a share of the arena's radius — it turns
-// back inward; otherwise it
-// heads for where the nearest opponent it can push will be (in Last One Standing, once only its
-// own team is left, its teammates too — standing.ts rivals) and dashes when lined up close
-// enough and the dash would not carry it past the edge; with no
-// such opponent it walks to its own wander point. The wander point (by id, moved on every
-// bots.wanderMs) also offsets the approach, so bots do not all meet in one spot.
+// Seasonal Sumo — the sumo bot's brain and the helpers hill.ts and bomb.ts share. It reads only
+// the public match state (through human.ts); it turns back near the edge, heads for an opponent it
+// can push and dashes when lined up, else walks to its own wander point.
 
 import type { GameConfig } from '../config.js';
 import { distance } from '../geometry.js';

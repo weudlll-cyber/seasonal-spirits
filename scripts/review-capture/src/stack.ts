@@ -1,8 +1,5 @@
-// Seasonal Sumo review capture — its own match server and client on ports of their own (never
-// `pnpm dev`'s 3930/5930 nor the browser specs'), the client also serving the viewer with its
-// admin panel at /admin/ (one address), with a fixed seed, every mode in the rotation and the
-// admin endpoint for that page; stopped again, with their child processes, at
-// the end. The same commands as the specs' stacks (apps/client/e2e/playwright.config.ts).
+// Seasonal Sumo review capture — its own match server and client on ports of their own, with the
+// viewer's admin panel at /admin/, a fixed seed and every mode; the e2e stacks' commands.
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import path from 'node:path';

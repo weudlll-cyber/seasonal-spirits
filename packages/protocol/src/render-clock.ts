@@ -1,8 +1,5 @@
-// Seasonal Spirits — render clock.
-// Maps wall time to a server-time render target so interpolation is smooth between state
-// arrivals. The target advances linearly with wall time and resyncs on large discrepancies
-// (the client has been paused, the server stream has restarted, or the clock drifted far
-// from `latestServerMs - bufferMs`).
+// Seasonal Spirits — render clock: maps wall time to a server-time render target that advances
+// linearly and resyncs when far from `latestServerMs - bufferMs` (pause, restart, drift).
 
 export interface RenderClockOptions {
   bufferMs: number; // target distance behind the latest state's server time

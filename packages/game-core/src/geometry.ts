@@ -1,8 +1,5 @@
-// Seasonal Sumo — plane geometry and one step of movement with momentum: distances, clamping,
-// a direction clamped to length 1, and stepGhost — the one movement rule the server's tick and
-// the client's prediction of the own ghost both use, so they cannot drift apart, cut into
-// sub-steps short enough that no contact is stepped over. The walls of hill and bomb are part of
-// it.
+// Seasonal Sumo — plane geometry and stepGhost, the one movement rule (momentum, walls, sub-steps
+// short enough that no contact is skipped) the server's tick and the client's prediction share.
 
 import { walled, type GameConfig } from './config.js';
 import type { Vec } from './types.js';

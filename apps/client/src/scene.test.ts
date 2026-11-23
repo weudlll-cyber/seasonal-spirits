@@ -1,7 +1,5 @@
-// Seasonal Sumo — the client's one camera (owner 2026-11-17: only half the arena showed): the
-// whole playing area on screen at desktop and phone sizes, before and after every halving, below
-// the band and clear of the Dash button and the joystick; the follow camera's minimap never under
-// the halving's banner.
+// Seasonal Sumo — the client's camera: the whole playing area on screen at desktop and phone sizes
+// through every halving, below the band, clear of the controls; the minimap never under the banner.
 
 import {
   DEFAULT_CONFIG,

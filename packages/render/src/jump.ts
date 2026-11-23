@@ -1,10 +1,5 @@
-// Seasonal Sumo — how a jump looks (JUMP 2026-11-17; NIGHT 2026-11-18: far more visible; Sky
-// Island look 2026-11-18): over its time in the air the character follows a smooth arc — up to
-// AIR_TOP_SCALE of its size and one ghost diameter up on screen at the top, its label and marks
-// with it — while its shadow stays on the ground at its real position, darker and smaller the
-// higher it is (every character has the shadow); a short ring spreads on the ground at the
-// take-off and the landing; "Dodged!" shows in a pill above a character a dash passed under (the
-// server's GHOST_DODGED). One drawing for the player client and the viewer (ghosts.ts calls it).
+// Seasonal Sumo — how a jump looks: the character on an arc up to AIR_TOP_SCALE with its label,
+// its shadow on the ground, rings at take-off and landing, "Dodged!" on GHOST_DODGED (ghosts.ts).
 
 import { REACH } from './character.js';
 import { look } from './palette.js';

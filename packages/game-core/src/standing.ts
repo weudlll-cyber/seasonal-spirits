@@ -1,7 +1,5 @@
-// Seasonal Sumo — lives and sumo's two variants (LIVES 2026-11-17): whether a match has a time
-// limit, the season clock after the third halving, the teams knocked out in order, when the
-// match is over and who won. The match (match.ts) asks these every tick; the walled modes play
-// "points", where nobody loses a life, so for them nothing changes.
+// Seasonal Sumo — lives and sumo's two variants: the time limit, the clock after the third halving,
+// the teams knocked out, the match end and winner; the walled modes play "points", unaffected.
 
 import type { GameConfig } from './config.js';
 import { nextSeason, seasonClock, seasonsInMatch, type SeasonClock } from './seasons.js';

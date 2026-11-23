@@ -1,12 +1,6 @@
-// Seasonal Spirits — interpolation + extrapolation for the client render loop.
-// Pure functions; the headless spectator and the browser viewer share them so they
-// measure the same thing.
-//
-// The time axis is the server's tick time (`state.serverMs`), not the client's receive
-// time. That matters because the artificial delay queue preserves order by holding later
-// packets back: two states can arrive almost simultaneously in client time while their
-// server times are a full tick apart, which would produce spurious jumps if we used the
-// client's clock.
+// Seasonal Spirits — interpolation and extrapolation for the render loop, shared by the headless
+// spectator and the viewer. The time axis is the server's tick time (`state.serverMs`), not the
+// receive time: the delay queue can deliver states a tick apart almost at once.
 
 import type { GhostState, ServerState } from './state.js';
 

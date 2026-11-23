@@ -1,8 +1,5 @@
-// Seasonal Sumo — the admin panel's values form, generated from the game's one settings schema
-// (game-core settings.ts; moved out of admin-panel.ts in the panel rebuild): one row per setting
-// with its unit and whether it applies now or from the next match, only the rows of one game,
-// in the schema's groups — collapsible, their open or closed state remembered — each with a
-// Reset to the schema's defaults. Both tabs of the panel use it.
+// Seasonal Sumo — the admin panel's values form, generated from game-core's settings schema: one
+// row per setting of one game, in collapsible groups (remembered), each with a Reset; both tabs.
 
 import {
   DEFAULT_SETTINGS,

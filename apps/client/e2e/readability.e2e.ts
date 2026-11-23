@@ -1,10 +1,6 @@
-// Seasonal Sumo — what the owner's play tests of 2026-11-15 and 2026-11-17 asked for, at desktop
-// and phone size: "You are Team <Season>", the team scores readable in the band. In every
-// sampled frame: the whole playing area on screen below the band and clear of the controls, the
-// own ghost named "You", no bot named outside the top three (NIGHT 2026-11-19), every name label
-// wholly inside the view (not under the top bar, not past a screen edge), none on another label;
-// the corner buttons and the scores sit in the band, not on the field. Screenshot:
-// <size>-field.png in reports/screens/latest/readability/ (the latest run only).
+// Seasonal Sumo — the field's readability at desktop and phone size: team line and scores in the
+// band, the whole playing area clear of band and controls, "You" on the own ghost, no bot named
+// outside the top three, every label inside the view and on no other label.
 
 import { expect, test, type Page } from '@playwright/test';
 import { overlaps, type Rect } from '@seasonal-spirits/render';

@@ -1,5 +1,5 @@
-// Seasonal Sumo — King of the Season's hint (2026-11-19): "Stand in the zone to score" shows only
-// for a player whose ghost stands on the field outside the zone in a running King match.
+// Seasonal Sumo — King of the Season's hint: "Stand in the zone to score" shows only for a player
+// on the field outside the zone in a running King match.
 
 import { describe, expect, it } from 'vitest';
 import {

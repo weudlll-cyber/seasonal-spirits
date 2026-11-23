@@ -1,8 +1,5 @@
-// Seasonal Sumo — what the drawing remembers of each ghost between frames (moved out of ghosts.ts
-// on NIGHT 2026-11-18): its last positions (the dash puffs), the side it faces (the character
-// looks where it last walked), when it began to fall (the fall), when it took off and landed (the
-// jump's arc and ground rings), when a dash passed under it ("Dodged!"), and the moments its
-// effects play from (moments.ts). Bounded by the ghost ids: a ghost no longer drawn is forgotten.
+// Seasonal Sumo — what the drawing remembers of each ghost between frames (positions, facing, fall,
+// jump, dodge, effect moments); bounded by the ghost ids: a ghost no longer drawn is forgotten.
 
 import {
   GHOST_AIRBORNE,

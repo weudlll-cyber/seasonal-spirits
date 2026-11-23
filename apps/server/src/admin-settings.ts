@@ -1,14 +1,7 @@
-// Seasonal Sumo — the game's admin settings endpoint (NIGHT 2026-11-18, piece 3; it grew out of
-// TUNE 2026-11-17's /dev/tune): one endpoint, ADMIN_SETTINGS_PATH, for the settings, the named
-// presets and the next match (choose a game, its values, start it — the panel rebuild), which the
-// admin panel (the viewer's, today) talks to. Access is one check in front of it (adminAccess):
-// today the dev flag — the endpoint exists only with DEV_TUNING=1, never with NODE_ENV=production
-// — a loopback caller (in the LAN mode also a home-network one, owner 2026-11-21: /admin from the
-// phone; home-network.ts) and the panel's page;
-// later the game's own admin login, as the sibling games' admin areas have it (BACKLOG OPEN).
-// Every value is checked against the game's one schema (game-core readSettings, in the command
-// readers of admin-commands.ts); the player
-// message validator never sees any of it (THREATS rows 39, 42).
+// Seasonal Sumo — the game's admin settings endpoint (ADMIN_SETTINGS_PATH): settings, presets and
+// the next match, for the admin panel. Only with DEV_TUNING=1, never in NODE_ENV=production, from
+// loopback (LAN mode: the home network, home-network.ts) and the panel's page (adminAccess). Every
+// value passes game-core readSettings; the player validator never sees it (THREATS rows 39, 42).
 
 import type http from 'node:http';
 import type { RotationSlot, Settings } from '@seasonal-spirits/game-core';

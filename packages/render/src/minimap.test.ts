@@ -1,7 +1,5 @@
-// Seasonal Sumo — the follow camera's minimap (2026-11-19, owner 2026-11-20): every mark is
-// outlined in ink, so it reads on every season's ground; its edge is where game-core stops a
-// character and closes in on the map at each King halving; in Bomb it shows the carriers and no
-// other player. (The frame of the screen against the follow camera: apps/client follow.test.ts.)
+// Seasonal Sumo — the follow camera's minimap: ink-outlined marks on every ground, its edge where
+// game-core stops a character and shrinking at King's halvings, in Bomb only the carriers.
 
 import { fieldBounds, wallsAfter } from '@seasonal-spirits/game-core';
 import { GHOST_BOMB, type GhostState, type ServerState } from '@seasonal-spirits/protocol';

@@ -1,8 +1,5 @@
-// Seasonal Sumo — one frame of the canvas: the sky, the whole playing area — the island —
-// fitted below the band (on a portrait phone in King and Bomb the follow camera and its minimap,
-// follow.ts), its ghosts and labels, the own ghost's marks (its pulse; its respawn band while
-// out), and the season clock; characters off the island's back before the island, which hides
-// them. Returns what it drew, for the browser specs.
+// Seasonal Sumo — one frame of the canvas: the sky, the island fitted below the band (or the follow
+// camera, follow.ts), its ghosts, labels, own marks and the clock. Returns what it drew, for specs.
 
 import type { Settings, Team } from '@seasonal-spirits/game-core';
 import {

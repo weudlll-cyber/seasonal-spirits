@@ -1,11 +1,5 @@
-// Seasonal Sumo — the Sky Island look's text reads in both looks (owner 2026-11-18: contrast at
-// least 4.5:1): the panels' text and the clock's countdown on the panel. (The season names on
-// their colours went with the clock's season cells, NIGHT 2026-11-19.) And the ink outlines stand
-// out on every season's ground at 3:1 at least: the minimap's marks (2026-11-19, minimap.ts) and
-// the own ring's outer edge (owner 2026-11-20, own.ts). The minimap's frame of the screen reads on
-// every ground and on the panel round the walls, and a carrier's bomb dot on its hot ring (owner
-// 2026-11-20). Every team's figure keeps its ink outline at 3:1 where its body does not stand out
-// from the grass (Spring the closest, measured 2026-11-21).
+// Seasonal Sumo — the Sky Island look's contrast: panel text at 4.5:1 in both looks; ink outlines,
+// the minimap's marks and frame, the own ring and the bomb dot at 3:1 on every season's ground.
 
 import { describe, expect, it } from 'vitest';
 import { BOMB, HOT } from './bomb.js';

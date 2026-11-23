@@ -1,8 +1,5 @@
-// Seasonal Sumo — when the own ghost needs finding (FIX 2026-11-17-3), from the states the client
-// already has: a pulse after its respawn and at the start of every match (and when the player
-// joins), and after a fall how long until it is back — the server respawns it outMs after the
-// fall, so the countdown runs on the server's clock of the first state that showed it falling;
-// none after its last life (LIVES 2026-11-17: it is out until the next match).
+// Seasonal Sumo — when the own ghost needs finding, from the states: a pulse after a respawn and at
+// each match start, and after a fall the countdown to its return on the server's clock (outMs).
 
 import {
   GHOST_FALLING,

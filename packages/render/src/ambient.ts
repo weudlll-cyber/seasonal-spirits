@@ -1,8 +1,5 @@
-// Seasonal Sumo — the sky's slow motion over its cached backdrop (NIGHT 2026-11-19, piece 2): the
-// far clouds drifting and wrapping round (each cloud painted once, then copied), the sea's wave
-// strokes moving along, the sun's ring turning (Light), the moon's soft glow and a few stars
-// twinkling (Dark). A handful of copies and strokes per frame; frozen with reduced motion.
-// drawSky is the whole sky: the backdrop, then this.
+// Seasonal Sumo — the sky's slow motion over its cached backdrop: drifting clouds, waves, the
+// sun's ring, the moon's glow and stars; frozen with reduced motion. drawSky is backdrop plus this.
 
 import { ambientMs } from './motion.js';
 import { look, type Look } from './palette.js';

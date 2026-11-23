@@ -1,11 +1,6 @@
-// Seasonal Sumo — the small map in a corner while the phone's camera follows the own character in
-// King and Bomb (apps/client follow.ts; owner 2026-11-20: it must say where the field ends and
-// what the screen shows). It shows the field's edge — the walls as they stand now, shrinking on the
-// map at each King halving —, a frame round the part of the field the screen shows, King's zone or
-// Bomb's carriers (no other players), and the own dot in a white halo on top. Its scale is the
-// walls' at the match's start, so the map never rescales. Every mark carries an ink outline: on
-// some season grounds a team's colour is the ground's own (spring's green on spring grass), the
-// outline still stands out (palette.test.ts: 3:1 at least).
+// Seasonal Sumo — the minimap while the phone's camera follows the own character (apps/client
+// follow.ts): the walls, the screen's frame, King's zone or Bomb's carriers and the own dot, at a
+// fixed scale, every mark ink-outlined so it reads on any season's ground.
 
 import type { Settings } from '@seasonal-spirits/game-core';
 import { GHOST_BOMB, type GhostState, type ServerState } from '@seasonal-spirits/protocol';

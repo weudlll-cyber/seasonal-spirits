@@ -1,11 +1,6 @@
-// Seasonal Sumo — the player client: joins the match, steers one ghost, shows the match.
-// Development mode, no sign-in: the server gives a free slot (a bot leaves) or, when every
-// slot has a player, lets the client watch. With ?spectate=1 it only watches (CONCEPT.md §5):
-// the whole field, the players' and the top three's names, the clock and the halving staging, no
-// controls. A start screen shows while it joins (start.ts). Draws with
-// packages/render (scene.ts), interpolates with packages/protocol; everything shown comes
-// from the server's state, only the own ghost is drawn ahead of it by the own input
-// (prediction.ts, display only).
+// Seasonal Sumo — the player client: joins the match, steers one ghost, shows the match from the
+// server's state (only the own ghost is predicted, display only). Development mode, no sign-in;
+// with ?spectate=1 it only watches (CONCEPT.md §5).
 
 import '@seasonal/kit/fonts.css';
 import '@seasonal/kit/tokens.css';

@@ -1,5 +1,5 @@
-// Seasonal Sumo — bots must not bunch in one spot for long or stand still (the pack test of
-// Seasonal Spirits, 2026-11-15: collectors once travelled as one blob of up to ten ghosts).
+// Seasonal Sumo — bots must not bunch in one spot for long or stand still (collectors once
+// travelled as one blob of up to ten ghosts).
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../config.js';

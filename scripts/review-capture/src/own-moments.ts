@@ -1,9 +1,5 @@
-// Seasonal Sumo review capture — which moments the own marker's capture shoots (owner 2026-11-20:
-// is the own character found at a glance where it is densest?), read from the player's client
-// frame by frame: the match's first seconds, then once in every season the mode's densest moment
-// — Sumo a crowd round the own character, King the own one in a full zone, Bomb the own one
-// carrying a bomb in a crowd — or, when none came, the season's last seconds. Pure: the clock
-// comes in.
+// Seasonal Sumo review capture — which moments the own marker's capture shoots: the first seconds,
+// then each season's densest moment for the mode (or its last seconds). Pure: the clock comes in.
 
 import { GHOST_BOMB, GHOST_OUT } from '@seasonal-spirits/protocol';
 import type { ClientView } from '../../../apps/client/e2e/stack.js';

@@ -1,6 +1,5 @@
-// Seasonal Sumo — the characters' short effects (NIGHT 2026-11-19, piece 2): the dust puffs at
-// the feet after a landing and the white star where a dash hit. Few shapes, fewer on a phone;
-// when they play is moments.ts.
+// Seasonal Sumo — the characters' short effects: landing dust and the dash hit's white star, fewer
+// on a phone; when they play is moments.ts.
 
 import { inkWidth } from './character.js';
 import { look } from './palette.js';

@@ -1,6 +1,5 @@
-// Seasonal Sumo review capture — review images do not pile up (owner decision 2026-11-21): a run
-// first removes its topic's previous images and sheets, and nothing of another topic; an e2e
-// spec's screenshots are cleared once per run, not again by a later worker of the same run.
+// Seasonal Sumo review capture — review images do not pile up: a run removes only its own topic's
+// previous images and sheets; an e2e spec's screenshots are cleared once per run, not per worker.
 
 import fs from 'node:fs';
 import os from 'node:os';

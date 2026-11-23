@@ -1,6 +1,5 @@
-// Seasonal Sumo — falling off the island (Sky Island look, 2026-11-18): the character drops from
-// where it fell towards the sea band at its standing size (planner 2026-11-20: falling characters
-// keep their world scale), and at the end of the fall time only its splash shows, on the sea band.
+// Seasonal Sumo — falling off the island: the character drops towards the sea band at its standing
+// size, and at the end of the fall time only its splash shows, on the sea band.
 
 import { describe, expect, it } from 'vitest';
 import { bodies, recorder } from './canvas-recorder.js';

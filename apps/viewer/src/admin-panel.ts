@@ -1,14 +1,6 @@
-// Seasonal Sumo — the admin panel in the viewer (NIGHT 2026-11-18; rebuilt around one flow:
-// choose the game, see and set its values, start). Two tabs:
-// - "Next match" (opens first): four games to choose from; then a draft of that game's values —
-//   copied from the settings in force, only the shared groups and the game's own (admin-form.ts),
-//   presets read into it or saved from it — which changes nothing until "Start <game>" sends the
-//   game and the draft in one request, with "keep playing this game";
-// - "Running match": the running game's name and time left and its values live — 'now' rows at
-//   once, 'next' rows from the next match —, the rotation, presets loaded into it.
-// It talks to one server endpoint (admin-api.ts), which decides who may; shown only when that
-// endpoint answers (DEV_TUNING today). Scrolls inside the window at any size (index.html); folds to
-// a small tab that is remembered (panel-fold.ts).
+// Seasonal Sumo — the admin panel in the viewer, two tabs: "Next match" (choose a game, set a
+// draft, "Start <game>") and "Running match" (its values live, the rotation, presets). It talks to
+// one endpoint (admin-api.ts), which decides who may; shown only when that endpoint answers.
 
 import {
   STARTABLE_GAMES,

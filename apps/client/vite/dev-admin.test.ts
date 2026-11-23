@@ -1,5 +1,5 @@
-// Seasonal Sumo — the game's "Admin" link exists in the dev build only (chain 2026-11-21, piece 1):
-// never in a production build, never without the admin panel switched on.
+// Seasonal Sumo — the game's "Admin" link exists in the dev build only: never in a production
+// build, never without the admin panel switched on.
 
 import { describe, expect, it } from 'vitest';
 import { devAdmin } from './dev-admin.js';

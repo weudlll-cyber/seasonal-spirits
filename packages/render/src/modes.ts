@@ -1,8 +1,5 @@
-// Seasonal Sumo — what the clients say about each game mode, in one place: its name in the
-// band (sumo's with its variant), its halving in the countdown and the banner, its last-chance
-// call, what a ghost's score counts. The wire carries the mode as its index in game-core's
-// GAME_MODES, sumo's variant as STATE_LAST_STANDING. In King and Bomb the halving's banner says
-// when the walls close in (2026-11-19).
+// Seasonal Sumo — what the clients say about each mode, in one place: its name, its halving, its
+// last-chance call and what a score counts; in King and Bomb the banner names the walls closing.
 
 import {
   DEFAULT_SETTINGS,

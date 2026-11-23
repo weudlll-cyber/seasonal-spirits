@@ -1,9 +1,6 @@
-// Seasonal Sumo — the start screen (NIGHT 2026-11-19, piece 4): "Seasonal Party" over a small
-// floating island with the four seasons' characters idling on it, in the game's own sky — sun or
-// moon as the Light/Dark switch has it, drifting clouds, far islands, the sea band (2026-11-19;
-// render podium.ts) — while the client connects and joins. It never blocks: no input waits on it, it lets every touch through,
-// and it fades out once the first state is in and it has shown for a moment. There is no name
-// entry and no team choice — the server seats a player on a team (connection.ts).
+// Seasonal Sumo — the start screen: "Seasonal Party" over a small island with the four seasons'
+// characters in the game's sky while the client joins. It never blocks input and fades out after
+// the first state; no name entry, no team choice (the server seats the player).
 
 import { drawStartScene } from '@seasonal-spirits/render';
 import { el } from './hud.js';

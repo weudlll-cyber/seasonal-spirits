@@ -1,10 +1,5 @@
-// Seasonal Sumo — where the characters' name labels go (from Seasonal Spirits, owner's play
-// tests 2026-11-15 and 2026-11-16; NIGHT 2026-11-19: fewer, and near their character). A label
-// sits near its character or not at all — the own one always shows; never two on top of each
-// other, never on another character, never under the top bar or past the screen edge. Also the
-// label's words: name and the mode's score. The own label goes beside the own arrow first (owner
-// 2026-11-20). Pure: positions and widths in, placements out,
-// tested without a canvas.
+// Seasonal Sumo — where the name labels go: near their character or not at all (the own one
+// always), never on a label, a character, the top bar or past the edge; and their words. Pure.
 
 import { GHOST_BOT, ghostName, ghostTag, type GhostState } from '@seasonal-spirits/protocol';
 import { overlaps, type Rect } from './view.js';

@@ -1,14 +1,6 @@
-// Seasonal Sumo — the result screen after a match: the mode's awards, the mode's score
-// (knockouts or points) per team — in Last One Standing the teams in their final order, the
-// winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player
-// (in Last One Standing with when each went out, "out at 1:42" or "still in", not its knockouts:
-// owner 2026-11-20), the own place and the time to the next match at the top (review 2026-11-20: below the list it
-// was out of view on a desktop), and the bridge box of CONCEPT.md §8 with the mode's line (on by
-// default, switched off in config.ts). Over it a podium on a floating island with the best three teams'
-// characters and a confetti burst in the winner's colour (render podium.ts, NIGHT 2026-11-19),
-// for every mode. Result and awards come from the server's recap message, the names and the time
-// to the next match from the state. The parts are the kit's result frame (frame/ResultCard.tsx);
-// this fills them by id, and each result filled lets the frame fit again.
+// Seasonal Sumo — the result screen after a match: the mode's awards and scores per team and
+// player, the own place and next match, the podium and the bridge box (CONCEPT.md §8, config.ts).
+// Fills the kit's result frame (frame/ResultCard.tsx) by id from the server's recap and state.
 
 import {
   GHOST_BOT,

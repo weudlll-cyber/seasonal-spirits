@@ -1,6 +1,5 @@
-// Seasonal Sumo — the game's sounds (NIGHT 2026-11-19, piece 5): every event the states bring
-// maps to its sound, each sound has something to play, and with the Sound switch off nothing
-// plays at all.
+// Seasonal Sumo — the game's sounds: every state event maps to a sound, each sound has something
+// to play, and with the Sound switch off nothing plays.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {

@@ -1,6 +1,5 @@
-// Seasonal Sumo — the jump (JUMP 2026-11-17): in the air nothing hits a ghost and it pushes
-// nobody, it barely steers, its cooldown is the core's, landing outside the arena is a fall,
-// the owner's switch off ignores it, and a bot jumps over a dash only after its reaction time.
+// Seasonal Sumo — the jump: in the air nothing hits a ghost and it pushes nobody, it barely steers,
+// landing outside is a fall, the switch off ignores it, a bot jumps a dash only after its reaction.
 
 import { describe, expect, it } from 'vitest';
 import { createBot } from './bots/human.js';

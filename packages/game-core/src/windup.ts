@@ -1,7 +1,5 @@
-// Seasonal Sumo — the dash's wind-up (owner's option, NIGHT 2026-11-18 piece 6; dashWindUpMs, off
-// by default): a pressed dash first holds the ghost for the wind-up, its direction fixed at the
-// press and shown to everyone (a glow and a line), then goes. A rival who sees it in time can
-// jump or step aside; the core enforces it for players and bots alike.
+// Seasonal Sumo — the dash's wind-up (dashWindUpMs, off by default): a pressed dash first holds
+// the ghost, its direction fixed and shown to all, then goes; enforced for players and bots alike.
 
 import type { GameConfig } from './config.js';
 import type { Ghost } from './types.js';

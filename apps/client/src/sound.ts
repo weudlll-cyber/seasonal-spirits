@@ -1,11 +1,5 @@
-// Seasonal Sumo — the game's sounds (NIGHT 2026-11-19, piece 5; before it one tone at every
-// deadline, CONCEPT.md §2b): short, soft notes and noise bursts made with Web Audio, no audio
-// file — a whoosh at the own dash, a thump at a hit, a boing at a jump and a tap at the landing,
-// a falling whistle and a splash at a fall, a crack and a rumble at sumo's halving, a chime when
-// King of the Season's zone moves, a pop when the bombs blow and their ticking, the countdown's
-// beeps and a short fanfare at the match end (which sound when: sound-events.ts). Behind the
-// Sound switch: muted, nothing plays. Browsers allow sound only after a user gesture, so the
-// context starts on the first key or touch; the mute choice is remembered.
+// Seasonal Sumo — the game's sounds, made with Web Audio, no audio file (which sound when:
+// sound-events.ts). Behind the remembered Sound switch; the context starts on the first gesture.
 
 import { HIT_REACH, clientConfig, readSetting, writeSetting } from '@seasonal-spirits/render';
 import type { ServerState } from '@seasonal-spirits/protocol';

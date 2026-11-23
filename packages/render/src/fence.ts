@@ -1,8 +1,5 @@
-// Seasonal Sumo — the walled modes' low wooden fence along the four walls, as standing pieces
-// (owner 2026-11-19: the fence lay over the characters): every post and every stretch of the two
-// rails between two posts stands on its own ground y in the depth order with the characters
-// (standing.ts), so one beside a side fence is in front of the posts behind it and behind those in
-// front of it. Its height goes with the characters, not with the walls.
+// Seasonal Sumo — the walled modes' low wooden fence as standing pieces: each post and rail on its
+// own ground y in the depth order with the characters (standing.ts); its height goes with them.
 
 import { ghostRadiusPx } from './reach.js';
 import { look } from './palette.js';

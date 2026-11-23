@@ -1,6 +1,5 @@
-// Seasonal Sumo — Halving Bomb's "no return" mark (2026-11-19): drawn over the ghost that may not
-// take the bomb back yet, and only over it; above its hat, or above its bomb when it carries one
-// again; and its label keeps clear of it.
+// Seasonal Sumo — Halving Bomb's "no return" mark: drawn only over the ghost that may not take the
+// bomb back yet, above its hat or its own bomb, and its label keeps clear of it.
 
 import { GHOST_BOMB, GHOST_NO_RETURN, type GhostState } from '@seasonal-spirits/protocol';
 import { describe, expect, it } from 'vitest';

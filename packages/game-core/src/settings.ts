@@ -1,9 +1,6 @@
-// Seasonal Sumo — every number that shapes play, in one schema (NIGHT 2026-11-18, piece 3): its
-// key, group, label, unit, range, step, default, the modes it belongs to, and whether it applies
-// at once or from the next match — the shape here, the entries in settings-list.ts. The game's
-// config is built from it (config.ts configFrom); the server validates with it (readSettings),
-// the admin panel and the docs table (docs/SETTINGS.md, settings-doc.ts) are generated from it. Nothing else holds a gameplay number; the numbers in
-// game-core that are not gameplay are listed in NOT_SETTINGS.
+// Seasonal Sumo — the settings schema's shape and reader (readSettings); the entries are in
+// settings-list.ts. Config, server validation, admin panel and docs/SETTINGS.md come from it;
+// nothing else holds a gameplay number (the non-gameplay ones: NOT_SETTINGS).
 
 import type { GameMode } from './config.js';
 import { ROTATION_SLOTS, SETTINGS } from './settings-list.js';

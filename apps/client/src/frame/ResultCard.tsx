@@ -1,12 +1,6 @@
-// Seasonal Sumo — the result screen in the kit's result frame (@seasonal/kit ResultFrame, night
-// chain 2026-11-21 piece 4): the headline, the own place and the time to the next match, the
-// podium as the reveal, the awards and the teams as the placings, the players and the bridge box
-// below. Its parts keep their ids; result.ts fills them as before. Fitted to the screen with a
-// 14 px text floor: no `data-sk-game`, so the kit's strictest floors apply; the scale's floor is
-// Mini Games' (0.6): the owner set the Seasonal Party floor at 14 px body text (2026-11-21), and
-// the kit's FIT_FLOORS has no Seasonal Party entry yet. The whole result is measured (the first
-// part and the rest, both `data-sk-fit-fixed`), so it fits the screen; at the floor the players'
-// list is the one named scroll area (result.css).
+// Seasonal Sumo — the result screen in the kit's ResultFrame: headline, own place, podium, awards,
+// teams, players and bridge box; result.ts fills the parts by id. Fitted with a 14 px text floor
+// (no `data-sk-game`, scale floor 0.6); at the floor only the players' list scrolls (result.css).
 
 import { ResultFrame } from '@seasonal/kit/react';
 import type { ReactElement } from 'react';

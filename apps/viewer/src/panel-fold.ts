@@ -1,6 +1,5 @@
-// Seasonal Sumo — the viewer's admin panel folds to a small tab (2026-11-19: open, it covered the
-// field's top right corner) and remembers that across reloads (render storage.ts: nothing breaks
-// when the browser blocks storage). Its own file so admin-panel.ts stays one concern.
+// Seasonal Sumo — the viewer's admin panel folds to a small tab and remembers it across reloads
+// (render storage.ts); its own file so admin-panel.ts stays one concern.
 
 import { readSetting, writeSetting } from '@seasonal-spirits/render';
 

@@ -1,7 +1,5 @@
-// Seasonal Sumo — the own ghost is always labelled "You": also with the respawn protection's
-// dashed ring around it and in a crowd (owner 2026-11-17: no ghost showed "You"); who carries a
-// label at all — the own one, the players and the top three (NIGHT 2026-11-19). The own marks:
-// own.test.ts.
+// Seasonal Sumo — the own ghost is always labelled "You", with the protection ring and in a crowd;
+// only the own one, the players and the top three carry a label. The own marks: own.test.ts.
 
 import { describe, expect, it } from 'vitest';
 import {

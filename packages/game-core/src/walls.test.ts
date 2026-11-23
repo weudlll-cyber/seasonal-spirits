@@ -1,7 +1,5 @@
-// Seasonal Sumo — the walls of King and Halving Bomb closing in at each halving (owner's decision
-// 2026-11-19): the half side × the factor, never below the smallest field; every ghost outside
-// the new walls is pushed in with them — nobody falls, scores or is stunned by it; the King zone
-// jumps into its quarter of the smaller field and fits it; with the switch off nothing moves.
+// Seasonal Sumo — King's and Bomb's walls closing in at each halving: by the factor, never below
+// the smallest field, ghosts pushed in without fall or score, the zone refitted; off, no change.
 
 import { describe, expect, it } from 'vitest';
 import { quarterCentre } from './arena.js';

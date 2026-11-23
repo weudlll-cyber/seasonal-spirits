@@ -1,11 +1,6 @@
-// Seasonal Spirits — browser viewer: a spectator of the running match, as a debug view.
-// Connects through the artificial delay queue, interpolates the ghosts and draws the whole
-// match with the client's drawing (packages/render): the same island, characters, effects,
-// season and clock pill, Light or Dark. The HUD shows the network numbers; they
-// are also exposed on window for Playwright checks. Served at /viewer/ and /admin/ on the client's
-// address (apps/client vite/viewer-pages.ts); at /admin/, with the server's admin settings
-// endpoint on (pnpm dev), it carries the admin panel (admin-panel.ts); it draws with the settings
-// in force.
+// Seasonal Spirits — browser viewer: a spectator of the running match as a debug view, through the
+// delay queue, drawn with packages/render; network numbers in the HUD and on window (Playwright).
+// Served at /viewer/ and /admin/ (apps/client vite/viewer-pages.ts); /admin/ adds the admin panel.
 
 // The kit's look for the page (Luxora Grotesk, the tokens); Fredoka for the canvas.
 import '@seasonal/kit/fonts.css';

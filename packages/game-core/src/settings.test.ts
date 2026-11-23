@@ -1,6 +1,5 @@
-// Seasonal Sumo — the settings schema (NIGHT 2026-11-18, piece 3): every number of a match's config
-// comes from a setting, game-core holds no other gameplay constant, the reader refuses anything
-// out of range, off its step, unknown or missing, and values that apply from the next match wait.
+// Seasonal Sumo — the settings schema: every config number comes from a setting, game-core holds
+// no other gameplay constant, the reader refuses bad values, and next-match values wait.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';

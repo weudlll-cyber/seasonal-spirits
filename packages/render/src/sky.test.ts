@@ -1,6 +1,5 @@
-// Seasonal Sumo — sky tests: the cached backdrop layers on a canvas without a size.
-// A window with no size yet (an embed before layout, a tab not shown) drew an empty layer, the
-// browser threw, and the client's frame loop stopped for good (day chain 2026-11-22 piece 2).
+// Seasonal Sumo — the sky's cached backdrop layers on a canvas without a size. Why: a window with
+// no size yet drew an empty layer, the browser threw, and the client's frame loop stopped for good.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { drawBackdrop, drawFrontClouds } from './sky.js';

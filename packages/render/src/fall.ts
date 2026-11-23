@@ -1,10 +1,5 @@
-// Seasonal Sumo — a character falling off the island (Sky Island look, 2026-11-18): it tips over
-// the edge, turns head-down with an open "o" mouth, drops towards the sea below with three white
-// speed streaks and a short "Aaah!" bubble, and lands in a splash on the sea band — a white crown
-// with a ring widening round it — all within the match's fall time (fallMs; `t` 0 … 1 from
-// trails.ts). It keeps the size of a standing character (planner 2026-11-20). Which characters
-// are off the island, and which of those at its back — drawn behind the island's body, hidden by
-// it — offIsland and offBack say (ghosts.ts, field.ts).
+// Seasonal Sumo — a character falling off the island within fallMs: tips over, drops head-down to
+// the sea at its standing size, splashes. Off the island, and behind it: offIsland, offBack.
 
 import { GHOST_FALLING, type GhostState, type WireDisc } from '@seasonal-spirits/protocol';
 import { inkWidth } from './character.js';

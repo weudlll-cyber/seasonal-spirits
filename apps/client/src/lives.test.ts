@@ -1,6 +1,5 @@
-// Seasonal Sumo — the band in sumo's variants (LIVES 2026-11-17): the hearts and "Out —
-// watching" only for the own ghost and only in sumo; per team the ghosts still in (with the score
-// in Points); Last One Standing's result table; the variant's rule in the help.
+// Seasonal Sumo — the band in sumo's variants: hearts and "Out — watching" only for the own ghost
+// in sumo, per team the ghosts still in, Last One Standing's result table, the variant's help rule.
 
 import { describe, expect, it } from 'vitest';
 import {

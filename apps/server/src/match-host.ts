@@ -1,13 +1,6 @@
-// Seasonal Sumo — the match server's game side: the seats, who steers each, match after match,
-// and each match's mode and sumo variant from the rotation (settings rotation1…6; "alternate"
-// takes Points and Last One Standing in turn) — or the game the admin panel started, kept for
-// the following matches while its "keep playing" switch is on. Every number comes from the settings (game-core
-// settings.ts, NIGHT 2026-11-18): those that apply at once reach the running match on a change
-// (tune), the rest wait for the next match. Every seat holds a ghost; a bot steers it until a
-// player joins, and again when a player has been gone for reconnectGraceMs. Seats are filled at a
-// match's start only (teamSize per team): a ghost out of lives stays out until the next match.
-// The game core decides everything; this file only routes intents in (wire.ts turns the core's
-// state into the wire state).
+// Seasonal Sumo — the match server's game side: the seats and who steers each (a bot until a
+// player joins, again after reconnectGraceMs), match after match, with the mode from the rotation
+// or the admin panel (next-game.ts). The game core decides everything; this only routes intents.
 
 import {
   Match,

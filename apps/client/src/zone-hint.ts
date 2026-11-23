@@ -1,7 +1,5 @@
-// Seasonal Sumo — King of the Season's hint for the player (2026-11-19: the zone reads as a place
-// to go): while the own ghost stands outside the zone, a small pill in its row under the band says
-// "Stand in the zone to score" (index.html #hint); hidden inside it, in the other modes, while
-// out or falling, in the result, while watching and while a banner shows (styles/hud.css).
+// Seasonal Sumo — King of the Season's hint: while the own ghost stands outside the zone a pill
+// under the band says "Stand in the zone to score" (index.html #hint); hidden otherwise.
 
 import { inZone } from '@seasonal-spirits/game-core';
 import {

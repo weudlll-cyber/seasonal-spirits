@@ -1,6 +1,5 @@
-// Seasonal Sumo — the characters' effect moments (NIGHT 2026-11-19, piece 2): a landing squashes
-// and kicks up dust, a dash's start stretches, a knock shows a star between it and the dasher and
-// spiral eyes while it slides; with reduced motion the effects are half as long.
+// Seasonal Sumo — the characters' effect moments: a landing squashes and kicks up dust, a dash
+// stretches, a knock shows a star and spiral eyes; reduced motion halves them.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {

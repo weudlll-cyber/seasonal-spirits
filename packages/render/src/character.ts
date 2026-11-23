@@ -1,10 +1,5 @@
-// Seasonal Sumo — one character of the Sky Island look (owner's choice 2026-11-18), drawn round
-// its body's centre: a bean body in the team's colour with an ink outline, two oval feet, short
-// arms, a lighter belly, big eyes, pink cheeks, a small smile and its season's hat (spring a
-// crown of flowers, summer a straw sun hat and sunglasses, autumn a rust beanie with a leaf,
-// winter a wool hat with a pompom); softly shaded — a highlight at the top left, a shade at the
-// lower right — and with spiral eyes when knocked ('dizzy', NIGHT 2026-11-19). Pure drawing on
-// any context; sprites.ts caches it.
+// Seasonal Sumo — one Sky Island character, drawn round its body's centre: a bean body in its
+// team's colour with its season's hat, spiral eyes when knocked. Pure drawing; sprites.ts caches.
 
 import { look, seasonColour } from './palette.js';
 

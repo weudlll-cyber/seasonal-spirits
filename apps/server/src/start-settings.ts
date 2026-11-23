@@ -1,9 +1,5 @@
-// Seasonal Sumo — the settings a server starts with (NIGHT 2026-11-18, piece 3): the defaults
-// (game-core settings.ts), then a named preset — PRESET, or with the admin endpoint on the one
-// loaded last — then what the environment asks for in development and the tests (GAME_MODE,
-// SUMO_VARIANT, SUMO_LIVES, SEASON_SECONDS, RESULT_SECONDS, GHOSTS). Every value is checked: an
-// environment value out of its range, a preset that does not pass the schema, or a result that
-// does not, stops the server before it starts.
+// Seasonal Sumo — the settings a server starts with: defaults, then a preset (PRESET or the last
+// loaded), then the environment (GAME_MODE, SUMO_VARIANT, …). Any invalid value stops the server.
 
 import {
   DEFAULT_SETTINGS,

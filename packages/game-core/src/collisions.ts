@@ -1,8 +1,6 @@
-// Seasonal Sumo — ghosts bump into each other (grown from Seasonal Spirits' soft separation):
-// two ghosts on the arena that overlap are moved apart and bounce, the heavier — the team in
-// season pushes inSeasonPush harder — moving less; a dashing ghost throws the one it hits off at
-// knockSpeed, and a crowd behind the thrown one gives way instead of stopping it; and each
-// remembers the last opponent that touched it, for the fall's credit.
+// Seasonal Sumo — ghosts bump into each other: overlapping ghosts are moved apart and bounce (the
+// team in season pushes harder), a dash throws the hit one off at knockSpeed, and each remembers
+// the last opponent that touched it, for the fall's credit.
 
 import type { GameConfig } from './config.js';
 import { inAir } from './jump.js';

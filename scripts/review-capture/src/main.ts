@@ -1,11 +1,6 @@
-// Seasonal Sumo review capture (`pnpm review:capture [sumo-points|sumo-last-one-standing|king-of-the-season|halving-bomb …]`, night
-// 2026-11-19/20): every part of a match, as the owner and the planner review it before a test.
-// On its own stack (stack.ts) each mode is started through the viewer's "Next match" flow and
-// played to its end and into the next match three times: once with the scripted player (player.ts)
-// on a desktop, a spectator on a phone and the viewer at 1920 × 1080, once with the player on a
-// phone and a spectator on a desktop, once with the player on a big screen and a spectator on a
-// phone — every moment (moments.ts) in Light and Dark (shoot.ts); then
-// the contact sheets (sheets.ts). Development only: it starts the dev admin endpoint.
+// Seasonal Sumo review capture (`pnpm review:capture [game …]`): each mode played into the next
+// match three times, player and spectators at all sizes, every moment in Light and Dark; then the
+// sheets. Development only: it starts the dev admin endpoint.
 
 import { setTimeout as delay } from 'node:timers/promises';
 import { STARTABLE_GAMES } from '@seasonal-spirits/game-core';

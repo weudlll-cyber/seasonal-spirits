@@ -1,10 +1,5 @@
-// Seasonal Sumo — the game core's match state as the wire state every client receives.
-// One place turns the core's numbers into what clients show: the game mode, per ghost its
-// position, speed, score, lives, the time to its next dash and jump, its phase, whether it is in
-// the air, its bomb and its bomb's return lock, the disc
-// that halves (sumo's arena, the hill's zone) now and after the next halving, the walls of hill
-// and bomb where they are now, the score per team, sumo's variant and what the clock runs to (a
-// halving, the end, or nothing).
+// Seasonal Sumo — the game core's match state as the wire state every client receives: the one
+// place that turns the core's numbers into what clients show.
 
 import {
   GAME_MODES,

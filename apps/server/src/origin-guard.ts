@@ -1,5 +1,5 @@
-// Seasonal Spirits — which pages may open the game's WebSocket (audit 2026-11-22 P1 M1, owner
-// decision 2026-11-22): the upgrade's Origin must be one the game is served from, else 403.
+// Seasonal Spirits — which pages may open the game's WebSocket (audit 2026-11-22 P1 M1): the
+// upgrade's Origin must be one the game is served from, else 403.
 // Stops other pages in a player's browser; a program can send any Origin (docs/SECURITY.md).
 
 // HTTP status of a refused upgrade.

@@ -1,8 +1,5 @@
-// Seasonal Sumo — which sounds a new state calls for (NIGHT 2026-11-19, piece 5), from the state
-// before and this one: the own character's dash, hit, jump, landing and fall; the halving (in
-// sumo the island cracks, in King of the Season the zone moves, in Halving Bomb the bombs blow),
-// the bombs' ticking (faster in the last seconds), the countdown's beeps and the match end.
-// Pure: states in, sound names out; sound.ts plays them.
+// Seasonal Sumo — which sounds a new state calls for, from the state before and this one (own dash,
+// hit, jump, landing, fall; halving, ticking, countdown, match end). Pure; sound.ts plays them.
 
 import {
   GHOST_AIRBORNE,

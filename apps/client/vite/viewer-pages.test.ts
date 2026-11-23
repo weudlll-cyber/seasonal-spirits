@@ -1,5 +1,5 @@
-// Seasonal Sumo — one address (chain 2026-11-21, piece 1): /admin and /viewer reach the viewer's
-// page on the client's port, everything else stays the game's.
+// Seasonal Sumo — one address: /admin and /viewer reach the viewer's page on the client's port,
+// everything else stays the game's.
 
 import { describe, expect, it } from 'vitest';
 import { VIEWER_BASE, viewerPath } from './viewer-pages.js';

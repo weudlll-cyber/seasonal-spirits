@@ -1,7 +1,5 @@
-// Seasonal Sumo — the halving banner fitted to a narrow screen (planner 2026-11-19: on a phone it
-// wrapped and ran past both screen edges). The banner is never wider than the screen minus 16 px
-// (index.html #announce); its text shrinks, not below BANNER_MIN_PX, until it takes at most
-// BANNER_LINES lines.
+// Seasonal Sumo — the halving banner fitted to a narrow screen: never wider than the screen minus
+// 16 px (index.html #announce), its text shrinks to BANNER_LINES lines, not below BANNER_MIN_PX.
 
 export const BANNER_MIN_PX = 14;
 const BANNER_LINES = 2;

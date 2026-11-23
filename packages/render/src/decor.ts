@@ -1,12 +1,6 @@
-// Seasonal Sumo — what grows on the island's top (Sky Island look, 2026-11-18): grass tufts, a
-// few flowers, two small trees at the back, two pebbles, and at night three small lanterns with a
-// warm halo — at fixed places in the ground's own units, so they scale with the arena and shrink
-// with it at a halving; the tufts and the tree crowns sway a little (NIGHT 2026-11-19; still with
-// reduced motion). No tree, pebble or lantern stands in the ground's keep-out (King's zones and
-// where they can jump, 2026-11-19); tufts, flowers and the lanterns' halos lie flat and grow
-// anywhere (owner 2026-11-19: King's field had almost none left) and are drawn with the ground
-// (drawGroundDecor); each tree, pebble and lantern stands in the depth order with the characters
-// (standing.ts). Pure decoration: nothing here touches a ghost.
+// Seasonal Sumo — what grows on the island: tufts, flowers, trees, pebbles and night lanterns at
+// fixed ground places, scaling with the arena; no standing one in King's zone keep-out. Flat ones
+// go with the ground (drawGroundDecor), standing ones in the depth order (standing.ts).
 
 import type { OnScreen } from './island.js';
 import { ambientMs } from './motion.js';

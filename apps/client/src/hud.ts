@@ -1,7 +1,5 @@
-// Seasonal Sumo — the client's controls and messages on top of the canvas (DOM, so they are
-// real buttons): the Dash and Jump buttons with their cooldown rings (Jump hidden while the
-// owner's switch has it off — JUMP 2026-11-17), the HALVING and MATCH OVER announcements (a red
-// banner under the band, index.html) with their flash, and notices.
+// Seasonal Sumo — the client's DOM controls and messages over the canvas: Dash and Jump with their
+// cooldown rings (Jump hidden when switched off), the HALVING and MATCH OVER banners, notices.
 
 import type { Settings } from '@seasonal-spirits/game-core';
 import {

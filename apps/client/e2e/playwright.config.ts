@@ -1,8 +1,6 @@
-// Seasonal Spirits — Playwright: the player client against its own short-match servers.
-// Starts the run's own stacks, never the developer's `pnpm dev` (3930/5930): Sumo on
-// 3932/5932 — its client also serving /admin/, whose panel the panel spec drives — and King of the
-// Season and Halving Bomb on 3933/5933 and 3934/5934, each with 15 s seasons (a whole match in
-// 60 s), then plays them in Chromium at a desktop size and at a phone size with touch.
+// Seasonal Spirits — Playwright: the player client in Chromium (desktop, and phone with touch)
+// against the run's own short-match stacks: Sumo on 3932/5932 (also serving /admin/), King on
+// 3933/5933, Bomb on 3934/5934 — never the developer's `pnpm dev` (3930/5930).
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

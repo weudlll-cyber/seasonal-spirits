@@ -1,6 +1,5 @@
-// Seasonal Sumo — the help card's drawings, made in code in the Sky Island look: one per rule
-// of each mode and the jump, and one per mark of "What you see" (render LEGEND). Split out of
-// help.ts (night chain 2026-11-22/23, piece 3), which builds and runs the card.
+// Seasonal Sumo — the help card's drawings in code, Sky Island look: one per rule of each mode and
+// the jump, one per mark of "What you see" (render LEGEND); help.ts builds and runs the card.
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import { LIGHT, SEASON_COLOURS, type LegendMarker } from '@seasonal-spirits/render';

@@ -1,6 +1,5 @@
-// Seasonal Sumo — the season on the island (NIGHT 2026-11-19, piece 3): its colours follow the
-// season in play, changing with a cross-fade of about a second at a halving; the first season
-// shows at once.
+// Seasonal Sumo — the season on the island: its colours follow the season in play with a
+// cross-fade of about a second at a halving; the first season shows at once.
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { look, useLook } from './palette.js';

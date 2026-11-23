@@ -1,9 +1,5 @@
-// Seasonal Sumo — the season in play on the island (NIGHT 2026-11-19, piece 3): its grass, tufts
-// and tree crowns (spring blossoms, a warm summer, autumn's orange and red, winter's pale grass
-// under snow caps) and what drifts over it — spring's petals, summer's butterflies, autumn's
-// tumbling leaves, winter's snowflakes. At a halving the season changes with a cross-fade of
-// about a second. The particles cost no memory: each one's place is a function of its index and
-// the time; capped, a phone half a desktop's count; drawn below the band, never over the HUD.
+// Seasonal Sumo — the season in play on the island: its colours and its drifting particles,
+// cross-faded at a halving. Particles cost no memory (index and time), capped, below the band.
 
 import { ambientMs, reducedMotion } from './motion.js';
 import { look, tintLook, type SeasonTint } from './palette.js';

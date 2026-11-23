@@ -1,9 +1,5 @@
-// Seasonal Sumo — "Halving Bomb" (bomb): walls, nobody falls, everyone earns
-// bomb.pointsPerSecond. One bomb per bomb.playersPerBomb players goes to random players; a
-// carrier passes it on by touching an opponent that holds none — never a teammate, and not back
-// to the one that just gave it before bomb.passBackMs. At every halving all bombs go off: each
-// carrier loses bomb.blastShare of its points (half by default), new bombs go to random players,
-// and the walls may close in (arena.ts closeWalls; 2026-11-19).
+// Seasonal Sumo — "Halving Bomb" (bomb): walls, nobody falls, points per second; carriers pass
+// bombs by touch (never to a teammate, not straight back), and at each halving every bomb goes off.
 
 import { closeWalls } from '../arena.js';
 import type { GameConfig } from '../config.js';

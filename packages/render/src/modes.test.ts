@@ -1,5 +1,4 @@
-// Seasonal Sumo — the halving's banner (2026-11-19): in King and Bomb it says when the walls close
-// in, and only then — with the switch off or the walls at their smallest it reads as before.
+// Seasonal Sumo — the halving's banner in King and Bomb says when the walls close in, only then.
 
 import { DEFAULT_SETTINGS, GAME_MODES, configFrom } from '@seasonal-spirits/game-core';
 import { describe, expect, it } from 'vitest';

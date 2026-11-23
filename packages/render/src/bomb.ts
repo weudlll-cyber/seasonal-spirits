@@ -1,7 +1,5 @@
-// Seasonal Sumo — the bomb carrier in "Halving Bomb", in code: a large round bomb above its hat,
-// ink-outlined with a shine and a cap, a thick fuse whose length is the share of the time left
-// until the bombs go off, a glowing spark at its tip, and the carrier's body pulsing in a hot
-// halo — one look at any size tells who carries (NIGHT 2026-11-18, piece 5; Sky Island look).
+// Seasonal Sumo — the bomb carrier in "Halving Bomb", in code: a round bomb above its hat with a
+// fuse as long as the time left and a spark, the carrier pulsing in a hot halo.
 
 import { REACH } from './character.js';
 import { look } from './palette.js';

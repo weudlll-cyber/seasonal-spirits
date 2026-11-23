@@ -1,9 +1,5 @@
-// Seasonal Sumo — the own character found at a glance (owner 2026-11-20: in a crowd the "You"
-// pill hid under a "Dodged!", the thin white ring vanished on the grass, others stood in front of
-// it): only it wears the ring in its team's colour, breathing, and the arrow above; it is drawn
-// after every other character; no other label or "Dodged!" goes in the arrow's box, the own label
-// sits beside it; the arrow goes over a carried bomb, its fuse and spark; off screen an arrow at
-// the edge points to it.
+// Seasonal Sumo — the own character found at a glance: only it wears the team ring and the arrow,
+// drawn last, no other label in the arrow's box, the arrow over a bomb, an edge arrow off screen.
 
 import { GHOST_BOMB, GHOST_DODGED, type GhostState } from '@seasonal-spirits/protocol';
 import { describe, expect, it } from 'vitest';

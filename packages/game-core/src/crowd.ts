@@ -1,8 +1,5 @@
-// Seasonal Sumo — how much room a crowd needs (owner 2026-11-19: at King's smallest field all 32
-// characters piled up in one corner, hid the zone and left most of the field empty): the area of
-// a crowd standing shoulder to shoulder — each character the square of its diameter — and from it
-// King's smallest field and smallest zone, the starting values of their settings
-// (settings-list.ts).
+// Seasonal Sumo — how much room a crowd standing shoulder to shoulder needs, and from it King's
+// smallest field and zone, the starting values of their settings (settings-list.ts).
 
 export const FIELD_CROWDS = 4; // the smallest field holds this many crowds
 export const ZONE_CROWDS = 1.5; // the smallest zone holds this many

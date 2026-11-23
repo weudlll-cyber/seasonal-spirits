@@ -1,7 +1,5 @@
-// Seasonal Sumo — the settings themselves (NIGHT 2026-11-18, piece 3): every number that shapes
-// play, one entry each, by group, with its label, unit, range, step, default, its modes and
-// whether it applies now or from the next match. The schema's shape, the reader and the numbers
-// that are not settings are settings.ts. All placeholders the owner sets in the admin panel.
+// Seasonal Sumo — the settings themselves: every number that shapes play, one entry each by group
+// (label, unit, range, step, default, modes, now or next). The schema's shape is settings.ts.
 
 import type { GameMode } from './config.js';
 import { smallestField, smallestZone, upToStep } from './crowd.js';

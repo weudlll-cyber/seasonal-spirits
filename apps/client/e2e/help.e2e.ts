@@ -1,8 +1,6 @@
-// Seasonal Spirits — the help overlay (owner's observation 2026-11-15): shown on the first
-// visit, not on the second, opened any time with "?" (key or band button), scrolled on the card
-// and closed with "×" or a key (owner 2026-11-20), read to its end with the keyboard (DECISIONS
-// D3); it offers the game's source (AGPL); "What you see" names every marker on the field with its drawing (session
-// 2026-11-16-LOOK-B). Screenshot <size>-help.png.
+// Seasonal Spirits — the help overlay in the browser: shown on the first visit only, opened with
+// "?", scrolled and read to its end by keyboard (DECISIONS D3), closed with "×" or a key; it links
+// the source (AGPL) and names every field marker. Screenshot <size>-help.png.
 
 import { expect, test } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';

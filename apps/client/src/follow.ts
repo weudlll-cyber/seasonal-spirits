@@ -1,12 +1,6 @@
-// Seasonal Sumo — the phone's follow camera in the walled modes (2026-11-19: on a portrait phone
-// King's and Bomb's square fields fitted only the width, the characters were tiny). On a portrait
-// screen, for a player on the field in King or Bomb, the camera follows the own character at a
-// scale where a body is FOLLOW_BODY_PX wide (decision 2026-11-19, BACKLOG am; was Sumo's starting
-// scale, about 14 px), clamped so it shows no more beyond the walls than it must, and eased
-// (about 150 ms); a minimap shows where it is (render minimap.ts). Once the walls have closed in
-// so far that the whole field fits at that scale, the whole field shows. The owner's setting
-// "Phone: follow camera in walled modes" switches it; desktop, landscape and spectators keep the
-// whole field.
+// Seasonal Sumo — the phone's follow camera in the walled modes: on a portrait screen a player in
+// King or Bomb is followed at FOLLOW_BODY_PX per body, clamped to the walls and eased, with a
+// minimap (render minimap.ts); the whole field once it fits. The owner's setting switches it.
 
 import { DEFAULT_SETTINGS, walled, type Settings } from '@seasonal-spirits/game-core';
 import type { GhostState, ServerState } from '@seasonal-spirits/protocol';

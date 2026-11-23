@@ -1,7 +1,5 @@
-// Seasonal Sumo — the dash's wind-up (NIGHT 2026-11-18, piece 6; owner's option, off by default):
-// off, the dash goes at the press as before; on, the ghost holds still for the wind-up in the
-// direction of the press, then dashes; the cooldown runs from the press; a jump meanwhile drops
-// the dash; a bot sees a rival's wind-up aimed at it as an attack.
+// Seasonal Sumo — the dash's wind-up (off by default): off, the dash goes at the press; on, the
+// ghost holds still in the press's direction, then dashes; a jump drops it; bots see an attack.
 
 import { describe, expect, it } from 'vitest';
 import { underAttack } from './bots/bot.js';

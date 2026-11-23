@@ -1,6 +1,5 @@
-// Seasonal Sumo — "King of the Season": a point per second in the zone for the ghost and its
-// team, the zone's jump and halving at every halving (shown before it) down to its smallest
-// radius (owner 2026-11-19), the bounce credit.
+// Seasonal Sumo — "King of the Season": points in the zone for ghost and team, the zone's jump and
+// shrink at every halving down to its smallest radius, the bounce credit.
 
 import { describe, expect, it } from 'vitest';
 import { configFrom } from '../config.js';

@@ -1,8 +1,5 @@
-// Seasonal Sumo — one match of any game mode: the pure, deterministic core driven by tick(dt).
-// No clock and no randomness of its own: time is the sum of the dt values it is given and
-// every random value comes from the seed, so the same seed and intents give the same match.
-// The shared physics live here once; the mode's own rules come from modes/rules.ts, sumo's
-// variants — lives, the end, the winner — from standing.ts.
+// Seasonal Sumo — one match of any mode: the pure, deterministic core driven by tick(dt), with no
+// clock or randomness of its own (the seed). Mode rules: modes/rules.ts; variants: standing.ts.
 
 import { followEdge, newArena, scaleArena, startSpot, updateArena } from './arena.js';
 import { collideGhosts } from './collisions.js';

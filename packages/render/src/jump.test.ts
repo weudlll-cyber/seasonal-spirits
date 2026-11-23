@@ -1,7 +1,5 @@
-// Seasonal Sumo — the jump drawn (NIGHT 2026-11-18): the character rises and grows on an arc
-// over its time in the air and comes down again, its shadow stays on the ground at its real
-// position, a ring spreads at the take-off, and "Dodged!" shows when the server flags a dash
-// passing under, inside the screen even over a character at its edge.
+// Seasonal Sumo — the jump drawn: the character rises on an arc and comes down, its shadow stays
+// at its position, a ring at take-off, and "Dodged!" on the server's flag, inside the screen.
 
 import { describe, expect, it } from 'vitest';
 import { GHOST_AIRBORNE, GHOST_DODGED, type GhostState } from '@seasonal-spirits/protocol';

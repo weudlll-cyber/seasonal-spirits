@@ -1,9 +1,5 @@
-// Seasonal Sumo — the characters' name labels drawn (moved out of ghosts.ts for the Sky Island
-// look, 2026-11-18): the own character, the real players and the top three by score named in a
-// white pill with an ink outline, bots otherwise not (NIGHT 2026-11-19: a label on almost every
-// character), the tag as the fallback in a crowd, placed by labels.ts; inside King of the
-// Season's zone only the tags, in Halving Bomb a score only for the top scorers and the own one;
-// the own label beside the own arrow, every other label out of the arrow's box (owner 2026-11-20).
+// Seasonal Sumo — the characters' name labels drawn (placed by labels.ts): the own one, players and
+// the top three named in a white pill, others not; none in the own arrow's box.
 
 import { GHOST_BOT, type GhostState } from '@seasonal-spirits/protocol';
 import type { GhostStyle } from './ghosts.js';

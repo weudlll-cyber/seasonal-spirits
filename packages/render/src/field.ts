@@ -1,14 +1,6 @@
-// Seasonal Sumo — the field of each mode as a floating island (Sky Island look, 2026-11-18):
-// sumo's arena is the island's round top with the next halving's line as a dashed crack (pulsing
-// in the countdown) and its outer ring breaking off at a halving (breakoff.ts); hill and bomb a
-// rounded platform with a fence along the walls (fence.ts), in hill the zone in the season's
-// colour and, in the countdown, its next place dashed (the server sends both discs, protocol
-// state.ts; zone.ts draws it). This is the ground layer (owner 2026-11-19: the crack lay over the
-// trees, the fence over the characters): the top, what lies flat on it — tufts, flowers, the
-// season's leaves and snow —, the crack and its ticks, the zone's glow and ring and its next
-// place, all under every tree, post, flag and character; those stand in one depth order
-// (standing.ts, ghosts.ts). The season in play tints it and decorates it (season.ts,
-// season-decor.ts), its trees never inside King's zones. The sky around it is sky.ts.
+// Seasonal Sumo — each mode's field as a floating island, the ground layer: sumo's round top with
+// the halving's crack, the walled modes' platform with its fence and King's zone, and what lies
+// flat on it, all under what stands (standing.ts). Tinted by season.ts; the sky is sky.ts.
 
 import { DEFAULT_CONFIG, walled } from '@seasonal-spirits/game-core';
 import {

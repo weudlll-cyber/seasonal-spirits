@@ -1,6 +1,5 @@
-// Seasonal Sumo — the result screen's words (review 2026-11-20: "1 knockouts"): a count of one
-// takes the singular, in the own place line and in every award; Last One Standing's players list
-// says when each went out, not its knockouts (owner 2026-11-20).
+// Seasonal Sumo — the result screen's words: a count of one takes the singular in the place line
+// and every award; Last One Standing's list says when each went out, not its knockouts.
 
 import type { ServerRecap } from '@seasonal-spirits/protocol';
 import { modeWords } from '@seasonal-spirits/render';

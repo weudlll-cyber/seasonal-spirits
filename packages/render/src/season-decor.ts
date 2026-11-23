@@ -1,9 +1,5 @@
-// Seasonal Sumo — what the season in play adds to the island's decoration (NIGHT 2026-11-19,
-// piece 3): blossoms on the tree crowns in spring, a few fallen leaves on the grass in autumn,
-// snow caps on the rim, the crowns and the pebbles in winter, faded in and out with the season
-// (season.ts). The fallen leaves and the rim's snow lie flat with the ground (drawSeasonGround;
-// anywhere, like the flowers, owner 2026-11-19); the blossoms and caps go with their tree or
-// pebble in the depth order (standing.ts).
+// Seasonal Sumo — what the season adds to the island's decoration: spring blossoms, autumn leaves,
+// winter snow, faded with the season; flat ones with the ground, the rest in the depth order.
 
 import { crownOf, pebbleSize, sizeOn, spotOn } from './decor.js';
 import { outline, type OnScreen } from './island.js';

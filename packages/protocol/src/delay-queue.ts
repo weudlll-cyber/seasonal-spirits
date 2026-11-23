@@ -1,8 +1,6 @@
-// Seasonal Spirits — artificial one-way latency with preserved order.
-// Used by bots (both directions) and the headless spectator and viewer (states in).
-// Delay is uniform in [minMs, maxMs]; order is preserved by taking
-// max(previous delivery, now + random) as each item's delivery time. With 0/0 the queue
-// becomes a straight pass-through.
+// Seasonal Spirits — artificial one-way latency with preserved order (bots, headless spectator,
+// viewer). Delay uniform in [minMs, maxMs]; delivery = max(previous delivery, now + random)
+// keeps the order; 0/0 is a straight pass-through.
 
 export interface DelayQueueClock {
   now(): number;

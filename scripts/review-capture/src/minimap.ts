@@ -1,11 +1,5 @@
-// Seasonal Sumo review capture of the phone's minimap (`pnpm review:minimap [game …]`, owner
-// 2026-11-20: does it show the field's edge, the screen's frame, King's zone or Bomb's carriers and
-// the own dot?): on the review stack (stack.ts) King of the Season and Halving Bomb started one
-// after the other through the viewer's "Next match" flow, each with one calm player (player.ts) on a
-// portrait phone, shot in Light and Dark (shoot.ts) at the moments of minimap-moments.ts: the
-// start, after each halving, the last seconds. Where the map and the band's bottom stood at each
-// moment go to the folder's minimap.jsonl; then one sheet, sheet-minimap.png, of every shot with
-// its map enlarged (sheets.ts). Named games alone (their folder names) are shot again, the others' shots kept.
+// Seasonal Sumo review capture of the phone's minimap (`pnpm review:minimap [game …]`): King and
+// Bomb with one calm player, shot in both looks at minimap-moments.ts, into sheet-minimap.png.
 // Development only: it starts the dev admin endpoint.
 
 import fs from 'node:fs';

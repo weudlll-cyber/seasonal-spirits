@@ -1,8 +1,5 @@
-// Seasonal Spirits — the match server: 20 Hz loop + WebSocket handler + /metrics-lite.
-// Fixed tick rate with drift correction (accumulated time, not a bare setInterval); each tick
-// advances the match host and sends one binary state message to every client; the liveness ping
-// runs on the same clock. Every client message passes the shared validator first
-// (docs/THREATS.md lists what a client can try).
+// Seasonal Spirits — the match server: 20 Hz loop with drift correction, WebSocket handler,
+// /metrics-lite. Every client message passes the shared validator first (docs/THREATS.md).
 
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';

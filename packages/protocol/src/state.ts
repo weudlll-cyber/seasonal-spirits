@@ -1,8 +1,5 @@
-// Seasonal Sumo — binary state encoding of a match, sent by the server every tick.
-// One encoding only: viewer, client and probe decode it, and everything a client shows comes
-// from it. Seasons travel as their index in the real order (0 Spring … 3 Winter), the game
-// mode as its index in game-core's GAME_MODES (0 sumo, 1 hill, 2 bomb); the discs (the arena,
-// the zone) and the walls' half side in tenths of a field unit.
+// Seasonal Sumo — binary state encoding of a match, sent every tick: the one encoding viewer,
+// client and probe decode. Seasons and modes as indices, discs and walls in tenths of a unit.
 
 export interface GhostState {
   id: number; // 0..255

@@ -1,7 +1,5 @@
-// Seasonal Sumo — the page's motion setting (NIGHT 2026-11-19): with prefers-reduced-motion the
-// ambient motion (drifting clouds, moving waves, swaying grass and trees, the sun's ring, the
-// twinkling stars) holds still and the effects (squash and stretch, the landing dust, the hit's
-// star) are shortened. Without a window (the unit tests) motion is on.
+// Seasonal Sumo — the page's motion setting: with prefers-reduced-motion the ambient motion holds
+// still and the effects are shortened. Without a window (the unit tests) motion is on.
 
 let query: MediaQueryList | null | undefined;
 

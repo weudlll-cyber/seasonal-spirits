@@ -1,6 +1,5 @@
-// Seasonal Sumo — the client draws characters with the game core's size (the collisions use it),
-// and a label keeps clear of the hat and the rings drawn around one, not only of its body
-// (session 2026-11-16-LOOK-B; Sky Island look 2026-11-18).
+// Seasonal Sumo — the client draws characters at the game core's size, and a label keeps clear of
+// the hat and rings drawn round one, not only of its body.
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '@seasonal-spirits/game-core';

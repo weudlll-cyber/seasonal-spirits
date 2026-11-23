@@ -1,13 +1,7 @@
-// Seasonal Spirits — Vite config for the player client.
-// Loopback only by default; CLIENT_HOST=0.0.0.0 (set by `pnpm dev --lan`, development only)
-// lets a phone in the same Wi-Fi open it. The match server's port goes into the build; the
-// host is the page's own, so a phone reaches the same machine. The dev server also serves the
-// viewer and the admin panel at /viewer/ and /admin/ (vite/viewer-pages.ts: one address), and with
-// DEV_TUNING=1 the game shows an "Admin" link (vite/dev-admin.ts). The kit's early theme script
-// (@seasonal/kit/vite themeInit) sets <html data-theme> before the first paint. WEBSITE_MODE=1
-// (exactly "1"; off by default and today) shows the kit's back link and docked chat
-// (src/frame/Frame.tsx), for the game inside the website. A build carries THIRD-PARTY-NOTICES.txt
-// with Fredoka's licence (vite/notices.ts).
+// Seasonal Spirits — Vite config for the player client. Loopback only by default; CLIENT_HOST
+// (`pnpm dev --lan`, development only) opens it to the LAN. Also serves /viewer/ and /admin/
+// (vite/viewer-pages.ts), the dev "Admin" link (DEV_TUNING=1, vite/dev-admin.ts), WEBSITE_MODE=1
+// (exactly "1") for the website frame, and Fredoka's licence in a build (vite/notices.ts).
 
 import { themeInit } from '@seasonal/kit/vite';
 import { defineConfig } from 'vite';

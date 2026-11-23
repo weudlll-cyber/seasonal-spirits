@@ -1,14 +1,6 @@
-// Seasonal Sumo — where the client draws its own ghost (from Seasonal Spirits' session
-// 2026-11-16-RESPONSE): moved at once by the player's own direction and dash with the server's
-// movement rules (game-core stepGhost: momentum, friction, top speed; dashVelocity) as a ghost
-// that touches nobody, pulled smoothly towards what the server says, snapped to it when far off;
-// inside the walls of hill and bomb as the core keeps it (fieldBounds); drawn gliding, never in
-// a jump (BLEND_MS; the stutter fix 2026-11-18), and never through another ghost — it stops at
-// one and slides round it (FIX 2026-11-17-3) while the server pushes it aside; in the air after
-// a jump barely steered and touching nobody, as the core (jump.ts airSteer; JUMP 2026-11-17);
-// with the dash's wind-up on, held still until the dash goes (game-core windup.ts). Display
-// only: the server's position is the truth and nothing of this leaves the client (THREATS row
-// 36).
+// Seasonal Sumo — where the client draws its own ghost: moved at once by the own input with the
+// core's movement rules (stepGhost, airSteer, windup), eased towards the server's state, never
+// through another ghost. Display only: the server's position is the truth (THREATS row 36).
 
 import {
   DEFAULT_CONFIG,
