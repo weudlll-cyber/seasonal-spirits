@@ -122,18 +122,23 @@ The server run sheet for the probe (Docker, leaves nothing installed) is in
   only the owner can switch on.
 - [docs/THREATS.md](docs/THREATS.md) — what a cheating or broken client can try, the
   server's answer and the test for each.
-- [docs/BACKLOG.md](docs/BACKLOG.md) — OPEN / CLOSED / CHECKS DONE.
+- [docs/BACKLOG.md](docs/BACKLOG.md) — OPEN / CLOSED / CHECKS DONE; its history of 2026-11-14 to
+  2026-11-16 in [docs/BACKLOG-ARCHIVE-2026-11-14-16.md](docs/BACKLOG-ARCHIVE-2026-11-14-16.md).
 - [docs/AUDIT-2026-11-22.md](docs/AUDIT-2026-11-22.md) — the full audit of `proto/sumo`: what was
   checked, every finding, what was fixed and what needs the owner's word.
 
 ## Licence
 
-AGPL-3.0-or-later. See [LICENSE](LICENSE).
+Copyright (C) 2026 the Seasonal Spirits authors. AGPL-3.0-or-later: see [LICENSE](LICENSE). Whoever
+runs a copy for others offers them its source (AGPL §13): the help card's "Source (AGPL)" link,
+`sourceUrl` in `apps/client/src/config.ts`, points to this repository and is changed to the copy's
+own source.
 
 The fonts are not under this licence:
 
 - **Fredoka** (the game's own texts, in and over the play field): `@fontsource/fredoka` 5.3.0, SIL Open Font License 1.1,
-  "Copyright 2016 The Fredoka Project Authors"; its licence text is in that package.
+  "Copyright 2016 The Fredoka Project Authors"; its licence text is in that package, and a build
+  writes it beside the game as `THIRD-PARTY-NOTICES.txt` (`apps/client/vite/notices.ts`, OFL §2).
 - **Luxora Grotesk** (every official text: the frame, help, result, admin): from `@seasonal/kit`; its files name Fontastica as the
   copyright holder; the kit's `fonts/README.md` records the project's purchase and the owner's
   approval to ship it (kit DECISIONS K8). Not covered by the AGPL.

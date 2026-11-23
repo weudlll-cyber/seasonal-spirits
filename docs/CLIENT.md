@@ -34,9 +34,10 @@ Spirits' client is on `master`.
 | `src/zone-hint.ts`         | King's hint "Stand in the zone to score" while outside the zone                             |
 | `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                             |
 | `src/sound-events.ts`      | Which sounds a new state calls for                                                          |
-| `src/config.ts`            | Bridge box on/off, its links and its line per mode                                          |
+| `src/config.ts`            | Bridge box on/off, its links and its line per mode; the source link (AGPL)                  |
 | `vite/viewer-pages.ts`     | Development only: the viewer at /viewer/ and the admin panel at /admin/ on this address     |
 | `vite/dev-admin.ts`        | Development only: whether the game shows its "Admin" link                                   |
+| `vite/notices.ts`          | A build's `THIRD-PARTY-NOTICES.txt`: Fredoka's licence text (OFL §2)                        |
 | `vite.config.ts`           | The dev server and build: ports, the LAN mode, the kit's theme script, website mode         |
 | `index.html`               | The page: the canvas, the band, the controls, the screens, the CSS links                    |
 | `e2e/`                     | Playwright config, helpers and the specs                                                    |
@@ -383,7 +384,9 @@ or touch (browsers allow sound only after a gesture).
   goes off and halves the carrier's points), the jump in every mode (a ghost over its shadow, a
   dash passing below), in sumo the variant's rule in one sentence with the
   match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
-  controls. It follows the match on screen. The card scrolls with a finger or the mouse wheel,
+  controls, and a "Source (AGPL)" link to the game's source (`config.ts` `sourceUrl`; AGPL §13,
+  audit 2026-11-22 P7 item 3 — reached by a tap or the mouse; the card keeps every key for itself,
+  so not by Tab). It follows the match on screen. The card scrolls with a finger or the mouse wheel,
   and by keyboard (DECISIONS D3, `help-keys.ts`): it opens with the focus on its "×" (kept when the
   card is rebuilt for a new match), the arrows move it a line, Page Up/Down and Space (Shift+Space
   back) a page, Home and End to its ends, Tab and a modifier alone leave it as it is; its "×" at

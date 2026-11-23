@@ -6,11 +6,13 @@
 // DEV_TUNING=1 the game shows an "Admin" link (vite/dev-admin.ts). The kit's early theme script
 // (@seasonal/kit/vite themeInit) sets <html data-theme> before the first paint. WEBSITE_MODE=1
 // (exactly "1"; off by default and today) shows the kit's back link and docked chat
-// (src/frame/Frame.tsx), for the game inside the website.
+// (src/frame/Frame.tsx), for the game inside the website. A build carries THIRD-PARTY-NOTICES.txt
+// with Fredoka's licence (vite/notices.ts).
 
 import { themeInit } from '@seasonal/kit/vite';
 import { defineConfig } from 'vite';
 import { devAdmin } from './vite/dev-admin.js';
+import { thirdPartyNotices } from './vite/notices.js';
 import { viewerPages } from './vite/viewer-pages.js';
 
 if (process.env.NODE_ENV === 'production' && process.env.CLIENT_HOST === '0.0.0.0') {
@@ -26,7 +28,7 @@ export default defineConfig(({ command }) => ({
     strictPort: true,
     host: process.env.CLIENT_HOST === '0.0.0.0' ? '0.0.0.0' : 'localhost',
   },
-  plugins: [themeInit(), viewerPages()],
+  plugins: [themeInit(), viewerPages(), thirdPartyNotices()],
   define: {
     __SERVER_PORT__: JSON.stringify(serverPort),
     __DEV_ADMIN__: JSON.stringify(devAdmin(process.env, command)),

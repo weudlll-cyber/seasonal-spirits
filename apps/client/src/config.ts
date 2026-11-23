@@ -1,9 +1,10 @@
-// Seasonal Sumo — the client's configuration: the bridge box.
+// Seasonal Sumo — the client's configuration: the bridge box and the source link.
 // The bridge box (CONCEPT.md §1 rule 3, §8) is on by default and switched off here.
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 
 export interface ClientConfig {
+  sourceUrl: string; // the game's source, offered to every player (AGPL §13)
   bridge: {
     enabled: boolean;
     startHereUrl: string; // the website's path for newcomers
@@ -12,6 +13,8 @@ export interface ClientConfig {
 }
 
 export const CLIENT_CONFIG: ClientConfig = {
+  // Whoever runs a copy changes this to its own source (audit 2026-11-22 P7 item 3).
+  sourceUrl: 'https://github.com/weudlll-cyber/seasonal-spirits',
   bridge: {
     enabled: true,
     // The website's "Start here" page (seasonal-entertainment docs/DESIGN.md, "Start here").

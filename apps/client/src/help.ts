@@ -1,7 +1,7 @@
 // Seasonal Sumo — the help overlay (owner's observation 2026-11-15: the rules were not
 // understood): the mode's three short rules in plain words and the jump (JUMP 2026-11-17), each
 // with a small drawing made in code (help-drawings.ts); in sumo the variant's rule in one sentence (LIVES 2026-11-17); "What you see": every
-// mark on the field, as the game draws it (LEGEND); and the controls. Shown once on the first
+// mark on the field, as the game draws it (LEGEND); the controls; and the game's source (AGPL). Shown once on the first
 // visit, any time with "?" or the band's "?" button. The card scrolls with a finger, the mouse
 // wheel or the scroll keys (help-keys.ts, DECISIONS D3); the "×" at its top right, a tap outside
 // it, Esc or any other key closes it (owner 2026-11-20: on a phone every touch closed it, so its
@@ -12,6 +12,7 @@
 import type { GameMode } from '@seasonal-spirits/game-core';
 import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
 import { LEGEND, readSetting, variantName, writeSetting } from '@seasonal-spirits/render';
+import { CLIENT_CONFIG } from './config.js';
 import { MARKER_DRAWINGS, RULES } from './help-drawings.js';
 import { helpKey } from './help-keys.js';
 
@@ -20,6 +21,9 @@ const SEEN =
   '<h3>What you see</h3><ol>' +
   LEGEND.map((l) => `<li>${MARKER_DRAWINGS[l.marker]}<span>${l.text}</span></li>`).join('') +
   '</ol>';
+
+// The game's source under its licence (AGPL §13: every player of a running copy is offered it).
+const SOURCE = `<p class="small">Free software under the AGPL: <a class="link" href="${CLIENT_CONFIG.sourceUrl}" target="_blank" rel="noopener noreferrer">Source (AGPL)</a></p>`;
 
 const CONTROLS =
   '<p><b>Keyboard:</b> WASD or arrows to move, Space to dash, Shift to jump, ? help.</p>' +
@@ -43,7 +47,7 @@ const content = (mode: GameMode, name: string, rule: string | null): string =>
   `<div class="card"><button class="close" type="button" aria-label="Close help">×</button>` +
   `<h2>How to play: ${name}</h2>${rule ? `<p>${rule}</p>` : ''}<ol>` +
   RULES[mode].map((r) => `<li>${r.drawing}<span>${r.text}</span></li>`).join('') +
-  `</ol>${SEEN}${CONTROLS}<p class="small">Scroll for more: a finger, the wheel, or the arrows, Page and Space keys. Close with ×, a tap outside the card, Esc or any other key.</p></div>`;
+  `</ol>${SEEN}${CONTROLS}${SOURCE}<p class="small">Scroll for more: a finger, the wheel, or the arrows, Page and Space keys. Close with ×, a tap outside the card, Esc or any other key.</p></div>`;
 
 // Whether more of a scrolled box lies below what it shows (a pixel of rounding is none).
 export function moreBelow(box: {

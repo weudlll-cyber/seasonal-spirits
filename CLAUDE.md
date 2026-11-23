@@ -43,7 +43,9 @@ These rules apply to every Claude Code session in this repository.
   browser responses; compare them in constant time.
 - Identity comes only from the website's sign-in route as documented in
   `weudlll-cyber/seasonal-entertainment` `docs/GAME-INTEGRATION.md`; no local accounts, no
-  passwords in this game ([CONCEPT.md](CONCEPT.md) section 12).
+  passwords in this game ([CONCEPT.md](CONCEPT.md) section 12). The one exception is the game's
+  own admin login for its admin area, following the sibling games' admin pattern (CONCEPT.md
+  section 16, BACKLOG af); players still sign in only through the website.
 - Cookies HttpOnly, Secure (outside development), SameSite=Lax, scoped to the base path;
   CSRF protection on every state-changing request.
 - Bounded everything: message sizes, queues, maps keyed by client data, timers.

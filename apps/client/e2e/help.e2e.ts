@@ -1,7 +1,7 @@
 // Seasonal Spirits — the help overlay (owner's observation 2026-11-15): shown on the first
 // visit, not on the second, opened any time with "?" (key or band button), scrolled on the card
 // and closed with "×" or a key (owner 2026-11-20), read to its end with the keyboard (DECISIONS
-// D3); "What you see" names every marker on the field with its drawing (session
+// D3); it offers the game's source (AGPL); "What you see" names every marker on the field with its drawing (session
 // 2026-11-16-LOOK-B). Screenshot <size>-help.png.
 
 import { expect, test } from '@playwright/test';
@@ -78,4 +78,20 @@ test('the help is read to its end with the keyboard and closed with Esc', async 
   await expect(help).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(help).toBeHidden();
+});
+
+// Audit 2026-11-22 P7 item 3: every player of a running copy is offered the game's source (AGPL
+// §13); a tap on the link opens it and leaves the card open.
+test("the help offers the game's source, and a tap on it opens a new tab", async ({ page }) => {
+  await page.goto('/');
+  const link = page.locator('#help a', { hasText: 'Source (AGPL)' });
+  await expect(link).toHaveAttribute('href', /^https:\/\/github\.com\/.+\/seasonal-spirits$/);
+  await expect(link).toHaveAttribute('target', '_blank');
+  await link.scrollIntoViewIfNeeded();
+  // The tab is not loaded: the link's request is answered here, nothing leaves the machine.
+  await page.context().route('https://github.com/**', (r) => r.fulfill({ body: 'source' }));
+  const opened = page.waitForEvent('popup');
+  await link.click();
+  await opened;
+  await expect(page.locator('#help')).toBeVisible();
 });
