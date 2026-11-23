@@ -116,11 +116,14 @@ describe('human-like bot: noise, form and seed', () => {
     expect(new Set(forms).size).toBeGreaterThan(5);
   });
 
+  // 10 s seasons, a 40 s match: every halving still comes (as simulation.test.ts' determinism);
+  // the whole 5:00 match twice ran over its 5 s under load (night chain 2026-11-22/23, piece 6).
   it('plays the same match again from the same seed', () => {
     const roster = [1, 2, 3, 4, 5, 6, 7, 8].map((id) => ({
       id,
       team: ((id - 1) % 4) as 0 | 1 | 2 | 3,
     }));
-    expect(simulate(cfg, 11, roster).result).toEqual(simulate(cfg, 11, roster).result);
+    const short = { ...cfg, seasonDurationMs: 10_000, matchDurationMs: 40_000 };
+    expect(simulate(short, 11, roster).result).toEqual(simulate(short, 11, roster).result);
   });
 });

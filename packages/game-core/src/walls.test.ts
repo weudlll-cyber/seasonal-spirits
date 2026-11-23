@@ -40,13 +40,15 @@ describe('walls closing in', () => {
       const c = cfgOf(mode);
       const half = c.wallHalf;
       const { factor, smallest } = c.walls;
+      // One whole match, played once (it was played again for every loop test).
+      const got = targets(c);
       const want: number[] = [];
-      for (let h = half, k = 0; k < targets(c).length; k++) {
+      for (let h = half, k = 0; k < got.length; k++) {
         h = Math.min(h, Math.max(smallest, h * factor));
         want.push(h);
       }
       expect(want.length).toBeGreaterThan(1);
-      expect(targets(c)).toEqual(want);
+      expect(got).toEqual(want);
       expect(Math.min(...want)).toBeGreaterThanOrEqual(smallest);
     },
   );

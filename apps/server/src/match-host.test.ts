@@ -145,17 +145,19 @@ describe('match host inputs', () => {
 });
 
 describe('match host state size', () => {
-  // A whole match: about 1–2 s alone, more beside the rest of the suite on a busy machine.
+  // A whole match with every halving, in 5 s seasons and with lives enough to reach its end: the
+  // state's size is the ghosts' count, not the time (night chain 2026-11-22/23, piece 6: the 5:00
+  // match took 21–61 s under load).
   it(
     'never sends more than 1 KB in a whole 32-bot match, the halvings included',
     {
       timeout: 20_000,
     },
     () => {
-      const host = hostOf(32);
+      const host = hostOf(32, { sumoSeason: 5, sumoMatch: 20, lives: 99 });
       let max = 0;
       let halvings = 0;
-      for (const s of runFor(host, DEFAULT_CONFIG.matchDurationMs)) {
+      for (const s of runFor(host, 20_000)) {
         const bytes = encodeState({ ...s, tick: 0, serverMs: 0 }).byteLength;
         max = Math.max(max, bytes);
         if (s.flags & STATE_HALVING_EVENT) halvings++;
@@ -172,10 +174,14 @@ describe('match host state size', () => {
 // 2026-11-17: with 3 lives the bots may knock out all but one team before 5:00).
 const CLOCK: Partial<Settings> = { lives: 99 };
 
+// That whole match and a second after it, played once for the two tests that read its clock.
+let clockMatch: WireState[] | null = null;
+const clockStates = (): WireState[] =>
+  (clockMatch ??= runFor(hostOf(8, CLOCK), DEFAULT_CONFIG.matchDurationMs + 1000));
+
 describe('match host lifecycle', () => {
   it('flags each of the three halvings in exactly one tick, with the new season', () => {
-    const host = hostOf(8, CLOCK);
-    const states = runFor(host, DEFAULT_CONFIG.matchDurationMs);
+    const states = clockStates();
     const flagged = states.filter((s) => s.flags & STATE_HALVING_EVENT);
     expect(flagged.map((s) => [s.matchMs, s.season])).toEqual([
       [75_000, 1],
@@ -185,8 +191,7 @@ describe('match host lifecycle', () => {
   });
 
   it('counts down to the match end in the last season and flags the end in one state', () => {
-    const host = hostOf(8, CLOCK);
-    const states = runFor(host, DEFAULT_CONFIG.matchDurationMs + 1000);
+    const states = clockStates();
     const lastSeason = 3 * DEFAULT_CONFIG.seasonDurationMs;
     const toEnd = states.filter((s) => s.flags & STATE_TO_END);
     expect(toEnd.every((s) => s.matchMs >= lastSeason && s.matchMs < 300_000)).toBe(true);
@@ -201,10 +206,12 @@ describe('match host lifecycle', () => {
 
   it('rotates the modes match by match as the rotation asks, each with its own rules and bots', () => {
     const rotation = { rotation1: 1, rotation2: 4, rotation3: 5 }; // Sumo, King, Bomb
-    const host = hostOf(8, { ...SHORT, resultPause: 0.5, ...rotation });
+    // King at its shortest match, 1:00 (the rotation turns at its end, not at its length).
+    const quickHill = { hillMatch: 60, hillJump: 15 };
+    const host = hostOf(8, { ...SHORT, resultPause: 0.5, ...rotation, ...quickHill });
     const modes: number[] = [];
     let carriers = new Set<number>();
-    const hill = configFrom(DEFAULT_SETTINGS, 'hill').matchDurationMs;
+    const hill = configFrom({ ...DEFAULT_SETTINGS, ...quickHill }, 'hill').matchDurationMs;
     for (const s of runFor(host, 1000 + 500 + hill + 500 + 1000)) {
       if (modes.at(-1) !== s.mode) modes.push(s.mode);
       if (s.mode === 2)
@@ -218,10 +225,10 @@ describe('match host lifecycle', () => {
 
   it('shows the result for the pause, then starts the next match with the same players', () => {
     const pauseMs = 15_000;
-    const host = hostOf(8, { resultPause: pauseMs / 1000 });
+    const host = hostOf(8, { ...SHORT, resultPause: pauseMs / 1000 });
     host.join(1);
-    const states = runFor(host, DEFAULT_CONFIG.matchDurationMs + pauseMs + 100);
-    // The match may end before its time limit (lives: one team left); the pause follows its end.
+    const states = runFor(host, 1000 + pauseMs + 100);
+    // A short match (SHORT), or one ended early by lives: the pause follows its end either way.
     const end = states.findIndex((s) => s.flags & STATE_MATCH_END_EVENT);
     const pause = pauseMs / 50;
     const after = states.slice(end, end + pause + 1);
