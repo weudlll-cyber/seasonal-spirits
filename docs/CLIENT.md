@@ -140,7 +140,8 @@ or touch (browsers allow sound only after a gesture).
   white pill per team with its colour dot (sumo Points "Spring 12 · 7 in": knockouts and ghosts
   still in; Last One Standing "Spring 7 in"; hill and bomb "Spring 12"; the leader outlined in
   its colour; on a narrow phone the team's name is left out, its dot names it). Out of lives the
-  team line says "Out — watching" (short enough for a 390 px phone, 2026-11-19) until
+  team line says "Out — watching", on a phone (480 px and narrower) "Watching" (DECISIONS D16:
+  at 390 px the whole line ran into "Out — wa…"; `lives.ts` `OUT_SHORT`) until
   the next match, without the Dash and Jump buttons; the view stays on the whole arena. The band is 78 px
   (`BAND_HEIGHT`; 68 px before the kit's game bar). Its buttons are 44 px targets on every
   screen (kit v0.10.0; 36 px on a desktop before), and a keyboard focus shows the kit's ring,
@@ -385,11 +386,12 @@ or touch (browsers allow sound only after a gesture).
   dash passing below), in sumo the variant's rule in one sentence with the
   match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
   controls, and a "Source (AGPL)" link to the game's source (`config.ts` `sourceUrl`; AGPL §13,
-  audit 2026-11-22 P7 item 3 — reached by a tap or the mouse; the card keeps every key for itself,
-  so not by Tab). It follows the match on screen. The card scrolls with a finger or the mouse wheel,
+  audit 2026-11-22 P7 item 3 — reached by a tap, the mouse or Tab; Enter on it opens it and leaves
+  the card open). It follows the match on screen. The card scrolls with a finger or the mouse wheel,
   and by keyboard (DECISIONS D3, `help-keys.ts`): it opens with the focus on its "×" (kept when the
   card is rebuilt for a new match), the arrows move it a line, Page Up/Down and Space (Shift+Space
-  back) a page, Home and End to its ends, Tab and a modifier alone leave it as it is; its "×" at
+  back) a page, Home and End to its ends, Tab and Shift+Tab move the focus between the "×" and the
+  source link and keep it on the card (DECISIONS D15), a modifier alone leaves it as it is; its "×" at
   the top right, a tap outside it, Esc or any other key closes it (owner 2026-11-20: on a phone
   every touch closed it), and the focus goes back where it was. The drawings' labels are 14 px. While more of the card lies below its bottom edge a
   fade shows there, held as the card scrolls and gone at its end (`moreBelow`, `#help .card.more`;

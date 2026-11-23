@@ -5,8 +5,10 @@ import type { ServerState } from '@seasonal-spirits/protocol';
 import { modeOf } from '@seasonal-spirits/render';
 import { el } from './hud.js';
 
-// Short enough for a 390 px phone next to the hearts (p20, 2026-11-19: the longer one was cut).
+// Out of lives: the whole line, and on a phone the short one (DECISIONS D16: at 390 px the whole
+// line ran into "Out — wa…" next to the hearts).
 export const OUT_LINE = 'Out — watching';
+export const OUT_SHORT = 'Watching';
 const MAX_HEARTS = 5; // up to this many lives one each; more: one and "×7"
 
 // The band's hearts: one per life, a lost one false — or, past MAX_HEARTS, one heart (false

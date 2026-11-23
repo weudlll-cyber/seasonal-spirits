@@ -28,13 +28,18 @@ describe('helpKey', () => {
     let top = 0;
     for (let i = 0; i < 10; i++) {
       const what = helpKey(key('PageDown'), card(top));
-      if (typeof what === 'object') top = what.scrollTo;
+      if (typeof what === 'object' && 'scrollTo' in what) top = what.scrollTo;
     }
     expect(top).toBe(600);
   });
 
-  it('stays open on Tab and a modifier alone (Shift, the jump key, starts Shift+Space)', () => {
-    for (const k of ['Tab', 'Shift', 'Control', 'Alt', 'Meta'])
+  it('moves the focus forward on Tab and back on Shift+Tab, the card left open (D15)', () => {
+    expect(helpKey(key('Tab'), card(0))).toEqual({ focus: 1 });
+    expect(helpKey(key('Tab', true), card(0))).toEqual({ focus: -1 });
+  });
+
+  it('stays open on a modifier alone (Shift, the jump key, starts Shift+Space)', () => {
+    for (const k of ['Shift', 'Control', 'Alt', 'Meta'])
       expect(helpKey(key(k), card(0))).toBe('stay');
   });
 

@@ -1,6 +1,6 @@
 // Seasonal Sumo — the field's readability at desktop and phone size: team line and scores in the
 // band, the whole playing area clear of band and controls, "You" on the own ghost, no bot named
-// outside the top three, every label inside the view and on no other label.
+// outside the top three, every label inside the view and on no other label, "Watching" on a phone.
 
 import { expect, test, type Page } from '@playwright/test';
 import { overlaps, type Rect } from '@seasonal-spirits/render';
@@ -157,5 +157,49 @@ test('the band text is never cut off, at any of four screen sizes', async ({ pag
         .map((e) => e.id || e.textContent || '?');
     }, size.width);
     expect(cut, `${String(size.width)}×${String(size.height)}`).toEqual([]);
+  }
+});
+
+// DECISIONS D16: out of lives, a phone's band reads "Watching" (at 390 px the whole line ran into
+// "Out — wa…"), wider screens "Out — watching"; light and dark, never cut. The own ghost is put
+// out by the page's own team-line module (the one main.ts draws with), as nine lives would take
+// a whole match here.
+test('out of lives the band reads "Watching" on a phone, never cut short', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'phone', 'the sizes are set here; one browser is enough');
+  await page.goto('/');
+  await joined(page);
+  await page.evaluate(async () => {
+    const path = '/src/team-line.ts';
+    const m = (await import(/* @vite-ignore */ path)) as {
+      TeamLine: {
+        prototype: {
+          show: (this: unknown, t: number | null, b: number | null, o: boolean) => void;
+        };
+      };
+    };
+    const show = m.TeamLine.prototype.show;
+    m.TeamLine.prototype.show = function (team, backInMs) {
+      show.call(this, team, backInMs, true);
+    };
+  });
+  const sizes = [360, 375, 390, 430, 1280].map((width) => ({ width, height: 800 }));
+  for (const dark of [false, true]) {
+    await page.evaluate((d) => {
+      document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+    }, dark);
+    for (const size of sizes) {
+      await page.setViewportSize(size);
+      const at = `${String(size.width)} px ${dark ? 'dark' : 'light'}`;
+      const team = page.locator('#team');
+      await expect(team, at).toHaveText(size.width > 480 ? 'Out — watching' : 'Watching', {
+        useInnerText: true,
+      });
+      const cut = await team.evaluate((e) => e.scrollWidth > e.clientWidth);
+      expect(cut, at).toBe(false);
+      const shot = `out-${String(size.width)}-${dark ? 'dark' : 'light'}`;
+      await page.locator('#band').screenshot({ path: screenshotPath(info, shot) });
+    }
   }
 });

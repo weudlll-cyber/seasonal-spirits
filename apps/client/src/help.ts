@@ -1,6 +1,7 @@
 // Seasonal Sumo — the help overlay: each mode's rules and the jump, drawn (help-drawings.ts),
 // "What you see" (LEGEND), the controls and the source (AGPL); on the first visit and on "?".
-// Scrolls by finger, wheel or keys (help-keys.ts, DECISIONS D3); "×", a tap out or a key close it.
+// Scrolls by finger, wheel or keys, Tab reaches the link (help-keys.ts, DECISIONS D3, D15); "×", a
+// tap out or a key close it.
 
 import type { GameMode } from '@seasonal-spirits/game-core';
 import { STATE_LAST_STANDING } from '@seasonal-spirits/protocol';
@@ -71,13 +72,12 @@ export class Help {
     button.addEventListener('click', () => {
       this.open();
     });
-    // Capture phase: while open, a key only scrolls or closes the help (help-keys.ts) and
-    // reaches no game control.
+    // Capture phase: while open, a key only scrolls, moves the focus or closes the help
+    // (help-keys.ts) and reaches no game control.
     window.addEventListener(
       'keydown',
       (e) => {
         if (!overlay.hidden) {
-          e.preventDefault();
           e.stopImmediatePropagation();
           this.key(e);
         } else if (e.key === '?') this.open();
@@ -120,9 +120,22 @@ export class Help {
 
   private key(e: KeyboardEvent): void {
     const card = this.overlay.firstElementChild;
+    // Enter on the focused source link follows it (the browser opens the tab); the card stays.
+    if (e.key === 'Enter' && document.activeElement?.matches('#help a[href]')) return;
+    e.preventDefault();
     const what = card instanceof HTMLElement ? helpKey(e, card) : 'close';
     if (what === 'close') this.close();
-    else if (what !== 'stay' && card) card.scrollTop = what.scrollTo;
+    if (typeof what !== 'object' || !card) return;
+    if ('focus' in what) this.moveFocus(what.focus);
+    else card.scrollTop = what.scrollTo;
+  }
+
+  // Tab's ring on the card: "×" and the source link, in turn; the browser's own Tab would leave
+  // the card for the page behind it. The card scrolls the newly focused one into view.
+  private moveFocus(by: 1 | -1): void {
+    const stops = [...this.overlay.querySelectorAll<HTMLElement>('.close, a[href]')];
+    const at = stops.findIndex((s) => s === document.activeElement);
+    stops[(at + by + stops.length) % stops.length]?.focus();
   }
 
   // The fade at the card's bottom edge while more follows (styles/controls.css `#help .card.more`).

@@ -230,7 +230,7 @@
     text-decoration: line-through;
   }
 }
-/* After a fall the line holds a whole and a short form (team-line.ts); one shows. */
+/* After a fall or out of lives: a whole and a short form (team-line.ts); one shows. */
 #team .short {
   display: none;
 }
@@ -240,7 +240,7 @@
   #scores .name {
     display: none;
   }
-  /* "Back in 3" here: the whole line ran into "…" before its seconds (review 2026-11-22). */
+  /* "Back in 3" and "Watching" here: the whole line ran into "…" (review 2026-11-22, D16). */
   #team .short {
     display: inline;
   }

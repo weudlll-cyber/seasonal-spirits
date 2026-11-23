@@ -1,6 +1,6 @@
 // Seasonal Spirits — the help overlay in the browser: shown on the first visit only, opened with
 // "?", scrolled and read to its end by keyboard (DECISIONS D3), closed with "×" or a key; it links
-// the source (AGPL) and names every field marker. Screenshot <size>-help.png.
+// the source (AGPL), reached by Tab (D15), names every field marker. Screenshot <size>-help.png.
 
 import { expect, test } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';
@@ -92,4 +92,36 @@ test("the help offers the game's source, and a tap on it opens a new tab", async
   await link.click();
   await opened;
   await expect(page.locator('#help')).toBeVisible();
+});
+
+// DECISIONS D15: Tab and Shift+Tab move the focus between "×" and the source link and keep it on
+// the card; the scroll keys still scroll, Enter on the link opens it, Esc still closes.
+test('Tab moves between "×" and the source link; the other keys still scroll and close', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'phone', 'a keyboard on a desktop');
+  const help = page.locator('#help');
+  const card = help.locator('.card');
+  const close = help.locator('.close');
+  const link = help.locator('a', { hasText: 'Source (AGPL)' });
+  await page.goto('/');
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(link).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(link).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect.poll(() => card.evaluate((c) => c.scrollTop)).toBe(0);
+  await page.keyboard.press('PageDown');
+  await expect.poll(() => card.evaluate((c) => c.scrollTop)).toBeGreaterThan(0);
+  await expect(link).toBeFocused();
+  await page.context().route('https://github.com/**', (r) => r.fulfill({ body: 'source' }));
+  const opened = page.waitForEvent('popup');
+  await page.keyboard.press('Enter');
+  await opened;
+  await expect(help).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(help).toBeHidden();
 });

@@ -3,7 +3,7 @@
 
 import { seasonColour, seasonName } from '@seasonal-spirits/render';
 import { el } from './hud.js';
-import { OUT_LINE } from './lives.js';
+import { OUT_LINE, OUT_SHORT } from './lives.js';
 import { backLine, fellLine } from './own-marker.js';
 
 const span = (className: string, text: string): HTMLSpanElement => {
@@ -19,7 +19,7 @@ export class TeamLine {
   // On a narrow phone "You are " is hidden (styles/hud.css), so the team's name is never cut off.
   // While the own ghost is out after a fall the line says when it is back (FIX 2026-11-17-3) —
   // the whole line and a short one, the phone showing the short (review 2026-11-22); out of
-  // lives, that it watches until the next match (LIVES 2026-11-17).
+  // lives, that it watches until the next match (LIVES 2026-11-17), the same two forms (D16).
   show(team: number | null, backInMs: number | null, out: boolean): void {
     const line = this.line;
     line.hidden = team === null;
@@ -28,8 +28,8 @@ export class TeamLine {
       delete line.dataset.team;
       if (line.dataset.line === text) return; // the same second: nothing to redraw
       line.dataset.line = text;
-      if (out) line.textContent = text;
-      else line.replaceChildren(span('long', text), span('short', backLine(backInMs ?? 0)));
+      const short = out ? OUT_SHORT : backLine(backInMs ?? 0);
+      line.replaceChildren(span('long', text), span('short', short));
       line.style.setProperty('--team', seasonColour(team));
       return;
     }
