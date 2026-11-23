@@ -14,6 +14,12 @@ saveExact: true
 # pnpm's default (audit 2026-11-22, P1/P5).
 minimumReleaseAge: 1440
 
+# A dependency's install script not listed under allowBuilds fails the install instead of being
+# skipped quietly, and a dependency of a dependency may not come from git or a tarball URL (only
+# the registry); set here, not left to pnpm's defaults (audit 2026-11-22 P5, DECISIONS D4).
+strictDepBuilds: true
+blockExoticSubdeps: true
+
 # Dependency install scripts run only when listed here as true.
 allowBuilds:
   # Pulled by tsx and vite. Its postinstall only checks or fetches the native binary, which

@@ -17,6 +17,17 @@
       "groupName": "minor and patch updates"
     }
   ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The scanner image in ci.yml's env: (`*_IMAGE: <image>:<tag>@sha256:<digest>`), which no built-in manager reads (audit 2026-11-22 P5, DECISIONS D4; scripts/repo-config.test.ts). The same manager as the kit's.",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
+      "matchStrings": [
+        "[A-Z_]+_IMAGE: (?<depName>[^\\s:@]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "description": "Security fixes skip the weekly schedule and the stability wait.",
