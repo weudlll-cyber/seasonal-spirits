@@ -7,27 +7,28 @@ website sign-in is wired in: it refuses to start with `NODE_ENV=production`.
 
 ## Files
 
-| File                    | What it holds                                                           |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `src/main.ts`           | Reads and validates the environment, starts the server                  |
-| `src/server.ts`         | The tick loop, the WebSocket handler, connection bounds                 |
-| `src/tick-metrics.ts`   | The server's numbers for `/metrics-lite` and the probe, by window       |
-| `src/origin-guard.ts`   | The pages that may open the WebSocket: their `Origin`, else 403         |
-| `src/tick-steps.ts`     | The steps due for the wall time passed, with the catch-up bound         |
-| `src/client-record.ts`  | One client: kind, socket, address, message budget, unsent-bytes bound   |
-| `src/recap.ts`          | The match recap message every client gets when a match ends             |
-| `src/home-network.ts`   | The LAN mode's home network: its callers and the panel's origins        |
-| `src/index.ts`          | The package's exports for the probe                                     |
-| `src/test-client.ts`    | A raw WebSocket client for the server tests                             |
-| `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle            |
-| `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started     |
-| `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config       |
-| `src/wire.ts`           | Game state → wire state: per-ghost values, the arena, the team scores   |
-| `src/http-routes.ts`    | `/metrics-lite` (loopback only), everything else 404                    |
-| `src/admin-settings.ts` | The admin settings endpoint and its one access check (`DEV_TUNING`)     |
-| `src/presets.ts`        | Named presets in the dev data folder, checked against the schema        |
-| `src/start-settings.ts` | The starting settings: defaults, a preset, the environment              |
-| `src/env.ts`            | `envInt`, `envChoice`, `envOrigin`, `refuseProduction` (with the probe) |
+| File                    | What it holds                                                                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.ts`           | Reads and validates the environment, starts the server                                                                                       |
+| `src/server.ts`         | The tick loop with the liveness ping, the WebSocket handler                                                                                  |
+| `src/tick-metrics.ts`   | The server's numbers for `/metrics-lite` and the probe, by window                                                                            |
+| `src/origin-guard.ts`   | The pages that may open the WebSocket: their `Origin`, else 403                                                                              |
+| `src/tick-steps.ts`     | The steps due for the wall time passed, with the catch-up bound                                                                              |
+| `src/client-record.ts`  | One client: kind, socket, address, message budget; the connection bounds (`admits`), the unsent-bytes bound, the liveness ping (`pingSweep`) |
+| `src/recap.ts`          | The match recap message every client gets when a match ends                                                                                  |
+| `src/home-network.ts`   | The LAN mode's home network: its callers and the panel's origins                                                                             |
+| `src/index.ts`          | The package's exports for the probe                                                                                                          |
+| `src/test-client.ts`    | A raw WebSocket client for the server tests                                                                                                  |
+| `src/match-host.ts`     | The seats (bot, player, standing ghost), the match lifecycle                                                                                 |
+| `src/next-game.ts`      | The next match's game: the rotation's, or the one the panel started                                                                          |
+| `src/refresh.ts`        | Deep assign: a settings change reaches the running match's config                                                                            |
+| `src/wire.ts`           | Game state → wire state: per-ghost values, the arena, the team scores                                                                        |
+| `src/http-routes.ts`    | `/metrics-lite` (loopback only), everything else 404                                                                                         |
+| `src/admin-settings.ts` | The admin settings endpoint and its one access check (`DEV_TUNING`)                                                                          |
+| `src/admin-commands.ts` | The endpoint's commands, each read field by field                                                                                            |
+| `src/presets.ts`        | Named presets in the dev data folder, checked against the schema                                                                             |
+| `src/start-settings.ts` | The starting settings: defaults, a preset, the environment                                                                                   |
+| `src/env.ts`            | `envInt`, `envChoice`, `envOrigin`, `refuseProduction` (with the probe)                                                                      |
 
 ## The loop
 
@@ -89,7 +90,8 @@ docs/GAME-CORE.md); an award nobody earned is left out, and a client
 shows the kinds it knows. A client that says hello during the result pause gets the same
 recap right after its welcome. Read by the shared `parseServerMessage` (`readRecap`: every
 field checked, at most 64 players and 8 awards, at most 4096 characters; THREATS row 33). Built in
-`src/recap.ts`; `src/client-record.ts` holds one client's record, message budget and send bound.
+`src/recap.ts`; `src/client-record.ts` holds one client's record, message budget, the connection
+bounds, the send bound and the liveness ping.
 
 ## The state message (`packages/protocol/src/state.ts`)
 
@@ -127,8 +129,11 @@ down), or in website mode `WEBSITE_ORIGIN` (a bare origin, checked by `envOrigin
 else, a missing `Origin` too, gets 403 before it is a connection, each refused address logged
 once. Every message passes `parseClientMessage` first; frames above 256 bytes are refused by the
 WebSocket server; every message counts against 20 per second; a connection that has not
-said hello within 10 s is closed; connections are bounded per address (40 in development)
-and in total (twice the slots); a client holding more than 256 KiB unsent (about 20 s of
+said hello within 10 s is closed; connections are bounded per address (16 in development, of
+them at most 4 before their hello) and in total (twice the slots; `client-record.ts` `admits`); a
+client that has not answered the previous liveness ping when the next one is due (every 15 s, on
+the server's clock: `pingSweep`) is ended, so a socket gone without a close is dropped after
+15–30 s; a client holding more than 256 KiB unsent (about 20 s of
 states at 32 ghosts) is closed with 1008 "send queue full" and sent nothing more, and its page
 shows the connection as gone. The full list, with the test for each, is
 [THREATS.md](THREATS.md).
@@ -141,7 +146,7 @@ shows the connection as gone. The full list, with the test for each, is
 | `TICK_HZ`                     | 20        | 1–60                                            |
 | `GHOSTS`                      | 32        | 4–48, a multiple of 4 (the team size × 4)       |
 | `MAX_INPUTS_PER_SECOND`       | 20        | 1–1000                                          |
-| `MAX_CONNECTIONS_PER_ADDRESS` | 40        | 1–1000                                          |
+| `MAX_CONNECTIONS_PER_ADDRESS` | 16        | 1–1000                                          |
 | `SEED`                        | 1         | 0–999999999                                     |
 | `HOST`                        | 127.0.0.1 | `127.0.0.1` or `0.0.0.0` (`pnpm dev --lan`)     |
 | `GAME_MODE`                   | —         | `sumo`, `hill`, `bomb` or `rotate` (`pnpm dev`) |
@@ -181,7 +186,9 @@ its hello, after a change and at every new match (public: the rules everyone pla
 predicts and draws with them.
 
 The admin panel (the viewer's page at http://localhost:5930/admin/ on the client's address, one
-address since 2026-11-21, with `DEV_TUNING=1`, which `pnpm dev` sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`) is built around one flow —
+address since 2026-11-21, with `DEV_TUNING=1`, which `pnpm dev` sets; apps/viewer `admin-panel.ts`, `admin-form.ts`, `admin-api.ts`;
+in Vite's dev server only — a build of the viewer leaves it out, `vite.config.ts` `__ADMIN_PANEL__`,
+checked in CI by `pnpm --filter @seasonal-spirits/viewer build:check`, audit 2026-11-22 I1) is built around one flow —
 choose the game, see and set its values, start — and generated from the schema, its groups
 Movement, Dash & push, Jump, Falling & respawn, Match flow, Bots — general, Bots — endgame, Sumo,
 King of the Season, Halving Bomb, Rotation. It folds to a small "◂ Admin" tab in the top right
@@ -206,8 +213,8 @@ corner, so the field's corner is free, and remembers that across reloads (`panel
 
 A preset is a JSON file in the git-ignored dev data folder `data/presets/` (`presets.ts`), checked
 against the schema when saved and when loaded or read (an invalid or unknown value is refused,
-never applied); `pnpm dev` starts with the last loaded one (deleting it clears that mark, and the
-modes rotate again).
+never applied); `pnpm dev` starts with the last loaded one — a preset only read into the draft is
+not marked (audit 2026-11-22 B1) — and deleting it clears that mark, so the modes rotate again.
 
 The panel talks to one endpoint, `GET` / `POST /api/v1/admin/settings` (`admin-settings.ts`; the
 path follows the sibling games' admin routes), with one access check in front of it,

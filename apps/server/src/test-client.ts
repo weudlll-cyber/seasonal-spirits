@@ -22,7 +22,9 @@ const TEST_CONFIG: ServerConfig = {
   settings: { ...DEFAULT_SETTINGS, teamSize: 1, reconnectGrace: 0 },
   maxInputsPerSecond: 20,
   maxConnectionsPerAddress: 6,
+  maxPendingPerAddress: 6,
   helloTimeoutMs: 10_000,
+  pingIntervalMs: 15_000,
   gameOrigins: [TEST_ORIGIN],
   maxBufferedBytes: 262_144,
   devCors: true,
@@ -35,14 +37,15 @@ export async function startServer(over: Partial<ServerConfig> = {}): Promise<Gam
   return server;
 }
 
-// `origin` null: an upgrade without an Origin header, as a program sends it.
-function open(server: GameServer, origin: string | null): WebSocket {
+// `origin` null: an upgrade without an Origin header, as a program sends it. `autoPong` false: a
+// client that never answers the liveness ping, as a socket gone without a close.
+function open(server: GameServer, origin: string | null, autoPong = true): WebSocket {
   const url = `ws://127.0.0.1:${server.port()}`;
-  return origin === null ? new WebSocket(url) : new WebSocket(url, { origin });
+  return origin === null ? new WebSocket(url) : new WebSocket(url, { origin, autoPong });
 }
 
-export function connect(server: GameServer): Promise<WebSocket> {
-  const ws = open(server, TEST_ORIGIN);
+export function connect(server: GameServer, autoPong = true): Promise<WebSocket> {
+  const ws = open(server, TEST_ORIGIN, autoPong);
   return new Promise((resolve, reject) => {
     ws.once('open', () => {
       resolve(ws);

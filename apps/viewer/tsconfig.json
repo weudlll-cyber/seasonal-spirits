@@ -1,10 +1,13 @@
-// Seasonal Spirits — viewer project: the browser source and its Vite config.
-// Node types are only for vite.config.ts, which reads the ports from process.env.
+// Seasonal Spirits — viewer project: the browser source, its Vite config and its build check.
+// Node types are only for vite.config.ts, which reads the ports from process.env, and for
+// build-check.mjs (checked as JavaScript).
 {
   "extends": "../../tsconfig.bundler.json",
   "compilerOptions": {
     "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
     "types": ["node"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "build-check.mjs"]
 }

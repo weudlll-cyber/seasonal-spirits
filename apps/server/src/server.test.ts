@@ -3,6 +3,7 @@
 // packages/protocol/src/client-message.test.ts, the game rules in packages/game-core.
 
 import { afterEach, describe, expect, it } from 'vitest';
+import { DEFAULT_SETTINGS } from '@seasonal-spirits/game-core';
 import { GHOST_BOT } from '@seasonal-spirits/protocol';
 import type { GameServer } from './server.js';
 import {
@@ -25,7 +26,10 @@ afterEach(async () => {
 
 describe('server under hostile messages', () => {
   it('survives garbage, null, arrays, numbers and wrong types without throwing', async () => {
-    server = await startServer();
+    // The widest arena and no dashes: the three bots start over 800 apart and need seconds to
+    // reach the player, so no contact moves its ghost (it did once, 5 px, under load).
+    const calm = { teamSize: 1, reconnectGrace: 0, arenaRadius: 960, botDashChance: 0 };
+    server = await startServer({ settings: { ...DEFAULT_SETTINGS, ...calm } });
     const { ws, ghost } = await player(server);
     const before = ghostIn(await nthState(ws, 1), ghost);
     for (const m of [
@@ -165,10 +169,46 @@ describe('server connection bounds', () => {
   });
 
   it('refuses connections beyond twice the seat count in total', async () => {
-    server = await startServer({ maxConnectionsPerAddress: 20 }); // four seats
+    // Four seats; neither per-address bound in the way.
+    server = await startServer({ maxConnectionsPerAddress: 20, maxPendingPerAddress: 20 });
     for (let i = 0; i < 8; i++) await connect(server);
     const ninth = await connect(server);
     expect(await closed(ninth)).toBe(1008);
+  });
+
+  // Audit 2026-11-22 P1 L1: sockets that never say hello held an address's whole share for the
+  // hello timeout.
+  it('refuses more connections waiting for their hello from one address than the pending bound', async () => {
+    server = await startServer({ maxPendingPerAddress: 2 });
+    const first = await connect(server);
+    await connect(server);
+    expect(await closed(await connect(server))).toBe(1008);
+    // Once one has said hello, the address may open another.
+    first.send(JSON.stringify({ kind: 'spectator' }));
+    await nthState(first, 1);
+    const next = await connect(server);
+    next.send(JSON.stringify({ kind: 'spectator' }));
+    await nthState(next, 1);
+    expect(server.clientCount()).toBe(3);
+  });
+});
+
+// Audit 2026-11-22 P1 M2, its second half: a socket gone without a close kept its seat.
+describe('server liveness ping', () => {
+  it('ends a client that does not answer its ping, and keeps one that does', async () => {
+    server = await startServer({ pingIntervalMs: 50 });
+    const silent = await connect(server, false);
+    const live = await connect(server);
+    let pings = 0;
+    const threePings = new Promise<void>((resolve) => {
+      live.on('ping', () => {
+        if (++pings === 3) resolve();
+      });
+    });
+    expect(await closed(silent)).toBe(1006); // ended, not closed: no close frame
+    await threePings;
+    expect(live.readyState).toBe(live.OPEN);
+    expect(server.clientCount()).toBe(1);
   });
 });
 

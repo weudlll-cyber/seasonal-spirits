@@ -50,9 +50,14 @@ const cfg: ServerConfig = {
   tickHz: envInt(env, 'TICK_HZ', 20, [1, 60]),
   settings,
   maxInputsPerSecond: envInt(env, 'MAX_INPUTS_PER_SECOND', 20, [1, 1000]),
-  // Room for 32 bots and a few viewers on one machine in development.
-  maxConnectionsPerAddress: envInt(env, 'MAX_CONNECTIONS_PER_ADDRESS', 40, [1, 1000]),
+  // One address — a household behind its router, or this PC with its tabs, viewer and browser
+  // specs — holds at most a quarter of the 64 connections 32 seats allow, and at most 4 of them
+  // before their hello (audit 2026-11-22 P1 L1; the bots are the server's own, no connections).
+  maxConnectionsPerAddress: envInt(env, 'MAX_CONNECTIONS_PER_ADDRESS', 16, [1, 1000]),
+  maxPendingPerAddress: 4,
   helloTimeoutMs: 10_000,
+  // A client gone without a close is dropped after 15–30 s (client-record.ts pingSweep).
+  pingIntervalMs: 15_000,
   gameOrigins: website ? [...localPages, website] : localPages,
   // About 20 s of states at 32 ghosts (592 bytes at 20 Hz, docs/SERVER.md) on top of what the
   // operating system buffers: a client that takes none for that long is closed.

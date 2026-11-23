@@ -56,12 +56,14 @@ import {
 import { startAdminPanel } from './admin-panel.js';
 
 declare const __SERVER_PORT__: number;
+declare const __ADMIN_PANEL__: boolean; // vite.config.ts: Vite's dev server only, never a build
 // The match server on the page's own host (one address, chain 2026-11-21: the client's dev server
 // serves this page), so it is reached the same way as the game reaches it.
 const SERVER_HTTP_URL = `http://${location.hostname}:${String(__SERVER_PORT__)}`;
 const SERVER_WS_URL = `ws://${location.hostname}:${String(__SERVER_PORT__)}`;
-// The admin panel only at /admin/; /viewer/ is the spectating debug view alone.
-const ADMIN_PAGE = location.pathname.startsWith('/admin');
+// The admin panel only at /admin/; /viewer/ is the spectating debug view alone. A build leaves the
+// panel's code out (audit 2026-11-22 I1).
+const ADMIN_PAGE = __ADMIN_PANEL__ && location.pathname.startsWith('/admin');
 
 const BUFFER_MS = 100;
 const LATENCY_MIN = 100;

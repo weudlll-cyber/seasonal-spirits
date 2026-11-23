@@ -47,6 +47,14 @@ export class PresetStore {
 
   // The preset's settings, checked against the schema; it becomes the last loaded one.
   load(name: string): PresetResult {
+    const r = this.read(name);
+    if (r.ok) fs.writeFileSync(path.join(this.dir, LAST), name);
+    return r;
+  }
+
+  // The preset's settings, checked against the schema, and nothing marked: the panel's "read"
+  // only looks at one (audit 2026-11-22 B1), so the next `pnpm dev` does not start with it.
+  read(name: string): PresetResult {
     if (!PRESET_NAME.test(name) || !this.list().includes(name))
       return { ok: false, reason: 'unknown' };
     const file = this.file(name);
@@ -58,9 +66,7 @@ export class PresetStore {
       return { ok: false, reason: 'invalid' };
     }
     const settings = readSettings(value);
-    if (!settings) return { ok: false, reason: 'invalid' };
-    fs.writeFileSync(path.join(this.dir, LAST), name);
-    return { ok: true, settings };
+    return settings ? { ok: true, settings } : { ok: false, reason: 'invalid' };
   }
 
   remove(name: string): boolean {

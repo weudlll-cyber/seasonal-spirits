@@ -1,7 +1,8 @@
 // Seasonal Spirits — the match server: 20 Hz loop + WebSocket handler + /metrics-lite.
 // Fixed tick rate with drift correction (accumulated time, not a bare setInterval); each tick
-// advances the match host and sends one binary state message to every client. Every client
-// message passes the shared validator first (docs/THREATS.md lists what a client can try).
+// advances the match host and sends one binary state message to every client; the liveness ping
+// runs on the same clock. Every client message passes the shared validator first
+// (docs/THREATS.md lists what a client can try).
 
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -19,6 +20,8 @@ import {
 } from '@seasonal-spirits/protocol';
 import {
   POLICY_VIOLATION,
+  admits,
+  pingSweep,
   rawToText,
   sendWithin,
   withinRate,
@@ -38,7 +41,9 @@ export interface ServerConfig {
   settings: Settings; // every gameplay number, the rotation and the seats (game-core settings.ts)
   maxInputsPerSecond: number; // every message counts, valid or not
   maxConnectionsPerAddress: number;
+  maxPendingPerAddress: number; // connections from one address not past their hello yet
   helloTimeoutMs: number; // a connection that has not said hello by then is closed
+  pingIntervalMs: number; // the liveness ping (client-record.ts pingSweep)
   gameOrigins: readonly string[]; // the pages the game is served from: no other may connect
   maxBufferedBytes: number; // a client holding more unsent bytes is closed (client-record.ts)
   devCors: boolean; // CORS `*` on /metrics-lite, development only
@@ -60,9 +65,9 @@ export class GameServer {
   private tickTimer: NodeJS.Timeout | null = null;
   private nextClientId = 1;
   private readonly clients = new Map<number, ClientRecord>();
-  private readonly perAddress = new Map<string, number>();
   private tickCount = 0;
   private lastTickWall = 0;
+  private lastPing = 0;
   private accumulator = 0;
   private stats!: TickMetrics;
 
@@ -119,6 +124,7 @@ export class GameServer {
   private start(): void {
     this.stats = new TickMetrics(Date.now());
     this.lastTickWall = this.stats.startWall;
+    this.lastPing = this.stats.startWall;
     // 1 ms resolution; drift-corrected inside tickLoop.
     this.tickTimer = setInterval(() => {
       this.tickLoop();
@@ -133,6 +139,10 @@ export class GameServer {
     const due = stepsDue(this.accumulator, now - this.lastTickWall, stepMs);
     this.accumulator = due.carryMs;
     this.lastTickWall = now;
+    if (now - this.lastPing >= this.cfg.pingIntervalMs) {
+      this.lastPing = now;
+      pingSweep(this.clients.values());
+    }
     for (let i = 0; i < due.steps; i++) {
       const tickStart = Date.now();
       this.tickCount++;
@@ -162,15 +172,15 @@ export class GameServer {
   }
 
   private handleConnection(ws: WebSocket, address: string): void {
-    const fromAddress = this.perAddress.get(address) ?? 0;
-    if (
-      this.clients.size >= this.host.seats() * 2 ||
-      fromAddress >= this.cfg.maxConnectionsPerAddress
-    ) {
+    const bounds = {
+      total: this.host.seats() * 2,
+      perAddress: this.cfg.maxConnectionsPerAddress,
+      pendingPerAddress: this.cfg.maxPendingPerAddress,
+    };
+    if (!admits(this.clients.values(), address, bounds)) {
       ws.close(POLICY_VIOLATION);
       return;
     }
-    this.perAddress.set(address, fromAddress + 1);
     const rec: ClientRecord = {
       id: this.nextClientId++,
       kind: 'pending',
@@ -181,8 +191,12 @@ export class GameServer {
       helloTimer: setTimeout(() => {
         if (rec.kind === 'pending') ws.close(POLICY_VIOLATION);
       }, this.cfg.helloTimeoutMs),
+      answered: true,
     };
     this.clients.set(rec.id, rec);
+    ws.on('pong', () => {
+      rec.answered = true;
+    });
     ws.on('message', (data, isBinary) => {
       this.handleMessage(rec, data, isBinary);
     });
@@ -199,9 +213,6 @@ export class GameServer {
     if (!this.clients.delete(rec.id)) return;
     clearTimeout(rec.helloTimer);
     if (rec.kind === 'player') this.host.leave(rec.id);
-    const left = (this.perAddress.get(rec.address) ?? 1) - 1;
-    if (left > 0) this.perAddress.set(rec.address, left);
-    else this.perAddress.delete(rec.address);
   }
 
   // Every message counts against the per-second budget, valid or not; the rest is dropped.

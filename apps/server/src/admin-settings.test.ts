@@ -3,7 +3,8 @@
 // rate bounded; presets saved, loaded and deleted by name, a stored preset with a bad value
 // refused and never applied; a change reaches the running match and every client; the next match
 // (the panel rebuild): a game started with its settings, the keep switch, a preset read into the
-// draft without applying it.
+// draft without applying it or marking it last loaded (audit 2026-11-22 B1: the next `pnpm dev`
+// started with a preset only looked at).
 
 import fs from 'node:fs';
 import http from 'node:http';
@@ -267,15 +268,16 @@ describe('admin next match', () => {
     expect(e.answer(POST, JSON.stringify({ action: 'keep', on: 1 })).status).toBe(400);
   });
 
-  it('saves the draft as a preset and reads one into the draft without applying it', () => {
+  it('saves the draft as a preset and reads one into the draft without applying or marking it', () => {
     let now = 0;
-    const { e, applied } = endpoint({}, () => (now += 100));
+    const { e, applied, dir } = endpoint({}, () => (now += 100));
     const save = JSON.stringify({ action: 'save', name: 'draft', settings: VALID });
     expect(e.answer(POST, save).body?.presets).toEqual(['draft']);
     const read = e.answer(POST, named('read', 'draft'));
     expect(read.body?.preset).toEqual(VALID);
     expect(read.body?.current).toEqual(DEFAULT_SETTINGS);
     expect(applied).toEqual([]);
+    expect(new PresetStore(dir).lastLoaded()).toBeNull();
     const bad = JSON.stringify({ action: 'save', name: 'x', settings: { ...VALID, lives: 0 } });
     expect(e.answer(POST, bad).status).toBe(400);
   });

@@ -50,10 +50,12 @@ Only the pages the game is served from may open it (owner decision 2026-11-22, D
 `apps/server/src/origin-guard.ts`): the client's address on this machine, in the LAN mode this
 machine's home-network addresses, in website mode the website's origin from `WEBSITE_ORIGIN`.
 Any other or a missing `Origin` gets 403. Like the admin check below, this stops other pages in
-a player's browser, not a program that writes the header itself; the per-address and total
-bounds still hold for those. A client that stops reading is closed once it holds 256 KiB unsent
-(`client-record.ts` `sendWithin`), so no client can grow the server's memory (THREATS rows 21b,
-21c).
+a player's browser, not a program that writes the header itself; the per-address, pending and
+total bounds still hold for those (16 per address, 4 of them before their hello; `client-record.ts`
+`admits`). A client that stops reading is closed once it holds 256 KiB unsent
+(`client-record.ts` `sendWithin`), so no client can grow the server's memory, and a client that
+does not answer the liveness ping is ended (`pingSweep`, every 15 s) (THREATS rows 20, 21b, 21c,
+21d).
 
 ## Development-only openings
 

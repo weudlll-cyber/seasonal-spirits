@@ -59,7 +59,10 @@ async function startServer(): Promise<GameServer> {
     maxInputsPerSecond: cfg.maxInputsPerSecond,
     // All bots and the spectator connect from this machine.
     maxConnectionsPerAddress: cfg.maxGhosts + 1,
+    // Every bot connects at once from this machine: none may wait behind the pending cap.
+    maxPendingPerAddress: cfg.maxGhosts + 1,
     helloTimeoutMs: 10_000,
+    pingIntervalMs: 15_000,
     // A bot is a normal client: it names a page origin like a browser does, the one listed here.
     gameOrigins: [PROBE_ORIGIN],
     maxBufferedBytes: 262_144,

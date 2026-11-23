@@ -41,7 +41,7 @@ export default defineConfig(
   },
   {
     // Plain Node scripts: TypeScript's own checks do not cover their globals here.
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'apps/viewer/build-check.mjs'],
     languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
   },
   {
