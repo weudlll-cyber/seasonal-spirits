@@ -72,7 +72,9 @@ body.touch #actions {
 }
 /* Dash and Jump: big round buttons in their colours; the colour fills round them while the
    cooldown runs (--ready 0 … 1); Jump smaller, so both fit a phone's right half. Their
-   text stays dark on both colours and on white. */
+   text stays dark on both colours and on white; while charging the button is a little see-through,
+   0.85 — at 0.75 Jump's text on its blue over the sky was 4.26:1, now 5.42:1 at the least in
+   both looks (WCAG AA 4.5:1, DECISIONS D3). */
 #dash,
 #jump {
   -webkit-tap-highlight-color: transparent;
@@ -86,7 +88,7 @@ body.touch #actions {
   box-shadow: var(--drop);
   color: #2b2140;
   background: conic-gradient(var(--fill) calc(var(--ready, 1) * 360deg), var(--rest) 0);
-  opacity: 0.75;
+  opacity: 0.85;
 }
 #dash {
   --fill: var(--dash);
@@ -101,10 +103,10 @@ body.touch #actions {
 #jump.ready {
   opacity: 1;
 }
+/* The key hints in the buttons' own text colour (#4a4060 was 2.98–4.25:1) at the 14 px floor. */
 .key {
-  color: #4a4060;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 14px;
   display: block;
 }
 body.touch .key {

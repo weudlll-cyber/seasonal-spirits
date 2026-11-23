@@ -1,7 +1,8 @@
 // Seasonal Spirits — the help overlay (owner's observation 2026-11-15): shown on the first
 // visit, not on the second, opened any time with "?" (key or band button), scrolled on the card
-// and closed with "×" or a key (owner 2026-11-20); "What you see" names every marker on the field
-// with its drawing (session 2026-11-16-LOOK-B). Screenshot <size>-help.png.
+// and closed with "×" or a key (owner 2026-11-20), read to its end with the keyboard (DECISIONS
+// D3); "What you see" names every marker on the field with its drawing (session
+// 2026-11-16-LOOK-B). Screenshot <size>-help.png.
 
 import { expect, test } from '@playwright/test';
 import { LEGEND } from '@seasonal-spirits/render';
@@ -50,5 +51,31 @@ test('help appears on the first visit, not on the second, and opens again with "
   await expect(help).toBeVisible();
   // A tap or a click beside the card closes it.
   await help.click({ position: { x: 4, y: 300 } });
+  await expect(help).toBeHidden();
+});
+
+// DECISIONS D3: a keyboard player reads the card to its end — it opens with the focus on its
+// "×", the scroll keys move it to the end and back and leave it open, Esc closes it (audit
+// 2026-11-22 P6 item 3: any key closed it).
+test('the help is read to its end with the keyboard and closed with Esc', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'phone', 'a keyboard on a desktop');
+  const help = page.locator('#help');
+  const card = help.locator('.card');
+  await page.goto('/');
+  await expect(help).toBeVisible();
+  await expect(help.locator('.close')).toBeFocused();
+  const end = (): Promise<number> =>
+    card.evaluate((c) => c.scrollHeight - c.clientHeight - c.scrollTop);
+  expect(await end()).toBeGreaterThan(1); // more lies below at 1280 × 800
+  for (let i = 0; i < 20 && (await end()) > 1; i++) await page.keyboard.press('PageDown');
+  expect(await end()).toBeLessThanOrEqual(1);
+  await expect(card).not.toHaveClass(/more/);
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Home');
+  await expect.poll(() => card.evaluate((c) => c.scrollTop)).toBe(0);
+  await expect(help).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(help).toBeHidden();
 });

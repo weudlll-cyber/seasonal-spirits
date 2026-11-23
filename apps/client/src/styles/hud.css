@@ -102,7 +102,7 @@
   display: flex;
   gap: 6px;
   font-family: var(--font-game);
-  font-size: 13px;
+  font-size: 14px; /* the 14 px floor outside the field (DECISIONS D3) */
   font-weight: 600;
 }
 #scores .score {
@@ -166,7 +166,7 @@
   transform: translateX(-50%);
   white-space: nowrap;
   font-family: var(--font-game);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   padding: 1px 10px;
   background: var(--panel);
@@ -197,7 +197,7 @@
   top: 115px;
   white-space: nowrap;
   font-family: var(--font-game);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   padding: 1px 10px;
   border-width: 2px;

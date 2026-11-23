@@ -3,8 +3,8 @@
 // winner first and then those knocked out, last out first (LIVES 2026-11-17) — and per player
 // (in Last One Standing with when each went out, "out at 1:42" or "still in", not its knockouts:
 // owner 2026-11-20), the own place and the time to the next match at the top (review 2026-11-20: below the list it
-// was out of view on a desktop), and the bridge box of CONCEPT.md §8 (on by default, switched off
-// in config.ts). Over it a podium on a floating island with the best three teams'
+// was out of view on a desktop), and the bridge box of CONCEPT.md §8 with the mode's line (on by
+// default, switched off in config.ts). Over it a podium on a floating island with the best three teams'
 // characters and a confetti burst in the winner's colour (render podium.ts, NIGHT 2026-11-19),
 // for every mode. Result and awards come from the server's recap message, the names and the time
 // to the next match from the state. The parts are the kit's result frame (frame/ResultCard.tsx);
@@ -20,12 +20,13 @@ import {
 import {
   drawPodium,
   mmss,
+  modeOf,
   modeWords,
   seasonColour,
   seasonName,
   type ModeWords,
 } from '@seasonal-spirits/render';
-import { BRIDGE_TEXT, CLIENT_CONFIG } from './config.js';
+import { BRIDGE_TEXTS, CLIENT_CONFIG } from './config.js';
 import { resultFilled } from './frame/frame-store.js';
 import { el } from './hud.js';
 
@@ -46,6 +47,7 @@ export class ResultScreen {
   private readonly players = el('result-players');
   private readonly place = el('result-place');
   private readonly next = el('result-next');
+  private readonly bridgeText = el('bridge-text');
   private readonly podium = el('podium', HTMLCanvasElement).getContext('2d');
   private shown: ServerRecap | null = null; // the recap on screen
   private shownAt = 0; // when it came on screen: the confetti's start
@@ -54,7 +56,6 @@ export class ResultScreen {
   constructor() {
     const bridge = el('bridge');
     bridge.hidden = !CLIENT_CONFIG.bridge.enabled;
-    el('bridge-text').textContent = BRIDGE_TEXT;
     el('start-here', HTMLAnchorElement).href = CLIENT_CONFIG.bridge.startHereUrl;
     el('simulator', HTMLAnchorElement).href = CLIENT_CONFIG.bridge.simulatorUrl;
   }
@@ -79,6 +80,7 @@ export class ResultScreen {
     this.shown = recap;
     this.shownAt = now;
     this.order = teamLines(recap).map(([team]) => team);
+    this.bridgeText.textContent = BRIDGE_TEXTS[modeOf(s.mode)];
     this.fill(recap, (ghost) => nameIn(s, ghost, ownId), {
       ownId,
       unit: modeWords(s.mode).unit,

@@ -1,7 +1,7 @@
 // Seasonal Sumo — King of the Season and Halving Bomb in the player client, at desktop and phone
 // size (NIGHT 2026-11-18, piece 7), each on its own short-match stack: join, move, dash, jump
 // (the own ghost in the air), in Bomb the carriers and the labels' score rule, live to "MATCH
-// OVER" and see the result with the mode's awards and the bridge box. Screenshots go to
+// OVER" and see the result with the mode's awards and the bridge box with the mode's line. Screenshots go to
 // reports/screens/latest/modes/ (git-ignored, the latest run only: stack.ts screenshotPath).
 
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -17,6 +17,7 @@ import {
   view,
 } from './stack.js';
 
+const BRIDGE = { hill: 'the zone jumps', bomb: 'every bomb goes off' };
 const AWARDS = {
   hill: /^(King.+, \d+ s in the zone|Bouncer.+, \d+ pushed out of the zone)$/,
   bomb: /^(Hot hands.+, \d+ bombs passed|Cool head.+, \d+ points)$/,
@@ -71,7 +72,8 @@ for (const mode of ['hill', 'bomb'] as const) {
     await expect(page.locator('#result')).toBeVisible({ timeout: 10_000 });
     const awards = page.locator('#result-awards li');
     for (const text of await awards.allTextContents()) expect(text).toMatch(AWARDS[mode]);
-    await expect(page.locator('#bridge-text')).toBeVisible();
+    // The bridge line says what this mode's halving does (DECISIONS D6), not sumo's arena.
+    await expect(page.locator('#bridge-text')).toContainText(BRIDGE[mode]);
     await shot('result');
   });
 }

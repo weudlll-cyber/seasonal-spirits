@@ -1,0 +1,34 @@
+// Seasonal Sumo — the help card by keyboard (DECISIONS D3, audit P6 item 3): the scroll keys
+// move the card, so a keyboard player reads it to its end; Escape, "?" and any other key close
+// it. Kept out of help.ts, which builds the card.
+
+export type HelpKey = { scrollTo: number } | 'stay' | 'close';
+
+// Where a line key moves the card, in pixels; a page key moves 90 % of what it shows.
+const LINE_PX = 40;
+const PAGE_SHARE = 0.9;
+
+// What a key does on the open card: scroll it to a new top (clamped to its range), stay (Tab,
+// which keeps the focus on the card's "×", and a modifier alone), or close it.
+export function helpKey(
+  e: { key: string; shiftKey: boolean },
+  box: { scrollTop: number; clientHeight: number; scrollHeight: number },
+): HelpKey {
+  const page = box.clientHeight * PAGE_SHARE;
+  const by: Record<string, number> = {
+    ArrowDown: LINE_PX,
+    ArrowUp: -LINE_PX,
+    PageDown: page,
+    PageUp: -page,
+    ' ': e.shiftKey ? -page : page,
+    Home: -box.scrollHeight,
+    End: box.scrollHeight,
+  };
+  const step = by[e.key];
+  if (step !== undefined) {
+    const end = Math.max(0, box.scrollHeight - box.clientHeight);
+    return { scrollTo: Math.min(end, Math.max(0, box.scrollTop + step)) };
+  }
+  if (['Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return 'stay';
+  return 'close';
+}

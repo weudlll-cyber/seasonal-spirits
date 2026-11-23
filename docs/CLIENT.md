@@ -13,7 +13,9 @@ Spirits' client is on `master`.
 | -------------------------- | ------------------------------------------------------------------------------------------- |
 | `src/main.ts`              | Wiring and the frame loop: interpolate, predict, draw, HUD, result, test hook               |
 | `src/scene.ts`             | One canvas frame: sky, the camera on the whole island, ghosts, labels, clock                |
-| `src/help.ts`              | The help overlay: the mode's three rules with drawings, "What you see", keys                |
+| `src/help.ts`              | The help overlay: the mode's rules, "What you see", the controls; open, close, focus        |
+| `src/help-drawings.ts`     | The help's drawings in code: one per rule and per mark of "What you see"                    |
+| `src/help-keys.ts`         | The help by keyboard: the scroll keys move the card, Esc and other keys close it            |
 | `src/scores.ts`            | The team pills in the band: score and ghosts still in per team, the leader ringed           |
 | `src/lives.ts`             | The own lives as red circles in the band; "You are out — watching"                          |
 | `src/connection.ts`        | The one WebSocket: hello, welcome or spectating notice, states, recap, settings             |
@@ -32,7 +34,7 @@ Spirits' client is on `master`.
 | `src/zone-hint.ts`         | King's hint "Stand in the zone to score" while outside the zone                             |
 | `src/sound.ts`             | The sounds, synthesised with Web Audio, behind the Sound switch                             |
 | `src/sound-events.ts`      | Which sounds a new state calls for                                                          |
-| `src/config.ts`            | Bridge box on/off and its links                                                             |
+| `src/config.ts`            | Bridge box on/off, its links and its line per mode                                          |
 | `vite/viewer-pages.ts`     | Development only: the viewer at /viewer/ and the admin panel at /admin/ on this address     |
 | `vite/dev-admin.ts`        | Development only: whether the game shows its "Admin" link                                   |
 | `vite.config.ts`           | The dev server and build: ports, the LAN mode, the kit's theme script, website mode         |
@@ -377,9 +379,12 @@ or touch (browsers allow sound only after a gesture).
   goes off and halves the carrier's points), the jump in every mode (a ghost over its shadow, a
   dash passing below), in sumo the variant's rule in one sentence with the
   match's lives (`variantRule`), "What you see" (render `LEGEND`, one drawing each), the
-  controls. It follows the match on screen. The card scrolls with a finger or the mouse wheel; its
-  "×" at the top right, a tap outside it or any key closes it (owner 2026-11-20: on a phone
-  every touch closed it). While more of the card lies below its bottom edge a
+  controls. It follows the match on screen. The card scrolls with a finger or the mouse wheel,
+  and by keyboard (DECISIONS D3, `help-keys.ts`): it opens with the focus on its "×" (kept when the
+  card is rebuilt for a new match), the arrows move it a line, Page Up/Down and Space (Shift+Space
+  back) a page, Home and End to its ends, Tab and a modifier alone leave it as it is; its "×" at
+  the top right, a tap outside it, Esc or any other key closes it (owner 2026-11-20: on a phone
+  every touch closed it), and the focus goes back where it was. The drawings' labels are 14 px. While more of the card lies below its bottom edge a
   fade shows there, held as the card scrolls and gone at its end (`moreBelow`, `#help .card.more`;
   owner 2026-11-20).
 - **Result**: the mode's two awards ("Best pusher"/"Survivor", "Last one standing"/"Best
@@ -392,9 +397,12 @@ or touch (browsers allow sound only after a gesture).
   owner 2026-11-20: the knockouts beside the survival order read as unsorted) — the own place
   ("1 knockout", "8 knockouts"; in Last One Standing "out at 1:42") and the
   time to the next match at the top, under the podium, so a desktop never has them below the
-  card's fold (review 2026-11-20) —, and the bridge box: "This is how Seasonal Tokens
-  work: every halving cuts in half — here it cuts the arena.", "Start here", "Try the
-  simulator", "No financial advice".
+  card's fold (review 2026-11-20) —, and the bridge box with the mode's line (DECISIONS D6,
+  `config.ts` `BRIDGE_TEXTS`): "This is how Seasonal Tokens work: every halving cuts in half —"
+  and in Sumo "here it cuts the arena.", in King of the Season "here the zone jumps to the next
+  season and shrinks, down to its smallest.", in Halving Bomb "here every bomb goes off and cuts
+  its carrier's points." (no share named: `blastShare` is a setting, half by default); then
+  "Start here", "Try the simulator", "No financial advice".
 
 ## Browser tests (`pnpm e2e`)
 
@@ -407,7 +415,7 @@ touch):
   halving with the arena halving, the last chance, "MATCH OVER", the result with the awards and
   the bridge box;
 - `e2e/modes.e2e.ts`: King of the Season and Halving Bomb each — join, move, dash, jump, "MATCH
-  OVER", the result with the mode's awards and the bridge box; in Bomb the carriers' screenshot
+  OVER", the result with the mode's awards and the bridge box with the mode's line; in Bomb the carriers' screenshot
   and at most three scores besides the own;
 - `e2e/panel.e2e.ts` (desktop): a setting changes play (the jump off: the Jump button goes), a
   preset saves and loads, the starting settings back at the end;
@@ -415,12 +423,14 @@ touch):
   frame's playing area wholly on screen and clear of the controls, its labels in view and
   apart, the own one "You", no bot named outside the top three;
 - `e2e/help.e2e.ts`: the help on the first visit with its rules and drawings, scrolled on the
-  card and closed with "×", a key or a tap beside it;
+  card and closed with "×", a key or a tap beside it; on a desktop read to its end by keyboard
+  (the focus on its "×", Page Down to the end, Home back) and closed with Esc;
 - `e2e/spectate.e2e.ts`: a spectator sees a halving and the result and sends only its hello;
 - `e2e/result-fit.e2e.ts` (phone): the whole result, the bridge box included, fits 375 × 667,
   390 × 844, 360 × 780 and 430 × 932, its text at 14 px or more;
 - `e2e/text-style.e2e.ts`: the fonts by DECISIONS D7 — the banner, score chips, zone hint and the
-  Dash and Jump buttons in Fredoka; the help, start card, team line and corner in Luxora Grotesk.
+  Dash and Jump buttons in Fredoka; the help, start card, team line and corner in Luxora Grotesk;
+  every page text on screen at 14 px or more with the help open (DECISIONS D3).
 
 Screenshots go to `reports/screens/latest/<spec>/` (git-ignored, like every screenshot under
 `reports/screens/`). Each spec's folder holds only its latest run (owner decision 2026-11-21:
